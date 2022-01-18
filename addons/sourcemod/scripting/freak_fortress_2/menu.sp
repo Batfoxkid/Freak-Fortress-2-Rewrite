@@ -1,0 +1,315 @@
+/*
+	void Menu_PluginStart()
+	void Menu_Command(int client)
+	bool Menu_BackButton(int client)
+	void Menu_MainMenu(int client)
+*/
+
+static bool InMainMenu[MAXTF2PLAYERS];
+
+void Menu_PluginStart()
+{
+	RegConsoleCmd("ff2", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
+	RegConsoleCmd("hale", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
+	RegConsoleCmd("vsh", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
+	
+	RegFreakCommand("voice", Menu_VoiceToggle, "Freak Fortress 2 Voices Preference");
+	
+	RegFreakCommand("queue", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu");
+	RegFreakCommand("next", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu", FCVAR_HIDDEN);
+}
+
+void Menu_Command(int client)
+{
+	InMainMenu[client] = false;
+}
+
+bool Menu_BackButton(int client)
+{
+	return InMainMenu[client];
+}
+
+public Action Menu_MainMenuCmd(int client, int args)
+{
+	if(!client)
+	{
+		PrintToServer("Freak Fortress 2: Rewrite (%s)", PLUGIN_VERSION);
+		
+		if(CvarDebug.BoolValue)
+			PrintToServer("Debug Mode Enabled");
+		
+		PrintToServer("Status: %s", Charset<0 ? "Idle" : Enabled ? "Gamemode Running" : "Ready");
+		
+		if(Charset < 0)
+		{
+			PrintToServer("Boss Pack: N/A");
+		}
+		else
+		{
+			char buffer[48];
+			Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+			PrintToServer("Boss Pack: %s (%d)", buffer, Charset);
+		}
+		
+		int amount, ready;
+		bool enabled;
+		ConfigMap cfg;
+		while((cfg = Bosses_GetConfig(amount++)))
+		{
+			if(cfg.GetBool("enabled", enabled) && enabled)
+				ready++;
+		}
+		
+		PrintToServer("%d bosses found", amount-1);
+		PrintToServer("%d bosses precached", ready);
+		
+		ready = 0;
+		for(amount=1; amount<=MaxClients; amount++)
+		{
+			if(Client(amount).IsBoss)
+				ready++;
+		}
+		
+		PrintToServer("%d bosses in play", ready);
+	}
+	else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		PrintToConsole(client, "Freak Fortress 2: Rewrite (%s)", PLUGIN_VERSION);
+		PrintToConsole(client, "%T", "Available Commands", client);
+	}
+	else
+	{
+		InMainMenu[client] = true;
+		Menu_MainMenu(client);
+	}
+	return Plugin_Handled;
+}
+
+void Menu_MainMenu(int client)
+{
+	Menu menu = new Menu(Menu_MainMenuH);
+	menu.SetTitle("Freak Fortress 2: Rewrite (%s)", PLUGIN_VERSION);
+	
+	char buffer[64];
+	SetGlobalTransTarget(client);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Command Selection");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Command Queue");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Command Music");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Command Voice");
+	menu.AddItem("", buffer);
+	
+	menu.ExitButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			switch(choice)
+			{
+				case 0:
+				{
+					//Menu_BossMenu(client);
+					FakeClientCommand(client, "ff2boss");
+				}
+				case 1:
+				{
+					QueueMenu(client);
+				}
+				case 2:
+				{
+					Music_MainMenu(client);
+				}
+				case 3:
+				{
+					Menu_VoiceToggle(client, 0);
+					Menu_MainMenu(client);
+				}
+			}
+		}
+	}
+}
+
+public Action Menu_VoiceToggle(int client, int args)
+{
+	if(client)
+	{
+		Client(client).NoVoice = !Client(client).NoVoice;
+		FReplyToCommand(client, "%t", Client(client).NoVoice ? "Boss Voices Disabled" : "Boss Voices Enabled");
+	}
+	else
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+	}
+	return Plugin_Handled;
+}
+
+public Action Menu_QueueMenuCmd(int client, int args)
+{
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		bool specTeam = CvarSpecTeam.BoolValue;
+		int amount;
+		int[] clients = new int[MaxClients];
+		for(int i=1; i<=MaxClients; i++)
+		{
+			if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))))
+				clients[amount++] = i;
+		}
+		
+		if(amount)
+		{
+			SortCustom1D(clients, amount, Menu_SortFunc);
+			
+			for(int i; i<amount; i++)
+			{
+				ReplyToCommand(client, "%s%d: %N", clients[i]==client ? " " : "", Client(clients[i]).Queue, clients[i]);
+			}
+		}
+		else
+		{
+			ReplyToCommand(client, "N/A");
+		}
+	}
+	else
+	{
+		Menu_Command(client);
+		QueueMenu(client);
+	}
+	return Plugin_Handled;
+}
+
+public int Menu_SortFunc(int elem1, int elem2, const int[] array, Handle hndl)
+{
+	if(Client(array[elem1]).Queue > Client(array[elem2]).Queue || (Client(array[elem1]).Queue == Client(array[elem2]).Queue && array[elem1] > array[elem2]))
+		return -1;
+
+	return 1;
+}
+
+static void QueueMenu(int client)
+{
+	Menu menu = new Menu(Menu_QueueMenuH);
+	
+	SetGlobalTransTarget(client);
+	
+	menu.SetTitle("%t", "Queue Menu");
+	
+	bool specTeam = CvarSpecTeam.BoolValue;
+	int amount;
+	int[] clients = new int[MaxClients];
+	for(int i=1; i<=MaxClients; i++)
+	{
+		if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))))
+			clients[amount++] = i;
+	}
+		
+	if(amount)
+		SortCustom1D(clients, amount, Menu_SortFunc);
+	
+	char buffer[64];
+	bool exitButton = Menu_BackButton(client);
+	for(int i; exitButton ? i<7 : i<8; i++)
+	{
+		if(clients[i])
+		{
+			FormatEx(buffer, sizeof(buffer), "%N - %d", clients[i], Client(clients[i]).Queue);
+			menu.AddItem("", buffer, clients[i]==client ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		}
+		else
+		{
+			menu.AddItem("", buffer, ITEMDRAW_SPACER);
+		}
+	}
+	
+	if(exitButton)
+	{
+		FormatEx(buffer, sizeof(buffer), "%t", "Back");
+		menu.AddItem("", buffer, ITEMDRAW_DEFAULT);
+	}
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
+	menu.AddItem("", buffer, Client(client).Queue > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	
+	menu.Pagination = false;
+	menu.ExitButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_QueueMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			if(choice == 7)
+			{
+				Menu_MainMenu(client);
+			}
+			else if(choice == 8)
+			{
+				ResetQueueMenu(client);
+			}
+			else
+			{
+				QueueMenu(client);
+			}
+		}
+	}
+}
+
+static void ResetQueueMenu(int client)
+{
+	Menu menu = new Menu(ResetQueueMenuH);
+	
+	SetGlobalTransTarget(client);
+	
+	menu.SetTitle("%t", "Reset Queue Points Confirm");
+	
+	char buffer[16];
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Yes");
+	menu.AddItem("", buffer, Client(client).Queue > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "No");
+	menu.AddItem("", buffer);
+	
+	menu.ExitButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			if(!choice && Client(client).Queue > 0)
+				Client(client).Queue = 0;
+			
+			QueueMenu(client);
+		}
+	}
+}

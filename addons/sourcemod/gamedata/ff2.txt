@@ -1,0 +1,169 @@
+"Games"
+{
+	"tf"
+	{
+		"Signatures"
+		{
+			"CTFPlayer::CanPickupDroppedWeapon"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x8B\xF1\x80\xBB\xDC\x04\x00\x00\x00"
+			}
+			"CTFPlayer::DropAmmoPack"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x8B\xD9\x56\x33\xF6"
+			}
+			"CTFPlayer::RegenThink"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10RegenThinkEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x74\x57\x8B\xF9\x8B\x07"
+			}
+		}
+		"Offsets"
+		{
+			"CBasePlayer::ForceRespawn"
+			{
+				"linux"		"334"
+				"windows"	"333"
+			}
+			"CTeamplayRoundBasedRules::RoundRespawn"
+			{
+				"linux"		"227"
+				"windows"	"225"
+			}
+			"CTeamplayRules::SetWinningTeam"
+			{
+				"linux"		"161"
+				"windows"	"160"
+			}
+			"CTeam::AddPlayer"
+			{
+				"linux"		"206"
+				"windows"	"205"
+			}
+			"CTeam::RemovePlayer"
+			{
+				"linux"		"207"
+				"windows"	"206"
+			}
+			"CTFGameRules::GetCaptureValueForPlayer"
+			{
+				"linux"		"154"
+				"windows"	"153"
+			}
+		}
+		"Functions"
+		{
+			"CBasePlayer::ForceRespawn"
+			{
+				"offset"	"CBasePlayer::ForceRespawn"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+			}
+			"CTeamplayRoundBasedRules::RoundRespawn"
+			{
+				"offset"	"CTeamplayRoundBasedRules::RoundRespawn"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
+			}
+			"CTeamplayRules::SetWinningTeam"
+			{
+				"offset"	"CTeamplayRules::SetWinningTeam"
+				"hooktype"	"gamerules"
+				"return"	"void"
+				"this"		"ignore"
+				"arguments"
+				{
+					"team"
+					{
+						"type"	"int"
+					}
+					"iWinReason"
+					{
+						"type"	"int"
+					}
+					"bForceMapReset"
+					{
+						"type"	"bool"
+					}
+					"bSwitchTeams"
+					{
+						"type"	"bool"
+					}
+					"bDontAddScore"
+					{
+						"type"	"bool"
+					}
+					"bFinal"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFGameRules::GetCaptureValueForPlayer"
+			{
+				"offset"	"CTFGameRules::GetCaptureValueForPlayer"
+				"hooktype"	"gamerules"
+				"return"	"int"
+				"this"		"ignore"
+				"arguments"
+				{
+					"player"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::CanPickupDroppedWeapon"
+			{
+				"signature"	"CTFPlayer::CanPickupDroppedWeapon"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"pWeapon"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::DropAmmoPack"
+			{
+				"signature"	"CTFPlayer::DropAmmoPack"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type"	"objectptr"
+						"flags"	"byref"
+					}
+					"bEmpty"
+					{
+						"type"	"bool"
+					}
+					"bDisguisedWeapon"
+					{
+						"type"	"bool"
+					}
+				}
+			}
+			"CTFPlayer::RegenThink"
+			{
+				"signature"	"CTFPlayer::RegenThink"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"entity"
+			}
+		}
+	}
+}

@@ -1,0 +1,9 @@
+*.dat
+*.exe
+*.ff2
+*.smx
+*.inc
+[Dd]esktop.ini
+[Tt]humbs.db
+!cfgmap.inc
+!ff2r.inc

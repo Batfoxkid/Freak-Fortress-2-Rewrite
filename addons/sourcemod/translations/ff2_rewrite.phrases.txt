@@ -1,0 +1,137 @@
+"Phrases"
+{
+	"Available Commands"
+	{
+		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines"
+	}
+	
+	"Lost Life"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} has 1 life left!"
+	}
+	"Lost Lives"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} has {2} lives left!"
+	}
+	"Boss Lives Left"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"Lives: {1} / {2}"
+	}
+	"Boss Rage Charge"
+	{
+		"#format"	"{1:d}"
+		"en"		"RAGE is not ready. {1}%%"
+	}
+	"Boss Rage Ready"
+	{
+		"#format"	"{1:d}"
+		"en"		"RAGE is ready! {1}%%\nCall for Medic to use."
+	}
+	
+	"Preference Updated"
+	{
+		"en"		"Your preferences and queue points were updated."
+	}
+	
+	"Command Selection"
+	{
+		"en"		"Whitelist Bosses (/ff2boss)"
+	}
+	"Command Queue"
+	{
+		"en"		"View Boss Queue (/ff2queue)"
+	}
+	"Command Music"
+	{
+		"en"		"Music Settings (/ff2music)"
+	}
+	"Command Voice"
+	{
+		"en"		"Toggle Boss Voicelines (/ff2voice)"
+	}
+	
+	"Boss Voices Disabled"
+	{
+		"en"		"Boss voices are now disabled."
+	}
+	"Boss Voices Enabled"
+	{
+		"en"		"Boss voices are now enabled."
+	}
+	
+	"Queue Menu"
+	{
+		"en"		"FF2 Boss Queue\n "
+	}
+	"Reset Queue Points"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Queue Points"
+	}
+	"Reset Queue Points"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1} Queue Points"
+	}
+	"Reset Queue Points Confirm"
+	{
+		"en"		"Reset your Queue Points?\n "
+	}
+	
+	"Boss Override Command"
+	{
+		"en"		"FF2 Boss Override\n "
+	}
+	"No Override"
+	{
+		"en"		"No Override"
+	}
+	"Boss Not Found"
+	{
+		"en"		"Boss not found"
+	}
+	"Boss Overriden"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} will now be played next round"
+	}
+	"Boss No Access"
+	{
+		"#format"	"{1:s}"
+		"en"		"You don't have permission to select {1}"
+	}
+	"No Boss Overriden"
+	{
+		"en"		"Removed queued boss override"
+	}
+	
+	"Now Playing"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"Now Playing: {blue}{1}{default} - {orange}{2}{default}"
+	}
+	"Unknown Song"
+	{
+		"en"		"Unknown Song"
+	}
+	"Unknown Artist"
+	{
+		"en"		"Unknown Artist"
+	}
+	"Music is now Enabled"
+	{
+		"en"		"Boss music is now on"
+	}
+	"Music is now Disabled"
+	{
+		"en"		"Boss music is now off"
+	}
+	"Music Unknown Arg"
+	{
+		"#format"	"{1:s}"
+		"en"		"Unknown argument '{1}'\nArguments Available: 'on', 'off', 'skip', 'shuffle', 'list'"
+	}
+}
