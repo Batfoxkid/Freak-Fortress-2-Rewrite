@@ -4,6 +4,18 @@
 	{
 		"Signatures"
 		{
+			"CTFGameStats::IncrementStat"	// TODO: Get this to work
+			{
+				"library"	"server"
+				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
+			}
+			"IncrementStat"	// TODO: Get this to work
+			{
+				"library"	"server"
+				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
+				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
+			}
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
 				"library"	"server"
@@ -21,6 +33,12 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10RegenThinkEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x74\x57\x8B\xF9\x8B\x07"
+			}
+			"CTFPlayer::TeamFortress_SetSpeed"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
+				"windows"	"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x83\xEC\x1C\x53"
 			}
 		}
 		"Offsets"
@@ -117,6 +135,28 @@
 					"player"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFGameStats::IncrementStat"
+			{
+				"signature"	"CTFGameStats::IncrementStat"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"ignore"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"	"cbaseentity"
+					}
+					"statType"
+					{
+						"type"	"int"
+					}
+					"iValue"
+					{
+						"type"	"int"
 					}
 				}
 			}

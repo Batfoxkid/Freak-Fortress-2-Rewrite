@@ -465,15 +465,14 @@ public any NativeOld_GetFF2flags(Handle plugin, int params)
 	int flags = FF2FLAG_USEBOSSTIMER|FF2FLAG_CLASSHELPED|FF2FLAG_HASONGIVED;
 	
 	if(Client(client).Minion)
-		flags += FF2FLAG_CLASSTIMERDISABLED|FF2FLAG_ALLOWSPAWNINBOSSTEAM;
+		flags += FF2FLAG_CLASSTIMERDISABLED;
 	
 	if(Client(client).IsBoss)
 	{
 		if(Client(client).Speaking)
 			flags += FF2FLAG_TALKING;
 		
-		int pickups;
-		Client(client).Cfg.GetInt("pickups", pickups);
+		int pickups = Client(client).Pickups;
 		if(pickups == 1 || pickups > 2)
 			flags += FF2FLAG_ALLOW_HEALTH_PICKUPS;
 	
@@ -516,7 +515,7 @@ public any NativeOld_SetFF2flags(Handle plugin, int params)
 	{
 		int flags = GetNativeCell(2);
 		
-		Client(client).Minion = view_as<bool>(flags & FF2FLAG_CLASSTIMERDISABLED | FF2FLAG_ALLOWSPAWNINBOSSTEAM);
+		Client(client).Minion = view_as<bool>(flags & FF2FLAG_CLASSTIMERDISABLED);
 		
 		if(Client(client).IsBoss)
 		{
@@ -526,7 +525,7 @@ public any NativeOld_SetFF2flags(Handle plugin, int params)
 			if(flags & FF2FLAG_ALLOW_AMMO_PICKUPS)
 				pickups += 2;
 			
-			Client(client).Cfg.SetInt("pickups", pickups);
+			Client(client).Pickups = pickups;
 		}
 	}
 }
@@ -828,16 +827,16 @@ public any NativeOld_MakeBoss(Handle plugin, int params)
 			int team = GetNativeCell(4);
 			if(team == 0)
 			{
-				team = view_as<int>(TFTeam_Blue);
+				team = TFTeam_Blue;
 			}
 			else if(team > 0)
 			{
-				team = view_as<int>(TFTeam_Red);
+				team = TFTeam_Red;
 			}
 			else
 			{
 				team = -1 - team;
-				if(team < 0 || team > view_as<int>(TFTeam_Blue))
+				if(team < 0 || team > TFTeam_Blue)
 					team = 0;
 			}
 			
@@ -869,10 +868,10 @@ public any NativeOld_VSHGetHale(Handle plugin, int params)
 
 public any NativeOld_VSHGetTeam(Handle plugin, int params)
 {
-	TFTeam team = TFTeam_Blue;
+	int team = TFTeam_Blue;
 	int client = FindClientOfBossIndex(0);
 	if(client != -1)
-		team = TF2_GetClientTeam(client);
+		team = GetClientTeam(client);
 	
 	return team;
 }

@@ -13,10 +13,12 @@ void Menu_PluginStart()
 	RegConsoleCmd("hale", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
 	RegConsoleCmd("vsh", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
 	
-	RegFreakCommand("voice", Menu_VoiceToggle, "Freak Fortress 2 Voices Preference");
+	RegFreakCmd("voice", Menu_VoiceToggle, "Freak Fortress 2 Voices Preference");
 	
-	RegFreakCommand("queue", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu");
-	RegFreakCommand("next", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu", FCVAR_HIDDEN);
+	RegFreakCmd("queue", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu");
+	RegFreakCmd("next", Menu_QueueMenuCmd, "Freak Fortress 2 Queue Menu", FCVAR_HIDDEN);
+	
+	RegAdminCmd("ff2_addpoints", Menu_AddPointsCmd, ADMFLAG_CHEATS, "Add Queue Points to a Player");
 }
 
 void Menu_Command(int client)
@@ -38,7 +40,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 		if(CvarDebug.BoolValue)
 			PrintToServer("Debug Mode Enabled");
 		
-		PrintToServer("Status: %s", Charset<0 ? "Idle" : Enabled ? "Gamemode Running" : "Ready");
+		PrintToServer("Status: %s", Charset<0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
 		
 		if(Charset < 0)
 		{
@@ -195,7 +197,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 
 public int Menu_SortFunc(int elem1, int elem2, const int[] array, Handle hndl)
 {
-	if(Client(array[elem1]).Queue > Client(array[elem2]).Queue || (Client(array[elem1]).Queue == Client(array[elem2]).Queue && array[elem1] > array[elem2]))
+	if(Client(elem1).Queue > Client(elem2).Queue || (Client(elem1).Queue == Client(elem2).Queue && elem1 > elem2))
 		return -1;
 
 	return 1;
@@ -311,5 +313,78 @@ public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 			
 			QueueMenu(client);
 		}
+	}
+}
+
+public Action Menu_AddPointsCmd(int client, int args)
+{
+	//if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		if(args == 2)
+		{
+			char name[MAX_TARGET_LENGTH];
+			GetCmdArg(2, name, sizeof(name));
+			int points = StringToInt(name);
+			
+			GetCmdArg(1, name, sizeof(name));
+			
+			bool lang;
+			int matches;
+			int[] target = new int[MaxClients];
+			if((matches=ProcessTargetString(name, client, target, MaxClients, COMMAND_FILTER_CONNECTED, name, sizeof(name), lang)) > 0)
+			{
+				AddQueuePoints(client, points, target, matches, name, lang);
+			}
+			else
+			{
+				ReplyToTargetError(client, matches);
+			}
+		}
+		else
+		{
+			ReplyToCommand(client, "[SM] Usage: ff2_addpoints <player> <points>");
+		}
+	}
+	/*else
+	{
+		Menu_Command(client);
+		AddPointsMenu(client);
+	}*/
+	return Plugin_Handled;
+}
+
+static void AddQueuePoints(int client, int points, int[] target, int matches, const char[] name, bool lang=false)
+{
+	for(int i; i<matches; i++)
+	{
+		Client(target[i]).Queue += points;
+		if(points < 0)
+		{
+			LogAction(client, target[i], "\"%L\" removed %d queue points from \"%L\"", client, -points, target[i]);
+		}
+		else
+		{
+			LogAction(client, target[i], "\"%L\" added %d queue points to \"%L\"", client, points, target[i]);
+		}
+	}
+	
+	if(points < 0)
+	{
+		if(lang)
+		{
+			FShowActivity(client, "%t", "Remove Points From", -points, name);
+		}
+		else
+		{
+			FShowActivity(client, "%t", "Remove Points From", -points, "_s", name);
+		}
+	}
+	else if(lang)
+	{
+		FShowActivity(client, "%t", "Add Points To", points, name);
+	}
+	else
+	{
+		FShowActivity(client, "%t", "Add Points To", points, "_s", name);
 	}
 }

@@ -9,10 +9,11 @@ void Events_PluginStart()
 {
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_PostNoCopy);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_PostNoCopy);
+	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
-	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
+	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 }
 
 public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -26,6 +27,34 @@ public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast
 public void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	Gamemode_RoundEnd();
+}
+
+public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBroadcast)
+{
+	if(event.GetInt("weaponid") || !Client(GetClientOfUserId(event.GetInt("ownerid"))).IsBoss)
+		return Plugin_Continue;
+
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client)
+	{
+		int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		if(weapon > MaxClients)
+		{
+			// Airblast gets slower the more times it hits
+			Address address = TF2Attrib_GetByDefIndex(weapon, 256);
+			if(address == Address_Null)
+			{
+				TF2Attrib_SetByDefIndex(weapon, 256, 1.0);
+				SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+			}
+			else
+			{
+				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.1);
+				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
+			}
+		}
+	}
+	return Plugin_Continue;
 }
 
 public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -51,7 +80,6 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 	if(Client(victim).IsBoss)
 	{
 		int damage = event.GetInt("damageamount");
-		PrintToChat(victim, "%d", damage);
 		
 		float rage = Client(victim).GetCharge(0) + (damage * 100.0 / Client(victim).RageDamage);
 		float maxrage = Client(victim).RageMax;
@@ -106,6 +134,8 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 				
 				if(health > 0)
 				{
+					SetEntityHealth(victim, health);
+					
 					char buffer[64];
 					
 					int bosses, mercs;
@@ -156,6 +186,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 			}
 			
 			Client(victim).Lives = lives;
+			Client(victim).MaxLives = maxlives;
 		}
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
@@ -168,8 +199,15 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 		int userid = event.GetInt("userid");
 		int victim = GetClientOfUserId(userid);
 		if(victim)
-		{	
+		{
 			int bosses, mercs;
+			while(TF2_GetItem(victim, bosses, mercs))
+			{
+				if(!GetEntProp(bosses, Prop_Send, "m_iAccountID"))
+					TF2_RemoveItem(victim, bosses);
+			}
+			
+			bosses = mercs = 0;
 			int[] boss = new int[MaxClients];
 			int[] merc = new int[MaxClients];
 			
@@ -205,13 +243,55 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			{
 				if(Client(attacker).IsBoss)
 				{
+					float engineTime = GetEngineTime();
+					
 					if(alive > 2)
 					{
 						if(!FirstBlood || !Bosses_PlaySoundToAll(victim, "sound_first_blood", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
+							int spree = 1;
+							if(Client(attacker).LastKillTime < engineTime + 5.0)
+								spree += Client(attacker).KillSpree;
 							
+							Client(attacker).KillSpree = spree;
+							if(spree != 3 || !Bosses_PlaySoundToAll(victim, "sound_kspree", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+							{
+								bool played = view_as<bool>(GetURandomInt() % 2);
+								if(!played)
+								{
+									TFClassType class = Client(victim).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(attacker);
+									if(deadRinger && TF2_IsPlayerInCondition(victim, TFCond_Disguised) && GetClientTeam(attacker) == GetEntProp(victim, Prop_Send, "m_nDisguiseTeam"))
+									{
+										int target = GetEntProp(victim, Prop_Send, "m_iDisguiseTargetIndex");
+										if(target > 0 && target <= MaxClients && target != attacker)
+										{
+											if(Client(target).IsBoss)
+											{
+												class = TFClass_Unknown;
+											}
+											else
+											{
+												class = view_as<TFClassType>(GetEntProp(victim, Prop_Send, "m_nDisguiseClass"));
+											}
+										}
+									}
+									
+									static const char classnames[][] = {"custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
+									
+									char buffer[20];
+									FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);
+									played = Bosses_PlaySoundToAll(victim, buffer, _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+									if(!played)
+										played = Bosses_PlaySoundToAll(victim, "sound_kill", classnames[class], victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+								}
+								
+								if(!played && !Bosses_PlaySoundToAll(victim, "sound_hit", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+									Bosses_PlaySoundToAll(victim, "sound_kill", "0", victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+							}
 						}
 					}
+					
+					Client(attacker).LastKillTime = engineTime;
 				}
 				
 				FirstBlood = false;
@@ -224,7 +304,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					Bosses_UseSlot(victim, 5, 5);
 					
 					if(!Enabled)
-						RequestFrame(Events_RemoveBossFrame, userid);
+						CreateTimer(0.1, Events_RemoveBossTimer, userid, TIMER_FLAG_NO_MAPCHANGE);
 				}
 				
 				if(Enabled || Client(victim).IsBoss)
@@ -246,11 +326,13 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
-public void Events_RemoveBossFrame(int userid)
+public Action Events_RemoveBossTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
-	if(client)
+	if(client && !IsPlayerAlive(client))
 		Bosses_Remove(client);
+	
+	return Plugin_Continue;
 }
 
 void Events_CheckAlivePlayers(int exclude=0)
@@ -281,7 +363,7 @@ void Events_CheckAlivePlayers(int exclude=0)
 	int team = Bosses_GetBossTeam();
 	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
 	
-	if(!LastMann && TotalPlayersAlive() == 2)
+	if(RoundActive && !LastMann && TotalPlayersAlive() == 2)
 	{
 		LastMann = true;
 		

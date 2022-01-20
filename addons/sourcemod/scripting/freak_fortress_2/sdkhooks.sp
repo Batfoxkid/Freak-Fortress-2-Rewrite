@@ -10,21 +10,26 @@ void SDKHook_PluginStart()
 
 void SDKHook_HookClient(int client)
 {
-	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
-	//SDKHook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
+	SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
+	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
+	//SDKHook(client, SDKHook_SDKHook_TakeDamageAlive, SDKHook_TakeDamageAlive);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if(StrContains(classname, "item_healthkit") != -1 || StrContains(classname, "item_ammopack") != -1 || StrEqual(classname, "tf_ammo_pack"))
+	if(StrContains(classname, "item_healthkit") != -1)
 	{
-		SDKHook(entity, SDKHook_StartTouch, OnItemTouch);
-		SDKHook(entity, SDKHook_Touch, OnItemTouch);
+		SDKHook(entity, SDKHook_StartTouch, SDKHook_HealthTouch);
+		SDKHook(entity, SDKHook_Touch, SDKHook_HealthTouch);
+	}
+	else if(StrContains(classname, "item_ammopack") != -1 || StrEqual(classname, "tf_ammo_pack"))
+	{
+		SDKHook(entity, SDKHook_StartTouch, SDKHook_AmmoTouch);
+		SDKHook(entity, SDKHook_Touch, SDKHook_AmmoTouch);
 	}
 }
 
-public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(Client(victim).IsBoss)
 	{
@@ -155,6 +160,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					event.SetInt("attacker", GetClientUserId(attacker));
 					event.SetInt("assister", assister == -1 ? assister : GetClientUserId(assister));
 					event.SetString("weapon", "telefrag");
+					event.SetString("weapon_logclassname", "ff2_notice");
 					event.SetInt("customkill", damagecustom);
 					event.SetInt("crit_type", 2);
 					
@@ -173,7 +179,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			}
 			
 			ScaleVector(damageForce, 1.3 - (Client(victim).Health / Client(victim).MaxHealth / Client(victim).MaxLives));
-			Attributes_OnHitBossPre(attacker, victim, damagetype, weapon);
+			Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
 			return Plugin_Changed;
 		}
 		else
@@ -249,11 +255,11 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	return Plugin_Continue;
 }
 
-public void OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
+public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
 {
 	if(Client(victim).IsBoss)
 	{
-		if(attacker > 0 && attacker <= MaxClients)
+		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
 		{
 			if(!IsInvuln(victim))
 			{
@@ -359,9 +365,17 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 	return Plugin_Continue;
 }
 
-public Action OnItemTouch(int entity, int client)
+public Action SDKHook_HealthTouch(int entity, int client)
 {
-	if(client > 0 && client <= MaxClients && (Client(client).IsBoss || Client(client).Minion))
+	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && (Client(client).Pickups != 1 && Client(client).Pickups < 3))))
+		return Plugin_Handled;
+	
+	return Plugin_Continue;
+}
+
+public Action SDKHook_AmmoTouch(int entity, int client)
+{
+	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && Client(client).Pickups < 2)))
 		return Plugin_Handled;
 	
 	return Plugin_Continue;

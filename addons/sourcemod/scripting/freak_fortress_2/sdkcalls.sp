@@ -2,6 +2,7 @@
 	void SDKCall_Setup()
 	void SDKCall_EquipWearable(int client, int entity)
 	int SDKCall_GetMaxHealth(int client)
+	void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
 	void SDKCall_SetSpeed(int client)
 */
 
@@ -9,6 +10,7 @@ static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
 static Handle SDKTeamAddPlayer;
 static Handle SDKTeamRemovePlayer;
+static Handle SDKIncrementStat;
 static Handle SDKSetSpeed;
 
 void SDKCall_Setup()
@@ -53,6 +55,15 @@ void SDKCall_Setup()
 	if(!SDKTeamRemovePlayer)
 		LogError("[Gamedata] Could not find CTeam::RemovePlayer");
 	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFGameStats::IncrementStat");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	SDKIncrementStat = EndPrepSDKCall();
+	if(!SDKIncrementStat)
+		LogError("[Gamedata] Could not find CTFGameStats::IncrementStat");
+	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
 	SDKSetSpeed = EndPrepSDKCall();
@@ -79,6 +90,15 @@ int SDKCall_GetMaxHealth(int client)
 	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
 
+void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
+{
+	if(SDKIncrementStat)
+	{
+		SDKCall(SDKIncrementStat, client, stat, amount);
+		Debug("%N %d %d", client, stat, amount);
+	}
+}
+
 void SDKCall_SetSpeed(int client)
 {
 	if(SDKSetSpeed)
@@ -91,7 +111,7 @@ void SDKCall_SetSpeed(int client)
 	}
 }
 
-void SDKCall_ChangeClientTeam(int client, any newTeam)
+void SDKCall_ChangeClientTeam(int client, int newTeam)
 {
 	int clientTeam = GetEntProp(client, Prop_Send, "m_iTeamNum");
 	if(newTeam == clientTeam)

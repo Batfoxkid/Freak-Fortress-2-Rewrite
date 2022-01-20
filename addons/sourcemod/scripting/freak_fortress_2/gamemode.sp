@@ -1,46 +1,190 @@
 /*
+	void Gamemode_MapStart()
 	void Gamemode_RoundSetup()
 	void Gamemode_RoundStart()
 	void Gamemode_RoundEnd()
 */
 
-static bool Waited;
+static bool Waiting;
+
+void Gamemode_MapStart()
+{
+	Waiting = true;
+	for(int i=1; i<=MaxClients; i++)
+	{
+		if(IsClientInGame(i))
+		{
+			Waiting = false;
+			break;
+		}
+	}
+}
 
 void Gamemode_RoundSetup()
 {
+	Debug("Gamemode_RoundSetup %d", Waiting ? 1 : 0);
+	
 	RoundActive = false;
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
 			Client(client).ResetByRound();
-			if(Client(client).IsBoss)
-				Bosses_Remove(client);
+			Bosses_Remove(client);
 		}
 	}
 	
 	if(Enabled)
 	{
-		if(!Waited)
+		if(Waiting)
 		{
 			CvarTournament.BoolValue = true;
 			CvarMovementFreeze.BoolValue = false;
 			ServerCommand("mp_waitingforplayers_restart 1");
+			Debug("mp_waitingforplayers_restart 1");
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
-			//int bvb = CvarBossVsBoss.IntValue;
-			
-			
+			int bosses = CvarBossVsBoss.IntValue;
+			if(bosses > 0)	// Boss vs Boss
+			{
+				int reds;
+				int[] red = new int[MaxClients];
+				for(int client=1; client<=MaxClients; client++)
+				{
+					if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+						red[reds++] = client;
+				}
+					
+				if(reds)
+				{
+					SortIntegers(red, reds, Sort_Random);
+					
+					int team = TFTeam_Red + (GetTime() % 2);
+					for(int i; i<reds; i++)
+					{
+						ChangeClientTeam(red[i], team);
+						team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+					}
+					
+					reds = GetBossQueue(red, MaxClients, TFTeam_Red);
+					
+					int[] blu = new int[MaxClients];
+					int blus = GetBossQueue(blu, MaxClients, TFTeam_Blue);
+					
+					// Somewhat balance out bosses
+					if(reds > blus)
+					{
+						reds = blus;
+					}
+					else if(blus > reds)
+					{
+						blus = reds;
+					}
+					
+					for(int i; i<bosses && i<blus; i++)
+					{
+						if(!Client(blu[i]).IsBoss)
+						{
+							Bosses_Create(blu[i], Preference_PickBoss(blu[i], TFTeam_Blue), TFTeam_Blue);
+							Client(blu[i]).Queue = 0;
+						}
+					}
+					
+					for(int i; i<bosses && i<reds; i++)
+					{
+						if(!Client(red[i]).IsBoss)
+						{
+							Bosses_Create(red[i], Preference_PickBoss(red[i], TFTeam_Red), TFTeam_Red);
+							Client(red[i]).Queue = 0;
+						}
+					}
+				}
+			}
+			else	// Standard FF2
+			{
+				int[] boss = new int[1];
+				if(GetBossQueue(boss, 1))
+				{
+					int team;
+					int special = Preference_PickBoss(boss[0]);
+					ConfigMap cfg;
+					if((cfg=Bosses_GetConfig(special)))
+					{
+						cfg.GetInt("bossteam", team);
+						switch(team)
+						{
+							case TFTeam_Spectator:
+							{
+								team = TFTeam_Red + (GetTime() % 2);
+							}
+							case TFTeam_Red, TFTeam_Blue:
+							{
+								
+							}
+							default:
+							{
+								team = TFTeam_Blue;
+							}
+						}
+						
+						Bosses_Create(boss[0], special, team);
+						Client(boss[0]).Queue = 0;
+					}
+					else
+					{
+						char buffer[64];
+						Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+						LogError("[!!!] Failed to find a valid boss in %s (#%d)", buffer, Charset);
+					}
+					
+					int count;
+					int[] players = new int[MaxClients];
+					for(int client=1; client<=MaxClients; client++)
+					{
+						if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+							players[count++] = client;
+					}
+					
+					team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+					for(int i; i<count; i++)
+					{
+						ChangeClientTeam(players[i], team);
+					}
+				}
+				else	// No boss, normal Arena time
+				{
+					int count;
+					int[] players = new int[MaxClients];
+					for(int client=1; client<=MaxClients; client++)
+					{
+						if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+							players[count++] = client;
+					}
+					
+					if(count)
+					{
+						SortIntegers(players, count, Sort_Random);
+						
+						int team = TFTeam_Red + (GetTime() % 2);
+						for(int i; i<count; i++)
+						{
+							ChangeClientTeam(players[i], team);
+							team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+						}
+					}
+				}
+			}
 		}
 	}
 }
 
 public void TF2_OnWaitingForPlayersStart()
 {
-	if(Enabled)
+	Debug("TF2_OnWaitingForPlayersStart");
+	if(GameRules_GetProp("m_bInWaitingForPlayers", 1) && Enabled)
 	{
-		Waited = true;
+		Waiting = false;
 		CvarTournament.BoolValue = false;
 		CreateTimer(4.0, Gamemode_TimerRespawn, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	}
@@ -48,6 +192,7 @@ public void TF2_OnWaitingForPlayersStart()
 
 public void TF2_OnWaitingForPlayersEnd()
 {
+	Debug("TF2_OnWaitingForPlayersEnd");
 	if(Enabled)
 		CvarMovementFreeze.BoolValue = true;
 }
@@ -73,15 +218,11 @@ void Gamemode_RoundStart()
 	{
 		RoundActive = true;
 		
-		int players[4];
+		Events_CheckAlivePlayers();
 		for(int client=1; client<=MaxClients; client++)
 		{
 			if(IsClientInGame(client) && IsPlayerAlive(client))
 			{
-				int team = GetClientTeam(client);
-				if(team >= 0 && team < 4)
-					players[team]++;
-				
 				if(!Client(client).IsBoss)
 				{
 					TF2_RegeneratePlayer(client);
@@ -96,14 +237,14 @@ void Gamemode_RoundStart()
 		bool specTeam = CvarSpecTeam.BoolValue;
 		for(int client=1; client<=MaxClients; client++)
 		{
-			if(Client(client).IsBoss && IsClientInGame(client) && IsPlayerAlive(client))
+			if(Client(client).IsBoss && IsClientInGame(client))
 			{
 				int team = GetClientTeam(client);
 				int amount = 0;
 				for(int i = specTeam ? 0 : 2; i<4; i++)
 				{
 					if(team != i)
-						amount += players[i];
+						amount += PlayersAlive[i];
 				}
 				Bosses_SetHealth(client, amount);
 			}

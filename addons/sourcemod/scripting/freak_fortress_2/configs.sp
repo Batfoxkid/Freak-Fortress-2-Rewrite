@@ -6,7 +6,7 @@
 
 bool Configs_CheckMap(const char[] mapname)
 {
-	int result = 1;
+	int enableResult;
 	
 	ConfigMap cfg = new ConfigMap(FILE_MAPS);
 	if(cfg)
@@ -17,7 +17,7 @@ bool Configs_CheckMap(const char[] mapname)
 			int entries = snap.Length;
 			if(entries)
 			{
-				result = -1;
+				enableResult = -1;
 				
 				PackVal val;
 				for(int i; i<entries; i++)
@@ -29,8 +29,7 @@ bool Configs_CheckMap(const char[] mapname)
 					if(val.tag != KeyValType_Section)
 						continue;
 					
-					int amount = ReplaceString(buffer, length, "*", "");
-					switch(amount)
+					switch(ReplaceString(buffer, length, "*", ""))
 					{
 						case 0:	// Exact
 						{
@@ -49,9 +48,12 @@ bool Configs_CheckMap(const char[] mapname)
 						}
 					}
 					
+					val.data.Reset();
+					ConfigMap cfgsub = val.data.ReadCell();	
+					
 					int current = -1;
-					if(cfg.GetInt("enable", current) && current > result)
-						result = current;
+					if(cfgsub.GetInt("enable", current) && current > enableResult)
+						enableResult = current;
 				}
 			}
 			
@@ -61,7 +63,7 @@ bool Configs_CheckMap(const char[] mapname)
 		DeleteCfg(cfg);
 	}
 	
-	switch(result)
+	switch(enableResult)
 	{
 		case -1:
 		{

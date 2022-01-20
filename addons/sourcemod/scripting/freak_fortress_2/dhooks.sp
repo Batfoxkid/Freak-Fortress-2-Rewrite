@@ -27,7 +27,14 @@ void DHook_Setup()
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
 	
+	//CreateDetour(gamedata, "CTFGameStats::IncrementStat", DHook_Temp);
+	
 	delete gamedata;
+}
+
+public MRESReturn DHook_Temp(DHookParam param)
+{
+	PrintToChat(param.Get(1), "%d %d", param.Get(2), param.Get(3));
 }
 
 static DynamicHook CreateHook(GameData gamedata, const char[] name)

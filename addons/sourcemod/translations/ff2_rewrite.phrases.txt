@@ -17,7 +17,7 @@
 	}
 	"Boss Lives Left"
 	{
-		"#format"	"{1:s},{2:d}"
+		"#format"	"{1:d},{2:d}"
 		"en"		"Lives: {1} / {2}"
 	}
 	"Boss Rage Charge"
@@ -79,6 +79,21 @@
 	"Reset Queue Points Confirm"
 	{
 		"en"		"Reset your Queue Points?\n "
+	}
+	
+	"Add Points Command"
+	{
+		"en"		"FF2 Queue Points\n "
+	}
+	"Add Points To"
+	{
+		"#format"	"{1:d},{2:t}"
+		"en"		"gave {1} queue points to {2}."
+	}
+	"Remove Points From"
+	{
+		"#format"	"{1:d},{2:t}"
+		"en"		"removed {1} queue points from {2}."
 	}
 	
 	"Boss Override Command"

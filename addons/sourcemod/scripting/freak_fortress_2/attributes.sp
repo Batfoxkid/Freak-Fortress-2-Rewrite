@@ -1,7 +1,7 @@
 /*
 	void Attributes_PluginStart()
 	bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon)
-	void Attributes_OnHitBossPre(int client, int victim, int &damagetype, int weapon)
+	void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagetype, int weapon)
 	void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
 	float Attributes_FindOnPlayer(int client, int index, bool multi=false, float defaul=0.0)
 	float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=false, float defaul=0.0)
@@ -115,6 +115,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	event.SetInt("assister", assister == -1 ? assister : GetClientUserId(assister));
 	event.SetInt("weaponid", weapon);
 	event.SetString("weapon", "backstab");
+	event.SetString("weapon_logclassname", "ff2_notice");
 	event.SetInt("customkill", TF_CUSTOM_BACKSTAB);
 	event.SetInt("kill_streak_total", ++Client(client).Stabs);
 	event.SetInt("kill_streak_wep", Client(client).Stabs);
@@ -131,7 +132,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	return silent;
 }
 
-void Attributes_OnHitBossPre(int client, int victim, int &damagetype, int weapon)
+void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagetype, int weapon)
 {
 	if((TF2_IsPlayerInCondition(client, TFCond_BlastJumping) && Attributes_FindOnWeapon(client, weapon, 621)) ||	// rocketjump attackrate bonus
 	   (TF2_IsPlayerInCondition(client, TFCond_DisguiseRemoved) && Attributes_FindOnWeapon(client, weapon, 410))) 	// damage bonus while disguised
@@ -153,10 +154,11 @@ void Attributes_OnHitBossPre(int client, int victim, int &damagetype, int weapon
 			else
 			{
 				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.02);
+				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 			}
 		}
 		
-		if(Attributes_FindOnWeapon(client, weapon, 416))	// mod flaregun fires pellets with knockback
+		if(damage > 5.0 && Attributes_FindOnWeapon(client, weapon, 416))	// mod flaregun fires pellets with knockback
 		{
 			// Scorch Shot gets slower the more times it hits
 			Address address = TF2Attrib_GetByDefIndex(weapon, 5);
@@ -168,6 +170,7 @@ void Attributes_OnHitBossPre(int client, int victim, int &damagetype, int weapon
 			else
 			{
 				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.025);
+				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 			}
 		}
 		
@@ -186,6 +189,7 @@ void Attributes_OnHitBossPre(int client, int victim, int &damagetype, int weapon
 				else
 				{
 					TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.02);
+					TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 				}
 			}
 			else if(StrEqual(classname, "tf_wepaon_stickbomb"))
@@ -267,6 +271,23 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 		SetEntPropFloat(client, Prop_Send, "m_flRageMeter", rage);
 	}
 	
+	if(Attributes_FindOnPlayer(client, 418) > 0.0)	// boost on damage
+	{
+		DataPack pack = new DataPack();
+		if(Enabled)
+		{
+			CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+			pack.WriteCell(GetClientUserId(client));
+			pack.WriteFloat(fdamage / 1000.0);
+		}
+		else
+		{
+			CreateDataTimer(0.5, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE);
+			pack.WriteCell(GetClientUserId(client));
+			pack.WriteFloat(fdamage / 2.0);
+		}
+	}
+	
 	if(Attributes_FindOnWeapon(client, weapon, 30))	// fists have radial buff
 	{
 		int entity;
@@ -306,10 +327,12 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 						if(attrib != Address_Null)
 						{
 							TF2Attrib_SetValue(attrib, TF2Attrib_GetValue(attrib)*1.1);
+							TF2Attrib_SetByDefIndex(entity, 403, view_as<float>(222153573));	// Update attribute
 						}
 						else
 						{
 							TF2Attrib_SetByDefIndex(entity, 28, 1.1);
+							SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 						}
 					}
 				}
@@ -476,6 +499,7 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 			int lastStreak = GetEntProp(client, Prop_Send, "m_nStreaks", _, slot);
 			int streak = lastStreak + amount;
 			SetEntProp(client, Prop_Send, "m_nStreaks", streak, _, slot);
+			Debug("%d -> %d", lastStreak, streak);
 			
 			int total = streak;
 			for(int i; i<4; i++)
@@ -494,6 +518,14 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 				event.SetInt("kill_streak_total", total);
 				event.SetInt("kill_streak_wep", streak);
 				event.SetInt("crit_type", streak > 10);
+				event.SetString("weapon_logclassname", "ff2_killstreak");
+				
+				if(weapon > MaxClients)
+				{
+					char buffer[32];
+					if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
+						event.SetString("weapon", buffer);
+				}
 				
 				int team = GetClientTeam(client);
 				for(int i=1; i<=MaxClients; i++)
@@ -521,6 +553,14 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 			event.SetInt("kill_streak_total", total);
 			event.SetInt("kill_streak_wep", 0);
 			event.SetInt("crit_type", 0);
+			event.SetString("weapon_logclassname", "ff2_killstreak");
+			
+			if(weapon > MaxClients)
+			{
+				char buffer[32];
+				if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
+					event.SetString("weapon", buffer);
+			}
 			
 			event.FireToClient(client);
 			event.Cancel();
@@ -530,34 +570,28 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 
 float Attributes_FindOnPlayer(int client, int index, bool multi=false, float defaul=0.0)
 {
-	bool found;
-	float value = defaul;
-	Address attrib = TF2Attrib_GetByDefIndex(client, index);
-	if(attrib != Address_Null)
-	{
-		value = TF2Attrib_GetValue(attrib);
-		found = true;
-	}
+	float total = defaul;
+	bool found = Attributes_GetByDefIndex(client, index, total);
 	
 	int i;
 	int entity;
+	float value;
 	while(TF2_GetWearable(client, entity, i))
 	{
-		attrib = TF2Attrib_GetByDefIndex(entity, index);
-		if(attrib != Address_Null)
+		if(Attributes_GetByDefIndex(entity, index, value))
 		{
 			if(!found)
 			{
-				value = TF2Attrib_GetValue(attrib);
+				total = value;
 				found = true;
 			}
 			else if(multi)
 			{
-				value *= TF2Attrib_GetValue(attrib);
+				total *= value;
 			}
 			else
 			{
-				value += TF2Attrib_GetValue(attrib);
+				total += value;
 			}
 		}
 	}
@@ -565,93 +599,135 @@ float Attributes_FindOnPlayer(int client, int index, bool multi=false, float def
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 	while(TF2_GetItem(client, entity, i))
 	{
-		if(index != 128 && active != entity)
-		{
-			attrib = TF2Attrib_GetByDefIndex(entity, 128);
-			if(attrib != Address_Null && TF2Attrib_GetValue(attrib))
-				continue;
-		}
+		if(index != 128 && active != entity && Attributes_GetByDefIndex(entity, 128, value) && value)
+			continue;
 		
-		attrib = TF2Attrib_GetByDefIndex(entity, index);
-		if(attrib != Address_Null)
+		if(Attributes_GetByDefIndex(entity, index, value))
 		{
 			if(!found)
 			{
-				value = TF2Attrib_GetValue(attrib);
+				total = value;
 				found = true;
 			}
 			else if(multi)
 			{
-				value *= TF2Attrib_GetValue(attrib);
+				total *= value;
 			}
 			else
 			{
-				value += TF2Attrib_GetValue(attrib);
+				total += value;
 			}
 		}
 	}
 	
-	return value;
+	return total;
 }
 
 float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=false, float defaul=0.0)
 {
-	bool found;
-	float value = defaul;
-	Address attrib = TF2Attrib_GetByDefIndex(client, index);
-	if(attrib != Address_Null)
-	{
-		value = TF2Attrib_GetValue(attrib);
-		found = true;
-	}
+	float total = defaul;
+	bool found = Attributes_GetByDefIndex(client, index, total);
 	
 	int i;
 	int wear;
+	float value;
 	while(TF2_GetWearable(client, wear, i))
 	{
-		attrib = TF2Attrib_GetByDefIndex(wear, index);
-		if(attrib != Address_Null)
+		if(Attributes_GetByDefIndex(wear, index, value))
 		{
 			if(!found)
 			{
-				value = TF2Attrib_GetValue(attrib);
+				total = value;
 				found = true;
 			}
 			else if(multi)
 			{
-				value *= TF2Attrib_GetValue(attrib);
+				total *= value;
 			}
 			else
 			{
-				value += TF2Attrib_GetValue(attrib);
+				total += value;
 			}
 		}
 	}
 	
 	if(entity > MaxClients)
 	{
-		attrib = TF2Attrib_GetByDefIndex(entity, index);
-		if(attrib != Address_Null)
+		if(Attributes_GetByDefIndex(entity, index, value))
 		{
 			if(!found)
 			{
-				value = TF2Attrib_GetValue(attrib);
+				total = value;
 			}
 			else if(multi)
 			{
-				value *= TF2Attrib_GetValue(attrib);
+				total *= value;
 			}
 			else
 			{
-				value += TF2Attrib_GetValue(attrib);
+				total += value;
 			}
 		}
 	}
 	
-	return value;
+	return total;
+}
+
+bool Attributes_GetByDefIndex(int entity, int index, float &value)
+{
+	Address attrib = TF2Attrib_GetByDefIndex(entity, index);
+	if(attrib != Address_Null)
+	{
+		value = TF2Attrib_GetValue(attrib);
+		return true;
+	}
+	
+	if(entity <= MaxClients)
+		return false;
+	
+	static int indexes[20];
+	static float values[20];
+	int count = TF2Attrib_GetSOCAttribs(entity, indexes, values, 20);
+	for(int i; i<count; i++)
+	{
+		if(indexes[i] == index)
+		{
+			value = values[i];
+			return true;
+		}
+	}
+	
+	count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
+	for(int i; i<count; i++)
+	{
+		if(indexes[i] == index)
+		{
+			value = values[i];
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
+{
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client && IsPlayerAlive(client))
+	{
+		float hype = GetEntPropFloat(client, Prop_Send, "m_flHypeMeter") - pack.ReadFloat();
+		if(hype < 0.0)
+			hype = 0.0;
+		
+		SetEntPropFloat(client, Prop_Send, "m_flHypeMeter", hype);
+		if(Enabled || RoundActive)
+			return Plugin_Continue;
+	}
+	return Plugin_Stop;
 }
 
 static int DamageGoal(int goal, int current, int last)
 {
-	return (current % goal) - (last % goal);
+	return (current / goal) - (last / goal);
 }

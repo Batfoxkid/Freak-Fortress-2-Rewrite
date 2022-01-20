@@ -69,16 +69,16 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 
 public Action Command_Spectate(int client, const char[] command, int args)
 {
-	if(!Enabled && !Client(client).IsBoss && !Client(client).Minion)
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
-	TFTeam team = TFTeam_Spectator;
+	int team = TFTeam_Spectator;
 	return SwapTeam(client, team);
 }
 
 public Action Command_AutoTeam(int client, const char[] command, int args)
 {
-	if(!Enabled && !Client(client).IsBoss && !Client(client).Minion)
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	int reds, blus;
@@ -98,7 +98,7 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 		}
 	}
 	
-	any team;
+	int team;
 	if(reds > blus)
 	{
 		team = TFTeam_Blue;
@@ -107,21 +107,13 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 	{
 		team = TFTeam_Red;
 	}
+	else if(GetClientTeam(client) == TFTeam_Red)
+	{
+		team = TFTeam_Blue;
+	}
 	else
 	{
-		team = GetClientTeam(client);
-		if(team == TFTeam_Red)
-		{
-			team = TFTeam_Blue;
-		}
-		else if(team == TFTeam_Red)
-		{
-			team = TFTeam_Red;
-		}
-		else
-		{
-			team = GetRandomInt(2, 3);
-		}
+		team = TFTeam_Red;
 	}
 	
 	return SwapTeam(client, team);
@@ -129,13 +121,13 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 
 public Action Command_JoinTeam(int client, const char[] command, int args)
 {
-	if(!Enabled && !Client(client).IsBoss && !Client(client).Minion)
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	char buffer[10];
 	GetCmdArg(1, buffer, sizeof(buffer));
 	
-	any team = TFTeam_Unassigned;
+	int team = TFTeam_Unassigned;
 	if(StrEqual(buffer, "red", false))
 	{
 		team = TFTeam_Red;
@@ -160,7 +152,7 @@ public Action Command_JoinTeam(int client, const char[] command, int args)
 	return SwapTeam(client, team);
 }
 
-static Action SwapTeam(int client, any &newTeam)
+static Action SwapTeam(int client, int &newTeam)
 {
 	if(Enabled)
 	{
@@ -172,7 +164,7 @@ static Action SwapTeam(int client, any &newTeam)
 		if(newTeam <= TFTeam_Spectator && !CvarAllowSpectators.BoolValue)
 			return Plugin_Handled;
 		
-		any currentTeam = GetClientTeam(client);
+		int currentTeam = GetClientTeam(client);
 		
 		// Prevent going to same team unless spec team trying to actually spec
 		if(currentTeam > TFTeam_Spectator && newTeam == currentTeam)

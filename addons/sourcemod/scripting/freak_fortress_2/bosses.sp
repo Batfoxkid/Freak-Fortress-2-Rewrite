@@ -7,7 +7,7 @@
 	ConfigMap Bosses_GetConfig(int special)
 	int Bosses_GetConfigLength()
 	int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int lang=-1, const char[] string="name")
-	bool Bosses_CanAccessBoss(int client, int special, bool playing=false, bool enabled=true)
+	bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true)
 	int Bosses_GetBossName(int special, char[] buffer, int length, int lang=-1, const char[] string="name")
 	int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1, const char[] string="name")
 	void Bosses_Create(int client, int special, int team)
@@ -339,6 +339,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				val.data.Reset();
 				val.data.ReadString(companion, val.size);
 				
+				bool found;
 				for(int a; a<length; a++)
 				{
 					ConfigMap cfgsub = BossList.Get(a);
@@ -353,6 +354,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							if(StrEqual(companion, filename, false))
 							{
 								cfg.SetInt("companion", a);
+								found = true;
 								break;
 							}
 						}
@@ -366,11 +368,15 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							if(StrEqual(companion, name, false))
 							{
 								cfg.SetInt("companion", a);
+								found = true;
 								break;
 							}
 						}
 					}
 				}
+				
+				if(!found)
+					cfg.DeleteSection("companion");
 			}
 		}
 	}
@@ -750,7 +756,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									if(!IsNotExtraArg(key))
+									if(IsNotExtraArg(key))
 									{
 										val.data.Reset();
 										val.data.ReadString(buffer, sizeof(buffer));
@@ -1232,8 +1238,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(precache)
 		cfg.SetInt("enabled", 1);
 	
-	PrintToServer("%s = %d = %d", character, cfg.GetInt("enabled", i), i);
-	
 	if(!cfg.GetVal("name", val))
 		cfg.Set("name", character);
 	
@@ -1340,7 +1344,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 	return similarBoss;
 }
 
-bool Bosses_CanAccessBoss(int client, int special, bool playing=false, bool enabled=true)
+bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1350,8 +1354,16 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, bool enab
 	if(enabled && (!cfg.GetBool("enabled", blocked) || !blocked))
 		return false;
 	
+	blocked = false;
 	if(cfg.GetBool("blocked", blocked, false) && blocked)
 		return false;
+	
+	if(team != -1)
+	{
+		int value;
+		if(cfg.GetInt("bossteam", value) && value > TFTeam_Spectator && team != value)
+			return false;
+	}
 	
 	char buffer[16];
 	bool admin = view_as<bool>(cfg.Get("admin", buffer, sizeof(buffer)));
@@ -1360,7 +1372,7 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, bool enab
 	
 	if((!admin || blocked) && !playing)	// If have both "admin" and "hidden", allow playing the boss randomly
 		cfg.GetBool("hidden", blocked, false);
-
+	
 	return !blocked;
 }
 
@@ -1440,34 +1452,41 @@ void Bosses_Create(int client, int special, int team)
 	}
 	
 	char buffer[512];
-	if(Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
+	if((!Enabled || RoundActive) && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
-	
-	if(!Enabled && Client(client).Cfg.Get("companion", buffer, sizeof(buffer)))
-	{
-		int companion = Bosses_GetByName(buffer, _, _, _, "filename");
-		if(companion == -1)
-			companion = Bosses_GetByName(buffer, false);
-		
-		if(companion != -1)
-		{
-			i = 0;
-			int[] players = new int[MaxClients];
-			for(int player = 1; player <= MaxClients; player++)
-			{
-				if(player != client && IsClientInGame(player) && GetClientTeam(player) == team && !Client(player).IsBoss)
-					players[i++] = player;
-			}
-			
-			if(i)
-				Bosses_Create(players[GetRandomInt(0, i - 1)], companion, team);
-		}
-	}
 	
 	TF2_RegeneratePlayer(client);
 	
 	if(!Enabled)
 		Music_RoundStart();
+	
+	if(Client(client).Cfg.GetInt("companion", i))
+	{
+		int count;
+		int[] players = new int[MaxClients];
+		for(int player = 1; player <= MaxClients; player++)
+		{
+			if(player != client && IsClientInGame(player) && GetClientTeam(player) == team && !Client(player).IsBoss)
+				players[count++] = player;
+		}
+		
+		if(count)
+		{
+			Bosses_Create(players[GetRandomInt(0, count - 1)], i, team);
+		}
+		else
+		{
+			i = RoundFloat(Client(client).MaxHealth * 2.8);
+			Client(client).MaxHealth = i;
+			Client(client).Cfg.SetInt("health_formula", i);
+			
+			if(IsPlayerAlive(client))
+			{
+				SetEntityHealth(client, i);
+				Bosses_UpdateHealth(client);
+			}
+		}
+	}
 }
 
 int Bosses_SetHealth(int client, int players)
@@ -1509,8 +1528,6 @@ int Bosses_SetHealth(int client, int players)
 
 void Bosses_Equip(int client)
 {
-	static char buffer[PLATFORM_MAX_PATH];
-	
 	TF2_RemovePlayerDisguise(client);
 	TF2_RemoveAllWeapons(client);
 	
@@ -1563,6 +1580,7 @@ void Bosses_Equip(int client)
 		}
 	}
 	
+	static char buffer[PLATFORM_MAX_PATH];
 	if(Client(client).Cfg.Get("model", buffer, sizeof(buffer)))
 	{
 		SetVariantString(buffer);
@@ -1921,7 +1939,7 @@ void Bosses_Remove(int client)
 
 any Bosses_GetBossTeam()
 {
-	static int bossTeam = view_as<int>(TFTeam_Blue);
+	static int bossTeam = TFTeam_Blue;
 	int client = FindClientOfBossIndex(0);
 	if(client != -1)
 		bossTeam = GetClientTeam(client);
@@ -1931,7 +1949,7 @@ any Bosses_GetBossTeam()
 
 void Bosses_PlayerRunCmd(int client, int buttons)
 {
-	if((!Enabled || RoundActive) && Client(client).IsBoss)
+	if((!Enabled || RoundActive) && Client(client).IsBoss && IsPlayerAlive(client))
 	{
 		float time = GetGameTime();
 		if(Client(client).PassiveAt <= time)
@@ -2219,8 +2237,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 							ConfigMap cfgsub = val.data.ReadCell();	
 							if(!cfgsub.Get("key", key, length) || StrContains(required, key, false) != 0)
 								continue;
-							
-							PrintToChatAll("section | %s", key);
 						}
 					}
 					case KeyValType_Value:
@@ -2241,8 +2257,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 								
 								if(StrContains(required, buffer, false) != 0)
 									continue;
-								
-								PrintToChatAll("value | %s", key);
 							}
 						}
 						else	// "1"	"example.mp3"
@@ -2260,7 +2274,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 								if(!buffer[0])
 									strcopy(buffer, sizeof(buffer), "0");
 								
-								PrintToChatAll("%s | %s | %s", required, buffer, key);
 								if(StrContains(required, buffer, false) != 0)
 									continue;
 							}
@@ -2272,7 +2285,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 					}
 				}
 				
-				PrintToChatAll("Added %s", key);
 				val.data = new DataPack();
 				val.data.WriteString(key);
 				val.size = length;
@@ -2296,7 +2308,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 						val.data.ReadString(key, length);
 						delete val.data;
 						
-						PrintToChatAll(key);
 						if(cfg.GetArray(key, val, sizeof(val)))
 						{
 							switch(val.tag)
@@ -2393,7 +2404,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 										
 										val.data.Reset();
 										val.data.ReadString(sound.Sound, sizeof(sound.Sound));
-										PrintToChatAll(sound.Sound);
 										
 										if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
 										{
@@ -2529,7 +2539,6 @@ static void EnableSubplugins()
 				int pos = strlen(filename) - 4;
 				if(pos > 0)
 				{
-					PrintToServer("%s | %s", filename, filename[pos]);
 					if(StrEqual(filename[pos], ".smx"))
 					{
 						FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
@@ -2594,7 +2603,6 @@ static void DisableSubplugins()
 		{
 			Handle plugin = ReadPlugin(iter);
 			GetPluginFilename(plugin, filename, sizeof(filename));
-			PrintToServer(filename);
 			if(!StrContains(filename, "freaks\\", false))
 				InsertServerCommand("sm plugins unload %s", filename);
 		}

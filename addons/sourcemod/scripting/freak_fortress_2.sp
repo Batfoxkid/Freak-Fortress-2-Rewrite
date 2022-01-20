@@ -3,6 +3,8 @@
 		-Batfoxkid
 */
 
+// mp_bonusroundtime 1; tf_arena_preround_time 1; sv_cheats 1; tf_bot_quota 12; ff2_game_bvb 12
+
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -30,15 +32,70 @@
 
 #define CHANGELOG_URL	"https://batfoxkid.github.io/Freak-Fortress-2-Rewrite"
 
-#define FAR_FUTURE	100000000.0
-#define MAXENTITIES	2048
+#define FAR_FUTURE		100000000.0
+#define MAXENTITIES		2048
 #define MAXTF2PLAYERS	36
 
 #define HEALTHBAR_CLASS		"monster_resource"
 #define HEALTHBAR_PROPERTY	"m_iBossHealthPercentageByte"
 #define HEALTHBAR_COLOR		"m_iBossState"
 #define HEALTHBAR_MAX		255
-#define MONOCULUS		"eyeball_boss"
+#define MONOCULUS			"eyeball_boss"
+
+#define TFTeam_Unassigned	0
+#define TFTeam_Spectator	1
+#define TFTeam_Red			2
+#define TFTeam_Blue			3
+
+enum TFStatType_t
+{
+	TFSTAT_UNDEFINED = 0,
+	TFSTAT_SHOTS_HIT,
+	TFSTAT_SHOTS_FIRED,
+	TFSTAT_KILLS,
+	TFSTAT_DEATHS,
+	TFSTAT_DAMAGE,
+	TFSTAT_CAPTURES,
+	TFSTAT_DEFENSES,
+	TFSTAT_DOMINATIONS,
+	TFSTAT_REVENGE,
+	TFSTAT_POINTSSCORED,
+	TFSTAT_BUILDINGSDESTROYED,
+	TFSTAT_HEADSHOTS,
+	TFSTAT_PLAYTIME,
+	TFSTAT_HEALING,
+	TFSTAT_INVULNS,
+	TFSTAT_KILLASSISTS,
+	TFSTAT_BACKSTABS,
+	TFSTAT_HEALTHLEACHED,
+	TFSTAT_BUILDINGSBUILT,
+	TFSTAT_MAXSENTRYKILLS,
+	TFSTAT_TELEPORTS,
+	TFSTAT_FIREDAMAGE,
+	TFSTAT_BONUS_POINTS,
+	TFSTAT_BLASTDAMAGE,
+	TFSTAT_DAMAGETAKEN,
+	TFSTAT_HEALTHKITS,
+	TFSTAT_AMMOKITS,
+	TFSTAT_CLASSCHANGES,
+	TFSTAT_CRITS,
+	TFSTAT_SUICIDES,
+	TFSTAT_CURRENCY_COLLECTED,
+	TFSTAT_DAMAGE_ASSIST,
+	TFSTAT_HEALING_ASSIST,
+	TFSTAT_DAMAGE_BOSS,
+	TFSTAT_DAMAGE_BLOCKED,
+	TFSTAT_DAMAGE_RANGED,
+	TFSTAT_DAMAGE_RANGED_CRIT_RANDOM,
+	TFSTAT_DAMAGE_RANGED_CRIT_BOOSTED,
+	TFSTAT_REVIVED,
+	TFSTAT_THROWABLEHIT,
+	TFSTAT_THROWABLEKILL,
+	TFSTAT_KILLSTREAK_MAX,
+	TFSTAT_KILLS_RUNECARRIER,
+	TFSTAT_FLAGRETURNS,
+	TFSTAT_TOTAL
+};
 
 enum SectionType
 {
@@ -82,23 +139,6 @@ enum struct SoundEnum
 	}
 }
 
-enum struct WeaponEnum
-{
-	int Crit;
-	int Shield;
-	int Stale;
-	float Stun;
-	float Uber;
-	float Stab;
-	float Fall;
-	float Special;
-	float Outline;
-	float Damage[3];
-	bool HealthKit;
-	bool NoForce;
-}
-
-ConVar CvarVersion;
 ConVar CvarCharset;
 ConVar CvarDebug;
 ConVar CvarSpecTeam;
@@ -126,9 +166,11 @@ Handle ThisPlugin;
 #include "freak_fortress_2/attributes.sp"
 #include "freak_fortress_2/bosses.sp"
 #include "freak_fortress_2/commands.sp"
+#include "freak_fortress_2/configs.sp"
 #include "freak_fortress_2/convars.sp"
 #include "freak_fortress_2/database.sp"
 #include "freak_fortress_2/dhooks.sp"
+#include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/events.sp"
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/forwards_old.sp"
@@ -180,6 +222,7 @@ public void OnPluginStart()
 	Music_PluginStart();
 	Preference_PluginStart();
 	SDKHook_PluginStart();
+	TFED_PluginStart();
 	
 	for(int i=1; i<=MaxClients; i++)
 	{
@@ -207,14 +250,22 @@ public void OnMapStart()
 	}
 	
 	DHook_MapStart();
+	Gamemode_MapStart();
 }
 
 public void OnConfigsExecuted()
 {
-	Charset = CvarCharset.IntValue;
-	
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
+	if(Configs_CheckMap(mapname))
+	{
+		Charset = CvarCharset.IntValue;
+	}
+	else
+	{
+		Charset = -1;
+	}
+	
 	Bosses_BuildPacks(Charset, mapname);
 	
 	if(Enabled)
@@ -234,6 +285,16 @@ public void OnPluginEnd()
 	Database_PluginEnd();
 	DHook_PluginEnd();
 	Music_PlaySongToAll();
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	TFED_LibraryAdded(name);
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	TFED_LibraryRemoved(name);
 }
 
 public void OnClientAuthorized(int client, const char[] auth)

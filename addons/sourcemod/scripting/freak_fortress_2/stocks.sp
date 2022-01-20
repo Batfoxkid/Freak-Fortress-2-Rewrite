@@ -1,5 +1,5 @@
 /*
-	void RegFreakCommand(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
+	void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
 	SectionType GetSectionType(const char[] buffer)
 	int FindClientOfBossIndex(int boss=0)
 	TFClassType GetClassOfName(const char[] buffer)
@@ -9,9 +9,9 @@
 	void Debug(const char[] buffer, any ...)
 */
 
-void RegFreakCommand(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
+void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
 {
-	static const char Prefixes[][] = {"ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony"};	//TODO: Is VSP still a thing?
+	static const char Prefixes[][] = {"ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony"};	// VSP still a thing
 	
 	int length = strlen(cmd)+6;
 	char[] command = new char[length];
@@ -27,11 +27,14 @@ SectionType GetSectionType(const char[] buffer)
 	if(!StrContains(buffer, "sound_") || !StrContains(buffer, "catch_"))
 		return Section_Sound;
 
+	if(StrEqual(buffer, "precache"))
+		return Section_Precache;
+
 	if(StrEqual(buffer, "mod_download"))
 		return Section_Model;
 
 	if(StrEqual(buffer, "mod_precache"))
-		return Section_Precache;
+		return Section_ModCache;
 
 	if(StrEqual(buffer, "mat_download"))
 		return Section_Material;
@@ -667,6 +670,20 @@ stock bool TF2_GetWearable(int client, int &entity, int &index)
 	return false;
 }
 
+stock void TF2_RemoveItem(int client, int weapon)
+{
+	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearableViewModel");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	RemovePlayerItem(client, weapon);
+	RemoveEntity(weapon);
+}
+
 stock bool IsInvuln(int client)
 {
 	return (TF2_IsPlayerInCondition(client, TFCond_Ubercharged) ||
@@ -819,6 +836,14 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 }
 
+stock void FShowActivity(int client, const char[] message, any ...)
+{
+	char buffer[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	VFormat(buffer, sizeof(buffer), message, 3);
+	CShowActivity2(client, "\x01{olive}[FF2]{default} ", buffer);
+}
+
 stock void Debug(const char[] buffer, any ...)
 {
 	if(CvarDebug.BoolValue)
@@ -855,6 +880,40 @@ stock any clamp(any value, any min, any max)
 		return min;
 	
 	return value;
+}
+
+int GetBossQueue(int[] players, int maxsize, int team=-1)
+{
+	int size;
+	int[] queue = new int[MaxClients];
+	bool spec = CvarSpecTeam.BoolValue;
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(!Client(client).IsBoss && IsClientInGame(client) && ((team == -1 && (GetClientTeam(client) > TFTeam_Spectator || (spec && IsPlayerAlive(client)))) || (team != -1 && GetClientTeam(client) == team)))
+			queue[size++] = client;
+	}
+	
+	SortCustom1D(queue, size, GetBossQueueSort);
+	
+	if(size > maxsize)
+		size = maxsize;
+	
+	for(int i; i<size; i++)
+	{
+		players[i] = queue[i];
+	}
+	return size;
+}
+
+public int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
+{
+	if(Client(elem1).Queue > Client(elem2).Queue)
+		return -1;
+	
+	if(Client(elem1).Queue < Client(elem2).Queue)
+		return 1;
+	
+	return (elem1 > elem2) ? 1 : -1;
 }
 
 void DeleteCfg2(ConfigMap cfg)

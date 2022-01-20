@@ -8,7 +8,7 @@ static int BossOverride = -1;
 void Preference_PluginStart()
 {
 	//TODO: Rewrite to a Whitelist/Blacklist type system using Databases for per-map stuff
-	//RegFreakCommand("boss", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection");
+	//RegFreakCmd("boss", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection");
 	//RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	//RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 
@@ -118,7 +118,7 @@ public int Preference_ForceBossMenuH(Menu menu, MenuAction action, int client, i
 	}
 }
 
-int Preference_PickBoss(int client, int team)
+int Preference_PickBoss(int client, int team=-1)
 {
 	int special = BossOverride;
 	if(special == -1)
@@ -127,7 +127,7 @@ int Preference_PickBoss(int client, int team)
 		int length = Bosses_GetConfigLength();
 		for(int i; i<length; i++)
 		{
-			if(Bosses_CanAccessBoss(client, i, true))
+			if(Bosses_CanAccessBoss(client, i, true, team))
 				list.Push(i);
 		}
 		
@@ -147,7 +147,7 @@ int Preference_PickBoss(int client, int team)
 				}
 			}
 			
-			special = list.Get(GetTime() % length);
+			special = list.Get((GetTime() + client) % length);
 			delete list;
 			
 			ForwardOld_OnSpecialSelected(Client(client).Index, special, true);
@@ -156,7 +156,7 @@ int Preference_PickBoss(int client, int team)
 		{
 			delete list;
 			Bosses_GetCharset(Charset, buffer, sizeof(buffer));
-			LogError("[!!!] Could not find a valid boss in %s", buffer);
+			LogError("[!!!] Could not find a valid boss in %s (#%d)", buffer, Charset);
 			return special;
 		}
 	}

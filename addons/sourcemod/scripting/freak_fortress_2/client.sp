@@ -195,7 +195,7 @@ methodmap Client
 		}
 		public set(int amount)
 		{
-			SetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", amount, 4, 10);
+			SDKCall_IncrementStat(view_as<int>(this), TFSTAT_BACKSTABS, amount - GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 10));
 		}
 	}
 	
@@ -386,6 +386,20 @@ methodmap Client
 		public set(int value)
 		{
 			this.Cfg.SetInt("knockback", value);
+		}
+	}
+	
+	property int Pickups
+	{
+		public get()
+		{
+			int value = 0;
+			this.Cfg.GetInt("pickups", value);
+			return value;
+		}
+		public set(int value)
+		{
+			this.Cfg.SetInt("pickups", value);
 		}
 	}
 	

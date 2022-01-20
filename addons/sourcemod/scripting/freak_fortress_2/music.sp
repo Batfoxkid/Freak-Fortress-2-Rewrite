@@ -14,7 +14,7 @@ static float NextThemeAt[MAXTF2PLAYERS];
 
 void Music_PluginStart()
 {
-	RegFreakCommand("music", Music_Command, "Freak Fortress 2 Music Menu");
+	RegFreakCmd("music", Music_Command, "Freak Fortress 2 Music Menu");
 }
 
 void Music_RoundStart()

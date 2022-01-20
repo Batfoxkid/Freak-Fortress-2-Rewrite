@@ -17,7 +17,7 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	CvarVersion = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	CvarCharset = CreateConVar("ff2_charset", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
 	CvarDebug = CreateConVar("ff2_debug", "1", "If to display debug outputs", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	
@@ -49,7 +49,7 @@ void ConVar_PluginStart()
 	ConVar_Add("mp_forcecamera", "0", false);
 	ConVar_Add("mp_humans_must_join_team", "any");
 	ConVar_Add("mp_teams_unbalance_limit", "0");
-	ConVar_Add("mp_waitingforplayers_time", "90.0", false);
+	//ConVar_Add("mp_waitingforplayers_time", "90.0", false);
 }
 
 static void ConVar_Add(const char[] name, const char[] value, bool enforce=true)
@@ -143,6 +143,9 @@ public void ConVar_OnChanged(ConVar cvar, const char[] oldValue, const char[] ne
 			}
 			else
 			{
+				char buffer[64];
+				cvar.GetName(buffer, sizeof(buffer));
+				Debug("Removed ConVar %s", buffer);
 				info.cvar.RemoveChangeHook(ConVar_OnChanged);
 				CvarList.Erase(index);
 			}
