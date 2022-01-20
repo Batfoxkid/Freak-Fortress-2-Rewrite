@@ -9,6 +9,7 @@ static bool Waiting;
 
 void Gamemode_MapStart()
 {
+	//TODO: If a round as been played before, Waiting for Players will never end - Late loading without players on breaks FF2 currently
 	Waiting = true;
 	for(int i=1; i<=MaxClients; i++)
 	{
@@ -249,6 +250,8 @@ void Gamemode_RoundStart()
 				Bosses_SetHealth(client, amount);
 			}
 		}
+		
+		Music_RoundStart();
 	}
 }
 

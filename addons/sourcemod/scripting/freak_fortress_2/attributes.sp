@@ -117,9 +117,11 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	event.SetString("weapon", "backstab");
 	event.SetString("weapon_logclassname", "ff2_notice");
 	event.SetInt("customkill", TF_CUSTOM_BACKSTAB);
-	event.SetInt("kill_streak_total", ++Client(client).Stabs);
-	event.SetInt("kill_streak_wep", Client(client).Stabs);
 	event.SetInt("crit_type", 2);
+	
+	int stabs = ++Client(client).Stabs;
+	event.SetInt("kill_streak_total", stabs);
+	event.SetInt("kill_streak_wep", stabs);
 	
 	int team = GetClientTeam(client);
 	for(int i=1; i<=MaxClients; i++)

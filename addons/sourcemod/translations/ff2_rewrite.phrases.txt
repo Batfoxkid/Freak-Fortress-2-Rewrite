@@ -123,6 +123,41 @@
 		"en"		"Removed queued boss override"
 	}
 	
+	"Boss Selection Command"
+	{
+		"en"		"FF2 Boss Selection\n "
+	}
+	"Clear Whitelist"
+	{
+		"en"		"Clear Whitelist"
+	}
+	"Clear Blacklist"
+	{
+		"en"		"Clear Blacklist"
+	}
+	"Disable Playing Boss"
+	{
+		"en"		"Disable Playing Boss"
+	}
+	"Enable Playing Boss"
+	{
+		"en"		"Enable Playing Boss"
+	}
+	"Boss No View"
+	{
+		"en"		"You may not have access to this boss or does not exist."
+	}
+	"Boss Whitelist"
+	{
+		"#format"	"{1:s}"
+		"en"		"Whitelist {1}"
+	}
+	"Boss Party"
+	{
+		"#format"	"{1:s}"
+		"en"		"Create Team for {1}"
+	}
+	
 	"Now Playing"
 	{
 		"#format"	"{1:s},{2:s}"

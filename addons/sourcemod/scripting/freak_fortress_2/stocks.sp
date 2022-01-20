@@ -684,6 +684,15 @@ stock void TF2_RemoveItem(int client, int weapon)
 	RemoveEntity(weapon);
 }
 
+stock void TF2_RemoveAllItems(int client)
+{
+	int entity, i;
+	while(TF2_GetItem(client, entity, i))
+	{
+		TF2_RemoveItem(client, entity);
+	}
+}
+
 stock bool IsInvuln(int client)
 {
 	return (TF2_IsPlayerInCondition(client, TFCond_Ubercharged) ||

@@ -4,18 +4,179 @@
 */
 
 static int BossOverride = -1;
+static int ViewingPack[MAXTF2PLAYERS];
+static int ViewingPage[MAXTF2PLAYERS];
+static int ViewingBoss[MAXTF2PLAYERS];
 
 void Preference_PluginStart()
 {
 	//TODO: Rewrite to a Whitelist/Blacklist type system using Databases for per-map stuff
-	//RegFreakCmd("boss", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection");
-	//RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
-	//RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
+	RegFreakCmd("boss", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection");
+	RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
+	RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 
-	RegAdminCmd("ff2_special", Preference_ForceBoss, ADMFLAG_CHEATS, "Force a specific boss to appear");
+	RegAdminCmd("ff2_special", Preference_ForceBossCmd, ADMFLAG_CHEATS, "Force a specific boss to appear");
 }
 
-public Action Preference_ForceBoss(int client, int args)
+public Action Preference_BossMenuLegacy(int client, int args)
+{
+	FReplyToCommand(client, "%t", "Legacy Boss Menu Command");
+	return Preference_BossMenuCmd(client, 0);
+}
+
+public Action Preference_BossMenuCmd(int client, int args)
+{
+	if(!client)
+	{
+	}
+	else if(args)
+	{
+	}
+	else
+	{
+		Preference_BossMenu(client);
+	}
+}
+
+void Preference_BossMenu(int client)
+{
+	ViewingPack[client] = Charset;
+	ViewingPage[client] = 0;
+	ViewingBoss[client] = -1;
+	BossMenu(client);
+}
+
+static void BossMenu(int client)
+{
+	Menu menu = new Menu(Preference_BossMenuH);
+	
+	SetGlobalTransTarget(client);
+	int lang = GetClientLanguage(client);
+	
+	char data[64], buffer[512];
+	if(ViewingBoss[client] >= 0)
+	{
+		Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
+		menu.SetTitle("%t%s\n ", "Boss Selection Command", data);
+		
+		if(Bosses_CanAccessBoss(client, ViewingBoss[client], false, -1, false))
+		{
+			Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description");
+			menu.AddItem("0", buffer, ITEMDRAW_RAWLINE);
+			
+			menu.AddItem("0", " ", ITEMDRAW_SPACER);
+			
+			int i;
+			if(Bosses_GetConfig(ViewingBoss[client]).GetInt(i) && i >= 0)
+			{
+				if(!Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang, "group"))
+					Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
+				
+				FormatEx(buffer, sizeof(buffer), "%t", "Boss Party", data);
+			}
+			else
+			{
+				Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
+				FormatEx(buffer, sizeof(buffer), "%t", "Boss Whitelist", data);
+			}
+			
+			menu.AddItem("1", buffer);
+			menu.ExitBackButton = true;
+		}
+		else
+		{
+			FormatEx(buffer, sizeof(buffer), "%t", "Boss No View");
+			menu.AddItem("0", buffer, ITEMDRAW_RAWLINE);
+		}
+		
+		menu.ExitBackButton = true;
+		menu.Display(client, MENU_TIME_FOREVER);
+	}
+	else if(ViewingPack[client] >= 0)
+	{
+		Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
+		menu.SetTitle("%t%s\n ", "Boss Selection Command", data);
+		
+		
+		
+		menu.ExitBackButton = (Menu_BackButton() || Bosses_GetCharsetLength() > 1);
+		menu.DisplayAt(client, MenuPage[client], MENU_TIME_FOREVER);
+	}
+	else
+	{
+		menu.SetTitle("%t", "Boss Selection Command");
+		
+		int length = Bosses_GetCharsetLength();
+		for(int i; i<length; i++)
+		{
+			Bosses_GetCharset(i, buffer, sizeof(buffer));
+			if(i == Charset)
+				Format(buffer, sizeof(buffer), "%s ✓", buffer);
+			
+			IntToString(i, data, sizeof(data));
+			menu.AddItem(data, buffer);
+		}
+		
+		menu.ExitBackButton = Menu_BackButton();
+		menu.Display(client, MENU_TIME_FOREVER);
+	}
+}
+
+public int Preference_ForceBossMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+			{
+				if(ViewingBoss[client] >= 0)
+				{
+					ViewingBoss[client] = -1;
+					BossMenu(client);
+				}
+				else if(ViewingPack[client] >= 0 && Bosses_GetCharsetLength() > 1)
+				{
+					ViewingPack[client] = -1;
+					ViewingPage[client] = 0;
+					BossMenu(client);
+				}
+				else
+				{
+					Menu_MainMenu(client);
+				}
+			}
+		}
+		case MenuAction_Select:
+		{
+			char buffer[12];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			int value = StringToInt(buffer);
+			
+			if(ViewingBoss[client] >= 0)
+			{
+				
+			}
+			else if(ViewingPack[client] >= 0)
+			{
+				ViewingBoss[client] = value;
+				ViewingPage[client] = choice / 7 * 7;
+				BossMenu(client);
+			}
+			else
+			{
+				ViewingPack[client] = value;
+				BossMenu(client);
+			}
+		}
+	}
+}
+
+public Action Preference_ForceBossCmd(int client, int args)
 {
 	if(args)
 	{

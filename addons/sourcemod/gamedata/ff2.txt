@@ -4,13 +4,13 @@
 	{
 		"Signatures"
 		{
-			"CTFGameStats::IncrementStat"	// TODO: Get this to work
+			"CTFGameStats::ResetRoundStats"
 			{
 				"library"	"server"
-				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
-				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
+				"linux"		"@_ZN12CTFGameStats15ResetRoundStatsEv"
+				"windows"	"\x53\x8B\xD9\x56\x57\xBE\x22\x00\x00\x00"
 			}
-			"IncrementStat"	// TODO: Get this to work
+			"CTFGameStats::IncrementStat"
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
@@ -138,27 +138,12 @@
 					}
 				}
 			}
-			"CTFGameStats::IncrementStat"
+			"CTFGameStats::ResetRoundStats"
 			{
-				"signature"	"CTFGameStats::IncrementStat"
+				"signature"	"CTFGameStats::ResetRoundStats"
 				"callconv"	"thiscall"
 				"return"	"void"
-				"this"		"ignore"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"	"cbaseentity"
-					}
-					"statType"
-					{
-						"type"	"int"
-					}
-					"iValue"
-					{
-						"type"	"int"
-					}
-				}
+				"this"		"address"
 			}
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{

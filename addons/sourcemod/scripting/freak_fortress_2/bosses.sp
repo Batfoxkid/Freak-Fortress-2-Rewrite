@@ -168,6 +168,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		delete PackList;
 	
 	PackList = new ArrayList(64, 0);
+	// TODO: Hidden boss packs or boss pack settings
 	
 	DownloadTable = FindStringTable("downloadables");
 	bool save = LockStringTables(false);
@@ -1295,7 +1296,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 		int size1 = exact ? 0 : strlen(name);
 		int similarChars;
 		
-		char language[4];
+		char language[5];
 		if(lang != -1)
 			GetLanguageInfo(lang, language, sizeof(language));
 		
@@ -1327,7 +1328,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 						int amount;
 						for(int c; c<size2; c++)
 						{
-							if(name[i] == buffer[i])
+							if(CharToLower(name[c]) == CharToLower(buffer[c]))
 								amount++;
 						}
 						
@@ -1528,8 +1529,21 @@ int Bosses_SetHealth(int client, int players)
 
 void Bosses_Equip(int client)
 {
+	EquipBoss(client, false);
+	CreateTimer(0.1, Bosses_EquipTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Bosses_EquipTimer(Handle timer, int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client && Client(client).IsBoss)
+		EquipBoss(client, true);
+}
+
+static void EquipBoss(int client, bool weapons)
+{
 	TF2_RemovePlayerDisguise(client);
-	TF2_RemoveAllWeapons(client);
+	TF2_RemoveAllItems(client);
 	
 	int i;
 	Client(client).Cfg.GetInt("healing", i);			
@@ -1588,239 +1602,242 @@ void Bosses_Equip(int client)
 		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
 	}
 	
-	StringMapSnapshot snap = Client(client).Cfg.Snapshot();
-	if(snap)
+	if(weapons)
 	{
-		int entries = snap.Length;
-		if(entries)
+		StringMapSnapshot snap = Client(client).Cfg.Snapshot();
+		if(snap)
 		{
-			value = false;
-			PackVal val;
-			for(i=0; i<entries; i++)
+			int entries = snap.Length;
+			if(entries)
 			{
-				static char classname[36];
-				snap.GetKey(i, classname, sizeof(classname));
-				Client(client).Cfg.GetArray(classname, val, sizeof(val));
-				if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
-					continue;
-				
-				val.data.Reset();
-				ConfigMap cfg = val.data.ReadCell();
-				if(!cfg)
-					continue;
-				
-				if(StrContains(classname, "tf_") != 0 &&
-				  !StrEqual(classname, "saxxy") &&
-				  !cfg.Get("name", classname, sizeof(classname)))
+				value = false;
+				PackVal val;
+				for(i=0; i<entries; i++)
 				{
-					continue;
-				}
-				
-				bool wearable = StrContains(classname, "tf_wea") != 0;
-				GetClassWeaponClassname(class, classname, sizeof(classname));
-				
-				cfg.GetInt("index", index);
-				
-				int level = -1;
-				cfg.GetInt("level", level);
-				
-				int quality = 5;
-				cfg.GetInt("quality", quality);
-				
-				int kills;
-				bool override = (cfg.GetInt("override", kills) && kills);
-				
-				kills = -1;
-				if(!cfg.GetInt("rank", kills) && level != -1 && !override)
-					kills = GetRandomInt(0, 20);
-				
-				if(kills >= 0)
-					kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
-				
-				if(level < 0 || level > 127)
-					level = 101;
-				
-				bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
-				
-				if(!wearable && value)
-				{
-					if(found)
+					static char classname[36];
+					snap.GetKey(i, classname, sizeof(classname));
+					Client(client).Cfg.GetArray(classname, val, sizeof(val));
+					if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
+						continue;
+					
+					val.data.Reset();
+					ConfigMap cfg = val.data.ReadCell();
+					if(!cfg)
+						continue;
+					
+					if(StrContains(classname, "tf_") != 0 &&
+					  !StrEqual(classname, "saxxy") &&
+					  !cfg.Get("name", classname, sizeof(classname)))
 					{
-						Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
+						continue;
 					}
-					else
+					
+					bool wearable = StrContains(classname, "tf_wea") != 0;
+					GetClassWeaponClassname(class, classname, sizeof(classname));
+					
+					cfg.GetInt("index", index);
+					
+					int level = -1;
+					cfg.GetInt("level", level);
+					
+					int quality = 5;
+					cfg.GetInt("quality", quality);
+					
+					int kills;
+					bool override = (cfg.GetInt("override", kills) && kills);
+					
+					kills = -1;
+					if(!cfg.GetInt("rank", kills) && level != -1 && !override)
+						kills = GetRandomInt(0, 20);
+					
+					if(kills >= 0)
+						kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
+					
+					if(level < 0 || level > 127)
+						level = 101;
+					
+					bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
+					
+					if(!wearable && value)
 					{
-						strcopy(buffer, sizeof(buffer), "2 ; 3.1");
-					}
-				}
-				else if(!wearable && !override)
-				{
-					if(found)
-					{
-						Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
-					}
-					else
-					{
-						strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
-					}
-				}
-				else if(!found)
-				{
-					buffer[0] = 0;
-				}
-				
-				static char buffers[40][16];
-				int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
-				
-				if(count % 2)
-					count--;
-				
-				int attribs;
-				int entity = -1;
-				if(wearable)
-				{
-					entity = CreateEntityByName(classname);
-					if(IsValidEntity(entity))
-					{
-						SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-						SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-						SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
-						SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
-						
-						DispatchSpawn(entity);
-					}
-					else
-					{
-						Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-						LogError("[Boss] Invalid classname '%s' for %s", classname, buffer);
-					}
-				}
-				else
-				{
-					Handle item = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
-					TF2Items_SetClassname(item, classname);
-					TF2Items_SetItemIndex(item, index);
-					TF2Items_SetLevel(item, level);
-					TF2Items_SetQuality(item, quality);
-					TF2Items_SetNumAttributes(item, count/2);
-					for(int a; attribs < count && attribs < 32; attribs += 2)
-					{
-						int attrib = StringToInt(buffers[attribs]);
-						if(attrib)
+						if(found)
 						{
-							TF2Items_SetAttribute(item, a++, attrib, StringToFloat(buffers[attribs+1]));
+							Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
 						}
 						else
 						{
-							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
-							continue;
+							strcopy(buffer, sizeof(buffer), "2 ; 3.1");
 						}
 					}
+					else if(!wearable && !override)
+					{
+						if(found)
+						{
+							Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
+						}
+						else
+						{
+							strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
+						}
+					}
+					else if(!found)
+					{
+						buffer[0] = 0;
+					}
 					
-					entity = TF2Items_GiveNamedItem(client, item);
-					delete item;
-				}
-				
-				if(entity != -1)
-				{
+					static char buffers[40][16];
+					int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
+					
+					if(count % 2)
+						count--;
+					
+					int attribs;
+					int entity = -1;
 					if(wearable)
 					{
-						SDKCall_EquipWearable(client, entity);
-					}
-					else
-					{
-						EquipPlayerWeapon(client, entity);
-					}
-					
-					for(; attribs < count; attribs += 2)
-					{
-						int attrib = StringToInt(buffers[attribs]);
-						if(attrib)
+						entity = CreateEntityByName(classname);
+						if(IsValidEntity(entity))
 						{
-							TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
+							SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
+							SetEntProp(entity, Prop_Send, "m_bInitialized", true);
+							SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
+							SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
+							
+							DispatchSpawn(entity);
 						}
 						else
 						{
 							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+							LogError("[Boss] Invalid classname '%s' for %s", classname, buffer);
 						}
-					}
-					
-					if(kills != -1)
-					{
-						TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
-						if(wearable)
-							TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
-					}
-					
-					if(!wearable)
-					{
-						if(cfg.GetInt("ammo", level))
-						{
-							int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-							if(type >= 0)
-								SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
-						}
-						
-						if(cfg.GetInt("clip", level))
-							SetEntProp(entity, Prop_Data, "m_iClip1", level);
-						
-						if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
-						{
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level!=3, _, level);
-							}
-						}
-						else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
-						{
-							SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
-							SetEntProp(entity, Prop_Data, "m_iSubType", 3);
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level==3, _, level);
-							}
-						}
-					}
-					
-					level = wearable ? 1 : 0;
-					cfg.GetInt("show", level);
-					if(level)
-					{
-						if(cfg.GetInt("worldmodel", index) && index)
-						{
-							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
-							}
-						}
-						
-						SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 					}
 					else
 					{
-						SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
-						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+						Handle item = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+						TF2Items_SetClassname(item, classname);
+						TF2Items_SetItemIndex(item, index);
+						TF2Items_SetLevel(item, level);
+						TF2Items_SetQuality(item, quality);
+						TF2Items_SetNumAttributes(item, count/2);
+						for(int a; attribs < count && attribs < 32; attribs += 2)
+						{
+							int attrib = StringToInt(buffers[attribs]);
+							if(attrib)
+							{
+								TF2Items_SetAttribute(item, a++, attrib, StringToFloat(buffers[attribs+1]));
+							}
+							else
+							{
+								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
+								LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+								continue;
+							}
+						}
+						
+						entity = TF2Items_GiveNamedItem(client, item);
+						delete item;
 					}
 					
-					override = view_as<bool>(cfg.GetInt("alpha", level));
-					override = (cfg.GetInt("red", index) || override);
-					override = (cfg.GetInt("green", kills) || override);
-					override = (cfg.GetInt("blue", count) || override);
-					if(override)
+					if(entity != -1)
 					{
-						SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-						SetEntityRenderColor(entity, index, kills, count, level);
-					}
-					
-					SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-					
-					if(!wearable && !value)
-					{
-						value = true;
-						SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+						if(wearable)
+						{
+							SDKCall_EquipWearable(client, entity);
+						}
+						else
+						{
+							EquipPlayerWeapon(client, entity);
+						}
+						
+						for(; attribs < count; attribs += 2)
+						{
+							int attrib = StringToInt(buffers[attribs]);
+							if(attrib)
+							{
+								TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
+							}
+							else
+							{
+								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
+								LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+							}
+						}
+						
+						if(kills != -1)
+						{
+							TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
+							if(wearable)
+								TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
+						}
+						
+						if(!wearable)
+						{
+							if(cfg.GetInt("ammo", level))
+							{
+								int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+								if(type >= 0)
+									SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
+							}
+							
+							if(cfg.GetInt("clip", level))
+								SetEntProp(entity, Prop_Data, "m_iClip1", level);
+							
+							if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
+							{
+								for(level = 0; level < 4; level++)
+								{
+									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level!=3, _, level);
+								}
+							}
+							else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
+							{
+								SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
+								SetEntProp(entity, Prop_Data, "m_iSubType", 3);
+								for(level = 0; level < 4; level++)
+								{
+									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level==3, _, level);
+								}
+							}
+						}
+						
+						level = wearable ? 1 : 0;
+						cfg.GetInt("show", level);
+						if(level)
+						{
+							if(cfg.GetInt("worldmodel", index) && index)
+							{
+								SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
+								for(level = 0; level < 4; level++)
+								{
+									SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
+								}
+							}
+							
+							SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+						}
+						else
+						{
+							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+							SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+						}
+						
+						override = view_as<bool>(cfg.GetInt("alpha", level));
+						override = (cfg.GetInt("red", index) || override);
+						override = (cfg.GetInt("green", kills) || override);
+						override = (cfg.GetInt("blue", count) || override);
+						if(override)
+						{
+							SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
+							SetEntityRenderColor(entity, index, kills, count, level);
+						}
+						
+						SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
+						
+						if(!wearable && !value)
+						{
+							value = true;
+							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+						}
 					}
 				}
 			}
@@ -1882,7 +1899,7 @@ void Bosses_SetSpeed(int client)
 				defaul = 320.0;
 		}
 		
-		maxspeed += 70.0 * (Client(client).Health / Client(client).MaxHealth / Client(client).MaxLives);
+		maxspeed += 70.0 - (70.0 * (Client(client).Health / Client(client).MaxHealth / Client(client).MaxLives));
 		TF2Attrib_SetByDefIndex(client, 442, maxspeed/defaul);
 		SDKCall_SetSpeed(client);
 	}
@@ -1931,7 +1948,7 @@ void Bosses_Remove(int client)
 		TF2Attrib_SetByDefIndex(client, 734, 1.0);
 		TF2Attrib_SetByDefIndex(client, 740, 1.0);
 		
-		TF2_RemoveAllWeapons(client);
+		TF2_RemoveAllItems(client);
 		if(IsPlayerAlive(client))
 			TF2_RegeneratePlayer(client);
 	}

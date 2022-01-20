@@ -3,7 +3,7 @@
 		-Batfoxkid
 */
 
-// mp_bonusroundtime 1; tf_arena_preround_time 1; sv_cheats 1; tf_bot_quota 12; ff2_game_bvb 12
+// mp_bonusroundtime 1; tf_arena_preround_time 1; mp_disable_respawn_times 1; sv_cheats 1; tf_bot_quota 12; ff2_game_bvb 12 
 
 #pragma semicolon 1
 
@@ -147,6 +147,7 @@ ConVar CvarBossSewer;
 ConVar CvarBossTriple;
 ConVar CvarBossCrits;
 ConVar CvarBossKnockback;
+ConVar CvarPrefBlacklist;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
@@ -324,4 +325,4 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	return Plugin_Continue;
 }
 
-#file "freak_fortress_2.sp"
+#file "freak_fortress_2.sp"	// RIP in SourceMod 1.11

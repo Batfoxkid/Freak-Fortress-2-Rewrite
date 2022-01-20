@@ -124,8 +124,8 @@ void Database_ClientDisconnect(int client, DBPriority priority=DBPrio_Normal)
 			char buffer[256];
 			FormatEx(buffer, sizeof(buffer), "UPDATE " ... DATATABLE_GENERAL ... " SET "
 			... "queue = %d, "
-			... "nomusic = %d, "
-			... "novoice = %d "
+			... "toggle_music = %d, "
+			... "toggle_voice = %d "
 			... "WHERE steamid = %d;",
 			Client(client).Queue,
 			Client(client).NoMusic,

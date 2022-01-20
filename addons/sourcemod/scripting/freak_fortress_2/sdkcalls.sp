@@ -55,7 +55,7 @@ void SDKCall_Setup()
 	if(!SDKTeamRemovePlayer)
 		LogError("[Gamedata] Could not find CTeam::RemovePlayer");
 	
-	StartPrepSDKCall(SDKCall_Static);
+	StartPrepSDKCall(SDKCall_Raw);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFGameStats::IncrementStat");
 	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
@@ -94,8 +94,10 @@ void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
 {
 	if(SDKIncrementStat)
 	{
-		SDKCall(SDKIncrementStat, client, stat, amount);
 		Debug("%N %d %d", client, stat, amount);
+		Address address = DHook_GetGameStats();
+		if(address != Address_Null)
+			SDKCall(SDKIncrementStat, address, client, stat, amount);
 	}
 }
 

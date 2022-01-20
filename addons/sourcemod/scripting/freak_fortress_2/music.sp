@@ -1,5 +1,6 @@
 /*
 	void Music_PluginStart()
+	void Music_RoundStart()
 	void Music_PlayerRunCmd(int client)
 	void Music_PlayNextSong(int client=0)
 	void Music_PlaySong(int[] clients, int numClients, const char[] sample="", const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
@@ -36,17 +37,17 @@ void Music_PlayNextSong(int client=0)
 {
 	if(client)
 	{
+		NextThemeAt[client] = FAR_FUTURE;
+		
 		if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_bgm"))
 		{
 			for(int i; i<MaxClients; i++)
 			{
 				int boss = FindClientOfBossIndex(i);
 				if(boss != -1 && Bosses_PlaySoundToClient(boss, client, "sound_bgm"))
-					return;
+					break;
 			}
 		}
-		
-		NextThemeAt[client] = FAR_FUTURE;
 	}
 	else
 	{
@@ -192,6 +193,7 @@ public Action Music_Command(int client, int args)
 
 stock void Music_MainMenu(int client)
 {
+	FReplyToCommand(client, "Menu Coming Soon");
 	/*		Menu menu = new Menu(Music_MainMenuH);
 			
 			SetGlobalTransTarget(buffer);

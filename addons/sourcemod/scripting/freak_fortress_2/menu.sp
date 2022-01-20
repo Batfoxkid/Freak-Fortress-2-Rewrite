@@ -10,8 +10,9 @@ static bool InMainMenu[MAXTF2PLAYERS];
 void Menu_PluginStart()
 {
 	RegConsoleCmd("ff2", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
-	RegConsoleCmd("hale", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
-	RegConsoleCmd("vsh", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu");
+	RegConsoleCmd("hale", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu", FCVAR_HIDDEN);
+	RegConsoleCmd("vsh", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu", FCVAR_HIDDEN);
+	RegConsoleCmd("pony", Menu_MainMenuCmd, "Freak Fortress 2 Main Menu", FCVAR_HIDDEN);
 	
 	RegFreakCmd("voice", Menu_VoiceToggle, "Freak Fortress 2 Voices Preference");
 	

@@ -9,6 +9,7 @@
 static DynamicHook GetCaptureValue;
 static DynamicHook RoundRespawn;
 static DynamicHook ForceRespawn;
+static Address CTFGameStats;
 
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
@@ -19,6 +20,7 @@ void DHook_Setup()
 {
 	GameData gamedata = new GameData("ff2");
 	
+	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
@@ -27,14 +29,7 @@ void DHook_Setup()
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
 	
-	//CreateDetour(gamedata, "CTFGameStats::IncrementStat", DHook_Temp);
-	
 	delete gamedata;
-}
-
-public MRESReturn DHook_Temp(DHookParam param)
-{
-	PrintToChat(param.Get(1), "%d %d", param.Get(2), param.Get(3));
 }
 
 static DynamicHook CreateHook(GameData gamedata, const char[] name)
@@ -98,6 +93,11 @@ void DHook_UnhookClient(int client)
 	DynamicHook.RemoveHook(ForceRespawnPostHook[client]);
 }
 
+Address DHook_GetGameStats()
+{
+	return CTFGameStats;
+}
+
 public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
@@ -106,6 +106,12 @@ public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 public MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ResetRoundStats(Address address)
+{
+	CTFGameStats = address;
 	return MRES_Ignored;
 }
 
