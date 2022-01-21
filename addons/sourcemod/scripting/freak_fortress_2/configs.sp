@@ -6,7 +6,7 @@
 
 bool Configs_CheckMap(const char[] mapname)
 {
-	int enableResult;
+	int enableResult = 1;
 	
 	ConfigMap cfg = new ConfigMap(FILE_MAPS);
 	if(cfg)

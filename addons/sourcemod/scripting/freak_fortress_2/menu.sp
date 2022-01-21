@@ -126,8 +126,7 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 			{
 				case 0:
 				{
-					//Menu_BossMenu(client);
-					FakeClientCommand(client, "ff2boss");
+					Preference_BossMenu(client);
 				}
 				case 1:
 				{
@@ -170,7 +169,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 		int[] clients = new int[MaxClients];
 		for(int i=1; i<=MaxClients; i++)
 		{
-			if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))))
+			if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
 				clients[amount++] = i;
 		}
 		

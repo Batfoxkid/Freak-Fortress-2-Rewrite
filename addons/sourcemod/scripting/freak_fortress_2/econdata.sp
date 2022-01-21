@@ -35,6 +35,7 @@ void TFED_LibraryRemoved(const char[] name)
 
 bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 {
+	//TODO: Use a config based system insteaad
 	if(Loaded)
 		return TF2Econ_GetItemDefinitionString(itemdef, key, buffer, maxlen, defaultValue);
 	

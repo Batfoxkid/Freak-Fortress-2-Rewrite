@@ -38,7 +38,7 @@
 	
 	"Command Selection"
 	{
-		"en"		"Whitelist Bosses (/ff2boss)"
+		"en"		"Boss Listing (/ff2boss)"
 	}
 	"Command Queue"
 	{
@@ -125,7 +125,7 @@
 	
 	"Boss Selection Command"
 	{
-		"en"		"FF2 Boss Selection\n "
+		"en"		"FF2 Boss Listing\n "
 	}
 	"Clear Whitelist"
 	{
@@ -135,27 +135,67 @@
 	{
 		"en"		"Clear Blacklist"
 	}
+	"Clear All"
+	{
+		"en"		"Clear All"
+	}
 	"Disable Playing Boss"
 	{
 		"en"		"Disable Playing Boss"
+	}
+	"Disable Playing Boss All"
+	{
+		"en"		"Disable Playing All Bosses"
 	}
 	"Enable Playing Boss"
 	{
 		"en"		"Enable Playing Boss"
 	}
+	"Enable Playing Boss All"
+	{
+		"en"		"Enable Playing All Bosses"
+	}
 	"Boss No View"
 	{
 		"en"		"You may not have access to this boss or does not exist."
+	}
+	"Charset No View"
+	{
+		"en"		"You may not have access to this pack or does not exist."
 	}
 	"Boss Whitelist"
 	{
 		"#format"	"{1:s}"
 		"en"		"Whitelist {1}"
 	}
+	"Boss Blacklist"
+	{
+		"#format"	"{1:s}"
+		"en"		"Blacklist {1}"
+	}
 	"Boss Party"
 	{
 		"#format"	"{1:s}"
 		"en"		"Create Team for {1}"
+	}
+	"Legacy Boss Menu Command"
+	{
+		"en"		"This command will be removed in the near future, use /ff2boss instead."
+	}
+	"Boss Whitelisted"
+	{
+		"#format"	"{1:s}"
+		"en"		"Whitelisted {1}"
+	}
+	"Boss Blacklisted"
+	{
+		"#format"	"{1:s}"
+		"en"		"Blacklisted {1}"
+	}
+	"Boss Blacklist Full"
+	{
+		"#format"	"{1:d}"
+		"en"		"Blacklist is full with {1} bosses."
 	}
 	
 	"Now Playing"

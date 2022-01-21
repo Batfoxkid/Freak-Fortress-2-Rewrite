@@ -2,6 +2,7 @@ static ConfigMap BossMap[MAXTF2PLAYERS] = {null, ...};
 static int Queue[MAXTF2PLAYERS];
 static bool NoMusic[MAXTF2PLAYERS];
 static bool NoVoice[MAXTF2PLAYERS];
+static char LastPlayed[MAXTF2PLAYERS][64];
 static bool Minion[MAXTF2PLAYERS];
 static bool Glowing[MAXTF2PLAYERS];
 static float GlowFor[MAXTF2PLAYERS];
@@ -72,6 +73,16 @@ methodmap Client
 		{
 			NoVoice[this] = value;
 		}
+	}
+	
+	public int GetLastPlayed(char[] buffer, int length)
+	{
+		return strcopy(buffer, length, LastPlayed[this]);
+	}
+	
+	public void SetLastPlayed(const char[] buffer)
+	{
+		strcopy(LastPlayed[this], sizeof(LastPlayed[]), buffer);
 	}
 	
 	property bool Minion
@@ -361,6 +372,20 @@ methodmap Client
 		}
 	}
 	
+	property bool Crits
+	{
+		public get()
+		{
+			bool value = true;
+			this.Cfg.GetBool("crits", value, false);
+			return value;
+		}
+		public set(bool value)
+		{
+			this.Cfg.SetInt("crits", value ? 1 : 0);
+		}
+	}
+	
 	property bool Triple
 	{
 		public get()
@@ -543,6 +568,7 @@ methodmap Client
 		this.Queue = 0;
 		this.NoMusic = false;
 		this.NoVoice = false;
+		this.SetLastPlayed("");
 		this.OverlayFor = 0.0;
 		
 		this.ResetByRound();

@@ -27,6 +27,10 @@ public void OnEntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_StartTouch, SDKHook_AmmoTouch);
 		SDKHook(entity, SDKHook_Touch, SDKHook_AmmoTouch);
 	}
+	else if(Enabled && StrEqual(classname, "team_round_timer"))
+	{
+		SDKHook(entity, SDKHook_Spawn, SDKHook_TimerSpawn);
+	}
 }
 
 public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
@@ -378,5 +382,11 @@ public Action SDKHook_AmmoTouch(int entity, int client)
 	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && Client(client).Pickups < 2)))
 		return Plugin_Handled;
 	
+	return Plugin_Continue;
+}
+
+public Action SDKHook_TimerSpawn(int entity)
+{
+	DispatchKeyValue(entity, "auto_countdown", "0");
 	return Plugin_Continue;
 }

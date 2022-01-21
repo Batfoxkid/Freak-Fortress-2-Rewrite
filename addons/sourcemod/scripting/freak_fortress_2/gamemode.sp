@@ -46,6 +46,8 @@ void Gamemode_RoundSetup()
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
+			CreateTimer(CvarPreroundTime.FloatValue / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+			
 			int bosses = CvarBossVsBoss.IntValue;
 			if(bosses > 0)	// Boss vs Boss
 			{
@@ -72,16 +74,6 @@ void Gamemode_RoundSetup()
 					
 					int[] blu = new int[MaxClients];
 					int blus = GetBossQueue(blu, MaxClients, TFTeam_Blue);
-					
-					// Somewhat balance out bosses
-					if(reds > blus)
-					{
-						reds = blus;
-					}
-					else if(blus > reds)
-					{
-						blus = reds;
-					}
 					
 					for(int i; i<bosses && i<blus; i++)
 					{
@@ -213,6 +205,27 @@ public Action Gamemode_TimerRespawn(Handle timer)
 	return Plugin_Continue;
 }
 
+public Action Gamemode_IntroTimer(Handle timer)
+{
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_begin"))
+			{
+				int team = GetClientTeam(client);
+				for(int i; i<MaxClients; i++)
+				{
+					int boss = FindClientOfBossIndex(i);
+					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin"))
+						break;
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
 void Gamemode_RoundStart()
 {
 	if(Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1))
@@ -258,4 +271,5 @@ void Gamemode_RoundStart()
 void Gamemode_RoundEnd()
 {
 	RoundActive = false;
+	Music_PlaySongToAll();
 }

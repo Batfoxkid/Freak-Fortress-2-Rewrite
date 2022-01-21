@@ -37,6 +37,7 @@ void ConVar_PluginStart()
 	
 	CvarAllowSpectators = FindConVar("mp_allowspectators");
 	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");
+	CvarPreroundTime = FindConVar("tf_arena_preround_time");
 	CvarTournament = FindConVar("mp_tournament");
 	CvarTournament.Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 	

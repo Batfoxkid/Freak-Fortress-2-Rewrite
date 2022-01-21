@@ -69,6 +69,7 @@ void NativeOld_PluginLoad()
 	CreateNative("FF2_SetClientShield", NativeOld_SetClientShield);
 	CreateNative("FF2_RemoveClientShield", NativeOld_RemoveClientShield);
 	CreateNative("FF2_LogError", NativeOld_LogError);
+	CreateNative("FF2_ReportError", NativeOld_LogError);
 	CreateNative("FF2_Debug", NativeOld_Debug);
 	CreateNative("FF2_SetCheats", NativeOld_SetCheats);
 	CreateNative("FF2_GetCheats", NativeOld_GetCheats);
@@ -122,10 +123,13 @@ public any NativeOld_GetBoss(Handle plugin, int params)
 public any NativeOld_GetIndex(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client >= 0 && client < MAXTF2PLAYERS)
+	if(client < 0)
+		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+	
+	if(client < MAXTF2PLAYERS)
 		return Client(GetNativeCell(1)).Index;
 	
-	return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+	return -1;
 }
 
 public any NativeOld_GetTeam(Handle plugin, int params)
@@ -331,9 +335,23 @@ public any NativeOld_HasAbility(Handle plugin, int params)
 	if(client == -1 || !Client(client).IsBoss)
 		return false;
 	
-	char ability[64];
-	GetNativeString(3, ability, sizeof(ability));
-	return Client(client).Cfg.GetSection(ability);
+	char buffer1[64];
+	GetNativeString(3, buffer1, sizeof(buffer1));
+	ConfigMap cfg = Client(client).Cfg.GetSection(buffer1);
+	if(!cfg)
+		return false;
+	
+	GetNativeString(2, buffer1, sizeof(buffer1));
+	if(buffer1[0])
+	{
+		SplitString(buffer1, ".smx", buffer1, sizeof(buffer1));
+		
+		char buffer2[64];
+		cfg.Get("plugin_name", buffer2, sizeof(buffer2));
+		if(buffer2[0] && !StrEqual(buffer1, buffer2))
+			return false;
+	}
+	return true;
 }
 
 public any NativeOld_DoAbility(Handle plugin, int params)
@@ -575,7 +593,7 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 		if(cfg)
 		{
 			char buffer[PLATFORM_MAX_PATH];
-			if(cfg.GetString("filename", buffer, sizeof(buffer)))
+			if(cfg.Get("filename", buffer, sizeof(buffer)))
 			{
 				BuildPath(Path_SM, buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, buffer);
 				
@@ -595,6 +613,12 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 
 public any NativeOld_StartMusic(Handle plugin, int params)
 {
+	{
+		char buffer[64];
+		GetPluginFilename(plugin, buffer, sizeof(buffer));
+		Debug("FF2_StartMusic %s", buffer);
+	}
+	
 	int client = GetNativeCell(1);
 	if(client < 1)
 	{
@@ -616,6 +640,12 @@ public any NativeOld_StartMusic(Handle plugin, int params)
 
 public any NativeOld_StopMusic(Handle plugin, int params)
 {
+	{
+		char buffer[64];
+		GetPluginFilename(plugin, buffer, sizeof(buffer));
+		Debug("FF2_StopMusic", buffer);
+	}
+	
 	int client = GetNativeCell(1);
 	if(client < 1)
 	{
@@ -795,12 +825,12 @@ public any NativeOld_RemoveClientShield(Handle plugin, int params)
 
 public any NativeOld_LogError(Handle plugin, int params)
 {
-	ThrowNativeError(SP_ERROR_NATIVE, "Error");
+	ThrowNativeError(SP_ERROR_NATIVE, "User Error");
 }
 
 public any NativeOld_Debug(Handle plugin, int params)
 {
-	return true;
+	return CvarDebug.BoolValue;
 }
 
 public any NativeOld_SetCheats(Handle plugin, int params)

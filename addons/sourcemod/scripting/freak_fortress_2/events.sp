@@ -8,12 +8,13 @@ static bool LastMann;
 void Events_PluginStart()
 {
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_PostNoCopy);
-	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
+	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
+	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_PostNoCopy);
 }
 
 public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -27,6 +28,18 @@ public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast
 public void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	Gamemode_RoundEnd();
+}
+
+public Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)
+{
+	if(Enabled)
+	{
+		char sound[64];
+		event.GetString("sound", sound, sizeof(sound));
+		if(!StrContains(sound, "Game.Your", false) || StrEqual(sound, "Game.Stalemate", false) || !StrContains(sound, "Announcer.AM_RoundStartRandom", false))
+			return Plugin_Handled;
+	}
+	return Plugin_Continue;
 }
 
 public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBroadcast)
@@ -49,7 +62,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 			}
 			else
 			{
-				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.1);
+				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.15);
 				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 			}
 		}

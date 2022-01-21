@@ -38,10 +38,12 @@ static int DownloadTable;
 void Bosses_PluginStart()
 {
 	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
-	RegServerCmd("ff2_checkboss", Bosses_CheckDebug, "Check's the boss config cache");
+	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
+	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
+	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");
 }
 
-public Action Bosses_CheckDebug(int args)
+public Action Bosses_DebugCache(int args)
 {
 	if(args)
 	{
@@ -71,6 +73,18 @@ public Action Bosses_CheckDebug(int args)
 	{
 		PrintToServer("[SM] Usage: ff2_checkboss [boss name / #index]");
 	}
+	return Plugin_Handled;
+}
+
+public Action Bosses_DebugLoad(int args)
+{
+	EnableSubplugins();
+	return Plugin_Handled;
+}
+
+public Action Bosses_DebugUnload(int args)
+{
+	DisableSubplugins();
 	return Plugin_Handled;
 }
 
@@ -271,7 +285,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						}
 						case KeyValType_Value:
 						{
-							if(length > val.size)	// "saxton_hale"	""
+							if(length > val.size+3)	// "saxton_hale"	""
 							{
 								if(!StrEqual(bossname, "hidden"))
 								{
@@ -713,6 +727,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
 							}
 						}
+						
+						if((!StrContains(section, "weapon") || !StrContains(section, "wearable")) && cfgsub.Get("name", buffer, sizeof(buffer)))
+						{
+							cfgsub.SetVal("name", _, -1);
+							cfg.Remove(section);
+							cfg.SetArray(buffer, val, sizeof(val));
+						}
 					}
 					case Section_Sound:
 					{
@@ -761,6 +782,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										val.data.Reset();
 										val.data.ReadString(buffer, sizeof(buffer));
+										RemoveSpecialChars(buffer, sizeof(buffer));
 										
 										if(length2 > val.size)	// "example.mp3"	""
 										{
@@ -857,6 +879,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									val.data.Reset();
 									val.data.ReadString(buffer, sizeof(buffer));
+									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
@@ -952,6 +975,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									val.data.Reset();
 									val.data.ReadString(buffer, sizeof(buffer));
+									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
@@ -1009,6 +1033,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									val.data.Reset();
 									val.data.ReadString(buffer, sizeof(buffer));
+									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example"	"mdl"
 									{
@@ -1108,6 +1133,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									val.data.Reset();
 									val.data.ReadString(buffer, sizeof(buffer));
+									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example"	"mdl"
 									{
@@ -1181,6 +1207,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									val.data.Reset();
 									val.data.ReadString(buffer, sizeof(buffer));
+									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "materials/example"	"mat"
 									{
@@ -1359,6 +1386,10 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=
 	if(cfg.GetBool("blocked", blocked, false) && blocked)
 		return false;
 	
+	blocked = false;
+	if(cfg.GetBool("owner", blocked, false) && blocked)
+		return false;
+	
 	if(team != -1)
 	{
 		int value;
@@ -1392,7 +1423,7 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1,
 	{
 		GetLanguageInfo(lang, buffer, length);
 		Format(buffer, length, "%s_%s", string, buffer);
-		int size = cfg.Get(buffer, buffer, length);
+		int size = cfg.Get(buffer, buffer, length, true);
 		if(size)
 			return size;
 	}
@@ -1406,8 +1437,6 @@ void Bosses_Create(int client, int special, int team)
 	if(!cfg)
 		return;
 	
-	EnableSubplugins();
-	
 	if(Client(client).Index < 0)
 	{
 		for(int i; ; i++)
@@ -1420,6 +1449,12 @@ void Bosses_Create(int client, int special, int team)
 		}
 	}
 	
+	Debug("%N %d", client, Client(client).Index);
+	
+	char buffer[512];
+	cfg.Get("filename", buffer, sizeof(buffer));
+	Client(client).SetLastPlayed(buffer);
+	
 	if(Client(client).Cfg)
 		DeleteCfg(Client(client).Cfg);
 	
@@ -1429,6 +1464,7 @@ void Bosses_Create(int client, int special, int team)
 		SDKCall_ChangeClientTeam(client, team);
 	
 	Events_CheckAlivePlayers();
+	EnableSubplugins();
 	
 	int i;
 	bool value = CvarSpecTeam.BoolValue;
@@ -1440,7 +1476,7 @@ void Bosses_Create(int client, int special, int team)
 	
 	Bosses_SetHealth(client, i);
 	
-	if(Client(client).Cfg.GetInt("fversion", i) && i != 2)
+	if(!Client(client).Cfg.GetInt("fversion", i) || i != 2)
 	{
 		if(!Client(client).Cfg.GetBool("triple", value, false))
 			Client(client).Cfg.SetInt("triple", CvarBossTriple.IntValue);
@@ -1452,7 +1488,6 @@ void Bosses_Create(int client, int special, int team)
 			Client(client).Cfg.SetInt("knockback", CvarBossKnockback.IntValue);
 	}
 	
-	char buffer[512];
 	if((!Enabled || RoundActive) && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
 	
@@ -1467,7 +1502,7 @@ void Bosses_Create(int client, int special, int team)
 		int[] players = new int[MaxClients];
 		for(int player = 1; player <= MaxClients; player++)
 		{
-			if(player != client && IsClientInGame(player) && GetClientTeam(player) == team && !Client(player).IsBoss)
+			if(player != client && IsClientInGame(player) && (!Enabled && GetClientTeam(player) == team) && !Client(player).IsBoss)
 				players[count++] = player;
 		}
 		
@@ -1632,8 +1667,8 @@ static void EquipBoss(int client, bool weapons)
 						continue;
 					}
 					
-					bool wearable = StrContains(classname, "tf_wea") != 0;
 					GetClassWeaponClassname(class, classname, sizeof(classname));
+					bool wearable = StrContains(classname, "tf_weap") != 0;
 					
 					cfg.GetInt("index", index);
 					
@@ -1695,6 +1730,7 @@ static void EquipBoss(int client, bool weapons)
 					int entity = -1;
 					if(wearable)
 					{
+						PrintToServer(classname);
 						entity = CreateEntityByName(classname);
 						if(IsValidEntity(entity))
 						{
@@ -1713,6 +1749,7 @@ static void EquipBoss(int client, bool weapons)
 					}
 					else
 					{
+						PrintToServer(classname);
 						Handle item = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
 						TF2Items_SetClassname(item, classname);
 						TF2Items_SetItemIndex(item, index);
@@ -2001,18 +2038,18 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 					float rage = Client(client).GetCharge(0);
 					if(rage >= Client(client).RageMin)
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 3.0);
+						SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
 						ShowSyncHudText(client, PlayerHud, "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
 					}
 					else
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 3.0);
+						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
 						ShowSyncHudText(client, PlayerHud, "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
 					}
 				}
 				else if(buffer[1])
 				{
-					SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 3.0);
+					SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
 					ShowSyncHudText(client, PlayerHud, buffer);
 				}
 			}
@@ -2086,7 +2123,17 @@ void Bosses_UseAbility(int client, const char[] plugin, const char[] ability, in
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(cfg)
+	{
+		if(plugin[0])
+		{
+			char buffer[64];
+			cfg.Get("plugin_name", buffer, sizeof(buffer));
+			if(buffer[0] && !StrEqual(buffer, plugin))
+				return;
+		}
+		
 		UseAbility(client, cfg, plugin, ability, slot, buttonmode);
+	}
 }
 
 static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
@@ -2268,6 +2315,7 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 							{
 								val.data.Reset();
 								val.data.ReadString(buffer, sizeof(buffer));
+								RemoveSpecialChars(buffer, sizeof(buffer));
 								
 								if(!buffer[0])
 									strcopy(buffer, sizeof(buffer), "0");
@@ -2614,6 +2662,9 @@ static void DisableSubplugins()
 	{
 		PluginsEnabled = false;
 		
+		//TODO: Reverse
+		ArrayList list = new ArrayList(PLATFORM_MAX_PATH);
+		
 		char filename[PLATFORM_MAX_PATH];
 		Handle iter = GetPluginIterator();
 		while(MorePlugins(iter))
@@ -2621,12 +2672,26 @@ static void DisableSubplugins()
 			Handle plugin = ReadPlugin(iter);
 			GetPluginFilename(plugin, filename, sizeof(filename));
 			if(!StrContains(filename, "freaks\\", false))
-				InsertServerCommand("sm plugins unload %s", filename);
+				list.PushString(filename);
 		}
 		delete iter;
 		
+		for(int i = list.Length-1; i >= 0; i--)
+		{
+			list.GetString(i, filename, sizeof(filename));
+			InsertServerCommand("sm plugins unload %s", filename);
+		}
+		
+		delete list;
 		ServerExecute();
 	}
+}
+
+static void RemoveSpecialChars(char[] buffer, int length)
+{
+	ReplaceString(buffer, length, "\n", "\\n");
+	ReplaceString(buffer, length, "\r", "\\r");
+	ReplaceString(buffer, length, "\t", "\\t");
 }
 
 static bool IsNotExtraArg(const char[] key)

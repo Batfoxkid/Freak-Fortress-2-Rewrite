@@ -114,7 +114,10 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 			}
 		}
 		
-		EmitSound(clients2, amount, sample2, _, SNDCHAN_STATIC, SNDLEVEL_NONE, _, vol, pitch);
+		for(int i; i<count; i++)
+		{
+			EmitSound(clients2, amount, sample2, _, SNDCHAN_STATIC, SNDLEVEL_NONE, _, vol, pitch);
+		}
 	}
 	else
 	{
@@ -159,16 +162,16 @@ public Action Music_Command(int client, int args)
 			if(StrContains(buffer, "on", false) != -1 || StrEqual(buffer, "1") || StrContains(buffer, "enable", false) != -1)
 			{
 				FReplyToCommand(client, "%t", "Music is now Enabled");
+				Client(client).NoMusic = false;
 			}
 			else if(StrContains(buffer, "off", false) != -1 || StrEqual(buffer, "0") || StrContains(buffer, "disable", false) != -1)
 			{
 				FReplyToCommand(client, "%t", "Music is now Disabled");
+				Client(client).NoMusic = true;
 			}
-			else if(StrContains(buffer, "skip", false) != -1)
+			else if(StrContains(buffer, "skip", false) != -1 || StrContains(buffer, "shuffle", false) != -1)
 			{
-			}
-			else if(StrContains(buffer, "shuffle", false) != -1)
-			{
+				Music_PlayNextSong(client);
 			}
 			else if(StrContains(buffer, "track", false) != -1 || StrContains(buffer, "list", false) != -1)
 			{
@@ -193,7 +196,7 @@ public Action Music_Command(int client, int args)
 
 stock void Music_MainMenu(int client)
 {
-	FReplyToCommand(client, "Menu Coming Soon");
+	FReplyToCommand(client, "Menu Coming Soon, Use !ff2music on/off");
 	/*		Menu menu = new Menu(Music_MainMenuH);
 			
 			SetGlobalTransTarget(buffer);

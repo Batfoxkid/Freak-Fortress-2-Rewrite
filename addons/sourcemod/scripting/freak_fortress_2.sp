@@ -151,6 +151,7 @@ ConVar CvarPrefBlacklist;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
+ConVar CvarPreroundTime;
 ConVar CvarTournament;
 
 int PlayersAlive[4];
@@ -323,6 +324,15 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	Bosses_PlayerRunCmd(client, buttons);
 	Music_PlayerRunCmd(client);
 	return Plugin_Continue;
+}
+
+public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
+{
+	if(!Client(client).IsBoss || Client(client).Crits || TF2_IsCritBoosted(client))
+		return Plugin_Continue;
+	
+	result = false;
+	return Plugin_Changed;
 }
 
 #file "freak_fortress_2.sp"	// RIP in SourceMod 1.11

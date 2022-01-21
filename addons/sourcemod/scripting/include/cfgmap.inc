@@ -297,11 +297,12 @@ methodmap ConfigMap < StringMap {
 	 * @param     key_path : key path to the data you need.
 	 * @param     buffer : buffer to store the string value.
 	 * @param     buf_size : size of the buffer.
+	 * @param     special_chars : if to use characters like \n
 	 * @return    Number of chars used, 0 if error.
 	 * @note      to directly access subsections, use a '.' like "root.section.key"
 	 *            for keys that have a dot in their name, use '\\.'
 	 */
-	public int Get(const char[] key_path, char[] buffer, int buf_size) {
+	public int Get(const char[] key_path, char[] buffer, int buf_size, bool special_chars=false) {
 		if( this==null || buf_size<=0 ) {
 			return 0;
 		}
@@ -311,6 +312,9 @@ methodmap ConfigMap < StringMap {
 			val.data.Reset();
 			char[] src_buf = new char[val.size];
 			val.data.ReadString(src_buf, val.size);
+			if( !special_chars ) {
+				RemoveSpecialChars(src_buf, val.size);
+			}
 			return strcopy(buffer, buf_size, src_buf);
 		}
 		return 0;
@@ -949,4 +953,11 @@ static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle 
 	}
 	delete snap;
 	return true;
+}
+
+static void RemoveSpecialChars(char[] buffer, int length)
+{
+	ReplaceString(buffer, length, "\n", "\\n");
+	ReplaceString(buffer, length, "\r", "\\r");
+	ReplaceString(buffer, length, "\t", "\\t");
 }
