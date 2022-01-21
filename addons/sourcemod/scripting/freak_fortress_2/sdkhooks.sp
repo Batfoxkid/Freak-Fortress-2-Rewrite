@@ -182,8 +182,11 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 				}
 			}
 			
-			ScaleVector(damageForce, 1.3 - (Client(victim).Health / Client(victim).MaxHealth / Client(victim).MaxLives));
-			Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
+			if(!Client(attacker).IsBoss)
+			{
+				ScaleVector(damageForce, 1.3 - (Client(victim).Health / Client(victim).MaxHealth / Client(victim).MaxLives));
+				Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
+			}
 			return Plugin_Changed;
 		}
 		else
@@ -286,7 +289,8 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 					}
 				}
 				
-				Attributes_OnHitBoss(attacker, victim, damage, weapon, damagecustom);
+				if(!Client(attacker).IsBoss)
+					Attributes_OnHitBoss(attacker, victim, damage, weapon, damagecustom);
 			}
 		}
 	}

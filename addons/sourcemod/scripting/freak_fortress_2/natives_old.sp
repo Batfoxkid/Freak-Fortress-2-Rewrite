@@ -597,14 +597,21 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 			{
 				BuildPath(Path_SM, buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, buffer);
 				
-				static KeyValues Kv;
+				static StringMap Kvs;
+				if(!Kvs)
+					Kvs = new StringMap();
 				
-				if(Kv)
-					delete Kv;
+				char name[PLATFORM_MAX_PATH];
+				GetPluginFilename(plugin, name, sizeof(name));
 				
-				Kv = new KeyValues("character");
-				Kv.ImportFromFile(buffer);
-				return Kv;
+				KeyValues kv;
+				if(Kvs.GetValue(name, kv))
+					delete kv;
+				
+				kv = new KeyValues("character");
+				kv.ImportFromFile(buffer);
+				Kvs.SetValue(name, kv);
+				return kv;
 			}
 		}
 	}
@@ -716,7 +723,7 @@ public any NativeOld_EmitVoiceToAll(Handle plugin, int params)
 	for(int i=1; i<=MaxClients; i++)
 	{
 		if(IsClientInGame(i) && !Client(i).NoVoice)
-			clients[amount++] = clients[i];
+			clients[amount++] = i;
 	}
 	
 	if(amount)

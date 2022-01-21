@@ -487,75 +487,38 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 	if(damagecustom == TF_CUSTOM_HEADSHOT && StrEqual(classname, "tf_weapon_sniperrifle_decap")) // Bazaar Bargain
 		SetEntProp(client, Prop_Send, "m_iDecapitations", GetEntProp(client, Prop_Send, "m_iDecapitations")+1);
 	
-	if(!Client(client).IsBoss)
+	int amount = DamageGoal(450, Client(client).GetDamage(slot), lastWeaponDamage);
+	if(amount)
 	{
-		int amount = DamageGoal(450, Client(client).GetDamage(slot), lastWeaponDamage);
-		if(amount)
+		if(slot == TFWeaponSlot_Building)
 		{
-			if(slot == TFWeaponSlot_Building)
+			weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Grenade);
+			slot = TFWeaponSlot_Grenade;
+		}
+		
+		if(Attributes_FindOnWeapon(client, weapon, 2025))	// killstreak tier
+		{
+			int lastStreak = GetEntProp(client, Prop_Send, "m_nStreaks", _, slot);
+			int streak = lastStreak + amount;
+			SetEntProp(client, Prop_Send, "m_nStreaks", streak, _, slot);
+			
+			int total = streak;
+			for(int i; i<4; i++)
 			{
-				weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Grenade);
-				slot = TFWeaponSlot_Grenade;
+				if(i != slot)
+					total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
 			}
 			
-			if(Attributes_FindOnWeapon(client, weapon, 2025))	// killstreak tier
+			if(DamageGoal(5, streak, lastStreak))
 			{
-				int lastStreak = GetEntProp(client, Prop_Send, "m_nStreaks", _, slot);
-				int streak = lastStreak + amount;
-				SetEntProp(client, Prop_Send, "m_nStreaks", streak, _, slot);
-				
-				int total = streak;
-				for(int i; i<4; i++)
-				{
-					if(i != slot)
-						total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
-				}
-				
-				if(DamageGoal(5, streak, lastStreak))
-				{
-					Event event = CreateEvent("player_death", true);
-					
-					event.SetInt("userid", GetClientUserId(victim));
-					event.SetInt("attacker", GetClientUserId(client));
-					event.SetInt("weaponid", weapon);
-					event.SetInt("kill_streak_total", total);
-					event.SetInt("kill_streak_wep", streak);
-					event.SetInt("crit_type", streak > 10);
-					event.SetString("weapon_logclassname", "ff2_killstreak");
-					
-					if(weapon > MaxClients)
-					{
-						char buffer[32];
-						if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
-							event.SetString("weapon", buffer);
-					}
-					
-					int team = GetClientTeam(client);
-					for(int i=1; i<=MaxClients; i++)
-					{
-						if(i == client || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
-							event.FireToClient(i);
-					}
-					
-					event.Cancel();
-				}
-			}
-			else if(damagecustom != TF_CUSTOM_BACKSTAB && damagecustom != TF_CUSTOM_TELEFRAG && DamageGoal(2250, Client(client).GetDamage(slot), lastWeaponDamage))
-			{
-				int total;
-				for(int i; i<4; i++)
-				{
-					total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
-				}
-				
 				Event event = CreateEvent("player_death", true);
 				
 				event.SetInt("userid", GetClientUserId(victim));
 				event.SetInt("attacker", GetClientUserId(client));
 				event.SetInt("weaponid", weapon);
 				event.SetInt("kill_streak_total", total);
-				event.SetInt("kill_streak_wep", 0);
-				event.SetInt("crit_type", 0);
+				event.SetInt("kill_streak_wep", streak);
+				event.SetInt("crit_type", streak > 10);
 				event.SetString("weapon_logclassname", "ff2_killstreak");
 				
 				if(weapon > MaxClients)
@@ -565,9 +528,43 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 						event.SetString("weapon", buffer);
 				}
 				
-				event.FireToClient(client);
+				int team = GetClientTeam(client);
+				for(int i=1; i<=MaxClients; i++)
+				{
+					if(i == client || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
+						event.FireToClient(i);
+				}
+				
 				event.Cancel();
 			}
+		}
+		else if(damagecustom != TF_CUSTOM_BACKSTAB && damagecustom != TF_CUSTOM_TELEFRAG && DamageGoal(2250, Client(client).GetDamage(slot), lastWeaponDamage))
+		{
+			int total;
+			for(int i; i<4; i++)
+			{
+				total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
+			}
+			
+			Event event = CreateEvent("player_death", true);
+			
+			event.SetInt("userid", GetClientUserId(victim));
+			event.SetInt("attacker", GetClientUserId(client));
+			event.SetInt("weaponid", weapon);
+			event.SetInt("kill_streak_total", total);
+			event.SetInt("kill_streak_wep", 0);
+			event.SetInt("crit_type", 0);
+			event.SetString("weapon_logclassname", "ff2_killstreak");
+			
+			if(weapon > MaxClients)
+			{
+				char buffer[32];
+				if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
+					event.SetString("weapon", buffer);
+			}
+			
+			event.FireToClient(client);
+			event.Cancel();
 		}
 	}
 }
