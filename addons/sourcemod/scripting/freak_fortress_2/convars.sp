@@ -24,6 +24,7 @@ void ConVar_PluginStart()
 	CvarSpecTeam = CreateConVar("ff2_game_spec", "1", "If to handle spectator teams as real fighting teams", _, true, 0.0, true, 1.0);
 	CvarBossVsBoss = CreateConVar("ff2_game_bvb", "0", "How many bosses per a team, 0 to disable", _, true, 0.0, true, float(MaxClients/2));
 	CvarBossSewer = CreateConVar("ff2_game_suicide", "1", "If bosses can use kill binds during the round", _, true, 0.0, true, 1.0);
+	CvarHealthBar = CreateConVar("ff2_game_healthbar", "3", "If a health bar and/or text will be shown, 1 = Health Bar, 2 = Health Display, 3 = Both", _, true, 0.0, true, 3.0);
 	CvarBossTriple = CreateConVar("ff2_boss_triple", "1", "If v1 bosses will deal extra damage versus players by default", _, true, 0.0, true, 1.0);
 	CvarBossCrits = CreateConVar("ff2_boss_crits", "0", "If v1 bosses can perform random crits by default", _, true, 0.0, true, 1.0);
 	CvarBossKnockback = CreateConVar("ff2_boss_knockback", "0", "If v1 bosses can perform self-knockback by default, 2 will also allow self-damage", _, true, 0.0, true, 2.0);

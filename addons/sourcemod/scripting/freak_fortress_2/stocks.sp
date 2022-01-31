@@ -928,10 +928,10 @@ public int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl
 	return (elem1 > elem2) ? 1 : -1;
 }
 
-void DeleteCfg2(ConfigMap cfg)
+/*void DeleteCfg2(ConfigMap cfg)
 {
 	ConfigMap cfg2 = cfg;
 	DeleteCfg(cfg2);
 }
 
-#define DeleteCfg DeleteCfg2
+#define DeleteCfg DeleteCfg2*/

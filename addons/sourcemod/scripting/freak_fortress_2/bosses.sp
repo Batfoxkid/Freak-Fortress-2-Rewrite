@@ -33,14 +33,22 @@ static const char SndExts[][] = { ".mp3", ".wav" };
 
 static ArrayList BossList;
 static ArrayList PackList;
+static StringMap SoundCache[MAXTF2PLAYERS];
 static int DownloadTable;
 
 void Bosses_PluginStart()
 {
 	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
+	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_RCON, "Reloads the current boss pack");
 	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
 	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");
+	HookEvent("tf_game_over", Bosses_TempEvent, EventHookMode_PostNoCopy);
+}
+
+public void Bosses_TempEvent(Event event, const char[] name, bool dontBroadcast)
+{
+	DisableSubplugins();
 }
 
 public Action Bosses_DebugCache(int args)
@@ -220,8 +228,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						break;
 					}
 					
-					val.data.Reset();
-					ConfigMap cfgSub = val.data.ReadCell();
+					ConfigMap cfgSub = val.cfg;
 					if(!cfgSub)
 						continue;
 					
@@ -248,8 +255,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			if(val.tag != KeyValType_Section)
 				continue;
 			
-			val.data.Reset();
-			ConfigMap cfgSub = val.data.ReadCell();
+			ConfigMap cfgSub = val.cfg;
 			if(!cfgSub)
 				continue;
 			
@@ -304,18 +310,14 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							{
 								if(!StrEqual(bossname, "chances"))
 								{
-									char config[PLATFORM_MAX_PATH];
-									val.data.Reset();
-									val.data.ReadString(config, sizeof(config));
-									
-									length = ReplaceString(config, sizeof(config), "*", "");
+									length = ReplaceString(val.data, sizeof(val.data), "*", "");
 									if(length)
 									{
-										LoadCharacterDirectory(filepath, config, length>1, pack, mapname, precache);
+										LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, precache);
 									}
 									else
 									{
-										LoadCharacter(config, pack, mapname, precache);
+										LoadCharacter(val.data, pack, mapname, precache);
 									}
 								}
 							}
@@ -351,8 +353,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			if(cfg.GetVal("companion", val))
 			{
 				char[] companion = new char[val.size];
-				val.data.Reset();
-				val.data.ReadString(companion, val.size);
+				strcopy(companion, val.size, val.data);
 				
 				bool found;
 				for(int a; a<length; a++)
@@ -362,11 +363,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					{
 						if(cfgsub.GetVal("filename", val))
 						{
-							char[] filename = new char[val.size];
-							val.data.Reset();
-							val.data.ReadString(filename, val.size);
-							
-							if(StrEqual(companion, filename, false))
+							if(StrEqual(companion, val.data, false))
 							{
 								cfg.SetInt("companion", a);
 								found = true;
@@ -376,11 +373,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						
 						if(cfgsub.GetVal("name", val))
 						{
-							char[] name = new char[val.size];
-							val.data.Reset();
-							val.data.ReadString(name, val.size);
-							
-							if(StrEqual(companion, name, false))
+							if(StrEqual(companion, val.data, false))
 							{
 								cfg.SetInt("companion", a);
 								found = true;
@@ -535,13 +528,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			
 			if(val.tag == KeyValType_Section)
 			{
-				val.data.Reset();
-				ConfigMap cfgsub = val.data.ReadCell();
-				if(cfgsub != cfg)
-					DeleteCfg(cfgsub);
+				if(val.cfg != cfg)
+					DeleteCfg(val.cfg);
 			}
-			
-			delete val.data;
 		}
 		
 		delete snap;
@@ -573,13 +562,10 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						if(val.tag != KeyValType_Value)
 							continue;
 						
-						val.data.Reset();
-						val.data.ReadString(buffer, sizeof(buffer));	// "vsh_crevice*"	"1"
-						
 						int amount = ReplaceString(mapname, length, "*", "");
 						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 						{
-							precache = view_as<bool>(StringToInt(buffer));
+							precache = view_as<bool>(StringToInt(val.data));
 							size = length;
 						}
 					}
@@ -609,10 +595,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							if(val.tag != KeyValType_Value)
 								continue;
 							
-							val.data.Reset();
-							val.data.ReadString(buffer, sizeof(buffer));
-							
-							if(!StrContains(map, buffer, false))
+							if(!StrContains(map, val.data, false))
 							{
 								found = true;
 								break;
@@ -645,10 +628,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								if(val.tag != KeyValType_Value)
 									continue;
 								
-								val.data.Reset();
-								val.data.ReadString(buffer, sizeof(buffer));
-								
-								if(!StrContains(map, buffer, false))
+								if(!StrContains(map, val.data, false))
 								{
 									precache = false;
 									break;
@@ -681,15 +661,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 				if(val.tag != KeyValType_Section)
 					continue;
 				
-				val.data.Reset();
-				ConfigMap cfgsub = val.data.ReadCell();
+				ConfigMap cfgsub = val.cfg;
 				if(!cfgsub)
 					continue;
 				
 				if(!precache)
 				{
 					DeleteCfg(cfgsub);
-					delete val.data;
 					cfg.Remove(section);
 					continue;
 				}
@@ -755,8 +733,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											bool music = bgm;
 											if(!music)
 											{
-												val.data.Reset();
-												ConfigMap cfgsound = val.data.ReadCell();
+												ConfigMap cfgsound = val.cfg;
 												if(cfgsound)
 													music = view_as<bool>(cfgsound.GetInt("time", length2));
 											}
@@ -780,8 +757,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									if(IsNotExtraArg(key))
 									{
-										val.data.Reset();
-										val.data.ReadString(buffer, sizeof(buffer));
+										strcopy(buffer, sizeof(buffer), val.data);
 										RemoveSpecialChars(buffer, sizeof(buffer));
 										
 										if(length2 > val.size)	// "example.mp3"	""
@@ -850,8 +826,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Precache:
 					{
-						delete val.data;
-						
 						for(int a; a<entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
@@ -877,8 +851,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									val.data.Reset();
-									val.data.ReadString(buffer, sizeof(buffer));
+									strcopy(buffer, sizeof(buffer), val.data);
 									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
@@ -950,8 +923,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_ModCache:
 					{
-						delete val.data;
-						
 						for(int a; a<entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
@@ -973,8 +944,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									val.data.Reset();
-									val.data.ReadString(buffer, sizeof(buffer));
+									strcopy(buffer, sizeof(buffer), val.data);
 									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
@@ -1008,8 +978,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Download:
 					{
-						delete val.data;
-						
 						for(int a; a<entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
@@ -1031,8 +999,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									val.data.Reset();
-									val.data.ReadString(buffer, sizeof(buffer));
+									strcopy(buffer, sizeof(buffer), val.data);
 									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example"	"mdl"
@@ -1102,8 +1069,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Model:
 					{
-						delete val.data;
-						
 						for(int a; a<entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+10;
@@ -1131,8 +1096,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									val.data.Reset();
-									val.data.ReadString(buffer, sizeof(buffer));
+									strcopy(buffer, sizeof(buffer), val.data);
 									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "models/example"	"mdl"
@@ -1178,8 +1142,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Material:
 					{
-						delete val.data;
-						
 						for(int a; a<entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+5;
@@ -1205,8 +1167,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									val.data.Reset();
-									val.data.ReadString(buffer, sizeof(buffer));
+									strcopy(buffer, sizeof(buffer), val.data);
 									RemoveSpecialChars(buffer, sizeof(buffer));
 									
 									if(length > val.size)	// "materials/example"	"mat"
@@ -1244,12 +1205,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						}
 						
 						DeleteCfg(cfgsub);
-						cfg.Remove(section);
-					}
-					default:
-					{
-						DeleteCfg(cfgsub);
-						delete val.data;
 						cfg.Remove(section);
 					}
 				}
@@ -1463,7 +1418,7 @@ void Bosses_Create(int client, int special, int team)
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);
 	
-	Events_CheckAlivePlayers();
+	Events_CheckAlivePlayers(_, false);
 	EnableSubplugins();
 	
 	int i;
@@ -1655,8 +1610,7 @@ static void EquipBoss(int client, bool weapons)
 					if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
 						continue;
 					
-					val.data.Reset();
-					ConfigMap cfg = val.data.ReadCell();
+					ConfigMap cfg = val.cfg;
 					if(!cfg)
 						continue;
 					
@@ -1906,7 +1860,7 @@ void Bosses_UpdateHealth(int client)
 				defaul = 150;
 		}
 		
-		TF2Attrib_SetByDefIndex(client, 140, float(maxhealth-defaul));
+		TF2Attrib_SetByDefIndex(client, 26, float(maxhealth-defaul));
 	}
 }
 
@@ -1981,7 +1935,7 @@ void Bosses_Remove(int client)
 		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
 		
 		TF2Attrib_SetByDefIndex(client, 442, 1.0);
-		TF2Attrib_SetByDefIndex(client, 140, 0.0);
+		TF2Attrib_SetByDefIndex(client, 26, 0.0);
 		TF2Attrib_SetByDefIndex(client, 734, 1.0);
 		TF2Attrib_SetByDefIndex(client, 740, 1.0);
 		
@@ -2008,6 +1962,12 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 		float time = GetGameTime();
 		if(Client(client).PassiveAt <= time)
 		{
+			if(SoundCache[client])
+			{
+				delete SoundCache[client];
+				SoundCache[client] = null;
+			}
+			
 			Client(client).PassiveAt = time + 0.2;
 			Bosses_UseSlot(client, 1, 3);
 		}
@@ -2087,8 +2047,7 @@ void Bosses_UseSlot(int client, int low, int high)
 			if(val.tag != KeyValType_Section || GetSectionType(ability) != Section_Ability)
 				continue;
 			
-			val.data.Reset();
-			ConfigMap cfg = val.data.ReadCell();
+			ConfigMap cfg = val.cfg;
 			if(!cfg)
 				continue;
 			
@@ -2104,10 +2063,7 @@ void Bosses_UseSlot(int client, int low, int high)
 			
 			if(cfg.GetVal("plugin_name", val) && val.tag == KeyValType_Value)
 			{
-				char[] plugin = new char[val.size];
-				val.data.Reset();
-				val.data.ReadString(plugin, val.size);
-				UseAbility(client, cfg, plugin, ability, slot, button);
+				UseAbility(client, cfg, val.data, ability, slot, button);
 			}
 			else
 			{
@@ -2273,6 +2229,9 @@ int Bosses_GetArgString(int client, const char[] ability, const char[] argument,
 
 int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required="")
 {
+	if(SoundCache[client] && SoundCache[client].GetArray(section, sound, sizeof(sound)))
+		return strlen(sound.Sound);
+	
 	int size;
 	
 	ConfigMap cfg = Client(client).Cfg.GetSection(section);
@@ -2282,8 +2241,9 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 		if(snap)
 		{
 			PackVal val;
-			ArrayList list = new ArrayList(sizeof(PackVal));
+			int sounds;
 			int entries = snap.Length;
+			int[] list = new int[entries];
 			char buffer[PLATFORM_MAX_PATH];
 			for(int i; i<entries; i++)
 			{
@@ -2296,10 +2256,8 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 					case KeyValType_Section:
 					{
 						if(required[0])
-						{
-							val.data.Reset();
-							ConfigMap cfgsub = val.data.ReadCell();	
-							if(!cfgsub.Get("key", key, length) || StrContains(required, key, false) != 0)
+						{	
+							if(!val.cfg.Get("key", key, length) || StrContains(required, key, false) != 0)
 								continue;
 						}
 					}
@@ -2313,8 +2271,7 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 						{
 							if(required[0])
 							{
-								val.data.Reset();
-								val.data.ReadString(buffer, sizeof(buffer));
+								strcopy(buffer, sizeof(buffer), val.data);
 								RemoveSpecialChars(buffer, sizeof(buffer));
 								
 								if(!buffer[0])
@@ -2350,151 +2307,132 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 					}
 				}
 				
-				val.data = new DataPack();
-				val.data.WriteString(key);
-				val.size = length;
-				list.PushArray(val);
+				list[sounds++] = i;
 			}
-			
-			delete snap;
 
-			entries = list.Length;
-			if(entries)
+			if(sounds)
 			{
-				int choosen = GetRandomInt(0, entries - 1);
-				for(int i; i<entries; i++)
+				sounds = list[GetRandomInt(0, sounds - 1)];
+				int length = snap.KeyBufferSize(sounds)+1;
+				char[] key = new char[length];
+				snap.GetKey(sounds, key, length);
+				if(cfg.GetArray(key, val, sizeof(val)))
 				{
-					list.GetArray(i, val);
-					if(i == choosen)
+					switch(val.tag)
 					{
-						int length = val.size;
-						char[] key = new char[length];
-						val.data.Reset();
-						val.data.ReadString(key, length);
-						delete val.data;
-						
-						if(cfg.GetArray(key, val, sizeof(val)))
+						case KeyValType_Section:
 						{
-							switch(val.tag)
+							ConfigMap cfgsub = val.cfg;
+							
+							if(cfgsub.GetInt("mode", sound.Entity))
 							{
-								case KeyValType_Section:
+								if(sound.Entity > SOUND_FROM_WORLD)
+									sound.Entity = -sound.Entity;
+								
+								if(sound.Entity < SOUND_FROM_PLAYER)
+									sound.Entity = SOUND_FROM_PLAYER;
+							}
+							
+							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+							{
+								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
+									size = strlen(sound.Sound);
+							}
+							else
+							{
+								size = strcopy(sound.Sound, sizeof(sound.Sound), key);
+							}
+							
+							cfgsub.GetInt("channel", sound.Channel);
+							cfgsub.GetInt("level", sound.Level);
+							cfgsub.GetInt("flags", sound.Flags);
+							cfgsub.GetFloat("volume", sound.Volume);
+							cfgsub.GetInt("pitch", sound.Pitch);
+							
+							if(cfgsub.GetFloat("time", sound.Time))
+							{
+								cfgsub.Get("name", sound.Name, sizeof(sound.Name));
+								cfgsub.Get("artist", sound.Artist, sizeof(sound.Artist));
+							}
+							
+							if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
+								cfgsub.GetFloat("duration", sound.Duration);
+						}
+						case KeyValType_Value:
+						{
+							if(length > val.size)	// "example.mp3"	""
+							{
+								if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 								{
-									val.data.Reset();
-									ConfigMap cfgsub = val.data.ReadCell();
-									
-									if(cfgsub.GetInt("mode", sound.Entity))
-									{
-										if(sound.Entity > SOUND_FROM_WORLD)
-											sound.Entity = -sound.Entity;
-										
-										if(sound.Entity < SOUND_FROM_PLAYER)
-											sound.Entity = SOUND_FROM_PLAYER;
-									}
-									
-									if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
-									{
-										if(!GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
-											continue;
-										
+									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
 										size = strlen(sound.Sound);
-									}
-									else
-									{
-										size = strcopy(sound.Sound, sizeof(sound.Sound), key);
-									}
-									
-									cfgsub.GetInt("channel", sound.Channel);
-									cfgsub.GetInt("level", sound.Level);
-									cfgsub.GetInt("flags", sound.Flags);
-									cfgsub.GetFloat("volume", sound.Volume);
-									cfgsub.GetInt("pitch", sound.Pitch);
-									
-									if(cfgsub.GetFloat("time", sound.Time))
-									{
-										cfgsub.Get("name", sound.Name, sizeof(sound.Name));
-										cfgsub.Get("artist", sound.Artist, sizeof(sound.Artist));
-									}
-									
-									if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
-										cfgsub.GetFloat("duration", sound.Duration);
 								}
-								case KeyValType_Value:
+								else
 								{
-									if(length > val.size)	// "example.mp3"	""
+									size = strcopy(sound.Sound, sizeof(sound.Sound), key);
+								}
+							}
+							else	// "1"	"example.mp3"
+							{
+								ReplaceStringEx(key, length, "path", "");
+								
+								Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
+								if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
+								{
+									Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
+									cfg.GetFloat(sound.Sound, sound.Duration);
+								}
+								
+								Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
+								if(cfg.GetFloat(sound.Sound, sound.Time))
+								{
+									Format(sound.Sound, sizeof(sound.Sound), "name%s", key);
+									cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
+									
+									Format(sound.Sound, sizeof(sound.Sound), "artist%s", key);
+									cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
+								}
+								else
+								{
+									Format(sound.Sound, sizeof(sound.Sound), "%smusic", key);
+									if(cfg.GetFloat(sound.Sound, sound.Time))
 									{
-										if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
-										{
-											if(!GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
-												continue;
-											
-											size = strlen(sound.Sound);
-										}
-										else
-										{
-											size = strcopy(sound.Sound, sizeof(sound.Sound), key);
-										}
+										Format(sound.Sound, sizeof(sound.Sound), "%sname", key);
+										cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
+										
+										Format(sound.Sound, sizeof(sound.Sound), "%sartist", key);
+										cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
 									}
-									else	// "1"	"example.mp3"
-									{
-										ReplaceStringEx(key, length, "path", "");
-										
-										Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
-										if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
-										{
-											Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
-											cfg.GetFloat(sound.Sound, sound.Duration);
-										}
-										
-										Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
-										if(cfg.GetFloat(sound.Sound, sound.Time))
-										{
-											Format(sound.Sound, sizeof(sound.Sound), "name%s", key);
-											cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
-											
-											Format(sound.Sound, sizeof(sound.Sound), "artist%s", key);
-											cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
-										}
-										else
-										{
-											Format(sound.Sound, sizeof(sound.Sound), "%smusic", key);
-											if(cfg.GetFloat(sound.Sound, sound.Time))
-											{
-												Format(sound.Sound, sizeof(sound.Sound), "%sname", key);
-												cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
-												
-												Format(sound.Sound, sizeof(sound.Sound), "%sartist", key);
-												cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
-											}
-										}
-										
-										val.data.Reset();
-										val.data.ReadString(sound.Sound, sizeof(sound.Sound));
-										
-										if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
-										{
-											if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
-												size = strlen(sound.Sound);
-										}
-										else
-										{
-											size = val.size;
-										}
-									}
+								}
+								
+								strcopy(sound.Sound, sizeof(sound.Sound), val.data);
+								
+								if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+								{
+									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
+										size = strlen(sound.Sound);
+								}
+								else
+								{
+									size = val.size;
 								}
 							}
 						}
 					}
-					else
-					{
-						delete val.data;
-					}
 				}
 			}
 			
-			delete list;
+			delete snap;
 		}
 	}
 	
+	if(!SoundCache[client])
+		SoundCache[client] = new StringMap();
+	
+	if(!size)
+		sound.Sound[0] = 0;
+	
+	SoundCache[client].SetArray(section, sound, sizeof(sound));
 	return size;
 }
 

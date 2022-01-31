@@ -283,8 +283,7 @@ methodmap Client
 			int health = GetClientHealth(view_as<int>(this));
 			if(this.IsBoss)
 			{
-				int lives = 1;
-				this.Cfg.GetInt("lives", lives);
+				int lives = this.Lives;
 				if(lives > 1)
 				{
 					int maxhealth;
@@ -298,7 +297,20 @@ methodmap Client
 		}
 		public set(int amount)
 		{
-			SetEntityHealth(view_as<int>(this), amount);
+			int health = amount;
+			if(this.IsBoss)
+			{
+				int lives = this.Lives;
+				if(lives > 1)
+				{
+					int maxhealth;
+					if(!this.Cfg.GetInt("maxhealth", maxhealth))
+						maxhealth = GetEntProp(view_as<int>(this), Prop_Data, "m_iMaxHealth");
+					
+					health -= maxhealth * (lives - 1);
+				}
+			}
+			SetEntityHealth(view_as<int>(this), health);
 		}
 	}
 	

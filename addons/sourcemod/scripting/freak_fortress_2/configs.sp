@@ -48,11 +48,8 @@ bool Configs_CheckMap(const char[] mapname)
 						}
 					}
 					
-					val.data.Reset();
-					ConfigMap cfgsub = val.data.ReadCell();	
-					
 					int current = -1;
-					if(cfgsub.GetInt("enable", current) && current > enableResult)
+					if(val.cfg.GetInt("enable", current) && current > enableResult)
 						enableResult = current;
 				}
 			}

@@ -27,13 +27,12 @@
 	#endinput
 #endif
 #define _cfgmap_included
+#define CFGMAP_FF2R
 
 #include <adt_array>
 #include <adt_trie>
 #include <adt_stack>
 #include <textparse>
-#include <datapack>
-
 
 enum KeyValType {
 	KeyValType_Null,     /// nil
@@ -42,7 +41,8 @@ enum KeyValType {
 };
 
 enum struct PackVal {
-	DataPack   data;
+	char       data[512];
+	ConfigMap  cfg;
 	int        size;
 	KeyValType tag;
 }
@@ -104,6 +104,7 @@ methodmap ConfigMap < StringMap {
 			
 			if( g_kvstate.top != null ) {
 				DeleteCfg(view_as< ConfigMap >(g_kvstate.top));
+				g_kvstate.top = null;
 			}
 		}
 		delete g_kvstate.parser;
@@ -171,8 +172,7 @@ methodmap ConfigMap < StringMap {
 				valbuf = val;
 				return true;
 			} else if( val.tag==KeyValType_Section ) {
-				val.data.Reset();
-				itermap = val.data.ReadCell();
+				itermap = val.cfg;
 			}
 		}
 		return false;
@@ -195,23 +195,18 @@ methodmap ConfigMap < StringMap {
 			if( result && tag != KeyValType_Null ) {
 				if( do_erase ) {
 					if( val.tag==KeyValType_Section ) {
-						val.data.Reset();
-						ConfigMap cfg = val.data.ReadCell();
-						DeleteCfg(cfg);
+						DeleteCfg(val.cfg);
 					}
-					delete val.data;
 					this.Remove(key);
 				} else if( tag==KeyValType_Value ) {
-					val.data.Reset();
-					val.data.WriteString(val_str);
+					strcopy(val.data, sizeof(val.data), val_str);
 					val.size = val_size;
 					this.SetArray(key, val, sizeof(val));
 				}
 				return true;
 			}
 			else if( !do_erase ) {
-				val.data = new DataPack();
-				val.data.WriteString(val_str);
+				strcopy(val.data, sizeof(val.data), val_str);
 				val.size = val_size;
 				val.tag = KeyValType_Value;
 				this.SetArray(key, val, sizeof(val));
@@ -252,23 +247,18 @@ methodmap ConfigMap < StringMap {
 				break;
 			} else if( StrEqual(curr_section, target_section) ) {
 				if( !do_erase ) {
-					val.data.Reset();
-					val.data.WriteString(val_str);
+					strcopy(val.data, sizeof(val.data), val_str);
 					val.size = val_size;
 					itermap.SetArray(curr_section, val, sizeof(val));
 				} else {
 					if( val.tag==KeyValType_Section ) {
-						val.data.Reset();
-						ConfigMap cfg = val.data.ReadCell();
-						DeleteCfg(cfg);
+						DeleteCfg(val.cfg);
 					}
-					delete val.data;
 					itermap.Remove(curr_section);
 				}
 				return true;
 			} else if( val.tag==KeyValType_Section ) {
-				val.data.Reset();
-				itermap = val.data.ReadCell();
+				itermap = val.cfg;
 			}
 		}
 		return false;
@@ -309,13 +299,11 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			val.data.Reset();
-			char[] src_buf = new char[val.size];
-			val.data.ReadString(src_buf, val.size);
+			strcopy(buffer, buf_size, val.data);
 			if( !special_chars ) {
-				RemoveSpecialChars(src_buf, val.size);
+				RemoveSpecialChars(buffer, buf_size);
 			}
-			return strcopy(buffer, buf_size, src_buf);
+			return strlen(buffer);
 		}
 		return 0;
 	}
@@ -351,9 +339,7 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Section ) {
-			val.data.Reset();
-			ConfigMap section = val.data.ReadCell();
-			return section;
+			return val.cfg;
 		}
 		return null;
 	}
@@ -391,10 +377,7 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			val.data.Reset();
-			char[] strval = new char[val.size];
-			val.data.ReadString(strval, val.size);
-			return StringToIntEx(strval, i, base);
+			return StringToIntEx(val.data, i, base);
 		}
 		return 0;
 	}
@@ -433,10 +416,7 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			val.data.Reset();
-			char[] strval = new char[val.size];
-			val.data.ReadString(strval, val.size);
-			return StringToFloatEx(strval, f);
+			return StringToFloatEx(val.data, f);
 		}
 		return 0;
 	}
@@ -476,15 +456,12 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			val.data.Reset();
-			char[] strval = new char[val.size];
-			val.data.ReadString(strval, val.size);
 			if( simple ) {
-				b = StringToInt(strval) != 0;
+				b = StringToInt(val.data) != 0;
 			} else {
-				if( !strcmp(strval, "true", false) || !strcmp(strval, "1", false) ) {
+				if( !strcmp(val.data, "true", false) || !strcmp(val.data, "1", false) ) {
 					b = true;
-				} else if( !strcmp(strval, "false", false) || !strcmp(strval, "0", false) ) {
+				} else if( !strcmp(val.data, "false", false) || !strcmp(val.data, "0", false) ) {
 					b = false;
 				} else {
 					return 0;
@@ -530,6 +507,7 @@ methodmap ConfigMap < StringMap {
 		ConfigMap map = view_as< ConfigMap >(new StringMap());
 		if( !CloneConfigMap(this, map, new_owner_pl) ) {
 			DeleteCfg(map);
+			map = null;
 		}
 		return map;
 	}
@@ -681,21 +659,16 @@ public SMCResult ConfigMap_OnNewSection(SMCParser smc, const char[] name, bool o
 public SMCResult ConfigMap_OnKeyValue(SMCParser smc, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
 	PackVal val;
-	val.data = new DataPack();
 	if( StrEqual(value, "<IOTA>") ) {
-		char iota_val_str[15];
 		int iota_val = g_kvstate.iota_global++;
-		IntToString(iota_val, iota_val_str, sizeof iota_val_str);
-		val.data.WriteString(iota_val_str);
-		val.size = strlen(iota_val_str) + 1;
+		IntToString(iota_val, val.data, sizeof val.data);
+		val.size = strlen(val.data) + 1;
 	} else if( StrEqual(value, "<iota>") ) {
-		char iota_val_str[15];
 		int iota_val = g_kvstate.iota_local++;
-		IntToString(iota_val, iota_val_str, sizeof iota_val_str);
-		val.data.WriteString(iota_val_str);
-		val.size = strlen(iota_val_str) + 1;
+		IntToString(iota_val, val.data, sizeof val.data);
+		val.size = strlen(val.data) + 1;
 	} else {
-		val.data.WriteString(value);
+		strcopy(val.data, sizeof val.data, value);
 		val.size = strlen(value) + 1;
 	}
 	val.tag = KeyValType_Value;
@@ -724,8 +697,7 @@ public SMCResult ConfigMap_OnEndSection(SMCParser smc)
 		StringMap higher = g_kvstate.cfgstack.Pop();
 		
 		PackVal val;
-		val.data = new DataPack();
-		val.data.WriteCell(g_kvstate.top);
+		val.cfg = view_as<ConfigMap>(g_kvstate.top);
 		val.size = sizeof(g_kvstate.top);
 		val.tag = KeyValType_Section;
 		
@@ -784,7 +756,7 @@ stock bool ParseTargetPath(const char[] key, char[] buffer, int buffer_len)
 	return n > 0;
 }
 
-stock void DeleteCfg(ConfigMap& cfg, bool clear_only=false) {
+stock void DeleteCfg(ConfigMap cfg, bool clear_only=false) {
 	if( cfg==null ) {
 		return;
 	}
@@ -800,15 +772,8 @@ stock void DeleteCfg(ConfigMap& cfg, bool clear_only=false) {
 		snap.GetKey(i, key_buffer, strsize);
 		PackVal val;
 		cfg.GetArray(key_buffer, val, sizeof(val));
-		switch( val.tag ) {
-			case KeyValType_Value:
-				delete val.data;
-			case KeyValType_Section: {
-				val.data.Reset();
-				ConfigMap section = val.data.ReadCell();
-				DeleteCfg(section);
-				delete val.data;
-			}
+		if( val.tag == KeyValType_Section) {
+			DeleteCfg(val.cfg);
 		}
 	}
 	delete snap;
@@ -884,17 +849,12 @@ static stock bool ConfigMapToFile(const ConfigMap cfg, const char[] sec_name, co
 		cfg.GetArray(key, pack, sizeof(pack));
 		if( pack.tag==KeyValType_Null )
 			continue;
-		pack.data.Reset();
 		switch( pack.tag ) {
 			case KeyValType_Value: {
-				int key_size = pack.size+10;
-				char[] key_val = new char[key_size];
-				pack.data.ReadString(key_val, key_size);
-				ReplaceEscapeSeq(key_val, key_size);
-				file.WriteLine("%s\t\"%s\"\t \"%s\"", tab, key, key_val);
+				file.WriteLine("%s\t\"%s\"\t \"%s\"", tab, key, pack.data);
 			}
 			case KeyValType_Section: {
-				ConfigMap subsection = pack.data.ReadCell();
+				ConfigMap subsection = pack.cfg;
 				if( !ConfigMapToFile(subsection, key, file, deep + 1) ) {
 					delete snap;
 					file.WriteLine("%s}", tab);
@@ -924,8 +884,6 @@ static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle 
 		cfg.GetArray(key_buffer, pack, sizeof(pack));
 		switch( pack.tag ) {
 			case KeyValType_Value: {
-				Handle data = pack.data;
-				pack.data = view_as< DataPack >(CloneHandle(data, new_owner_pl));
 				new_cfg.SetArray(key_buffer, pack, sizeof(pack));
 			}
 			case KeyValType_Section: {
@@ -934,17 +892,11 @@ static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle 
 				section_pack.tag = pack.tag;
 				ConfigMap new_subsec = view_as< ConfigMap >(new StringMap());
 				
-				DataPack val = new DataPack();
-				val.WriteCell(new_subsec);
-				section_pack.data = view_as< DataPack >(CloneHandle(val, new_owner_pl));
-				delete val;
+				section_pack.cfg = new_subsec;
 				
 				new_cfg.SetArray(key_buffer, section_pack, sizeof(section_pack));
 				
-				pack.data.Reset();
-				ConfigMap subsec = pack.data.ReadCell();
-				
-				if( !CloneConfigMap(subsec, new_subsec, new_owner_pl) ) {
+				if( !CloneConfigMap(pack.cfg, new_subsec, new_owner_pl) ) {
 					delete snap;
 					return false;
 				}
@@ -957,7 +909,7 @@ static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle 
 
 static void RemoveSpecialChars(char[] buffer, int length)
 {
-	ReplaceString(buffer, length, "\n", "\\n");
-	ReplaceString(buffer, length, "\r", "\\r");
-	ReplaceString(buffer, length, "\t", "\\t");
+	int found = ReplaceString(buffer, length, "\n", "\\n");
+	found += ReplaceString(buffer, length, "\r", "\\r");
+	found += ReplaceString(buffer, length, "\t", "\\t");
 }

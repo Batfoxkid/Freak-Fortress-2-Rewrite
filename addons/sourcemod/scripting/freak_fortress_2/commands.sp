@@ -34,8 +34,6 @@ public Action Command_Voicemenu(int client, const char[] command, int args)
 						float rageMin, charge;
 						if(rageDamage <= 1.0 || (charge=Client(client).GetCharge(0)) >= (rageMin=Client(client).RageMin))
 						{
-							Bosses_UseSlot(client, 0, 0);
-							
 							if(rageDamage > 1.0)
 							{
 								if(rageType == 1)
@@ -47,6 +45,8 @@ public Action Command_Voicemenu(int client, const char[] command, int args)
 									Client(client).SetCharge(0, 0.0);
 								}
 							}
+							
+							Bosses_UseSlot(client, 0, 0);
 							return Plugin_Handled;
 						}
 					}

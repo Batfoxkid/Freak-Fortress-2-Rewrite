@@ -11,6 +11,7 @@ static Handle SDKGetMaxHealth;
 static Handle SDKTeamAddPlayer;
 static Handle SDKTeamRemovePlayer;
 static Handle SDKIncrementStat;
+static Handle SDKCheckBlockBackstab;
 static Handle SDKSetSpeed;
 
 void SDKCall_Setup()
@@ -65,6 +66,14 @@ void SDKCall_Setup()
 		LogError("[Gamedata] Could not find CTFGameStats::IncrementStat");
 	
 	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::CheckBlockBackstab");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
+	SDKCheckBlockBackstab = EndPrepSDKCall();
+	if(!SDKCheckBlockBackstab)
+		LogError("[Gamedata] Could not find CTFPlayer::CheckBlockBackstab");
+	
+	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
 	SDKSetSpeed = EndPrepSDKCall();
 	if(!SDKSetSpeed)
@@ -99,6 +108,14 @@ void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
 		if(address != Address_Null)
 			SDKCall(SDKIncrementStat, address, client, stat, amount);
 	}
+}
+
+bool SDKCall_CheckBlockBackstab(int client, int attacker)
+{
+	if(SDKCheckBlockBackstab)
+		return SDKCall(SDKCheckBlockBackstab, client, attacker);
+	
+	return false;
 }
 
 void SDKCall_SetSpeed(int client)

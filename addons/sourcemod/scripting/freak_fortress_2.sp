@@ -16,6 +16,7 @@
 #include <dhooks>
 #include <tf2items>
 #include <tf2attributes>
+#undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 //#tryinclude <goomba>
 
@@ -46,6 +47,7 @@
 #define TFTeam_Spectator	1
 #define TFTeam_Red			2
 #define TFTeam_Blue			3
+#define TFTeam_MAX			4
 
 enum TFStatType_t
 {
@@ -144,6 +146,7 @@ ConVar CvarDebug;
 ConVar CvarSpecTeam;
 ConVar CvarBossVsBoss;
 ConVar CvarBossSewer;
+ConVar CvarHealthBar;
 ConVar CvarBossTriple;
 ConVar CvarBossCrits;
 ConVar CvarBossKnockback;

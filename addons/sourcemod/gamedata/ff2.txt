@@ -22,6 +22,12 @@
 				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
 				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x8B\xF1\x80\xBB\xDC\x04\x00\x00\x00"
 			}
+			"CTFPlayer::CheckBlockBackstab"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xB0\x19\x00\x00"
+			}
 			"CTFPlayer::DropAmmoPack"
 			{
 				"library"	"server"

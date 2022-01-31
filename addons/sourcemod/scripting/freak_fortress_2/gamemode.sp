@@ -6,6 +6,16 @@
 */
 
 static bool Waiting;
+static Handle SyncHud[TFTeam_MAX];
+static bool HasBoss[TFTeam_MAX];
+
+void Gamemode_PluginStart()
+{
+	for(int i; i<TFTeam_MAX; i++)
+	{
+		SyncHud[i] = CreateHudSynchronizer();
+	}
+}
 
 void Gamemode_MapStart()
 {
@@ -255,7 +265,7 @@ void Gamemode_RoundStart()
 			{
 				int team = GetClientTeam(client);
 				int amount = 0;
-				for(int i = specTeam ? 0 : 2; i<4; i++)
+				for(int i = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; i<TFTeam_MAX; i++)
 				{
 					if(team != i)
 						amount += PlayersAlive[i];
@@ -272,4 +282,26 @@ void Gamemode_RoundEnd()
 {
 	RoundActive = false;
 	Music_PlaySongToAll();
+}
+
+void Gamemode_UpdateHUDAll(int team)
+{
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+			Gamemode_UpdateHUD(client, team);
+	}
+}
+
+void Gamemode_UpdateHUD(int client, int team)
+{
+	HasBoss[team] = true;
+	int count;
+	for(int i; i<TFTeam_MAX; i++)
+	{
+		if(HasBoss[i])
+			count++;
+	}
+	
+	
 }

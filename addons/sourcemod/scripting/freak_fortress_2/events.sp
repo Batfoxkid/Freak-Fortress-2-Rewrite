@@ -21,7 +21,6 @@ public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast
 {
 	FirstBlood = true;
 	LastMann = false;
-	Events_CheckAlivePlayers();
 	Gamemode_RoundStart();
 }
 
@@ -348,7 +347,7 @@ public Action Events_RemoveBossTimer(Handle timer, int userid)
 	return Plugin_Continue;
 }
 
-void Events_CheckAlivePlayers(int exclude=0)
+void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
 {
 	PlayersAlive[0] = 0;
 	PlayersAlive[1] = 0;
@@ -358,15 +357,15 @@ void Events_CheckAlivePlayers(int exclude=0)
 	int redBoss, bluBoss;
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(i != exclude && IsClientInGame(i) && IsPlayerAlive(i) && !Client(i).Minion)
+		if(i != exclude && IsClientInGame(i) && (!alive || IsPlayerAlive(i)) && !Client(i).Minion)
 		{
 			int team = GetClientTeam(i);
 			PlayersAlive[team]++;
-			if(team == 3 && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+			if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
 			{
 				bluBoss = i;
 			}
-			else if(team != 3 && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+			else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
 			{
 				redBoss = i;
 			}
@@ -376,7 +375,7 @@ void Events_CheckAlivePlayers(int exclude=0)
 	int team = Bosses_GetBossTeam();
 	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
 	
-	if(RoundActive && !LastMann && TotalPlayersAlive() == 2)
+	if(alive && RoundActive && !LastMann && TotalPlayersAlive() == 2)
 	{
 		LastMann = true;
 		
@@ -389,7 +388,7 @@ void Events_CheckAlivePlayers(int exclude=0)
 			{
 				if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_VOICE, _, _, 2.0))
 				{
-					if(redBoss && (!bluBoss && GetClientTeam(client) == 3))
+					if((redBoss && (!bluBoss && GetClientTeam(client) == 3)) || (redBoss == client && !bluBoss))
 					{
 						red[reds++] = client;
 					}
