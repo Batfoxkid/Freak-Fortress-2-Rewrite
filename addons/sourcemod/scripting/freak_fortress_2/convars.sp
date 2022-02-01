@@ -52,7 +52,7 @@ void ConVar_PluginStart()
 	ConVar_Add("mp_forcecamera", "0", false);
 	ConVar_Add("mp_humans_must_join_team", "any");
 	ConVar_Add("mp_teams_unbalance_limit", "0");
-	//ConVar_Add("mp_waitingforplayers_time", "90.0", false);
+	ConVar_Add("mp_waitingforplayers_time", "90.0", false);
 }
 
 static void ConVar_Add(const char[] name, const char[] value, bool enforce=true)

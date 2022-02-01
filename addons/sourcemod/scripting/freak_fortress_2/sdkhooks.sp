@@ -182,7 +182,15 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 				}
 			}
 			
-			if(!Client(attacker).IsBoss)
+			if(Client(attacker).IsBoss)
+			{
+				if(damage <= 160.0 && Client(attacker).Triple)
+				{
+					// The thing everyone hates but can't remove
+					damage *= 3.0;
+				}
+			}
+			else
 			{
 				ScaleVector(damageForce, 1.3 - (Client(victim).Health / Client(victim).MaxHealth / Client(victim).MaxLives));
 				Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
@@ -206,7 +214,7 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 			{
 				// Cap of 1500 damage every 2.5 seconds, or 300 every 1/2 second
 				float cap = 1500.0 - pressure;
-				if(cap > damage)
+				if(damage > cap)
 				{
 					damage = cap;
 					action = Plugin_Changed;

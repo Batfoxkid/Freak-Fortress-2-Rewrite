@@ -39,7 +39,7 @@ static int DownloadTable;
 void Bosses_PluginStart()
 {
 	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
-	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_RCON, "Reloads the current boss pack");
+	RegAdminCmd("ff2_reloadcharset", Bosses_MakeBoss, ADMFLAG_RCON, "Reloads the current boss pack");
 	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
 	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");

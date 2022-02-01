@@ -288,16 +288,16 @@ public any NativeOld_GetBossRageDamage(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1 && Client(client).IsBoss)
-		return Client(client).RageDamage;
+		return RoundFloat(Client(client).RageDamage);
 	
-	return 0.0;
+	return 0;
 }
 
 public any NativeOld_SetBossRageDamage(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1 && Client(client).IsBoss)
-		Client(client).RageDamage = GetNativeCell(2);
+		Client(client).RageDamage = float(GetNativeCell(2));
 }
 
 public any NativeOld_GetRoundState(Handle plugin, int params)
@@ -592,10 +592,10 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 		
 		if(cfg)
 		{
-			char buffer[PLATFORM_MAX_PATH];
-			if(cfg.Get("filename", buffer, sizeof(buffer)))
+			char filename[PLATFORM_MAX_PATH], filepath[PLATFORM_MAX_PATH];
+			if(cfg.Get("filename", filename, sizeof(filename)))
 			{
-				BuildPath(Path_SM, buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, buffer);
+				BuildPath(Path_SM, filepath, sizeof(filepath), "%s/%s.cfg", FOLDER_CONFIGS, filename);
 				
 				static StringMap Kvs;
 				if(!Kvs)
@@ -609,7 +609,8 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 					delete kv;
 				
 				kv = new KeyValues("character");
-				kv.ImportFromFile(buffer);
+				kv.ImportFromFile(filepath);
+				kv.SetString("filename", filename);
 				Kvs.SetValue(name, kv);
 				return kv;
 			}
