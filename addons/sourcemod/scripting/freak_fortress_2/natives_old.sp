@@ -214,13 +214,16 @@ public any NativeOld_SetBossHealth(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
+	{
 		Client(client).Health = GetNativeCell(2);
+		Gamemode_UpdateHUD(GetClientTeam(client));
+	}
 }
 
 public any NativeOld_GetBossMaxHealth(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return Client(client).MaxHealth;
 	
 	return 0;
@@ -229,7 +232,7 @@ public any NativeOld_GetBossMaxHealth(Handle plugin, int params)
 public any NativeOld_SetBossMaxHealth(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		Client(client).MaxHealth = GetNativeCell(2);
 		Bosses_UpdateHealth(client);
@@ -239,7 +242,7 @@ public any NativeOld_SetBossMaxHealth(Handle plugin, int params)
 public any NativeOld_GetBossLives(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return Client(client).Lives;
 	
 	return 0;
@@ -248,14 +251,17 @@ public any NativeOld_GetBossLives(Handle plugin, int params)
 public any NativeOld_SetBossLives(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
+	{
 		Client(client).Lives = GetNativeCell(2);
+		Gamemode_UpdateHUD(GetClientTeam(client));
+	}
 }
 
 public any NativeOld_GetBossMaxLives(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return Client(client).MaxLives;
 	
 	return 0;
@@ -264,14 +270,17 @@ public any NativeOld_GetBossMaxLives(Handle plugin, int params)
 public any NativeOld_SetBossMaxLives(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
+	{
 		Client(client).MaxLives = GetNativeCell(2);
+		Gamemode_UpdateHUD(GetClientTeam(client));
+	}
 }
 
 public any NativeOld_GetBossCharge(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return Client(client).GetCharge(GetNativeCell(2));
 	
 	return 0.0;
@@ -280,14 +289,14 @@ public any NativeOld_GetBossCharge(Handle plugin, int params)
 public any NativeOld_SetBossCharge(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		Client(client).SetCharge(GetNativeCell(2), GetNativeCell(3));
 }
 
 public any NativeOld_GetBossRageDamage(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return RoundFloat(Client(client).RageDamage);
 	
 	return 0;
@@ -296,7 +305,7 @@ public any NativeOld_GetBossRageDamage(Handle plugin, int params)
 public any NativeOld_SetBossRageDamage(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		Client(client).RageDamage = float(GetNativeCell(2));
 }
 
@@ -357,7 +366,7 @@ public any NativeOld_HasAbility(Handle plugin, int params)
 public any NativeOld_DoAbility(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char plugi[64], ability[64];
 		GetNativeString(2, plugi, sizeof(plugi));
@@ -370,7 +379,7 @@ public any NativeOld_GetAbilityArgument(Handle plugin, int params)
 {
 	int value = GetNativeCell(5);
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -387,7 +396,7 @@ public any NativeOld_GetAbilityArgumentFloat(Handle plugin, int params)
 {
 	float value = GetNativeCell(5);
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -406,7 +415,7 @@ public any NativeOld_GetAbilityArgumentString(Handle plugin, int params)
 	char[] buffer = new char[size];
 	
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -424,7 +433,7 @@ public any NativeOld_GetArgNamedI(Handle plugin, int params)
 {
 	int value = GetNativeCell(5);
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64], arg[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -438,7 +447,7 @@ public any NativeOld_GetArgNamedF(Handle plugin, int params)
 {
 	float value = GetNativeCell(5);
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64], arg[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -454,7 +463,7 @@ public any NativeOld_GetArgNamedS(Handle plugin, int params)
 	char[] buffer = new char[size];
 	
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		char ability[64], arg[64];
 		GetNativeString(3, ability, sizeof(ability));
@@ -678,7 +687,7 @@ public any NativeOld_RandomSound(Handle plugin, int params)
 	SoundEnum sound;
 	bool success;
 	int client = FindClientOfBossIndex(GetNativeCell(4));
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 	{
 		int soundSize;
 		GetNativeStringLength(1, soundSize);
@@ -865,11 +874,11 @@ public any NativeOld_MakeBoss(Handle plugin, int params)
 			int team = GetNativeCell(4);
 			if(team == 0)
 			{
-				team = TFTeam_Blue;
+				team = Bosses_GetBossTeam();
 			}
 			else if(team > 0)
 			{
-				team = TFTeam_Red;
+				team = Bosses_GetBossTeam() == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
 			}
 			else
 			{
@@ -931,7 +940,7 @@ public any NativeOld_VSHGetHealth(Handle plugin, int params)
 public any NativeOld_VSHGetHealthMax(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(0);
-	if(client != -1 && Client(client).IsBoss)
+	if(client != -1)
 		return Client(client).MaxHealth;
 	
 	return 0;

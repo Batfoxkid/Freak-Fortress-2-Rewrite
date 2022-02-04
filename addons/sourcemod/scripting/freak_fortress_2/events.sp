@@ -107,7 +107,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		}
 		
 		int attacker = GetClientOfUserId(event.GetInt("attacker"));
-		
+		int team = GetClientTeam(victim);
 		int health = GetClientHealth(victim);
 		if(health < 1)
 		{
@@ -154,7 +154,6 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					int[] boss = new int[MaxClients];
 					int[] merc = new int[MaxClients];
 					
-					int team = GetClientTeam(victim);
 					for(int i=1; i<=MaxClients; i++)
 					{
 						if(IsClientInGame(i))
@@ -200,6 +199,8 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 			Client(victim).Lives = lives;
 			Client(victim).MaxLives = maxlives;
 		}
+		
+		Gamemode_UpdateHUD(team);
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
@@ -246,6 +247,9 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				
 				if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 					Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				
+				if(!deadRinger)
+					Gamemode_UpdateHUD(GetClientTeam(victim));
 			}
 			
 			int alive = TotalPlayersAlive();

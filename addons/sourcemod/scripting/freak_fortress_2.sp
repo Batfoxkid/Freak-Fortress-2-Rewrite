@@ -223,6 +223,7 @@ public void OnPluginStart()
 	Command_PluginStart();
 	ConVar_PluginStart();
 	Events_PluginStart();
+	Gamemode_PluginStart();
 	Menu_PluginStart();
 	Music_PluginStart();
 	Preference_PluginStart();

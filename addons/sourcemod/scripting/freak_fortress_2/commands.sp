@@ -16,7 +16,7 @@ void Command_PluginStart()
 
 public Action Command_Voicemenu(int client, const char[] command, int args)
 {
-	if(client && args == 2 && Client(client).IsBoss && IsPlayerAlive(client) && (!Enabled || RoundActive))
+	if(client && args == 2 && IsPlayerAlive(client) && (!Enabled || RoundActive))
 	{
 		char arg[4];
 		GetCmdArg(1, arg, sizeof(arg));

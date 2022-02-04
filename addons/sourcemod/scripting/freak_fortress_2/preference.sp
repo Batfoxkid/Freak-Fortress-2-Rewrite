@@ -120,7 +120,7 @@ int Preference_PickBoss(int client, int team=-1)
 				for(int i; i<length2; i++)
 				{
 					special = BossListing[client].Get(i);
-					if(blacklist > 0 ? (list.FindValue(special) == -1) : (list.FindValue(special) != -1))
+					if((blacklist > 0 ? (list.FindValue(special) == -1) : (list.FindValue(special) != -1)))
 					{
 						list2.Push(special);
 						found = true;

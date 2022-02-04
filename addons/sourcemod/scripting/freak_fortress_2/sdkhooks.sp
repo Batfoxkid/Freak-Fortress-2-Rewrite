@@ -119,11 +119,10 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 							if(!Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
 								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
 						}
-						else
+						else if(!Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
-							Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
 						}
 					}
 					
@@ -231,6 +230,14 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 		if(!IsInvuln(victim))
 		{
 			bool changed;
+			if(((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH)) && SDKCall_CheckBlockBackstab(victim, attacker))
+			{
+				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
+					TF2_RemoveCondition(victim, TFCond_RuneResist);
+				
+				return Plugin_Handled;
+			}
+			
 			if(damage <= 160.0 && Client(attacker).Triple)
 			{
 				// The thing everyone hates but can't remove
@@ -247,13 +254,13 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 				changed = true;
 			}
 			
-			if(TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffed) ||
+			/*if(TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffed) ||
 			   TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffNoCritBlock))
 			{
 				// 35% resist to 50% resist
 				damage /= 1.3;
 				changed = true;
-			}
+			}*/
 			
 			if((damagetype & DMG_CRIT) &&
 			   GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") &&

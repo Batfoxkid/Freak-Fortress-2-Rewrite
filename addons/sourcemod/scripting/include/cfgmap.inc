@@ -287,23 +287,18 @@ methodmap ConfigMap < StringMap {
 	 * @param     key_path : key path to the data you need.
 	 * @param     buffer : buffer to store the string value.
 	 * @param     buf_size : size of the buffer.
-	 * @param     special_chars : if to use characters like \n
 	 * @return    Number of chars used, 0 if error.
 	 * @note      to directly access subsections, use a '.' like "root.section.key"
 	 *            for keys that have a dot in their name, use '\\.'
 	 */
-	public int Get(const char[] key_path, char[] buffer, int buf_size, bool special_chars=false) {
+	public int Get(const char[] key_path, char[] buffer, int buf_size) {
 		if( this==null || buf_size<=0 ) {
 			return 0;
 		}
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			strcopy(buffer, buf_size, val.data);
-			if( !special_chars ) {
-				RemoveSpecialChars(buffer, buf_size);
-			}
-			return strlen(buffer);
+			return strcopy(buffer, buf_size, val.data);
 		}
 		return 0;
 	}
@@ -669,7 +664,8 @@ public SMCResult ConfigMap_OnKeyValue(SMCParser smc, const char[] key, const cha
 		val.size = strlen(val.data) + 1;
 	} else {
 		strcopy(val.data, sizeof val.data, value);
-		val.size = strlen(value) + 1;
+		ReplaceEscapeSeq(val.data, sizeof val.data);
+		val.size = strlen(val.data) + 1;
 	}
 	val.tag = KeyValType_Value;
 	
@@ -905,11 +901,4 @@ static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle 
 	}
 	delete snap;
 	return true;
-}
-
-static void RemoveSpecialChars(char[] buffer, int length)
-{
-	int found = ReplaceString(buffer, length, "\n", "\\n");
-	found += ReplaceString(buffer, length, "\r", "\\r");
-	found += ReplaceString(buffer, length, "\t", "\\t");
 }

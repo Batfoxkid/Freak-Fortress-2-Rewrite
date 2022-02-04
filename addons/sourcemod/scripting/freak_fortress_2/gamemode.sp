@@ -281,27 +281,141 @@ void Gamemode_RoundStart()
 void Gamemode_RoundEnd()
 {
 	RoundActive = false;
-	Music_PlaySongToAll();
-}
-
-void Gamemode_UpdateHUDAll(int team)
-{
+	
+	int[] clients = new int[MaxClients];
+	int total;
+	
 	for(int client=1; client<=MaxClients; client++)
 	{
 		if(IsClientInGame(client))
-			Gamemode_UpdateHUD(client, team);
+			clients[total++] = client;
 	}
-}
-
-void Gamemode_UpdateHUD(int client, int team)
-{
-	HasBoss[team] = true;
-	int count;
+	
+	Music_PlaySong(clients, total);
+	
 	for(int i; i<TFTeam_MAX; i++)
 	{
 		if(HasBoss[i])
-			count++;
+		{
+			HasBoss[i] = false;
+			
+			for(int a; a<total; a++)
+			{
+				ClearSyncHud(clients[a], SyncHud[i]);
+			}
+		}
 	}
-	
-	
+}
+
+void Gamemode_UpdateHUD(int team)
+{
+	if(RoundActive)
+	{
+		int count;
+		if(HasBoss[team])
+		{
+			for(int i; i<TFTeam_MAX; i++)
+			{
+				if(HasBoss[i])
+					count++;
+			}
+		}
+		else
+		{
+			count++;
+			for(int i; i<TFTeam_MAX; i++)
+			{
+				if(HasBoss[i])
+				{
+					count++;
+					Gamemode_UpdateHUD(i);
+				}
+			}
+			
+			HasBoss[team] = true;
+		}
+		
+		int[] clients = new int[MaxClients];
+		int total;
+		
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				clients[total++] = client;
+		}
+		
+		int health, lives, maxhealth, maxlives, combined, bosses;
+		for(int i; i<total; i++)
+		{
+			if(Client(clients[i]).IsBoss && GetClientTeam(clients[i]) == team)
+			{
+				bosses++;
+				health += GetClientHealth(clients[i]);
+				lives += Client(clients[i]).Lives;
+				maxhealth += Client(clients[i]).MaxHealth;
+				maxlives += Client(clients[i]).MaxLives;
+				combined += Client(clients[i]).Health;
+			}
+		}
+		
+		if(count > 1)
+		{
+			float x = (team == TFTeam_Red || team == TFTeam_Spectator) ? 0.53 : 0.43;
+			float y = team <= TFTeam_Spectator ? 0.18 : 0.12;
+			int r = (team == TFTeam_Unassigned || team == TFTeam_Red) ? 255 : 100;
+			int g = team <= TFTeam_Spectator ? 255 : 100;
+			int b = team == TFTeam_Blue ? 255 : 100;
+			for(int i; i<total; i++)
+			{
+				if(IsClientObserver(clients[i]))
+				{
+					SetHudTextParams(x, y+0.1, 45.0, r, g, b, 255, 0, 0.35, 0.0, 30.0);
+				}
+				else
+				{
+					SetHudTextParams(x, y, 45.0, r, g, b, 255, 0, 0.35, 0.0, 30.0);
+				}
+				
+				if(bosses > 1)
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d", combined);
+				}
+				else if(lives > 1)
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d (x%d)", health, lives);
+				}
+				else
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d", health);
+				}
+			}
+		}
+		else
+		{
+			for(int i; i<total; i++)
+			{
+				if(IsClientObserver(clients[i]))
+				{
+					SetHudTextParams(-1.0, 0.22, 45.0, 200, 255, 200, 255, 0, 0.35, 0.0, 30.0);
+				}
+				else
+				{
+					SetHudTextParams(-1.0, 0.12, 45.0, 200, 255, 200, 255, 0, 0.35, 0.0, 30.0);
+				}
+				
+				if(bosses > 1)
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d / %d", combined, maxhealth * maxlives);
+				}
+				else if(lives > 1)
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d / %d (x%d)", health, maxhealth, lives);
+				}
+				else
+				{
+					ShowSyncHudText(clients[i], SyncHud[team], "%d / %d", health, maxhealth);
+				}
+			}
+		}
+	}
 }

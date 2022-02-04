@@ -39,7 +39,7 @@ static int DownloadTable;
 void Bosses_PluginStart()
 {
 	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
-	RegAdminCmd("ff2_reloadcharset", Bosses_MakeBoss, ADMFLAG_RCON, "Reloads the current boss pack");
+	RegAdminCmd("ff2_reloadcharset", Bosses_ReloadCharset, ADMFLAG_RCON, "Reloads the current boss pack");
 	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
 	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");
@@ -93,6 +93,14 @@ public Action Bosses_DebugLoad(int args)
 public Action Bosses_DebugUnload(int args)
 {
 	DisableSubplugins();
+	return Plugin_Handled;
+}
+
+public Action Bosses_ReloadCharset(int client, int args)
+{
+	char mapname[64];
+	GetCurrentMap(mapname, sizeof(mapname));
+	Bosses_BuildPacks(Charset, mapname);
 	return Plugin_Handled;
 }
 
@@ -758,7 +766,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									if(IsNotExtraArg(key))
 									{
 										strcopy(buffer, sizeof(buffer), val.data);
-										RemoveSpecialChars(buffer, sizeof(buffer));
 										
 										if(length2 > val.size)	// "example.mp3"	""
 										{
@@ -851,22 +858,19 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									strcopy(buffer, sizeof(buffer), val.data);
-									RemoveSpecialChars(buffer, sizeof(buffer));
-									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
-										if(buffer[0] == 'm')	// mdl, model, mat, material
+										if(val.data[0] == 'm')	// mdl, model, mat, material
 										{
 											PrecacheModel(key);
 										}
-										else if(buffer[0] == 'g' || buffer[2] == 'r')	// gs, gamesound, script
+										else if(val.data[0] == 'g' || val.data[2] == 'r')	// gs, gamesound, script
 										{
 											PrecacheScriptSound(key);
 										}
-										else if(buffer[0] == 's')
+										else if(val.data[0] == 's')
 										{
-											if(buffer[1] == 'e')	// sentence
+											if(val.data[1] == 'e')	// sentence
 											{
 												PrecacheSentenceFile(key);
 											}
@@ -875,11 +879,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												PrecacheSound(key);
 											}
 										}
-										else if(buffer[0] == 'd')	// decal
+										else if(val.data[0] == 'd')	// decal
 										{
 											PrecacheDecal(key);
 										}
-										else if(buffer[0])	// generic
+										else if(val.data[0])	// generic
 										{
 											PrecacheGeneric(key);
 										}
@@ -888,30 +892,30 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										if(key[0] == 'm')	// mdl, model, mat, material
 										{
-											PrecacheModel(buffer);
+											PrecacheModel(val.data);
 										}
 										else if(key[0] == 'g' || key[2] == 'r')	// gs, gamesound, script
 										{
-											PrecacheScriptSound(buffer);
+											PrecacheScriptSound(val.data);
 										}
 										else if(key[0] == 's')
 										{
 											if(key[1] == 'e')	// sentence
 											{
-												PrecacheSentenceFile(buffer);
+												PrecacheSentenceFile(val.data);
 											}
 											else	// snd, sound
 											{
-												PrecacheSound(buffer);
+												PrecacheSound(val.data);
 											}
 										}
 										else if(key[0] == 'd')	// decal
 										{
-											PrecacheDecal(buffer);
+											PrecacheDecal(val.data);
 										}
 										else if(key[0])	// generic
 										{
-											PrecacheGeneric(buffer);
+											PrecacheGeneric(val.data);
 										}
 									}
 								}
@@ -944,9 +948,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									strcopy(buffer, sizeof(buffer), val.data);
-									RemoveSpecialChars(buffer, sizeof(buffer));
-									
 									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
 										if(FileExists(key, true))
@@ -958,15 +959,15 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											LogError("[Boss] %s is missing file %s in %s", character, key, section);
 										}
 									}
-									else if(buffer[0])	// "1"	"models/example.mdl"
+									else if(val.data[0])	// "1"	"models/example.mdl"
 									{
-										if(FileExists(buffer, true))
+										if(FileExists(val.data, true))
 										{
-											PrecacheModel(buffer);
+											PrecacheModel(val.data);
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+											LogError("[Boss] %s is missing file %s in %s", character, val.data, section);
 										}
 									}
 								}
@@ -999,12 +1000,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									strcopy(buffer, sizeof(buffer), val.data);
-									RemoveSpecialChars(buffer, sizeof(buffer));
-									
 									if(length > val.size)	// "models/example"	"mdl"
 									{
-										if(buffer[1] == 'a')	// mat, material
+										if(val.data[1] == 'a')	// mat, material
 										{
 											for(int b; b<sizeof(MatExts); b++)
 											{
@@ -1020,7 +1018,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 											continue;
 										}
-										else if(buffer[1] == 'd' || buffer[1] == 'o')	// mdl, model
+										else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
 										{
 											for(int b; b<sizeof(MdlExts); b++)
 											{
@@ -1051,13 +1049,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else			// "1"	"sound/example.mp3"
 									{
-										if(FileExists(buffer, true))
+										if(FileExists(val.data, true))
 										{
-											AddToStringTable(DownloadTable, buffer);
+											AddToStringTable(DownloadTable, val.data);
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+											LogError("[Boss] %s is missing file %s in %s", character, val.data, section);
 										}
 									}
 								}
@@ -1096,9 +1094,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									strcopy(buffer, sizeof(buffer), val.data);
-									RemoveSpecialChars(buffer, sizeof(buffer));
-									
 									if(length > val.size)	// "models/example"	"mdl"
 									{
 										for(int b; b<sizeof(MdlExts); b++)
@@ -1120,15 +1115,15 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										for(int b; b<sizeof(MdlExts); b++)
 										{
-											Format(buffer2, sizeof(buffer2), "%s.%s", buffer, MdlExts[b]);
-											if(FileExists(buffer2, true))
+											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
+											if(FileExists(buffer, true))
 											{
 												if(b)
-													AddToStringTable(DownloadTable, buffer2);
+													AddToStringTable(DownloadTable, buffer);
 											}
 											else if(b != sizeof(MdlExts)-1)
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer2, section);
+												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
 												break;
 											}
 										}
@@ -1167,9 +1162,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 								case KeyValType_Value:
 								{
-									strcopy(buffer, sizeof(buffer), val.data);
-									RemoveSpecialChars(buffer, sizeof(buffer));
-									
 									if(length > val.size)	// "materials/example"	"mat"
 									{
 										for(int b; b<sizeof(MatExts); b++)
@@ -1189,14 +1181,14 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										for(int b; b<sizeof(MatExts); b++)
 										{
-											Format(buffer2, sizeof(buffer2), "%s.%s", buffer, MatExts[b]);
-											if(FileExists(buffer2, true))
+											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
+											if(FileExists(buffer, true))
 											{
 												AddToStringTable(DownloadTable, buffer2);
 											}
 											else
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer2, section);
+												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
 											}
 										}
 									}
@@ -1378,12 +1370,18 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1,
 	{
 		GetLanguageInfo(lang, buffer, length);
 		Format(buffer, length, "%s_%s", string, buffer);
-		int size = cfg.Get(buffer, buffer, length, true);
-		if(size)
-			return size;
+		if(!cfg.Get(buffer, buffer, length))
+			 cfg.Get(string, buffer, length);
+	}
+	else
+	{
+		 cfg.Get(string, buffer, length);
 	}
 	
-	return cfg.Get(string, buffer, length);
+	ReplaceString(buffer, length, "\\n", "\n");
+	ReplaceString(buffer, length, "\\t", "\t");
+	ReplaceString(buffer, length, "\\r", "\r");
+	return strlen(buffer);
 }
 
 void Bosses_Create(int client, int special, int team)
@@ -1514,6 +1512,7 @@ int Bosses_SetHealth(int client, int players)
 		Bosses_SetSpeed(client);
 	}
 	
+	Gamemode_UpdateHUD(GetClientTeam(client));
 	return maxhealth;
 }
 
@@ -1526,7 +1525,7 @@ void Bosses_Equip(int client)
 public Action Bosses_EquipTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
-	if(client && Client(client).IsBoss)
+	if(client)
 		EquipBoss(client, true);
 }
 
@@ -1862,6 +1861,8 @@ void Bosses_UpdateHealth(int client)
 		
 		TF2Attrib_SetByDefIndex(client, 26, float(maxhealth-defaul));
 	}
+	
+	Gamemode_UpdateHUD(GetClientTeam(client));
 }
 
 void Bosses_SetSpeed(int client)
@@ -1957,7 +1958,7 @@ any Bosses_GetBossTeam()
 
 void Bosses_PlayerRunCmd(int client, int buttons)
 {
-	if((!Enabled || RoundActive) && Client(client).IsBoss && IsPlayerAlive(client))
+	if((!Enabled || RoundActive) && IsPlayerAlive(client))
 	{
 		float time = GetGameTime();
 		if(Client(client).PassiveAt <= time)
@@ -2272,7 +2273,6 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 							if(required[0])
 							{
 								strcopy(buffer, sizeof(buffer), val.data);
-								RemoveSpecialChars(buffer, sizeof(buffer));
 								
 								if(!buffer[0])
 									strcopy(buffer, sizeof(buffer), "0");
@@ -2623,13 +2623,6 @@ static void DisableSubplugins()
 		delete list;
 		ServerExecute();
 	}
-}
-
-static void RemoveSpecialChars(char[] buffer, int length)
-{
-	ReplaceString(buffer, length, "\n", "\\n");
-	ReplaceString(buffer, length, "\r", "\\r");
-	ReplaceString(buffer, length, "\t", "\\t");
 }
 
 static bool IsNotExtraArg(const char[] key)
