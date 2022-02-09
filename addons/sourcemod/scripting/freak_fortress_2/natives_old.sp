@@ -76,6 +76,29 @@ void NativeOld_PluginLoad()
 	CreateNative("FF2_MakeBoss", NativeOld_MakeBoss);
 	CreateNative("FF2_SelectBoss", NativeOld_ChooseBoss);
 	
+	CreateNative("FF2Data.Unknown", NativeOld_GetIndex);
+	CreateNative("FF2Data.FF2Data", NativeOld_FF2Data);
+	CreateNative("FF2Data.boss.get", NativeOld_FF2DataBoss);
+	CreateNative("FF2Data.client.get", NativeOld_FF2DataClient);
+	CreateNative("FF2Data.Config.get", NativeOld_GetSpecialKV);
+	CreateNative("FF2Data.Health.get", NativeOld_GetBossHealth);
+	CreateNative("FF2Data.Health.set", NativeOld_SetBossHealth);
+	CreateNative("FF2Data.MaxHealth.get", NativeOld_GetBossMaxHealth);
+	CreateNative("FF2Data.MaxHealth.set", NativeOld_SetBossMaxHealth);
+	CreateNative("FF2Data.Lives.get", NativeOld_GetBossLives);
+	CreateNative("FF2Data.Lives.set", NativeOld_SetBossLives);
+	CreateNative("FF2Data.MaxLives.get", NativeOld_GetBossMaxLives);
+	CreateNative("FF2Data.MaxLives.set", NativeOld_SetBossMaxLives);
+	CreateNative("FF2Data.RageDmg.get", NativeOld_GetBossRageDamage);
+	CreateNative("FF2Data.RageDmg.set", NativeOld_SetBossRageDamage);
+	CreateNative("FF2Data.Change", NativeOld_FF2Data);
+	CreateNative("FF2Data.GetArgI", NativeOld_FF2DataArgI);
+	CreateNative("FF2Data.GetArgF", NativeOld_FF2DataArgF);
+	CreateNative("FF2Data.GetArgB", NativeOld_FF2DataArgB);
+	CreateNative("FF2Data.GetArgS", NativeOld_FF2DataArgS);
+	CreateNative("FF2Data.HasAbility", NativeOld_FF2DataHasAbility);
+	CreateNative("FF2Data.BossTeam", NativeOld_GetTeam);
+	
 	CreateNative("VSH_IsSaxtonHaleModeMap", NativeOld_VSHIsVSHMap);
 	CreateNative("VSH_IsSaxtonHaleModeEnabled", NativeOld_IsEnabled);
 	CreateNative("VSH_GetSaxtonHaleUserId", NativeOld_VSHGetHale);
@@ -92,7 +115,7 @@ void NativeOld_PluginLoad()
 
 public any NativeOld_IsEnabled(Handle plugin, int params)
 {
-	return true;
+	return (Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1));
 }
 
 public any NativeOld_FF2Version(Handle plugin, int params)
@@ -215,8 +238,12 @@ public any NativeOld_SetBossHealth(Handle plugin, int params)
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
 	{
-		Client(client).Health = GetNativeCell(2);
-		Gamemode_UpdateHUD(GetClientTeam(client));
+		int lastHealth = Client(client).Health;
+		int newHealth = GetNativeCell(2);
+		Client(client).Health = newHealth;
+		
+		Bosses_SetSpeed(client);
+		Gamemode_UpdateHUD(GetClientTeam(client), newHealth > lastHealth);
 	}
 }
 
@@ -234,8 +261,13 @@ public any NativeOld_SetBossMaxHealth(Handle plugin, int params)
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
 	{
-		Client(client).MaxHealth = GetNativeCell(2);
+		int lastHealth = Client(client).MaxHealth;
+		int newHealth = GetNativeCell(2);
+		Client(client).MaxHealth = newHealth;
+		
 		Bosses_UpdateHealth(client);
+		Bosses_SetSpeed(client);
+		Gamemode_UpdateHUD(GetClientTeam(client), (newHealth > lastHealth && Client(client).Lives > 1));
 	}
 }
 
@@ -253,8 +285,13 @@ public any NativeOld_SetBossLives(Handle plugin, int params)
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
 	{
-		Client(client).Lives = GetNativeCell(2);
-		Gamemode_UpdateHUD(GetClientTeam(client));
+		int lastLives = Client(client).Lives;
+		int newLives = GetNativeCell(2);
+		SetEntityHealth(client, GetClientHealth(client) - ((newLives - lastLives) * Client(client).MaxHealth));
+		Client(client).Lives = newLives;
+		
+		Bosses_SetSpeed(client);
+		Gamemode_UpdateHUD(GetClientTeam(client), newLives > lastLives);
 	}
 }
 
@@ -273,6 +310,8 @@ public any NativeOld_SetBossMaxLives(Handle plugin, int params)
 	if(client != -1)
 	{
 		Client(client).MaxLives = GetNativeCell(2);
+		
+		Bosses_SetSpeed(client);
 		Gamemode_UpdateHUD(GetClientTeam(client));
 	}
 }
@@ -341,26 +380,29 @@ public any NativeOld_GetRageDist(Handle plugin, int params)
 public any NativeOld_HasAbility(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(GetNativeCell(1));
-	if(client == -1 || !Client(client).IsBoss)
-		return false;
-	
-	char buffer1[64];
-	GetNativeString(3, buffer1, sizeof(buffer1));
-	ConfigMap cfg = Client(client).Cfg.GetSection(buffer1);
-	if(!cfg)
-		return false;
-	
-	GetNativeString(2, buffer1, sizeof(buffer1));
-	if(buffer1[0])
+	if(client != -1)
 	{
-		SplitString(buffer1, ".smx", buffer1, sizeof(buffer1));
-		
-		char buffer2[64];
-		cfg.Get("plugin_name", buffer2, sizeof(buffer2));
-		if(buffer2[0] && !StrEqual(buffer1, buffer2))
-			return false;
+		char buffer1[64];
+		GetNativeString(3, buffer1, sizeof(buffer1));
+		ConfigMap cfg = Client(client).Cfg.GetSection(buffer1);
+		if(cfg)
+		{
+			GetNativeString(2, buffer1, sizeof(buffer1));
+			if(buffer1[0])
+			{
+				SplitString(buffer1, ".smx", buffer1, sizeof(buffer1));
+				
+				char buffer2[64];
+				cfg.Get("plugin_name", buffer2, sizeof(buffer2));
+				if(buffer2[0] && !StrEqual(buffer1, buffer2))
+					return false;
+			}
+			
+			return true;
+		}
 	}
-	return true;
+	
+	return false;
 }
 
 public any NativeOld_DoAbility(Handle plugin, int params)
@@ -588,7 +630,7 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 			return ThrowNativeError(SP_ERROR_INDEX, "Invalid index %d", index);
 		
 		ConfigMap cfg;
-		if(GetNativeCell(2))
+		if(params < 2 || GetNativeCell(2))
 		{
 			cfg = Bosses_GetConfig(index);
 		}
@@ -904,7 +946,7 @@ public any NativeOld_ChooseBoss(Handle plugin, int params)
 
 public any NativeOld_VSHIsVSHMap(Handle plugin, int params)
 {
-	return false;
+	return Enabled;
 }
 
 public any NativeOld_VSHGetHale(Handle plugin, int params)
@@ -925,7 +967,12 @@ public any NativeOld_VSHGetTeam(Handle plugin, int params)
 
 public any NativeOld_VSHGetSpecial(Handle plugin, int params)
 {
-	return 0;
+	int special;
+	int client = FindClientOfBossIndex(0);
+	if(client != -1)
+		Client(client).Cfg.GetInt("special", special);
+	
+	return special;
 }
 
 public any NativeOld_VSHGetHealth(Handle plugin, int params)
@@ -941,7 +988,7 @@ public any NativeOld_VSHGetHealthMax(Handle plugin, int params)
 {
 	int client = FindClientOfBossIndex(0);
 	if(client != -1)
-		return Client(client).MaxHealth;
+		return Client(client).MaxHealth*Client(client).MaxLives;
 	
 	return 0;
 }
@@ -960,4 +1007,130 @@ public any NativeOld_VSHGetRoundState(Handle plugin, int params)
 			return 1;
 	}
 	return 2;
+}
+
+static char AbilityCache[13][64];
+static char PluginCache[13][64];
+
+public any NativeOld_FF2Data(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	if(boss < 0 || boss > 12)
+		return ThrowNativeError(SP_ERROR_INDEX, "Invalid index %d", boss);
+	
+	GetNativeString(3, AbilityCache[boss], sizeof(AbilityCache[]));
+	GetNativeString(2, PluginCache[boss], sizeof(PluginCache[]));
+	if(PluginCache[boss][0])
+		SplitString(PluginCache[boss], ".smx", PluginCache[boss], sizeof(PluginCache[]));
+	
+	return boss;
+}
+
+public any NativeOld_FF2DataBoss(Handle plugin, int params)
+{
+	return GetNativeCell(1);
+}
+
+public any NativeOld_FF2DataClient(Handle plugin, int params)
+{
+	return FindClientOfBossIndex(GetNativeCell(1));
+}
+
+public any NativeOld_FF2DataArgI(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	int value = GetNativeCell(3);
+	if(boss >= 0 && boss < 13)
+	{
+		int client = FindClientOfBossIndex(boss);
+		if(client != -1)
+		{
+			char arg[64];
+			GetNativeString(2, arg, sizeof(arg));
+			Bosses_GetArgInt(client, AbilityCache[boss], arg, value, GetNativeCell(4));
+		}
+	}
+	return value;
+}
+
+public any NativeOld_FF2DataArgF(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	float value = GetNativeCell(3);
+	int client = FindClientOfBossIndex(boss);
+	if(boss >= 0 && boss < 13)
+	{
+		if(client != -1)
+		{
+			char arg[64];
+			GetNativeString(2, arg, sizeof(arg));
+			Bosses_GetArgFloat(client, AbilityCache[boss], arg, value);
+		}
+	}
+	return value;
+}
+
+public any NativeOld_FF2DataArgB(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	bool value = GetNativeCell(3);
+	if(boss >= 0 && boss < 13)
+	{
+		int client = FindClientOfBossIndex(boss);
+		if(client != -1)
+		{
+			char arg[64];
+			GetNativeString(2, arg, sizeof(arg));
+			Bosses_GetArgBool(client, AbilityCache[boss], arg, value);
+		}
+	}
+	return value;
+}
+
+public any NativeOld_FF2DataArgS(Handle plugin, int params)
+{
+	int size = GetNativeCell(4);
+	char[] buffer = new char[size];
+	
+	int boss = GetNativeCell(1);
+	if(boss >= 0 && boss < 13)
+	{
+		int client = FindClientOfBossIndex(boss);
+		if(client != -1)
+		{
+			char arg[64];
+			GetNativeString(2, arg, sizeof(arg));
+			Bosses_GetArgString(client, AbilityCache[boss], arg, buffer, size);
+		}
+	}
+	
+	SetNativeString(3, buffer, size, _, boss);
+	return boss;
+}
+
+public any NativeOld_FF2DataHasAbility(Handle plugin, int params)
+{
+	int boss = GetNativeCell(1);
+	if(boss >= 0 && boss < 13)
+	{
+		int client = FindClientOfBossIndex(boss);
+		if(client != -1)
+		{
+			ConfigMap cfg = Client(client).Cfg.GetSection(AbilityCache[boss]);
+			if(cfg)
+			{
+				if(PluginCache[boss][0])
+				{
+					char buffer[64];
+					cfg.Get("plugin_name", buffer, sizeof(buffer));
+					if(buffer[0] && !StrEqual(buffer, PluginCache[boss]))
+						return false;
+				}
+				
+				return true;
+			}
+		}
+	}
+	
+	return false;
 }

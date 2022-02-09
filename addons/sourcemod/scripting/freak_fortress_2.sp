@@ -31,17 +31,11 @@
 #define MINOR_REVISION	11
 #define STABLE_REVISION	0
 
-#define CHANGELOG_URL	"https://batfoxkid.github.io/Freak-Fortress-2-Rewrite"
+#define GITHUB_URL	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
 #define FAR_FUTURE		100000000.0
 #define MAXENTITIES		2048
 #define MAXTF2PLAYERS	36
-
-#define HEALTHBAR_CLASS		"monster_resource"
-#define HEALTHBAR_PROPERTY	"m_iBossHealthPercentageByte"
-#define HEALTHBAR_COLOR		"m_iBossState"
-#define HEALTHBAR_MAX		255
-#define MONOCULUS			"eyeball_boss"
 
 #define TFTeam_Unassigned	0
 #define TFTeam_Spectator	1
@@ -99,6 +93,28 @@ enum TFStatType_t
 	TFSTAT_TOTAL
 };
 
+enum
+{
+	WINREASON_NONE = 0,
+	WINREASON_ALL_POINTS_CAPTURED,
+	WINREASON_OPPONENTS_DEAD,
+	WINREASON_FLAG_CAPTURE_LIMIT,
+	WINREASON_DEFEND_UNTIL_TIME_LIMIT,
+	WINREASON_STALEMATE,
+	WINREASON_TIMELIMIT,
+	WINREASON_WINLIMIT,
+	WINREASON_WINDIFFLIMIT,
+	WINREASON_RD_REACTOR_CAPTURED,
+	WINREASON_RD_CORES_COLLECTED,
+	WINREASON_RD_REACTOR_RETURNED,
+	WINREASON_PD_POINTS,
+	WINREASON_SCORED,
+	WINREASON_STOPWATCH_WATCHING_ROUNDS,
+	WINREASON_STOPWATCH_WATCHING_FINAL_ROUND,
+	WINREASON_STOPWATCH_PLAYING_ROUNDS,
+	WINREASON_CUSTOM_OUT_OF_TIME
+};
+
 enum SectionType
 {
 	Section_Unknown = 0,
@@ -149,18 +165,20 @@ ConVar CvarBossSewer;
 ConVar CvarHealthBar;
 ConVar CvarBossTriple;
 ConVar CvarBossCrits;
+ConVar CvarBossHealing;
 ConVar CvarBossKnockback;
 ConVar CvarPrefBlacklist;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
 ConVar CvarPreroundTime;
+ConVar CvarBonusRoundTime;
 ConVar CvarTournament;
 
 int PlayersAlive[4];
 int Charset;
 bool Enabled;
-bool RoundActive;
+int RoundStatus;
 bool PluginsEnabled;
 Handle PlayerHud;
 Handle ThisPlugin;
@@ -319,6 +337,7 @@ public void OnClientDisconnect(int client)
 	Bosses_ClientDisconnect(client);
 	Database_ClientDisconnect(client);
 	Events_CheckAlivePlayers(client);
+	Music_ClientDisconnect(client);
 	
 	Client(client).ResetByAll();
 }

@@ -267,7 +267,9 @@ methodmap Client
 		public get()
 		{
 			int health = 1;
-			this.Cfg.GetInt("maxhealth", health);
+			if(!this.Cfg.GetInt("maxhealth", health) || health < 1)
+				health = SDKCall_GetMaxHealth(view_as<int>(this));
+			
 			return health;
 		}
 		public set(int health)
@@ -285,13 +287,7 @@ methodmap Client
 			{
 				int lives = this.Lives;
 				if(lives > 1)
-				{
-					int maxhealth;
-					if(!this.Cfg.GetInt("maxhealth", maxhealth))
-						maxhealth = GetEntProp(view_as<int>(this), Prop_Data, "m_iMaxHealth");
-					
-					health += maxhealth * (lives - 1);
-				}
+					health += this.MaxHealth * (lives - 1);
 			}
 			return health;
 		}
@@ -302,13 +298,7 @@ methodmap Client
 			{
 				int lives = this.Lives;
 				if(lives > 1)
-				{
-					int maxhealth;
-					if(!this.Cfg.GetInt("maxhealth", maxhealth))
-						maxhealth = GetEntProp(view_as<int>(this), Prop_Data, "m_iMaxHealth");
-					
-					health -= maxhealth * (lives - 1);
-				}
+					health -= this.MaxHealth * (lives - 1);
 			}
 			SetEntityHealth(view_as<int>(this), health);
 		}

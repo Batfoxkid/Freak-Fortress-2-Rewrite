@@ -1,7 +1,10 @@
 /*
 	void SDKHook_PluginStart()
 	void SDKHook_HookClient(int client)
+	void SDKHook_BossCreated(int client)
 */
+
+static char SoundCache[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
 
 void SDKHook_PluginStart()
 {
@@ -13,6 +16,11 @@ void SDKHook_HookClient(int client)
 	SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
 	//SDKHook(client, SDKHook_SDKHook_TakeDamageAlive, SDKHook_TakeDamageAlive);
+}
+
+void SDKHook_BossCreated(int client)
+{
+	SoundCache[client][0] = 0;
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -191,7 +199,6 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 			}
 			else
 			{
-				ScaleVector(damageForce, 1.3 - (Client(victim).Health / Client(victim).MaxHealth / Client(victim).MaxLives));
 				Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
 			}
 			return Plugin_Changed;
@@ -333,14 +340,19 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 		
 		if(Client(client).IsBoss && !Client(entity).Speaking)
 		{
-			SoundEnum sound;
+			static SoundEnum sound;
 			sound.Entity = entity;
 			sound.Channel = channel;
 			sound.Level = level;
 			sound.Flags = flags;
 			sound.Volume = volume;
 			sound.Pitch = pitch;
-			if(Bosses_GetRandomSound(client, "catch_replace", sound, sample) || Bosses_GetRandomSound(client, "catch_phrase", sound))
+			
+			bool found = StrEqual(SoundCache[client], sample);
+			if(!found)
+				strcopy(SoundCache[client], sizeof(SoundCache[]), sample);
+			
+			if(found || Bosses_GetRandomSound(client, "catch_replace", sound, sample) || Bosses_GetRandomSound(client, "catch_phrase", sound))
 			{
 				int[] clients2 = new int[numClients];
 				int amount;

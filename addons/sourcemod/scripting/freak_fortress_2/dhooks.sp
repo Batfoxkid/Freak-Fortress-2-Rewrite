@@ -9,6 +9,7 @@
 static DynamicHook GetCaptureValue;
 static DynamicHook RoundRespawn;
 static DynamicHook ForceRespawn;
+static DynamicHook SetWinningTeam;
 static Address CTFGameStats;
 
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
@@ -28,6 +29,7 @@ void DHook_Setup()
 	RoundRespawn = CreateHook(gamedata, "CTeamplayRoundBasedRules::RoundRespawn");
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
+	SetWinningTeam = CreateHook(gamedata, "CTeamplayRules::SetWinningTeam");
 	
 	delete gamedata;
 }
@@ -67,6 +69,9 @@ void DHook_MapStart()
 	
 	if(!RoundRespawn || RoundRespawn.HookGamerules(Hook_Pre, DHook_RoundRespawn) == INVALID_HOOK_ID)
 		HookEvent("teamplay_round_start", DHook_RoundSetup, EventHookMode_PostNoCopy);
+	
+	if(SetWinningTeam)
+		SetWinningTeam.HookGamerules(Hook_Pre, DHook_SetWinningTeam);
 }
 
 void DHook_HookClient(int client)
@@ -177,5 +182,37 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 	if(Client(client).IsBoss && TF2_GetPlayerClass(client) == TFClass_Unknown)
 		TF2_SetPlayerClass(client, TFClass_Medic);
 	
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_SetWinningTeam(DHookParam param)
+{
+	if(CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
+	{
+		int found = -1;
+		for(int i; i<TFTeam_MAX; i++)
+		{
+			if(PlayersAlive[i])
+			{
+				if(found != -1)
+					return MRES_Supercede;
+				
+				found = i;
+			}
+		}
+		
+		if(found == -1)
+		{
+			found = 0;
+		}
+		else if(found < TFTeam_Red)
+		{
+			Gamemode_OverrideWinner(found);
+			found += 2;
+		}
+		
+		param.Set(1, found);
+		return MRES_ChangedOverride;
+	}
 	return MRES_Ignored;
 }

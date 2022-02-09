@@ -163,27 +163,29 @@ void ForwardOld_OnSpecialSelected(int boss, int &special, bool preset)
 
 bool ForwardOld_OnAddQueuePoints(int[] points, int size)
 {
-	int[] points2 = new int[size];
-	
-	for(int i; i < size; i++)
+	int points2[MAXPLAYERS + 1];
+	for(int i = 1; i < size; i++)
 	{
 		points2[i] = points[i];
 	}
 	
 	Action action;
 	Call_StartForward(OnAddQueuePoints);
-	Call_PushArrayEx(points2, size, SM_PARAM_COPYBACK);
+	Call_PushArrayEx(points2, sizeof(points2), SM_PARAM_COPYBACK);
 	Call_Finish(action);
+	
+	if(action > Plugin_Changed)
+		return false;
 	
 	if(action == Plugin_Changed)
 	{
-		for(int i; i < size; i++)
+		for(int i = 1; i < size; i++)
 		{
 			points[i] = points2[i];
 		}
 	}
 	
-	return action > Plugin_Changed;
+	return true;
 }
 
 bool ForwardOld_OnLoadCharacterSet(int &charset, char name[64])

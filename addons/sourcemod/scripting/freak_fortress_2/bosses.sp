@@ -19,11 +19,12 @@
 	any Bosses_GetBossTeam()
 	void Bosses_ShowHud(int client)
 	void Bosses_UseSlot(int client, int low, int high)
-	void Bosses_UseAbility(int client, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
-	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value)
+	void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability, int slot, int buttonmode=0)
+	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base=10)
 	int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, float &value)
 	int Bosses_GetArgString(int client, const char[] ability, const char[] argument, char[] value, int length)
 	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required="")
+	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required="")
 	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
 	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
 	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
@@ -33,7 +34,6 @@ static const char SndExts[][] = { ".mp3", ".wav" };
 
 static ArrayList BossList;
 static ArrayList PackList;
-static StringMap SoundCache[MAXTF2PLAYERS];
 static int DownloadTable;
 
 void Bosses_PluginStart()
@@ -1412,12 +1412,14 @@ void Bosses_Create(int client, int special, int team)
 		DeleteCfg(Client(client).Cfg);
 	
 	Client(client).Cfg = cfg.Clone(ThisPlugin);
+	Client(client).Cfg.SetInt("special", special);
 	
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);
 	
 	Events_CheckAlivePlayers(_, false);
 	EnableSubplugins();
+	SDKHook_BossCreated(client);
 	
 	int i;
 	bool value = CvarSpecTeam.BoolValue;
@@ -1439,9 +1441,12 @@ void Bosses_Create(int client, int special, int team)
 		
 		if(!Client(client).Cfg.GetInt("knockback", i))
 			Client(client).Cfg.SetInt("knockback", CvarBossKnockback.IntValue);
+		
+		if(!Client(client).Cfg.GetInt("healing", i))
+			Client(client).Cfg.SetInt("healing", CvarBossHealing.IntValue);
 	}
 	
-	if((!Enabled || RoundActive) && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
+	if((!Enabled || RoundStatus == 1) && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
 	
 	TF2_RegeneratePlayer(client);
@@ -1635,7 +1640,7 @@ static void EquipBoss(int client, bool weapons)
 					bool override = (cfg.GetInt("override", kills) && kills);
 					
 					kills = -1;
-					if(!cfg.GetInt("rank", kills) && level != -1 && !override)
+					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
 						kills = GetRandomInt(0, 20);
 					
 					if(kills >= 0)
@@ -1762,15 +1767,15 @@ static void EquipBoss(int client, bool weapons)
 						
 						if(!wearable)
 						{
+							if(cfg.GetInt("clip", level))
+								SetEntProp(entity, Prop_Data, "m_iClip1", level);
+							
 							if(cfg.GetInt("ammo", level))
 							{
 								int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
 								if(type >= 0)
 									SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
 							}
-							
-							if(cfg.GetInt("clip", level))
-								SetEntProp(entity, Prop_Data, "m_iClip1", level);
 							
 							if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
 							{
@@ -1836,6 +1841,7 @@ static void EquipBoss(int client, bool weapons)
 	
 	Bosses_UpdateHealth(client);
 	Bosses_SetSpeed(client);
+	Gamemode_UpdateHUD(GetClientTeam(client));
 }
 
 void Bosses_UpdateHealth(int client)
@@ -1861,8 +1867,10 @@ void Bosses_UpdateHealth(int client)
 		
 		TF2Attrib_SetByDefIndex(client, 26, float(maxhealth-defaul));
 	}
-	
-	Gamemode_UpdateHUD(GetClientTeam(client));
+	else
+	{
+		TF2Attrib_SetByDefIndex(client, 26, 0.0);
+	}
 }
 
 void Bosses_SetSpeed(int client)
@@ -1891,9 +1899,14 @@ void Bosses_SetSpeed(int client)
 				defaul = 320.0;
 		}
 		
-		maxspeed += 70.0 - (70.0 * (Client(client).Health / Client(client).MaxHealth / Client(client).MaxLives));
+		// Total Health / (This Life Max Health + Other Lives Max Health)
+		maxspeed += 70.0 - (70.0 * Client(client).Health / (SDKCall_GetMaxHealth(client) + (Client(client).MaxHealth * (Client(client).MaxLives - 1))));
 		TF2Attrib_SetByDefIndex(client, 442, maxspeed/defaul);
 		SDKCall_SetSpeed(client);
+	}
+	else
+	{
+		TF2Attrib_SetByDefIndex(client, 442, 1.0);
 	}
 }
 
@@ -1942,7 +1955,10 @@ void Bosses_Remove(int client)
 		
 		TF2_RemoveAllItems(client);
 		if(IsPlayerAlive(client))
+		{
+			SetEntityHealth(client, 1);
 			TF2_RegeneratePlayer(client);
+		}
 	}
 }
 
@@ -1958,17 +1974,11 @@ any Bosses_GetBossTeam()
 
 void Bosses_PlayerRunCmd(int client, int buttons)
 {
-	if((!Enabled || RoundActive) && IsPlayerAlive(client))
+	if((!Enabled || RoundStatus == 1) && Client(client).IsBoss && IsPlayerAlive(client))
 	{
 		float time = GetGameTime();
 		if(Client(client).PassiveAt <= time)
 		{
-			if(SoundCache[client])
-			{
-				delete SoundCache[client];
-				SoundCache[client] = null;
-			}
-			
 			Client(client).PassiveAt = time + 0.2;
 			Bosses_UseSlot(client, 1, 3);
 		}
@@ -1997,15 +2007,25 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 				if(Client(client).RageDamage < 99999.0)
 				{
 					float rage = Client(client).GetCharge(0);
-					if(rage >= Client(client).RageMin)
+					float ragemin = Client(client).RageMin;
+					if(rage >= ragemin)
 					{
 						SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
-						ShowSyncHudText(client, PlayerHud, "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
+						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
 					}
 					else
 					{
 						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
-						ShowSyncHudText(client, PlayerHud, "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+					}
+					
+					if(Client(client).RageMode == 2 && rage < ragemin)
+					{
+						ShowSyncHudText(client, PlayerHud, buffer);
+					}
+					else
+					{
+						ShowSyncHudText(client, PlayerHud, "%s%t", buffer, "Boss Rage Medic");
 					}
 				}
 				else if(buffer[1])
@@ -2076,16 +2096,42 @@ void Bosses_UseSlot(int client, int low, int high)
 	delete snap;
 }
 
-void Bosses_UseAbility(int client, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
+void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability, int slot, int buttonmode=0)
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(cfg)
 	{
-		if(plugin[0])
+		char buffer1[64];
+		if(plugin[0] && cfg.Get("plugin_name", buffer1, sizeof(buffer1)) && !StrEqual(buffer1, plugin))
+			return;
+		
+		if(cfg.Get("life", buffer1, sizeof(buffer1)))
 		{
-			char buffer[64];
-			cfg.Get("plugin_name", buffer, sizeof(buffer));
-			if(buffer[0] && !StrEqual(buffer, plugin))
+			bool found;
+			int life = Client(client).Lives;
+			int add, current;
+			char buffer2[12];
+			do
+			{
+				add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
+				found = add != -1;
+				if(found)
+				{
+					current += add;
+				}
+				else
+				{
+					strcopy(buffer2, sizeof(buffer2), buffer1[current]);
+				}
+				
+				if(StringToInt(buffer2) == life)
+				{
+					found = true;
+					break;
+				}
+			} while(found);
+			
+			if(!found)
 				return;
 		}
 		
@@ -2201,13 +2247,13 @@ public Action Bosses_UseBossCharge(Handle timer, DataPack data)
 	return Plugin_Continue;
 }
 
-int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value)
+int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base=10)
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(!cfg)
 		return 0;
 	
-	return cfg.GetInt(argument, value);
+	return cfg.GetInt(argument, value, base);
 }
 
 int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, float &value)
@@ -2217,6 +2263,15 @@ int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, 
 		return 0;
 	
 	return cfg.GetFloat(argument, value);
+}
+
+int Bosses_GetArgBool(int client, const char[] ability, const char[] argument, bool &value)
+{
+	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
+	if(!cfg)
+		return 0;
+	
+	return cfg.GetBool(argument, value, false);
 }
 
 int Bosses_GetArgString(int client, const char[] ability, const char[] argument, char[] value, int length)
@@ -2230,12 +2285,14 @@ int Bosses_GetArgString(int client, const char[] ability, const char[] argument,
 
 int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required="")
 {
-	if(SoundCache[client] && SoundCache[client].GetArray(section, sound, sizeof(sound)))
-		return strlen(sound.Sound);
-	
+	return Bosses_GetRandomSoundCfg(Client(client).Cfg, section, sound, required);
+}
+
+int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sound, const char[] required="")
+{
 	int size;
 	
-	ConfigMap cfg = Client(client).Cfg.GetSection(section);
+	ConfigMap cfg = full.GetSection(section);
 	if(cfg)
 	{
 		StringMapSnapshot snap = cfg.Snapshot();
@@ -2335,7 +2392,7 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 							
 							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 							{
-								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
+								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
 							}
 							else
@@ -2364,7 +2421,7 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 							{
 								if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 								{
-									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
+									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 										size = strlen(sound.Sound);
 								}
 								else
@@ -2409,7 +2466,7 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 								
 								if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
 								{
-									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? client : sound.Entity))
+									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 										size = strlen(sound.Sound);
 								}
 								else
@@ -2426,13 +2483,9 @@ int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, con
 		}
 	}
 	
-	if(!SoundCache[client])
-		SoundCache[client] = new StringMap();
-	
 	if(!size)
 		sound.Sound[0] = 0;
 	
-	SoundCache[client].SetArray(section, sound, sizeof(sound));
 	return size;
 }
 
@@ -2451,7 +2504,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	
 	if(sound.Time > 0)
 	{
-		Music_PlaySong(clients, numClients, sound.Sound, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+		Music_PlaySong(clients, numClients, sound.Sound, boss, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
 	}
 	else
 	{

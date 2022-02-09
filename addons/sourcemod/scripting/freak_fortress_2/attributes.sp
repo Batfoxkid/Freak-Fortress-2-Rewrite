@@ -722,7 +722,7 @@ public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
 			hype = 0.0;
 		
 		SetEntPropFloat(client, Prop_Send, "m_flHypeMeter", hype);
-		if(Enabled || RoundActive)
+		if(Enabled || RoundStatus == 1)
 			return Plugin_Continue;
 	}
 	return Plugin_Stop;

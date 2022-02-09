@@ -10,11 +10,12 @@ void Events_PluginStart()
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_PostNoCopy);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
+	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
-	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 }
 
 public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -26,7 +27,7 @@ public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast
 
 public void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-	Gamemode_RoundEnd();
+	Gamemode_RoundEnd(event.GetInt("team"));
 }
 
 public Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)
@@ -83,6 +84,13 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 			Bosses_Equip(client);
 	}
 	return Plugin_Continue;
+}
+
+public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("patient"));
+	if(Client(client).IsBoss)
+		Gamemode_UpdateHUD(GetClientTeam(client), true);
 }
 
 public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -207,7 +215,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 
 public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	if(!Enabled || RoundActive)
+	if(!Enabled || RoundStatus == 1)
 	{
 		int userid = event.GetInt("userid");
 		int victim = GetClientOfUserId(userid);
@@ -378,7 +386,7 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
 	int team = Bosses_GetBossTeam();
 	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
 	
-	if(alive && RoundActive && !LastMann && TotalPlayersAlive() == 2)
+	if(alive && RoundStatus == 1 && !LastMann && TotalPlayersAlive() == 2)
 	{
 		LastMann = true;
 		

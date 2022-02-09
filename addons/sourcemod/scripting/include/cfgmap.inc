@@ -451,16 +451,12 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		bool result = this.GetVal(key_path, val);
 		if( result && val.tag==KeyValType_Value ) {
-			if( simple ) {
-				b = StringToInt(val.data) != 0;
+			if( !simple && ( !strcmp(val.data, "true", false) || !strcmp(val.data, "1", false) )) {
+				b = true;
+			} else if( !simple && ( !strcmp(val.data, "false", false) || !strcmp(val.data, "0", false) )) {
+				b = false;
 			} else {
-				if( !strcmp(val.data, "true", false) || !strcmp(val.data, "1", false) ) {
-					b = true;
-				} else if( !strcmp(val.data, "false", false) || !strcmp(val.data, "0", false) ) {
-					b = false;
-				} else {
-					return 0;
-				}
+				b = StringToInt(val.data) != 0;
 			}
 			return val.size - 1;
 		}

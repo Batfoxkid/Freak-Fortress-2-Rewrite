@@ -590,6 +590,7 @@ stock void ShowGameText(int client, const char[] icon="leaderboard_streak", int 
 		char message[512];
 		SetGlobalTransTarget(client);
 		VFormat(message, sizeof(message), buffer, 5);
+		CRemoveTags(message, sizeof(message));
 		
 		bf.WriteString(message);
 		bf.WriteString(icon);
@@ -794,20 +795,23 @@ stock int TF2_GetClassnameSlot(const char[] classname, bool econ=false)
 stock void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();
-	if(client<1 || client>MaxClients)
-	{
-		ThrowError("Invalid client index %i", client);
-	}
-	if(!IsClientInGame(client))
-	{
-		ThrowError("Client %i is not in game", client);
-	}
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
 	Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
 	VFormat(buffer2, sizeof(buffer2), buffer, 3);
 	CReplaceColorCodes(buffer2);
 	CSendMessage(client, buffer2);
+}
+
+stock void FPrintToChatEx(int client, int author, const char[] message, any ...)
+{
+	CCheckTrie();
+	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
+	SetGlobalTransTarget(client);
+	Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
+	VFormat(buffer2, sizeof(buffer2), buffer, 4);
+	CReplaceColorCodes(buffer2, author);
+	CSendMessage(client, buffer2, author);
 }
 
 stock void FPrintToChatAll(const char[] message, any ...)
@@ -821,6 +825,7 @@ stock void FPrintToChatAll(const char[] message, any ...)
 			CSkipList[i] = false;
 			continue;
 		}
+		
 		SetGlobalTransTarget(i);
 		Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
 		VFormat(buffer2, sizeof(buffer2), buffer, 2);

@@ -16,7 +16,7 @@ void Command_PluginStart()
 
 public Action Command_Voicemenu(int client, const char[] command, int args)
 {
-	if(client && args == 2 && IsPlayerAlive(client) && (!Enabled || RoundActive))
+	if(client && args == 2 && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
 	{
 		char arg[4];
 		GetCmdArg(1, arg, sizeof(arg));
@@ -61,7 +61,7 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 {
 	if(Enabled)
 	{
-		if((Client(client).IsBoss || Client(client).Minion) && !CvarBossSewer.BoolValue)
+		if((Client(client).IsBoss || Client(client).Minion) && (RoundStatus == 0 || (RoundStatus == 1 && !CvarBossSewer.BoolValue)))
 			return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -157,7 +157,7 @@ static Action SwapTeam(int client, int &newTeam)
 	if(Enabled)
 	{
 		// No suicides
-		if(!CvarBossSewer.BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).Minion))
+		if(RoundStatus != 2 && !CvarBossSewer.BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).Minion))
 			return Plugin_Handled;
 		
 		// Prevent going to spectate with cvar disabled
@@ -229,7 +229,7 @@ public Action Command_JoinClass(int client, const char[] command, int args)
 
 public Action Command_EurekaTeleport(int client, const char[] command, int args)
 {
-	if(Enabled && RoundActive && IsPlayerAlive(client))
+	if(Enabled && RoundStatus == 1 && IsPlayerAlive(client))
 	{
 		char buffer[4];
 		GetCmdArg(1, buffer, sizeof(buffer));

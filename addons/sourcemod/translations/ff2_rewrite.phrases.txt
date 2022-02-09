@@ -5,6 +5,47 @@
 		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines"
 	}
 	
+	"Boss Spawned As"
+	{
+		"#format"	"{1:N},{2:s},{3:d}"
+		"en"		"{teamcolor}{1} {default}became {olive}{2} {default}with {olive}{3} {default}HP."
+	}
+	"Boss Spawned As Lives"
+	{
+		"#format"	"{1:N},{2:s},{3:d},{4:d}"
+		"en"		"{teamcolor}{1} {default}became {olive}{2} {default}with {olive}{3} (x{4}) {default}HP."
+	}
+	"Boss Had Health Left"
+	{
+		"#format"	"{1:s},{2:N},{3:d},{4:d}"
+		"en"		"{olive}{1} {default}({teamcolor}{2}{default}) had {olive}{3} {default}/ {olive}{4} {default}HP left."
+	}
+	"Boss Had Health Left Hud"
+	{
+		"#format"	"{1:s},{2:N},{3:d},{4:d}"
+		"en"		"{1} ({2}) had {3} / {4} HP left."
+	}
+	"Team Had Health Left Hud"
+	{
+		"#format"	"{1:t},{2:s},{3:d}"
+		"en"		"{1} had {2} / {3} HP left."
+	}
+	"Team 0"
+	{
+		"en"		"YLW Team"
+	}
+	"Team 1"
+	{
+		"en"		"GRN Team"
+	}
+	"Team 2"
+	{
+		"en"		"RED Team"
+	}
+	"Team 3"
+	{
+		"en"		"BLU Team"
+	}
 	"Lost Life"
 	{
 		"#format"	"{1:s}"
@@ -28,7 +69,11 @@
 	"Boss Rage Ready"
 	{
 		"#format"	"{1:d}"
-		"en"		"RAGE is ready! {1}%%\nCall for Medic to use."
+		"en"		"RAGE is ready! {1}%%"
+	}
+	"Boss Rage Medic"
+	{
+		"en"		" | Call for Medic"
 	}
 	
 	"Preference Updated"
@@ -211,17 +256,42 @@
 	{
 		"en"		"Unknown Artist"
 	}
-	"Music is now Enabled"
+	"Music Disabled"
 	{
-		"en"		"Boss music is now on"
-	}
-	"Music is now Disabled"
-	{
-		"en"		"Boss music is now off"
+		"en"		"Disabled boss music."
 	}
 	"Music Unknown Arg"
 	{
 		"#format"	"{1:s}"
-		"en"		"Unknown argument '{1}'\nArguments Available: 'on', 'off', 'skip', 'shuffle', 'list'"
+		"en"		"Unknown argument '{1}'\nArguments Available: 'on', 'off', 'next', 'shuffle', 'list'"
+	}
+	"Music Menu"
+	{
+		"en"		"FF2 Music Settings\n "
+	}
+	"Music Boss Pack"
+	{
+		"#format"	"{1:s}"
+		"en"		"Playlist: {1}\n "
+	}
+	"Music Enable"
+	{
+		"en"		"Enable Boss Music"
+	}
+	"Music Disable"
+	{
+		"en"		"Disable Boss Music"
+	}
+	"Music Skip"
+	{
+		"en"		"Play Next Song"
+	}
+	"Music Shuffle"
+	{
+		"en"		"Play Random Song"
+	}
+	"Music List"
+	{
+		"en"		"View Playlist"
 	}
 }

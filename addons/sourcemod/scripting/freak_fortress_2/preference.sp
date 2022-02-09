@@ -110,19 +110,28 @@ int Preference_PickBoss(int client, int team=-1)
 		length = list.Length;
 		if(length)
 		{
-			int blacklist = CvarPrefBlacklist.IntValue;
-			if(BossListing[client] && blacklist != 0)
+			int count = CvarPrefBlacklist.IntValue;
+			if(BossListing[client] && count != 0)
 			{
-				ArrayList list2 = new ArrayList();
+				ArrayList list2 = count > 0 ? list.Clone() : new ArrayList();
 				
 				bool found;
 				int length2 = BossListing[client].Length;
 				for(int i; i<length2; i++)
 				{
 					special = BossListing[client].Get(i);
-					if((blacklist > 0 ? (list.FindValue(special) == -1) : (list.FindValue(special) != -1)))
+					int index = count > 0 ? list2.FindValue(special) : list.FindValue(special);
+					if(index != -1)
 					{
-						list2.Push(special);
+						if(count > 0)
+						{
+							list2.Erase(index);
+						}
+						else
+						{
+							list2.Push(special);
+						}
+						
 						found = true;
 					}
 				}
@@ -133,15 +142,43 @@ int Preference_PickBoss(int client, int team=-1)
 					list = list2;
 					length = list2.Length;
 				}
+				else
+				{
+					delete list2;
+				}
 			}
 			
 			if(length > 1 && Client(client).GetLastPlayed(buffer, sizeof(buffer)))
 			{
-				blacklist = list.FindValue(Bosses_GetByName(buffer, true, _, _, "filename"));
-				if(blacklist != -1)
+				count = list.FindValue(Bosses_GetByName(buffer, true, _, _, "filename"));
+				if(count != -1)
 				{
-					list.Erase(blacklist);
+					list.Erase(count);
 					length--;
+				}
+			}
+			
+			count = 0;
+			int[] bosses = new int[MaxClients];
+			for(int i=1; i<=MaxClients; i++)
+			{
+				if(i != client && Client(i).IsBoss)
+					bosses[count++] = i;
+			}
+			
+			if(length > count)
+			{
+				for(int i; i<count; i++)
+				{
+					if(Client(bosses[i]).Cfg.GetInt("special", special))
+					{
+						special = list.FindValue(special);
+						if(special != -1)
+						{
+							list.Erase(special);
+							length--;
+						}
+					}
 				}
 			}
 			

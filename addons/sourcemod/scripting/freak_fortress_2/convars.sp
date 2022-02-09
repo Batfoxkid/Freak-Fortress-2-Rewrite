@@ -27,6 +27,7 @@ void ConVar_PluginStart()
 	CvarHealthBar = CreateConVar("ff2_game_healthbar", "3", "If a health bar and/or text will be shown, 1 = Health Bar, 2 = Health Display, 3 = Both", _, true, 0.0, true, 3.0);
 	CvarBossTriple = CreateConVar("ff2_boss_triple", "1", "If v1 bosses will deal extra damage versus players by default", _, true, 0.0, true, 1.0);
 	CvarBossCrits = CreateConVar("ff2_boss_crits", "0", "If v1 bosses can perform random crits by default", _, true, 0.0, true, 1.0);
+	CvarBossHealing = CreateConVar("ff2_boss_healing", "0", "If v1 bosses can be healed by default, 1 = Self Healing Only, 2 = Other Healing Only, 3 = Both", _, true, 0.0, true, 3.0);
 	CvarBossKnockback = CreateConVar("ff2_boss_knockback", "0", "If v1 bosses can perform self-knockback by default, 2 will also allow self-damage", _, true, 0.0, true, 2.0);
 	CvarPrefBlacklist = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", _, true, 0.0);
 	
@@ -39,6 +40,7 @@ void ConVar_PluginStart()
 	CvarAllowSpectators = FindConVar("mp_allowspectators");
 	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");
 	CvarPreroundTime = FindConVar("tf_arena_preround_time");
+	CvarBonusRoundTime = FindConVar("mp_bonusroundtime");
 	CvarTournament = FindConVar("mp_tournament");
 	CvarTournament.Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 	
