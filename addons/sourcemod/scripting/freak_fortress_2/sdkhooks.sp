@@ -39,6 +39,11 @@ public void OnEntityCreated(int entity, const char[] classname)
 	{
 		SDKHook(entity, SDKHook_Spawn, SDKHook_TimerSpawn);
 	}
+	else
+	{
+		DHook_EntityCreated(entity, classname);
+		Weapons_EntityCreated(entity, classname);
+	}
 }
 
 public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
@@ -65,6 +70,8 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 		{
 			if(IsInvuln(victim))
 				return Plugin_Continue;
+			
+			Weapons_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
 			
 			switch(damagecustom)
 			{
@@ -124,10 +131,10 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 					{
 						if(Client(attacker).IsBoss)
 						{
-							if(!Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
-								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+							if(!Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						}
-						else if(!Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+						else if(!Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
@@ -184,7 +191,7 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 					
 					event.Cancel();
 					
-					Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+					Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					return Plugin_Changed;
 				}
 			}
@@ -315,6 +322,8 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 					Attributes_OnHitBoss(attacker, victim, damage, weapon, damagecustom);
 			}
 		}
+		
+		Bosses_SetSpeed(victim);
 	}
 }
 

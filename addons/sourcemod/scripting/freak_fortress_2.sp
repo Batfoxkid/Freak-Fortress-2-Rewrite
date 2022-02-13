@@ -157,6 +157,8 @@ enum struct SoundEnum
 	}
 }
 
+public const char SndExts[][] = { ".mp3", ".wav" };
+
 ConVar CvarCharset;
 ConVar CvarDebug;
 ConVar CvarSpecTeam;
@@ -204,6 +206,8 @@ Handle ThisPlugin;
 #include "freak_fortress_2/preference.sp"
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
+#include "freak_fortress_2/tf2utils.sp"
+#include "freak_fortress_2/weapons.sp"
 
 public Plugin myinfo =
 {
@@ -225,6 +229,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	ForwardOld_PluginLoad();
 	NativeOld_PluginLoad();
+	TF2U_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -246,7 +251,9 @@ public void OnPluginStart()
 	Music_PluginStart();
 	Preference_PluginStart();
 	SDKHook_PluginStart();
+	TF2U_PluginStart();
 	TFED_PluginStart();
+	Weapons_PluginStart();
 	
 	for(int i=1; i<=MaxClients; i++)
 	{
@@ -260,6 +267,7 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
+	Configs_AllPluginsLoaded();
 	Database_Setup();
 	DHook_Setup();
 	SDKCall_Setup();
@@ -267,12 +275,13 @@ public void OnAllPluginsLoaded()
 
 public void OnMapStart()
 {
-	if(FileExists("sound/saxton_hale/9000.wav", true))
+	/*if(FileExists("sound/saxton_hale/9000.wav", true))
 	{
 		AddFileToDownloadsTable("sound/saxton_hale/9000.wav");
 		PrecacheSound("saxton_hale/9000.wav");
-	}
+	}*/
 	
+	Configs_MapStart();
 	DHook_MapStart();
 	Gamemode_MapStart();
 }
@@ -294,6 +303,8 @@ public void OnConfigsExecuted()
 	
 	if(Enabled)
 		ConVar_Enable();
+	
+	Weapons_ConfigsExecuted();
 }
 
 public void OnMapEnd()
@@ -303,8 +314,7 @@ public void OnMapEnd()
 
 public void OnPluginEnd()
 {
-	OnMapEnd();
-	
+	Bosses_PluginEnd();
 	ConVar_Disable();
 	Database_PluginEnd();
 	DHook_PluginEnd();
@@ -313,12 +323,16 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
+	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
+	Weapons_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
+	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
+	Weapons_LibraryRemoved(name);
 }
 
 public void OnClientAuthorized(int client, const char[] auth)
@@ -345,6 +359,7 @@ public void OnClientDisconnect(int client)
 public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	Bosses_PlayerRunCmd(client, buttons);
+	Gamemode_PlayerRunCmd(client);
 	Music_PlayerRunCmd(client);
 	return Plugin_Continue;
 }

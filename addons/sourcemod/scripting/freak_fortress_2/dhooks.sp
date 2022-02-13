@@ -6,30 +6,41 @@
 	void DHook_UnhookClient(int client)
 */
 
-static DynamicHook GetCaptureValue;
-static DynamicHook RoundRespawn;
 static DynamicHook ForceRespawn;
+static DynamicHook RoundRespawn;
 static DynamicHook SetWinningTeam;
+static DynamicHook GetCaptureValue;
+static DynamicHook ApplyOnInjured;
+static DynamicHook ApplyPostHit;
 static Address CTFGameStats;
+static int DamageTypeOffset = -1;
 
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 
 static int PrefClass;
+static int EffectClass;
+static int KnifeWasChanged = -1;
 
 void DHook_Setup()
 {
 	GameData gamedata = new GameData("ff2");
+	
+	DamageTypeOffset = gamedata.GetOffset("m_bitsDamageType");
+	if(DamageTypeOffset == -1)
+		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
 	
-	RoundRespawn = CreateHook(gamedata, "CTeamplayRoundBasedRules::RoundRespawn");
-	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
+	RoundRespawn = CreateHook(gamedata, "CTeamplayRoundBasedRules::RoundRespawn");
 	SetWinningTeam = CreateHook(gamedata, "CTeamplayRules::SetWinningTeam");
+	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
+	ApplyOnInjured = CreateHook(gamedata, "CTFWeaponBase::ApplyOnInjuredAttributes");
+	ApplyPostHit = CreateHook(gamedata, "CTFWeaponBase::ApplyPostHitEffects");
 	
 	delete gamedata;
 }
@@ -80,6 +91,21 @@ void DHook_HookClient(int client)
 	{
 		ForceRespawnPreHook[client] = ForceRespawn.HookEntity(Hook_Pre, client, DHook_ForceRespawnPre);
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
+	}
+}
+
+void DHook_EntityCreated(int entity, const char[] classname)
+{
+	if(ApplyOnInjured && !StrContains(classname, "tf_weapon_knife"))
+	{
+		ApplyOnInjured.HookEntity(Hook_Pre, entity, DHook_KnifeInjuredPre);
+		ApplyOnInjured.HookEntity(Hook_Post, entity, DHook_KnifeInjuredPost);
+	}
+	
+	if(ApplyPostHit && !StrContains(classname, "tf_weapon_drg_pomson"))
+	{
+		ApplyPostHit.HookEntity(Hook_Pre, entity, DHook_ApplyPostHitPre);
+		ApplyPostHit.HookEntity(Hook_Post, entity, DHook_ApplyPostHitPost);
 	}
 }
 
@@ -187,8 +213,10 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 
 public MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
-	if(CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
+	if(Enabled && RoundStatus == 1 && CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
 	{
+		Events_CheckAlivePlayers();
+		
 		int found = -1;
 		for(int i; i<TFTeam_MAX; i++)
 		{
@@ -213,6 +241,54 @@ public MRESReturn DHook_SetWinningTeam(DHookParam param)
 		
 		param.Set(1, found);
 		return MRES_ChangedOverride;
+	}
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
+{
+	Debug("DHook_KnifeInjuredPre");
+	if(DamageTypeOffset != -1 && !param.IsNull(2) && Client(param.Get(2)).IsBoss)
+	{
+		Address address = view_as<Address>(param.Get(3) + DamageTypeOffset);
+		int damagetype = LoadFromAddress(address, NumberType_Int32);
+		if(!(damagetype & DMG_BURN))
+		{
+			KnifeWasChanged = damagetype;
+			StoreToAddress(address, damagetype | DMG_BURN, NumberType_Int32);
+		}
+	}
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
+{
+	Debug("DHook_KnifeInjuredPost");
+	if(KnifeWasChanged != -1)
+	{
+		StoreToAddress(view_as<Address>(param.Get(3) + DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
+		KnifeWasChanged = -1;
+	}
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ApplyPostHitPre(int entity, DHookParam param)
+{
+	int client = param.Get(2);
+	if(Client(client).IsBoss)
+	{
+		EffectClass = GetEntProp(client, Prop_Send, "m_iClass");
+		SetEntProp(client, Prop_Send, "m_iClass", TFClass_Spy);
+	}
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
+{
+	if(EffectClass != -1)
+	{
+		SetEntProp(param.Get(2), Prop_Send, "m_iClass", EffectClass);
+		EffectClass = -1;
 	}
 	return MRES_Ignored;
 }

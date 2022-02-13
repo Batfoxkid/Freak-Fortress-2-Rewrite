@@ -1,15 +1,25 @@
 /*
 	void Music_PluginStart()
+	void Music_ClearPlaylist()
+	void Music_AddSong(int special, const char[] section, const char[] key)
 	void Music_ClientDisconnect()
 	void Music_RoundStart()
 	void Music_PlayerRunCmd(int client)
 	void Music_PlayNextSong(int client=0)
-	void Music_PlaySong(int[] clients, int numClients, const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
-	void Music_PlaySongToClient(int client, const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
-	void Music_PlaySongToAll(const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+	void Music_PlaySong(int[] clients, int numClients, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+	void Music_PlaySongToClient(int client, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+	void Music_PlaySongToAll(const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
 	void Music_MainMenu(int client)
 */
 
+enum struct MusicEnum
+{
+	int Special;
+	char Section[64];
+	char Key[PLATFORM_MAX_PATH];
+}
+
+static ArrayList Playlist;
 static char CurrentTheme[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
 static int CurrentVolume[MAXTF2PLAYERS];
 static int CurrentSource[MAXTF2PLAYERS];
@@ -19,6 +29,24 @@ static float NextThemeAt[MAXTF2PLAYERS];
 void Music_PluginStart()
 {
 	RegFreakCmd("music", Music_Command, "Freak Fortress 2 Music Menu");
+}
+
+void Music_ClearPlaylist()
+{
+	if(Playlist)
+		delete Playlist;
+	
+	Playlist = new ArrayList(sizeof(MusicEnum));
+}
+
+void Music_AddSong(int special, const char[] section, const char[] key)
+{
+	MusicEnum music;
+	music.Special = special;
+	strcopy(music.Section, sizeof(music.Section), section);
+	strcopy(music.Key, sizeof(music.Key), key);
+	
+	Playlist.PushArray(music);
 }
 
 void Music_ClientDisconnect(int client)
@@ -45,6 +73,7 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 			
 			int boss;
 			SoundEnum sound;
+			sound.Default();
 			if(CurrentSourceType[clients[i]])
 			{
 				ConfigMap cfg = Bosses_GetConfig(CurrentSource[clients[i]]);
@@ -65,7 +94,7 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 			}
 			else
 			{
-				boss = GetClientUserId(CurrentSource[clients[i]]);
+				boss = GetClientOfUserId(CurrentSource[clients[i]]);
 				if(boss)
 				{
 					if(GetClientTeam(boss) == winner)
@@ -100,7 +129,28 @@ void Music_PlayNextSong(int client=0)
 	{
 		NextThemeAt[client] = FAR_FUTURE;
 		
-		if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_bgm"))
+		if(CurrentSourceType[client])
+		{
+			int length = Bosses_GetConfigLength();
+			int start = GetRandomInt(0, length - 1);
+			
+			SoundEnum sound;
+			sound.Default();
+			int i = start;
+			do
+			{
+				if(i == length)
+					i = 0;
+				
+				ConfigMap cfg = Bosses_GetConfig(start);
+				if(cfg && Bosses_GetRandomSoundCfg(cfg, "sound_bgm", sound))
+				{
+					Music_PlaySongToClient(client, sound.Sound, i, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+					return;
+				}
+			} while(++i != start);
+		}
+		else if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_bgm"))
 		{
 			for(int i; i<MaxClients; i++)
 			{
@@ -108,6 +158,10 @@ void Music_PlayNextSong(int client=0)
 				if(boss != -1 && Bosses_PlaySoundToClient(boss, client, "sound_bgm"))
 					return;
 			}
+		}
+		else
+		{
+			return;
 		}
 		
 		Music_PlaySongToClient(client);
@@ -122,7 +176,7 @@ void Music_PlayNextSong(int client=0)
 	}
 }
 
-void Music_PlaySong(const int[] clients, int numClients, const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySong(const int[] clients, int numClients, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
 {
 	for(int i; i<numClients; i++)
 	{
@@ -165,10 +219,9 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 		int[] clients2 = new int[numClients];
 		int amount;
 		
-		int userid = GetClientUserId(boss); // CHANGE
 		for(int i; i<numClients; i++)
 		{
-			if(!Enabled || RoundStatus == 1)
+			if(name[0] || artist[0])
 			{
 				if(!name[0])
 					FormatEx(songName, sizeof(songName), "{default}%T", "Unknown Song", clients[i]);
@@ -185,7 +238,7 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 				strcopy(CurrentTheme[clients[i]], sizeof(CurrentTheme[]), sample2);
 				NextThemeAt[clients[i]] = time;
 				CurrentVolume[clients[i]] = count;
-				CurrentSource[clients[i]] = userid;
+				CurrentSource[clients[i]] = source;
 			}
 		}
 		
@@ -204,14 +257,14 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 	}
 }
 
-void Music_PlaySongToClient(int client, const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySongToClient(int client, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
 {
 	int clients[1];
 	clients[0] = client;
-	Music_PlaySong(clients, 1, sample, boss, name, artist, duration, volume, pitch);
+	Music_PlaySong(clients, 1, sample, source, name, artist, duration, volume, pitch);
 }
 
-void Music_PlaySongToAll(const char[] sample="", int boss=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySongToAll(const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -222,7 +275,7 @@ void Music_PlaySongToAll(const char[] sample="", int boss=0, const char[] name="
 			clients[total++] = client;
 	}
 	
-	Music_PlaySong(clients, total, sample, boss, name, artist, duration, volume, pitch);
+	Music_PlaySong(clients, total, sample, source, name, artist, duration, volume, pitch);
 }
 
 public Action Music_Command(int client, int args)
@@ -234,10 +287,40 @@ public Action Music_Command(int client, int args)
 			char buffer[16];
 			GetCmdArg(1, buffer, sizeof(buffer));
 			
-			if(StrContains(buffer, "on", false) != -1 || StrEqual(buffer, "1") || StrContains(buffer, "enable", false) != -1)
+			if(StrContains(buffer, "#", false) == 0)
+			{
+				int index = StringToInt(buffer[1]);
+				if(index >= 0 && index < Playlist.Length)
+				{
+					MusicEnum music;
+					Playlist.GetArray(index, music);
+					
+					ConfigMap cfg = Bosses_GetConfig(music.Special);
+					if(cfg)
+					{
+						SoundEnum sound;
+						sound.Default();
+						if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+						{
+							CurrentSourceType[client] = true;
+							
+							bool toggle = Client(client).NoMusic;
+							Client(client).NoMusic = false;
+							Music_PlaySongToClient(client, sound.Sound, music.Special, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+							Client(client).NoMusic = toggle;
+						}
+					}
+				}
+				else
+				{
+					FReplyToCommand(client, "%t", "Music Unknown Arg", buffer);
+				}
+			}
+			else if(StrContains(buffer, "on", false) != -1 || StrEqual(buffer, "1") || StrContains(buffer, "enable", false) != -1)
 			{
 				Client(client).NoMusic = false;
-				Music_PlayNextSong(client);
+				if(Enabled && RoundStatus == 1)
+					Music_PlayNextSong(client);
 			}
 			else if(StrContains(buffer, "off", false) != -1 || StrEqual(buffer, "0") || StrContains(buffer, "disable", false) != -1)
 			{
@@ -248,15 +331,63 @@ public Action Music_Command(int client, int args)
 			else if(StrContains(buffer, "skip", false) != -1 || StrContains(buffer, "next", false) != -1)
 			{
 				CurrentSourceType[client] = false;
+				
+				bool toggle = Client(client).NoMusic;
+				Client(client).NoMusic = false;
 				Music_PlayNextSong(client);
+				Client(client).NoMusic = toggle;
 			}
 			else if(StrContains(buffer, "shuffle", false) != -1 || StrContains(buffer, "rand", false) != -1)
 			{
 				CurrentSourceType[client] = true;
+				
+				bool toggle = Client(client).NoMusic;
+				Client(client).NoMusic = false;
 				Music_PlayNextSong(client);
+				Client(client).NoMusic = toggle;
 			}
 			else if(StrContains(buffer, "track", false) != -1 || StrContains(buffer, "list", false) != -1)
 			{
+				if(!client)
+				{
+					MusicEnum music;
+					int length = Playlist.Length;
+					for(int i; i<length; i++)
+					{
+						Playlist.GetArray(i, music);
+						
+						ConfigMap cfg = Bosses_GetConfig(music.Special);
+						if(cfg)
+						{
+							SoundEnum sound;
+							sound.Default();
+							if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+							{
+								IntToString(i, music.Section, sizeof(music.Section));
+								
+								if(!sound.Name[0])
+									Format(sound.Name, sizeof(sound.Name), "%T", "Unknown Song", client);
+								
+								if(!sound.Artist[0])
+									Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
+								
+								int time = RoundToFloor(sound.Time);
+								PrintToServer("#%d %s - %s (%d:%02d)", i, sound.Artist, sound.Name, time / 60, time % 60);
+							}
+						}
+					}
+				}
+				else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+				{
+					DataPack pack = new DataPack();
+					pack.WriteCell(GetClientUserId(client));
+					pack.WriteCell(0);
+					RequestFrame(Music_DisplayTracks, pack);
+				}
+				else
+				{
+					PlaylistMenu(client);
+				}
 			}
 			else
 			{
@@ -280,29 +411,237 @@ void Music_MainMenu(int client)
 {
 	Menu menu = new Menu(Music_MainMenuH);
 	
-	SetGlobalTransTarget(buffer);
+	SetGlobalTransTarget(client);
 	menu.SetTitle("%t", "Music Menu");
 	
-			char buffer[128];
-			if(ToggleMusic[client])
+	char buffer[64];
+	FormatEx(buffer, sizeof(buffer), "%t", Client(client).NoMusic ? "Music Enable" : "Music Disable");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Music Skip");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Music Shuffle");
+	menu.AddItem("", buffer);
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Music List");
+	menu.AddItem("", buffer);
+	
+	menu.ExitButton = true;
+	menu.ExitBackButton = Menu_BackButton(client);
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				Menu_MainMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			switch(choice)
 			{
-				FormatEx(buffer, sizeof(buffer), "%t", "themes_disable");
-				menu.AddItem(buffer, buffer);
-				FormatEx(buffer, sizeof(buffer), "%t", "theme_skip");
-				menu.AddItem(buffer, buffer);
-				FormatEx(buffer, sizeof(buffer), "%t", "theme_shuffle");
-				menu.AddItem(buffer, buffer);
-				if(cvarSongInfo.IntValue >= 0)
+				case 0:
 				{
-					FormatEx(buffer, sizeof(buffer), "%t", "theme_select");
-					menu.AddItem(buffer, buffer);
+					if(Client(client).NoMusic)
+					{
+						Client(client).NoMusic = false;
+						Music_PlayNextSong(client);
+					}
+					else
+					{
+						Client(client).NoMusic = true;
+						Music_PlaySongToClient(client);
+					}
+					
+					Music_MainMenu(client);
+				}
+				case 1:
+				{
+					CurrentSourceType[client] = false;
+					
+					bool toggle = Client(client).NoMusic;
+					Client(client).NoMusic = false;
+					Music_PlayNextSong(client);
+					Client(client).NoMusic = toggle;
+					
+					Music_MainMenu(client);
+				}
+				case 2:
+				{
+					CurrentSourceType[client] = true;
+					
+					bool toggle = Client(client).NoMusic;
+					Client(client).NoMusic = false;
+					Music_PlayNextSong(client);
+					Client(client).NoMusic = toggle;
+					
+					Music_MainMenu(client);
+				}
+				case 3:
+				{
+					PlaylistMenu(client);
 				}
 			}
-			else
+		}
+	}
+}
+
+static void PlaylistMenu(int client, int page=0)
+{
+	Menu menu = new Menu(Music_PlaylistMenuH);
+	
+	menu.SetTitle("%t", "Music Menu");
+	
+	// We're just gonna use special indexes, may later use the actual config
+	
+	int special1 = -1;
+	int special2 = -1;
+	if(Client(client).IsBoss)
+		Client(client).Cfg.GetInt("special", special1);
+	
+	if(special1 == -1 || !ForwardOld_OnMusicPerBoss(client))
+	{
+		for(int i; i<MaxClients; i++)
+		{
+			int boss = FindClientOfBossIndex(i);
+			if(boss != -1 && Client(boss).Cfg.GetInt("special", special2))
+				break;
+		}
+	}
+	
+	menu.AddItem("-1", " --- ", ITEMDRAW_DISABLED);
+	
+	MusicEnum music;
+	int length = Playlist.Length;
+	for(int i; i<length; i++)
+	{
+		Playlist.GetArray(i, music);
+		
+		ConfigMap cfg = Bosses_GetConfig(music.Special);
+		if(cfg)
+		{
+			SoundEnum sound;
+			sound.Default();
+			if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
 			{
-				FormatEx(buffer, sizeof(buffer), "%t", "themes_enable");
-				menu.AddItem(buffer, buffer);
+				IntToString(i, music.Section, sizeof(music.Section));
+				
+				if(!sound.Name[0])
+					Format(sound.Name, sizeof(sound.Name), "%T", "Unknown Song", client);
+				
+				if(!sound.Artist[0])
+					Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
+				
+				int time = RoundToFloor(sound.Time);
+				Format(music.Key, sizeof(music.Key), "%s - %s (%d:%02d)", sound.Artist, sound.Name, time / 60, time % 60);
+				
+				if(music.Special == special1 || music.Special == special2)
+				{
+					menu.InsertItem(0, music.Section, music.Key);
+				}
+				else
+				{
+					menu.AddItem(music.Section, music.Key);
+				}
 			}
-			menu.ExitButton = true;
-			menu.Display(client, MENU_TIME_FOREVER);*/
+		}
+	}
+	
+	menu.ExitButton = true;
+	menu.ExitBackButton = true;
+	menu.DisplayAt(client, page, MENU_TIME_FOREVER);
+}
+
+public int Music_PlaylistMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				Music_MainMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			MusicEnum music;
+			menu.GetItem(choice, music.Section, sizeof(music.Section));
+			int index = StringToInt(music.Section);
+			if(index >= 0 && index < Playlist.Length)
+			{
+				Playlist.GetArray(index, music);
+				
+				ConfigMap cfg = Bosses_GetConfig(music.Special);
+				if(cfg)
+				{
+					SoundEnum sound;
+					sound.Default();
+					if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+					{
+						CurrentSourceType[client] = true;
+						
+						bool toggle = Client(client).NoMusic;
+						Client(client).NoMusic = false;
+						Music_PlaySongToClient(client, sound.Sound, music.Special, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+						Client(client).NoMusic = toggle;
+					}
+				}
+			}
+			
+			PlaylistMenu(client, choice / 7 * 7);
+		}
+	}
+}
+
+public void Music_DisplayTracks(DataPack pack)
+{
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client)
+	{
+		int index = pack.ReadCell();
+		int length = Playlist.Length;
+		if(index < length)
+		{
+			MusicEnum music;
+			Playlist.GetArray(index, music);
+			
+			ConfigMap cfg = Bosses_GetConfig(music.Special);
+			if(cfg)
+			{
+				SoundEnum sound;
+				sound.Default();
+				if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+				{
+					if(!sound.Name[0])
+						Format(sound.Name, sizeof(sound.Name), "%T", "Unknown Song", client);
+					
+					if(!sound.Artist[0])
+						Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
+					
+					int time = RoundToFloor(sound.Time);
+					PrintToConsole(client, "#%d %s - %s (%d:%02d)", index, sound.Artist, sound.Name, time / 60, time % 60);
+				}
+			}
+			
+			pack.Position--;
+			pack.WriteCell(index+1, false);
+			RequestFrame(Music_DisplayTracks, pack);
+			return;
+		}
+	}
+	
+	delete pack;
 }

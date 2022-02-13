@@ -13,6 +13,7 @@ void Events_PluginStart()
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
+	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
@@ -62,7 +63,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 			}
 			else
 			{
-				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.15);
+				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.25);
 				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 			}
 		}
@@ -101,7 +102,12 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 	{
 		int damage = event.GetInt("damageamount");
 		
-		float rage = Client(victim).GetCharge(0) + (damage * 100.0 / Client(victim).RageDamage);
+		float multi = 100.0;
+		int weapon = event.GetInt("weaponid");
+		if(weapon > MaxClients)
+			multi *= Weapons_PlayerHurt(weapon);
+		
+		float rage = Client(victim).GetCharge(0) + (damage * multi / Client(victim).RageDamage);
 		float maxrage = Client(victim).RageMax;
 		if(rage > maxrage)
 			rage = maxrage;
@@ -190,15 +196,15 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					IntToString(lives, buffer, sizeof(buffer));
 					if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					else if(lives == 1 && Bosses_PlaySound(victim, merc, mercs, "sound_last_life", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					else if(Bosses_PlaySound(victim, merc, mercs, "sound_nextlife", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					break;
 				}
@@ -271,14 +277,14 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					
 					if(alive > 2)
 					{
-						if(!FirstBlood || !Bosses_PlaySoundToAll(victim, "sound_first_blood", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+						if(!FirstBlood || !Bosses_PlaySoundToAll(attacker, "sound_first_blood", _, attacker, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							int spree = 1;
 							if(Client(attacker).LastKillTime < engineTime + 5.0)
 								spree += Client(attacker).KillSpree;
 							
 							Client(attacker).KillSpree = spree;
-							if(spree != 3 || !Bosses_PlaySoundToAll(victim, "sound_kspree", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+							if(spree != 3 || !Bosses_PlaySoundToAll(attacker, "sound_kspree", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 							{
 								bool played = view_as<bool>(GetURandomInt() % 2);
 								if(!played)
@@ -304,13 +310,13 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									
 									char buffer[20];
 									FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);
-									played = Bosses_PlaySoundToAll(victim, buffer, _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+									played = Bosses_PlaySoundToAll(attacker, buffer, _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 									if(!played)
-										played = Bosses_PlaySoundToAll(victim, "sound_kill", classnames[class], victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+										played = Bosses_PlaySoundToAll(attacker, "sound_kill", classnames[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 								}
 								
-								if(!played && !Bosses_PlaySoundToAll(victim, "sound_hit", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
-									Bosses_PlaySoundToAll(victim, "sound_kill", "0", victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+								if(!played && !Bosses_PlaySoundToAll(attacker, "sound_hit", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+									Bosses_PlaySoundToAll(attacker, "sound_kill", "0", attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 							}
 						}
 					}

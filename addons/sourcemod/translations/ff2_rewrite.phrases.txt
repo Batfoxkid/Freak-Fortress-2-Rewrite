@@ -27,7 +27,7 @@
 	}
 	"Team Had Health Left Hud"
 	{
-		"#format"	"{1:t},{2:s},{3:d}"
+		"#format"	"{1:t},{2:d},{3:d}"
 		"en"		"{1} had {2} / {3} HP left."
 	}
 	"Team 0"
@@ -79,6 +79,15 @@
 	"Preference Updated"
 	{
 		"en"		"Your preferences and queue points were updated."
+	}
+	"Next Pack Vote"
+	{
+		"en"		"Boss Pack for Freak Fortress 2:\n "
+	}
+	"Next Pack Voted"
+	{
+		"#format"	"{1:s}"
+		"en"		"The next boss pack will be {olive}{1}"
 	}
 	
 	"Command Selection"
@@ -263,7 +272,7 @@
 	"Music Unknown Arg"
 	{
 		"#format"	"{1:s}"
-		"en"		"Unknown argument '{1}'\nArguments Available: 'on', 'off', 'next', 'shuffle', 'list'"
+		"en"		"Unknown argument '{1}'\nArguments Available: 'on', 'off', 'next', 'shuffle', 'list', '#<song id>'"
 	}
 	"Music Menu"
 	{

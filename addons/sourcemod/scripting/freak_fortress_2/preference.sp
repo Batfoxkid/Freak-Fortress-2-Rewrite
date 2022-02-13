@@ -284,13 +284,23 @@ public Action Preference_BossMenuCmd(int client, int args)
 				FReplyToCommand(client, "%t", "Boss No View");
 			}
 		}
+		else if(client)
+		{
+			DataPack pack = new DataPack();
+			pack.WriteCell(GetClientUserId(client));
+			pack.WriteCell(0);
+			RequestFrame(Preference_DisplayBosses, pack);
+		}
 		else
 		{
-			// Display All Bossess with RequestFrame
-			ViewingPack[client] = Enabled ? Charset : -1;
-			ViewingPage[client] = 0;
-			ViewingBoss[client] = -1;
-			BossMenu(client);
+			char buffer[64];
+			
+			ConfigMap cfg;
+			for(int i; (cfg = Bosses_GetConfig(i)); i++)
+			{
+				Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer));
+				PrintToServer("#%d %s", i, buffer);
+			}
 		}
 	}
 	else if(args)
@@ -823,4 +833,28 @@ static int GetBlacklistCount(int client, int charset)
 		}
 	}
 	return count;
+}
+
+public void Preference_DisplayBosses(DataPack pack)
+{
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client)
+	{
+		int index = pack.ReadCell();
+		ConfigMap cfg = Bosses_GetConfig(index);
+		if(cfg)
+		{
+			char buffer[64];
+			Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), GetClientLanguage(client));
+			PrintToConsole(client, "#%d %s", index, buffer);
+			
+			pack.Position--;
+			pack.WriteCell(index+1, false);
+			RequestFrame(Preference_DisplayBosses, pack);
+			return;
+		}
+	}
+	
+	delete pack;
 }

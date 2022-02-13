@@ -79,6 +79,21 @@
 				"linux"		"154"
 				"windows"	"153"
 			}
+			"CTFWeaponBase::ApplyPostHitEffects"
+			{
+				"linux"		"420"
+				"windows"	"413"
+			}
+			"CTFWeaponBase::ApplyOnInjuredAttributes"
+			{
+				"linux"		"421"
+				"windows"	"414"
+			}
+			"m_bitsDamageType"
+			{
+				"linux"		"60"
+				"windows"	"60"
+			}
 		}
 		"Functions"
 		{
@@ -194,6 +209,46 @@
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"entity"
+			}
+			"CTFWeaponBase::ApplyPostHitEffects"
+			{
+				"offset"	"CTFWeaponBase::ApplyPostHitEffects"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"info"
+					{
+						"type"	"objectptr"
+					}
+					"pVictim"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFWeaponBase::ApplyOnInjuredAttributes"
+			{
+				"offset"	"CTFWeaponBase::ApplyOnInjuredAttributes"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"pVictim"
+					{
+						"type"	"cbaseentity"
+					}
+					"pAttacker"
+					{
+						"type"	"cbaseentity"
+					}
+					"info"
+					{
+						"type"	"int"
+					}
+				}
 			}
 		}
 	}

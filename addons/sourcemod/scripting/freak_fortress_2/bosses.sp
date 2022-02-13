@@ -25,12 +25,11 @@
 	int Bosses_GetArgString(int client, const char[] ability, const char[] argument, char[] value, int length)
 	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required="")
 	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required="")
+	int Bosses_GetSpecificSoundCfg(ConfigMap cfg, const char[] section, char[] key, int length, SoundEnum sound)
 	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
 	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
 	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
 */
-
-static const char SndExts[][] = { ".mp3", ".wav" };
 
 static ArrayList BossList;
 static ArrayList PackList;
@@ -199,6 +198,8 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	
 	PackList = new ArrayList(64, 0);
 	// TODO: Hidden boss packs or boss pack settings
+	
+	Music_ClearPlaylist();
 	
 	DownloadTable = FindStringTable("downloadables");
 	bool save = LockStringTables(false);
@@ -653,6 +654,8 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(precache && cfg.Get("model", buffer, sizeof(buffer)) && buffer[0])
 		PrecacheModel(buffer);
 	
+	int special = BossList.Length;
+	
 	snap = cfg.Snapshot();
 	if(snap)
 	{
@@ -734,24 +737,21 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
+									bool music = bgm;
+									if(!music)
+									{
+										ConfigMap cfgsound = val.cfg;
+										if(cfgsound)
+											music = view_as<bool>(cfgsound.GetInt("time", length2));
+									}
+									
 									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
 									{
-										if(StrContains(key, "#") != 0)
+										if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
 										{
-											bool music = bgm;
-											if(!music)
-											{
-												ConfigMap cfgsound = val.cfg;
-												if(cfgsound)
-													music = view_as<bool>(cfgsound.GetInt("time", length2));
-											}
-											
-											if(music)	// Replace the tree with an added #
-											{
-												cfgsub.Remove(key);
-												Format(buffer, sizeof(buffer), "#%s", key);
-												cfgsub.SetArray(key, val, sizeof(val));
-											}
+											cfgsub.Remove(key);
+											Format(key, length2, "#%s", key);
+											cfgsub.SetArray(key, val, sizeof(val));
 										}
 										
 										PrecacheSound(key);
@@ -760,6 +760,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										PrecacheScriptSound(key);
 									}
+									
+									if(music)
+										Music_AddSong(special, section, key);
 								}
 								case KeyValType_Value:
 								{
@@ -767,25 +770,22 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										strcopy(buffer, sizeof(buffer), val.data);
 										
+										bool music = bgm;
 										if(length2 > val.size)	// "example.mp3"	""
 										{
+											if(!music)
+											{
+												Format(buffer, sizeof(buffer), "%smusic", buffer);
+												music = view_as<bool>(cfgsub.GetInt(section, length2));
+											}
+											
 											if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
-												if(StrContains(key, "#") != 0)
+												if(music && StrContains(key, "#") != 0)
 												{
-													bool music = bgm;
-													if(!music)
-													{
-														Format(buffer, sizeof(buffer), "%smusic", buffer);
-														music = view_as<bool>(cfgsub.GetInt(section, length2));
-													}
-													
-													if(music)
-													{
-														cfgsub.Remove(key);
-														Format(key, length2, "#%s", key);
-														cfgsub.SetArray(key, val, sizeof(val));
-													}
+													cfgsub.Remove(key);
+													Format(key, length2, "#%s", key);
+													cfgsub.SetArray(key, val, sizeof(val));
 												}
 												
 												PrecacheSound(key);
@@ -797,22 +797,18 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else	// "1"	"example.mp3"
 										{
+											if(!music)
+											{
+												Format(buffer2, sizeof(buffer2), "%smusic", key);
+												music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
+											}
+											
 											if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
-												if(StrContains(buffer, "#") != 0)
+												if(music && StrContains(buffer, "#") != 0)
 												{
-													bool music = bgm;
-													if(!music)
-													{
-														Format(buffer2, sizeof(buffer2), "%smusic", key);
-														music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
-													}
-													
-													if(music)
-													{
-														Format(buffer, sizeof(buffer), "#%s", buffer);
-														cfgsub.Set(key, buffer);
-													}
+													Format(buffer, sizeof(buffer), "#%s", buffer);
+													cfgsub.Set(key, buffer);
 												}
 												
 												PrecacheSound(buffer);
@@ -826,6 +822,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											if(!cfgsub.GetInt(buffer2, length))
 												cfgsub.SetInt(buffer2, 0);
 										}
+										
+										if(music)
+											Music_AddSong(special, section, key);
 									}
 								}
 							}
@@ -1227,12 +1226,16 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 
 void Bosses_MapEnd()
 {
+	Bosses_PluginEnd();
+	DisableSubplugins();
+}
+
+void Bosses_PluginEnd()
+{
 	for(int i=1; i<=MaxClients; i++)
 	{
 		Bosses_Remove(i);
 	}
-	
-	DisableSubplugins();
 }
 
 int Bosses_GetCharset(int charset, char[] buffer, int length)
@@ -1421,7 +1424,7 @@ void Bosses_Create(int client, int special, int team)
 	EnableSubplugins();
 	SDKHook_BossCreated(client);
 	
-	int i;
+	int i = 1;
 	bool value = CvarSpecTeam.BoolValue;
 	for(int t = CvarSpecTeam.BoolValue ? 0 : 2; t < 4; t++)
 	{
@@ -1566,7 +1569,7 @@ static void EquipBoss(int client, bool weapons)
 	
 	i = 0;
 	int index;
-	while(TF2_GetWearable(client, index, i))
+	while(TF2U_GetWearable(client, index, i))
 	{
 		switch(GetEntProp(index, Prop_Send, "m_iItemDefinitionIndex"))
 		{
@@ -2019,7 +2022,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
 					}
 					
-					if(Client(client).RageMode == 2 && rage < ragemin)
+					if(rage < ragemin || Client(client).RageMode == 2)
 					{
 						ShowSyncHudText(client, PlayerHud, buffer);
 					}
@@ -2109,11 +2112,11 @@ void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability,
 		{
 			bool found;
 			int life = Client(client).Lives;
-			int add, current;
+			int current;
 			char buffer2[12];
 			do
 			{
-				add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
+				int add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
 				found = add != -1;
 				if(found)
 				{
@@ -2462,16 +2465,12 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 									}
 								}
 								
-								strcopy(sound.Sound, sizeof(sound.Sound), val.data);
+								size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
 								
 								if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
 								{
 									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 										size = strlen(sound.Sound);
-								}
-								else
-								{
-									size = val.size;
 								}
 							}
 						}
@@ -2480,6 +2479,120 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 			}
 			
 			delete snap;
+		}
+	}
+	
+	if(!size)
+		sound.Sound[0] = 0;
+	
+	return size;
+}
+
+int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key, int length, SoundEnum sound)
+{
+	int size;
+	
+	ConfigMap cfg = full.GetSection(section);
+	if(cfg)
+	{
+		PackVal val;
+		cfg.GetArray(key, val, sizeof(val));
+		switch(val.tag)
+		{
+			case KeyValType_Section:
+			{
+				ConfigMap cfgsub = val.cfg;
+				
+				if(cfgsub.GetInt("mode", sound.Entity))
+				{
+					if(sound.Entity > SOUND_FROM_WORLD)
+						sound.Entity = -sound.Entity;
+					
+					if(sound.Entity < SOUND_FROM_PLAYER)
+						sound.Entity = SOUND_FROM_PLAYER;
+				}
+				
+				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+				{
+					if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+						size = strlen(sound.Sound);
+				}
+				else
+				{
+					size = strcopy(sound.Sound, sizeof(sound.Sound), key);
+				}
+				
+				cfgsub.GetInt("channel", sound.Channel);
+				cfgsub.GetInt("level", sound.Level);
+				cfgsub.GetInt("flags", sound.Flags);
+				cfgsub.GetFloat("volume", sound.Volume);
+				cfgsub.GetInt("pitch", sound.Pitch);
+				
+				if(cfgsub.GetFloat("time", sound.Time))
+				{
+					cfgsub.Get("name", sound.Name, sizeof(sound.Name));
+					cfgsub.Get("artist", sound.Artist, sizeof(sound.Artist));
+				}
+				
+				if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
+					cfgsub.GetFloat("duration", sound.Duration);
+			}
+			case KeyValType_Value:
+			{
+				if(strlen(key) > val.size)	// "example.mp3"	""
+				{
+					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+					{
+						if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+							size = strlen(sound.Sound);
+					}
+					else
+					{
+						size = strcopy(sound.Sound, sizeof(sound.Sound), key);
+					}
+				}
+				else	// "1"	"example.mp3"
+				{
+					ReplaceStringEx(key, length, "path", "");
+					
+					Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
+					if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
+					{
+						Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
+						cfg.GetFloat(sound.Sound, sound.Duration);
+					}
+					
+					Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
+					if(cfg.GetFloat(sound.Sound, sound.Time))
+					{
+						Format(sound.Sound, sizeof(sound.Sound), "name%s", key);
+						cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
+						
+						Format(sound.Sound, sizeof(sound.Sound), "artist%s", key);
+						cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
+					}
+					else
+					{
+						Format(sound.Sound, sizeof(sound.Sound), "%smusic", key);
+						if(cfg.GetFloat(sound.Sound, sound.Time))
+						{
+							Format(sound.Sound, sizeof(sound.Sound), "%sname", key);
+							cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
+							
+							Format(sound.Sound, sizeof(sound.Sound), "%sartist", key);
+							cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
+						}
+					}
+					
+					size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
+					
+					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+					{
+						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+							size = strlen(sound.Sound);
+					}
+				}
+			}
 		}
 	}
 	
@@ -2504,7 +2617,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	
 	if(sound.Time > 0)
 	{
-		Music_PlaySong(clients, numClients, sound.Sound, boss, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+		Music_PlaySong(clients, numClients, sound.Sound, GetClientUserId(boss), sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
 	}
 	else
 	{
@@ -2525,6 +2638,8 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 			int count = RoundToCeil(sound.Volume);
 			if(count > 1)
 				sound.Volume /= float(count);
+			
+			PrintToConsoleAll("%d | %s", amount, sound.Sound);
 			
 			Client(boss).Speaking = true;
 			for(int i; i<count; i++)

@@ -2,7 +2,7 @@
 	void TF2U_PluginStart()
 	void TF2U_LibraryAdded(const char[] name)
 	void TF2U_LibraryRemoved(const char[] name)
-	bool TF2U_GetWearable(int client, int &index, int &entity)
+	bool TF2U_GetWearable(int client, int &entity, int &index)
 	int TF2U_GetMaxOverheal(int client)
 */
 
@@ -10,27 +10,44 @@
 
 #define TF2U_LIBRARY	"nosoop_tf2utils"
 
+#if defined __nosoop_tf2_utils_included
 static bool Loaded;
+#endif
+
+void TF2U_PluginLoad()
+{
+	#if defined __nosoop_tf2_utils_included
+	MarkNativeAsOptional("TF2Util_GetPlayerWearableCount");
+	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
+	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
+	#endif
+}
 
 void TF2U_PluginStart()
 {
+	#if defined __nosoop_tf2_utils_included
 	Loaded = LibraryExists(TF2U_LIBRARY);
+	#endif
 }
 
 void TF2U_LibraryAdded(const char[] name)
 {
+	#if defined __nosoop_tf2_utils_included
 	if(!Loaded)
 		Loaded = StrEqual(name, TF2U_LIBRARY);
 }
 
 void TF2U_LibraryRemoved(const char[] name)
 {
+	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
 		Loaded = !StrEqual(name, TF2U_LIBRARY);
+	#endif
 }
 
-bool TF2U_GetWearable(int client, int &index, int &entity)
+bool TF2U_GetWearable(int client, int &entity, int &index)
 {
+	/*#if defined __nosoop_tf2_utils_included
 	if(Loaded)
 	{
 		int length = TF2Util_GetPlayerWearableCount(client);
@@ -42,8 +59,9 @@ bool TF2U_GetWearable(int client, int &index, int &entity)
 		}
 	}
 	else
+	#endif*/
 	{
-		if(index <= MaxClients)
+		if(index >= -1 && index <= MaxClients)
 			index = MaxClients + 1;
 		
 		if(index > -2)
@@ -78,33 +96,13 @@ int TF2U_GetMaxOverheal(int client)
 	if(Client(client).IsBoss)
 		return Client(client).MaxHealth * Client(client).MaxLives;
 	
+	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
 		return TF2Util_GetPlayerMaxHealthBoost(client);
+	#endif
 	
 	float maxhealth = float(SDKCall_GetMaxHealth(client));
 	maxhealth *= Attributes_FindOnPlayer(client, 800, true, 1.0);
 	maxhealth *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
 	return RoundFloat(maxhealth);
-}
-
-float TF2U_GetClientCondDuration(int client, TFCond cond)
-{
-	if(Loaded)
-		return TF2Util_GetPlayerConditionDuration(client, cond);
-	
-	return 0.0;
-}
-
-void TF2U_SetClientCondDuration(int client, TFCond cond, float duration)
-{
-	if(Loaded)
-		TF2Util_SetPlayerConditionDuration(client, cond, duration);
-}
-
-int TF2U_GetClientCondProvider(int client, TFCond cond)
-{
-	if(Loaded)
-		return TF2Util_GetPlayerConditionProvider(client, cond);
-	
-	return INVALID_ENT_REFERENCE;
 }

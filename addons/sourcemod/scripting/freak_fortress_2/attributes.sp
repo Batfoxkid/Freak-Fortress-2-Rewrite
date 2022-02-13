@@ -67,7 +67,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	
 	if(Attributes_FindOnWeapon(client, weapon, 217))	// sanguisuge
 	{
-		int maxoverheal = SDKCall_GetMaxHealth(client) * 7 / 2;	// 250% overheal (from 200% overheal)
+		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 3;	// 250% overheal (from 200% overheal)
 		int health = GetClientHealth(health);
 		if(health < maxoverheal)
 		{
@@ -199,7 +199,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 				// Ullapool Caber gets a critical explosion
 				if(!GetEntProp(weapon, Prop_Send, "m_iDetonated"))
 				{
-					Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+					Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					damagetype |= DMG_CRIT;
 				}
 			}
@@ -416,7 +416,7 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 		int maxhealth = SDKCall_GetMaxHealth(client);
 		int health = GetClientHealth(health);
 		
-		int maxoverheal = maxhealth * 7 / 4;	// 75% overheal
+		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 6;	// 75% overheal
 		if(health < maxoverheal)
 		{
 			int healing = RoundFloat(float(maxhealth) * value / 100.0);
@@ -446,7 +446,7 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.001);
 		TF2_AddCondition(client, TFCond_DemoBuff);
 		
-		int maxoverheal = SDKCall_GetMaxHealth(client) * 7 / 4;	// 75% overheal
+		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 6;	// 75% overheal
 		int health = GetClientHealth(health);
 		if(health < maxoverheal)
 		{
@@ -577,7 +577,7 @@ float Attributes_FindOnPlayer(int client, int index, bool multi=false, float def
 	int i;
 	int entity;
 	float value;
-	while(TF2_GetWearable(client, entity, i))
+	while(TF2U_GetWearable(client, entity, i))
 	{
 		if(Attributes_GetByDefIndex(entity, index, value))
 		{
@@ -632,7 +632,7 @@ float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=fals
 	int i;
 	int wear;
 	float value;
-	while(TF2_GetWearable(client, wear, i))
+	while(TF2U_GetWearable(client, wear, i))
 	{
 		if(Attributes_GetByDefIndex(wear, index, value))
 		{
@@ -683,6 +683,7 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 		return true;
 	}
 	
+	// Players
 	if(entity <= MaxClients)
 		return false;
 	
@@ -698,13 +699,16 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 		}
 	}
 	
-	count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
-	for(int i; i<count; i++)
+	if(!GetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", 1))
 	{
-		if(indexes[i] == index)
+		count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
+		for(int i; i<count; i++)
 		{
-			value = values[i];
-			return true;
+			if(indexes[i] == index)
+			{
+				value = values[i];
+				return true;
+			}
 		}
 	}
 	

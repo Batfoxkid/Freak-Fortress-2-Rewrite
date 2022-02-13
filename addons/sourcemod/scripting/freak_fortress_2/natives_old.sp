@@ -146,10 +146,7 @@ public any NativeOld_GetBoss(Handle plugin, int params)
 public any NativeOld_GetIndex(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
-	
-	if(client < MAXTF2PLAYERS)
+	if(client > 0 && client < MAXTF2PLAYERS && Client(client).IsBoss)
 		return Client(GetNativeCell(1)).Index;
 	
 	return -1;
@@ -727,6 +724,8 @@ public any NativeOld_StopMusic(Handle plugin, int params)
 public any NativeOld_RandomSound(Handle plugin, int params)
 {
 	SoundEnum sound;
+	sound.Default();
+	
 	bool success;
 	int client = FindClientOfBossIndex(GetNativeCell(4));
 	if(client != -1)

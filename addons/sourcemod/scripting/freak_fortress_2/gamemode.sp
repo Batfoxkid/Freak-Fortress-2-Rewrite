@@ -234,13 +234,13 @@ public Action Gamemode_IntroTimer(Handle timer)
 	{
 		if(IsClientInGame(client))
 		{
-			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_begin"))
+			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, 2.0))
 			{
 				int team = GetClientTeam(client);
 				for(int i; i<MaxClients; i++)
 				{
 					int boss = FindClientOfBossIndex(i);
-					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin"))
+					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
 						break;
 				}
 			}
@@ -290,7 +290,7 @@ void Gamemode_RoundStart()
 		for(int i; i<bosses; i++)
 		{
 			int team = GetClientTeam(boss[i]);
-			int amount = 0;
+			int amount = 1;
 			for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a<TFTeam_MAX; a++)
 			{
 				if(team != a)
@@ -430,7 +430,7 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	float time = CvarBonusRoundTime.FloatValue - 1.0;
+	float time = CvarBonusRoundTime.FloatValue - 5.0;
 	for(int i; i<TFTeam_MAX; i++)
 	{
 		if(HasBoss[i])
@@ -439,7 +439,7 @@ void Gamemode_RoundEnd(int winteam)
 			
 			if(bosses[i])
 			{
-				SetHudTextParamsEx(-1.0, 0.4 - (i * 0.05), time, TeamColors[i], TeamColors[winner], 2, 2.0, 0.5, 1.0);
+				SetHudTextParamsEx(-1.0, 0.4 - (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
 				for(int a; a<total; a++)
 				{
 					SetGlobalTransTarget(clients[a]);
@@ -507,7 +507,7 @@ void Gamemode_RoundEnd(int winteam)
 			if(winner == teams[i])
 			{
 				// Play sound_win for themself if they are on the winning team
-				if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win"))
+				if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win", _, _, _, _, _, 2.0))
 					continue;
 			}
 			else if(globalTeam != winner)
@@ -515,7 +515,7 @@ void Gamemode_RoundEnd(int winteam)
 				// Play sound_fail for themself if: Global sound wasn't a sound_win, Global sound didn't exist or they're alive
 				if(!globalBoss || IsPlayerAlive(clients[i]))
 				{
-					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail"))
+					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail", _, _, _, _, _, 2.0))
 						continue;
 				}
 			}
@@ -526,7 +526,7 @@ void Gamemode_RoundEnd(int winteam)
 	
 	// Play global sound
 	if(globalBoss)
-		Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail");
+		Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail", _, _, _, _, _, 2.0);
 	
 	// Give Queue Points
 	if(Enabled && total)
@@ -623,13 +623,13 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 						if(GetClientButtons(clients[i]) & IN_SCORE)
 							continue;
 						
-						if(IsClientObserver(clients[i]))
+						if(IsPlayerAlive(clients[i]))
 						{
-							SetHudTextParamsEx(x, y+0.1, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
+							SetHudTextParamsEx(x, y, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
 						}
 						else
 						{
-							SetHudTextParamsEx(x, y, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
+							SetHudTextParamsEx(x, y+0.1, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
 						}
 						
 						if(bosses > 1)
@@ -653,13 +653,13 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 						if(GetClientButtons(clients[i]) & IN_SCORE)
 							continue;
 						
-						if(IsClientObserver(clients[i]))
+						if(IsPlayerAlive(clients[i]))
 						{
-							SetHudTextParams(-1.0, 0.22, 3.0, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+							SetHudTextParams(-1.0, 0.12, 3.0, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 						}
 						else
 						{
-							SetHudTextParams(-1.0, 0.12, 3.0, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
+							SetHudTextParams(-1.0, 0.22, 3.0, 200, 255, 200, 255, 0, 0.35, 0.0, 0.1);
 						}
 						
 						if(bosses > 1)
@@ -807,4 +807,55 @@ public Action Gamemode_UpdateHudTimer(Handle timer, int team)
 	HudTimer[team] = null;
 	Gamemode_UpdateHUD(team);
 	return Plugin_Continue;
+}
+
+void Gamemode_SetClientGlow(int client, float duration)
+{
+	float time = GetGameTime() + duration;
+	float current = Client(client).GlowFor;
+	if(current < time)
+		Client(client).GlowFor = time;
+}
+
+void Gamemode_PlayerRunCmd(int client)
+{
+	if(IsPlayerAlive(client))
+	{
+		if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).Minion)
+		{
+			int team = GetClientTeam(client);
+			if(PlayersAlive[team] < 3)
+				TF2_AddCondition(client, TFCond_CritCola, 0.5);
+			
+			if(PlayersAlive[team] < 2)
+			{
+				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
+				Client(client).GlowFor = GetGameTime() + 0.5;
+			}
+		}
+		
+		if(Client(client).Glowing)
+		{
+			if(Client(client).GlowFor < GetGameTime())
+			{
+				SetEntProp(client, Prop_Send, "m_bGlowEnabled", false, 1);
+				Client(client).Glowing = false;
+			}
+		}
+		else if(!GetEntProp(client, Prop_Send, "m_bGlowEnabled", 1) && Client(client).GlowFor > GetGameTime())
+		{
+			SetEntProp(client, Prop_Send, "m_bGlowEnabled", true, 1);
+			Client(client).Glowing = true;
+		}
+	}
+	
+	if(Client(client).OverlayFor && Client(client).OverlayFor < GetEngineTime())
+	{
+		Client(client).OverlayFor = 0.0;
+		
+		int flags = GetCommandFlags("r_screenoverlay");
+		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
+		ClientCommand(client, "r_screenoverlay \"\"");
+		SetCommandFlags("r_screenoverlay", flags);
+	}
 }

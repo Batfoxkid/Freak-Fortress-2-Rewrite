@@ -572,6 +572,8 @@ methodmap Client
 		this.NoVoice = false;
 		this.SetLastPlayed("");
 		this.OverlayFor = 0.0;
+		this.GlowFor = 0.0;
+		this.Glowing = false;
 		
 		this.ResetByRound();
 	}

@@ -640,37 +640,6 @@ stock bool TF2_GetItem(int client, int &weapon, int &pos)
 	return false;
 }
 
-stock bool TF2_GetWearable(int client, int &entity, int &index)
-{
-	if(index <= MaxClients)
-		index = MaxClients + 1;
-	
-	if(index > -2)
-	{
-		while((index=FindEntityByClassname(index, "tf_wear*")) != -1)
-		{
-			if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client)
-			{
-				entity = index;
-				return true;
-			}
-		}
-		
-		index = -(MaxClients + 1);
-	}
-	
-	entity = -index;
-	while((entity=FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
-	{
-		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
-		{
-			index = -entity;
-			return true;
-		}
-	}
-	return false;
-}
-
 stock void TF2_RemoveItem(int client, int weapon)
 {
 	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");

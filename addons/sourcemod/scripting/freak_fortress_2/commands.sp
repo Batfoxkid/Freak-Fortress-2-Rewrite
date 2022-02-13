@@ -16,7 +16,7 @@ void Command_PluginStart()
 
 public Action Command_Voicemenu(int client, const char[] command, int args)
 {
-	if(client && args == 2 && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
+	if(client && args == 2 && Client(client).IsBoss && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
 	{
 		char arg[4];
 		GetCmdArg(1, arg, sizeof(arg));
@@ -72,8 +72,7 @@ public Action Command_Spectate(int client, const char[] command, int args)
 	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
-	int team = TFTeam_Spectator;
-	return SwapTeam(client, team);
+	return SwapTeam(client, TFTeam_Spectator);
 }
 
 public Action Command_AutoTeam(int client, const char[] command, int args)
@@ -152,8 +151,9 @@ public Action Command_JoinTeam(int client, const char[] command, int args)
 	return SwapTeam(client, team);
 }
 
-static Action SwapTeam(int client, int &newTeam)
+static Action SwapTeam(int client, int wantTeam)
 {
+	int newTeam = wantTeam;
 	if(Enabled)
 	{
 		// No suicides
@@ -199,6 +199,16 @@ static Action SwapTeam(int client, int &newTeam)
 		Bosses_Remove(client);
 		ForcePlayerSuicide(client);
 		ChangeClientTeam(client, newTeam);
+		return Plugin_Handled;
+	}
+	
+	if(Enabled)
+	{
+		ForcePlayerSuicide(client);
+		ChangeClientTeam(client, newTeam);
+		if(newTeam > TFTeam_Spectator)
+			ShowVGUIPanel(client, newTeam == TFTeam_Red ? "class_red" : "class_blue");
+		
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
