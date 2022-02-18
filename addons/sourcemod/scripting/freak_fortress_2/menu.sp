@@ -318,7 +318,7 @@ public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 
 public Action Menu_AddPointsCmd(int client, int args)
 {
-	//if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
 		if(args == 2)
 		{
@@ -345,12 +345,112 @@ public Action Menu_AddPointsCmd(int client, int args)
 			ReplyToCommand(client, "[SM] Usage: ff2_addpoints <player> <points>");
 		}
 	}
-	/*else
+	else
 	{
-		Menu_Command(client);
 		AddPointsMenu(client);
-	}*/
+	}
 	return Plugin_Handled;
+}
+
+static void AddPointsMenu(int client, const char[] userid=NULL_STRING)
+{
+	int target = userid[0] ? GetClientOfUserId(StringToInt(userid)) : 0;
+	if(target)
+	{
+		Menu menu = new Menu(Menu_AddPointsActionH);
+		
+		menu.SetTitle("%T%N\n ", "Add Points Command", client, target);
+		
+		menu.AddItem(userid, "1000");
+		menu.AddItem(userid, "100");
+		menu.AddItem(userid, "10");
+		menu.AddItem(userid, "-10");
+		menu.AddItem(userid, "-100");
+		menu.AddItem(userid, "-1000");
+		
+		menu.ExitBackButton = true;
+		menu.Display(client, MENU_TIME_FOREVER);
+	}
+	else
+	{
+		Menu menu = new Menu(Menu_AddPointsTargetH);
+		
+		menu.SetTitle("%T", "Add Points Command", client);
+		
+		AddTargetsToMenu(menu, client);
+		
+		menu.Display(client, MENU_TIME_FOREVER);
+	}
+}
+
+public int Menu_AddPointsTargetH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			char userid[12];
+			menu.GetItem(choice, userid, sizeof(userid));
+			AddPointsMenu(client, userid);
+		}
+	}
+}
+
+public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				AddPointsMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[32];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			
+			int target[1];
+			target[0] = GetClientOfUserId(StringToInt(buffer));
+			if(target[0])
+			{
+				int points;
+				switch(choice)
+				{
+					case 0:
+						points = -1000;
+					
+					case 1:
+						points = -100;
+					
+					case 2:
+						points = -10;
+					
+					case 3:
+						points = 10;
+					
+					case 4:
+						points = 100;
+					
+					case 5:
+						points = 1000;
+				}
+				
+				GetClientName(target[0], buffer, sizeof(buffer));
+				AddQueuePoints(client, points, target, 1, buffer);
+			}
+			
+			AddPointsMenu(client);
+		}
+	}
 }
 
 static void AddQueuePoints(int client, int points, int[] target, int matches, const char[] name, bool lang=false)

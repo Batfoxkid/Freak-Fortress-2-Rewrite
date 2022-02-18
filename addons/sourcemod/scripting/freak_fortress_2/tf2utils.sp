@@ -96,13 +96,15 @@ int TF2U_GetMaxOverheal(int client)
 	if(Client(client).IsBoss)
 		return Client(client).MaxHealth * Client(client).MaxLives;
 	
+	// 75% overheal from 50%
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
-		return TF2Util_GetPlayerMaxHealthBoost(client);
+		return TF2Util_GetPlayerMaxHealthBoost(client, true) / 8 * 6;
 	#endif
 	
-	float maxhealth = float(SDKCall_GetMaxHealth(client));
-	maxhealth *= Attributes_FindOnPlayer(client, 800, true, 1.0);
-	maxhealth *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
-	return RoundFloat(maxhealth);
+	int maxhealth = SDKCall_GetMaxHealth(client);
+	float maxoverheal = float(SDKCall_GetMaxHealth(client)) * 0.75;
+	maxoverheal *= Attributes_FindOnPlayer(client, 800, true, 1.0);
+	maxoverheal *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
+	return maxhealth + (RoundFloat(maxoverheal / 5.0) * 5);
 }

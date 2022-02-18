@@ -125,11 +125,6 @@
 		"#format"	"{1:d}"
 		"en"		"{1} Queue Points"
 	}
-	"Reset Queue Points"
-	{
-		"#format"	"{1:d}"
-		"en"		"{1} Queue Points"
-	}
 	"Reset Queue Points Confirm"
 	{
 		"en"		"Reset your Queue Points?\n "

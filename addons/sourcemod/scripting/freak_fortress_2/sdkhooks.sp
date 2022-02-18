@@ -319,7 +319,7 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 				}
 				
 				if(!Client(attacker).IsBoss)
-					Attributes_OnHitBoss(attacker, victim, damage, weapon, damagecustom);
+					Attributes_OnHitBoss(attacker, victim, inflictor, damage, weapon, damagecustom);
 			}
 		}
 		

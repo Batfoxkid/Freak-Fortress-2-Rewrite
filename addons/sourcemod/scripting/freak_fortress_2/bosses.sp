@@ -38,16 +38,11 @@ static int DownloadTable;
 void Bosses_PluginStart()
 {
 	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
+	//RegAdminCmd("ff2_setrage", Bosses_SetRage, ADMFLAG_CHEATS, "Give RAGE to a boss");
 	RegAdminCmd("ff2_reloadcharset", Bosses_ReloadCharset, ADMFLAG_RCON, "Reloads the current boss pack");
 	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
 	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");
-	HookEvent("tf_game_over", Bosses_TempEvent, EventHookMode_PostNoCopy);
-}
-
-public void Bosses_TempEvent(Event event, const char[] name, bool dontBroadcast)
-{
-	DisableSubplugins();
 }
 
 public Action Bosses_DebugCache(int args)
@@ -2104,39 +2099,9 @@ void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability,
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(cfg)
 	{
-		char buffer1[64];
-		if(plugin[0] && cfg.Get("plugin_name", buffer1, sizeof(buffer1)) && !StrEqual(buffer1, plugin))
+		char buffer[64];
+		if(plugin[0] && cfg.Get("plugin_name", buffer, sizeof(buffer)) && !StrEqual(buffer, plugin))
 			return;
-		
-		if(cfg.Get("life", buffer1, sizeof(buffer1)))
-		{
-			bool found;
-			int life = Client(client).Lives;
-			int current;
-			char buffer2[12];
-			do
-			{
-				int add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
-				found = add != -1;
-				if(found)
-				{
-					current += add;
-				}
-				else
-				{
-					strcopy(buffer2, sizeof(buffer2), buffer1[current]);
-				}
-				
-				if(StringToInt(buffer2) == life)
-				{
-					found = true;
-					break;
-				}
-			} while(found);
-			
-			if(!found)
-				return;
-		}
 		
 		UseAbility(client, cfg, plugin, ability, slot, buttonmode);
 	}
@@ -2144,10 +2109,39 @@ void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability,
 
 static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
 {
-	char plugin2[64];
-	FormatEx(plugin2, sizeof(plugin2), "%s.smx", plugin);
+	char buffer1[64];
+	if(cfg.Get("life", buffer1, sizeof(buffer1)))
+	{
+		bool found;
+		int life = Client(client).Lives;
+		int current;
+		char buffer2[12];
+		do
+		{
+			int add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
+			found = add != -1;
+			if(found)
+			{
+				current += add;
+			}
+			else
+			{
+				strcopy(buffer2, sizeof(buffer2), buffer1[current]);
+			}
+			
+			if(StringToInt(buffer2) == life)
+			{
+				found = true;
+				break;
+			}
+		} while(found);
+		
+		if(!found)
+			return;
+	}
 	
-	if(!ForwardOld_PreAbility(client, plugin2, ability, slot))
+	FormatEx(buffer1, sizeof(buffer1), "%s.smx", plugin);
+	if(!ForwardOld_PreAbility(client, buffer1, ability, slot))
 		return;
 	
 	int status = 3;
@@ -2235,7 +2229,7 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 	}
 	
-	ForwardOld_OnAbility(client, plugin2, ability, status);
+	ForwardOld_OnAbility(client, buffer1, ability, status);
 }
 
 public Action Bosses_UseBossCharge(Handle timer, DataPack data)
@@ -2638,8 +2632,6 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 			int count = RoundToCeil(sound.Volume);
 			if(count > 1)
 				sound.Volume /= float(count);
-			
-			PrintToConsoleAll("%d | %s", amount, sound.Sound);
 			
 			Client(boss).Speaking = true;
 			for(int i; i<count; i++)

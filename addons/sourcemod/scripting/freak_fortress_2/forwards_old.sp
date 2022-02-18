@@ -250,5 +250,6 @@ bool ForwardOld_OnMusicPerBoss(int client)
 	Call_StartForward(OnMusicPerBoss);
 	Call_PushCell(Client(client).Index);
 	Call_Finish(result);
+	Debug("ForwardOld_OnMusicPerBoss::%d", result);
 	return result;
 }

@@ -8,6 +8,7 @@
 #pragma semicolon 1
 
 #include <sourcemod>
+#include <adminmenu>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <clientprefs>

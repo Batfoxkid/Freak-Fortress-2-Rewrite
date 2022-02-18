@@ -36,7 +36,7 @@ void TFED_LibraryRemoved(const char[] name)
 
 bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 {
-	//TODO: Use a config based system insteaad
+	//TODO: Find a way to use m_pszItemIconClassname instead
 	
 	#if defined __tf_econ_data_included
 	if(Loaded)

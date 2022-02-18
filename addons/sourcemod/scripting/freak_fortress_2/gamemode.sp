@@ -241,8 +241,12 @@ public Action Gamemode_IntroTimer(Handle timer)
 				{
 					int boss = FindClientOfBossIndex(i);
 					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
-						break;
+						return Plugin_Continue;
 				}
+				
+				int boss = FindClientOfBossIndex(0);
+				if(boss != -1 && boss == client && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
+					break;
 			}
 		}
 	}

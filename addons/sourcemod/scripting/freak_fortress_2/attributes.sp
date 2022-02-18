@@ -67,7 +67,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	
 	if(Attributes_FindOnWeapon(client, weapon, 217))	// sanguisuge
 	{
-		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 3;	// 250% overheal (from 200% overheal)
+		int maxoverheal = TF2U_GetMaxOverheal(client) * 2;	// 250% overheal (from 200% overheal)
 		int health = GetClientHealth(health);
 		if(health < maxoverheal)
 		{
@@ -207,7 +207,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 	}
 }
 
-void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int damagecustom)
+void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
 {
 	char classname[36];
 	int slot = TFWeaponSlot_Building;
@@ -410,13 +410,36 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 		}
 	}
 	
+	if(Attributes_FindOnWeapon(client, weapon, 219) && !StrContains(classname, "tf_weapon_sword"))	// Eyelander
+	{
+		SetEntProp(client, Prop_Send, "m_iDecapitations", GetEntProp(client, Prop_Send, "m_iDecapitations")+1);
+		TF2_AddCondition(client, TFCond_DemoBuff);
+		SDKCall_SetSpeed(client);
+		
+		int maxoverheal = TF2U_GetMaxOverheal(client);
+		int health = GetClientHealth(health);
+		if(health < maxoverheal)
+		{
+			if(health + 15 > maxoverheal)
+			{
+				SetEntityHealth(client, maxoverheal);
+				ApplySelfHealEvent(client, maxoverheal - health);
+			}
+			else
+			{
+				SetEntityHealth(client, health + 15);
+				ApplySelfHealEvent(client, 15);
+			}
+		}
+	}
+	
 	value = Attributes_FindOnWeapon(client, weapon, 220);
 	if(value)	// restore health on kill
 	{
 		int maxhealth = SDKCall_GetMaxHealth(client);
 		int health = GetClientHealth(health);
 		
-		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 6;	// 75% overheal
+		int maxoverheal = TF2U_GetMaxOverheal(client);
 		if(health < maxoverheal)
 		{
 			int healing = RoundFloat(float(maxhealth) * value / 100.0);
@@ -438,29 +461,6 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 	{
 		SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
 		SetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy", GetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy")+1);
-	}
-	
-	if(Attributes_FindOnWeapon(client, weapon, 292) == 6.0)	// Eyelander
-	{
-		SetEntProp(client, Prop_Send, "m_iDecapitations", GetEntProp(client, Prop_Send, "m_iDecapitations")+1);
-		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.001);
-		TF2_AddCondition(client, TFCond_DemoBuff);
-		
-		int maxoverheal = TF2U_GetMaxOverheal(client) * 7 / 6;	// 75% overheal
-		int health = GetClientHealth(health);
-		if(health < maxoverheal)
-		{
-			if(health + 15 > maxoverheal)
-			{
-				SetEntityHealth(client, maxoverheal);
-				ApplySelfHealEvent(client, maxoverheal - health);
-			}
-			else
-			{
-				SetEntityHealth(client, health + 15);
-				ApplySelfHealEvent(client, 15);
-			}
-		}
 	}
 	
 	if(Attributes_FindOnWeapon(client, weapon, 409))	// kill forces attacker to laugh
@@ -492,6 +492,9 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 	{
 		if(slot == TFWeaponSlot_Building)
 		{
+			if(inflictor > MaxClients && GetEntityClassname(inflictor, classname, sizeof(classname)) && !StrContains(classname, "obj_sentrygun"))
+				SetEntProp(inflictor, Prop_Send, "m_iKills", GetEntProp(inflictor, Prop_Send, "m_iKills") + 1);
+			
 			weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Grenade);
 			slot = TFWeaponSlot_Grenade;
 		}
@@ -515,6 +518,7 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 				
 				event.SetInt("userid", GetClientUserId(victim));
 				event.SetInt("attacker", GetClientUserId(client));
+				event.SetInt("inflictor_entindex", inflictor);
 				event.SetInt("weaponid", weapon);
 				event.SetInt("kill_streak_total", total);
 				event.SetInt("kill_streak_wep", streak);
@@ -550,6 +554,7 @@ void Attributes_OnHitBoss(int client, int victim, float fdamage, int weapon, int
 			
 			event.SetInt("userid", GetClientUserId(victim));
 			event.SetInt("attacker", GetClientUserId(client));
+			event.SetInt("inflictor_entindex", inflictor);
 			event.SetInt("weaponid", weapon);
 			event.SetInt("kill_streak_total", total);
 			event.SetInt("kill_streak_wep", 0);
