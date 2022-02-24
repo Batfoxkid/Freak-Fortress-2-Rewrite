@@ -108,6 +108,9 @@ void Menu_MainMenu(int client)
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Voice");
 	menu.AddItem("", buffer);
 	
+	FormatEx(buffer, sizeof(buffer), "%t", "Command Weapon");
+	menu.AddItem("", buffer);
+	
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -140,6 +143,10 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 				{
 					Menu_VoiceToggle(client, 0);
 					Menu_MainMenu(client);
+				}
+				case 4:
+				{
+					Weapons_ChangeMenu(client);
 				}
 			}
 		}
@@ -175,7 +182,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 		
 		if(amount)
 		{
-			SortCustom1D(clients, amount, Menu_SortFunc);
+			SortCustom1D(clients, amount, GetBossQueueSort);
 			
 			for(int i; i<amount; i++)
 			{
@@ -195,14 +202,6 @@ public Action Menu_QueueMenuCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-public int Menu_SortFunc(int elem1, int elem2, const int[] array, Handle hndl)
-{
-	if(Client(elem1).Queue > Client(elem2).Queue || (Client(elem1).Queue == Client(elem2).Queue && elem1 > elem2))
-		return -1;
-
-	return 1;
-}
-
 static void QueueMenu(int client)
 {
 	Menu menu = new Menu(Menu_QueueMenuH);
@@ -216,12 +215,12 @@ static void QueueMenu(int client)
 	int[] clients = new int[MaxClients];
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))))
+		if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
 			clients[amount++] = i;
 	}
 		
 	if(amount)
-		SortCustom1D(clients, amount, Menu_SortFunc);
+		SortCustom1D(clients, amount, GetBossQueueSort);
 	
 	char buffer[64];
 	bool exitButton = Menu_BackButton(client);

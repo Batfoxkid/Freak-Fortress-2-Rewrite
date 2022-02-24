@@ -87,10 +87,12 @@ void SDKCall_EquipWearable(int client, int entity)
 	if(SDKEquipWearable)
 	{
 		SDKCall(SDKEquipWearable, client, entity);
+		Debug("Attached Wearable");
 	}
 	else
 	{
 		RemoveEntity(entity);
+		Debug("Removed Wearable");
 	}
 }
 

@@ -1243,7 +1243,7 @@ int Bosses_GetCharset(int charset, char[] buffer, int length)
 
 int Bosses_GetCharsetLength()
 {
-	return PackList.Length;
+	return PackList ? PackList.Length : 0;
 }
 
 ConfigMap Bosses_GetConfig(int special)
@@ -1528,7 +1528,7 @@ void Bosses_Equip(int client)
 public Action Bosses_EquipTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
-	if(client)
+	if(client && Client(client).IsBoss)
 		EquipBoss(client, true);
 }
 
@@ -1626,6 +1626,9 @@ static void EquipBoss(int client, bool weapons)
 					GetClassWeaponClassname(class, classname, sizeof(classname));
 					bool wearable = StrContains(classname, "tf_weap") != 0;
 					
+					if(wearable)
+						Debug("Found Wearable");
+					
 					cfg.GetInt("index", index);
 					
 					int level = -1;
@@ -1696,6 +1699,8 @@ static void EquipBoss(int client, bool weapons)
 							SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
 							
 							DispatchSpawn(entity);
+							
+							Debug("Created Wearable");
 						}
 						else
 						{
@@ -1711,8 +1716,8 @@ static void EquipBoss(int client, bool weapons)
 						TF2Items_SetItemIndex(item, index);
 						TF2Items_SetLevel(item, level);
 						TF2Items_SetQuality(item, quality);
-						TF2Items_SetNumAttributes(item, count/2);
-						for(int a; attribs < count && attribs < 32; attribs += 2)
+						TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
+						for(int a; attribs < count && a < 16; attribs += 2)
 						{
 							int attrib = StringToInt(buffers[attribs]);
 							if(attrib)
@@ -1735,7 +1740,7 @@ static void EquipBoss(int client, bool weapons)
 					{
 						if(wearable)
 						{
-							SDKCall_EquipWearable(client, entity);
+							TF2U_EquipPlayerWearable(client, entity);
 						}
 						else
 						{
@@ -2045,7 +2050,7 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0);
-			Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0);
+			Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 		}
 	}
 	

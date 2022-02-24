@@ -15,6 +15,9 @@ static float StartTime[MAXTF2PLAYERS];
 
 void Database_Setup()
 {
+	RegServerCmd("ff2_query", Database_QueryCmd, "Query the database");
+	RegServerCmd("ff2_steamid", Database_SteamIdCmd, "Get the account id");
+	
 	char error[512];
 	Database db = SQLite_UseDatabase(DATABASE, error, sizeof(error));
 	if(!db)
@@ -37,6 +40,78 @@ void Database_Setup()
 	... "boss TEXT NOT NULL);");
 	
 	db.Execute(tr, Database_SetupCallback, Database_FailHandle, db);
+}
+
+public Action Database_SteamIdCmd(int args)
+{
+	if(args)
+	{
+		char buffer[64];
+		GetCmdArgString(buffer, sizeof(buffer));
+		
+		bool isTrans;
+		int targets;
+		int[] target = new int[MaxClients];
+		if((targets=ProcessTargetString(buffer, 0, target, MaxClients, 0, buffer, sizeof(buffer), isTrans)) > 0)
+		{
+			for(int i; i<targets; i++)
+			{
+				PrintToServer("%N: %d", target[i], GetSteamAccountID(target[i], false));
+			}
+		}
+		else
+		{
+			ReplyToTargetError(0, targets);
+		}
+	}
+	else
+	{
+		PrintToServer("[SM] Usage: ff2_steamid <client>");
+	}
+	return Plugin_Handled;
+}
+
+public Action Database_QueryCmd(int args)
+{
+	char buffer[1024];
+	GetCmdArgString(buffer, sizeof(buffer));
+	
+	ReplaceString(buffer, sizeof(buffer), "\"", "");
+	
+	Transaction tr = new Transaction();
+	tr.AddQuery(buffer);
+	DataBase.Execute(tr, Database_QueryCallback, Database_QueryFail);
+	return Plugin_Handled;
+}
+
+public void Database_QueryCallback(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
+{
+	PrintToServer("Success");
+	
+	char buffer[256];
+	int length = results[0].RowCount;
+	for(int i; i<length; i++)
+	{
+		#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>10
+		results[0].FetchRow();
+		#endif
+		
+		int length2 = results[0].FieldCount;
+		for(int a; a<length2; a++)
+		{
+			results[0].FetchString(1, buffer, sizeof(buffer));
+			PrintToServer("%d-%d '%s'", i, a, buffer);
+		}
+		
+		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
+		results[0].FetchRow();
+		#endif
+	}
+}
+
+public void Database_QueryFail(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
+{
+	PrintToServer(error);
 }
 
 public void Database_SetupCallback(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
@@ -91,7 +166,11 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 	{
 		char buffer[256];
 		Transaction tr;
+		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
+		if(results[0].RowCount)
+		#else
 		if(results[0].FetchRow())
+		#endif
 		{
 			Client(client).Queue = results[0].FetchInt(1);
 			Client(client).NoMusic = !results[0].FetchInt(2);
@@ -107,6 +186,14 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 			FormatEx(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_GENERAL ... " (steamid) VALUES (%d)", GetSteamAccountID(client));
 			tr.AddQuery(buffer);	
 		}
+		
+		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
+		if(results[1].RowCount)
+		{
+			results[1].FetchString(1, buffer, sizeof(buffer));
+			Preference_AddBoss(client, buffer);
+		}
+		#endif
 		
 		while(results[1].MoreRows)
 		{
@@ -156,10 +243,12 @@ void Database_ClientDisconnect(int client, DBPriority priority=DBPrio_Normal)
 			... "last_played = '%s' "
 			... "WHERE steamid = %d;",
 			Client(client).Queue,
-			Client(client).NoMusic,
-			Client(client).NoVoice,
+			!Client(client).NoMusic,
+			!Client(client).NoVoice,
 			buffer,
 			id);
+			
+			tr.AddQuery(buffer);
 			
 			DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			

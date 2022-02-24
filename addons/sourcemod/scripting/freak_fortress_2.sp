@@ -8,8 +8,8 @@
 #pragma semicolon 1
 
 #include <sourcemod>
-#include <adminmenu>
 #include <sdkhooks>
+#include <adminmenu>
 #include <tf2_stocks>
 #include <clientprefs>
 #include <cfgmap>
@@ -160,6 +160,14 @@ enum struct SoundEnum
 
 public const char SndExts[][] = { ".mp3", ".wav" };
 
+public const int TeamColors[][] =
+{
+	{255, 255, 100, 255},
+	{100, 255, 100, 255},
+	{255, 100, 100, 255},
+	{100, 100, 255, 255}
+};
+
 ConVar CvarCharset;
 ConVar CvarDebug;
 ConVar CvarSpecTeam;
@@ -171,6 +179,8 @@ ConVar CvarBossCrits;
 ConVar CvarBossHealing;
 ConVar CvarBossKnockback;
 ConVar CvarPrefBlacklist;
+ConVar CvarCaptureTime;
+ConVar CvarCaptureAlive;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
@@ -179,6 +189,7 @@ ConVar CvarBonusRoundTime;
 ConVar CvarTournament;
 
 int PlayersAlive[4];
+int MaxPlayersAlive[4];
 int Charset;
 bool Enabled;
 int RoundStatus;
@@ -246,11 +257,14 @@ public void OnPluginStart()
 	Bosses_PluginStart();
 	Command_PluginStart();
 	ConVar_PluginStart();
+	Database_Setup();
+	DHook_Setup();
 	Events_PluginStart();
 	Gamemode_PluginStart();
 	Menu_PluginStart();
 	Music_PluginStart();
 	Preference_PluginStart();
+	SDKCall_Setup();
 	SDKHook_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
@@ -258,9 +272,6 @@ public void OnPluginStart()
 	
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientAuthorized(i))
-			OnClientAuthorized(i, NULL_STRING);
-		
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
@@ -269,9 +280,6 @@ public void OnPluginStart()
 public void OnAllPluginsLoaded()
 {
 	Configs_AllPluginsLoaded();
-	Database_Setup();
-	DHook_Setup();
-	SDKCall_Setup();
 }
 
 public void OnMapStart()
@@ -324,6 +332,7 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
+	SDKHook_LibraryRemoved(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
@@ -331,6 +340,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
+	SDKHook_LibraryAdded(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);

@@ -132,6 +132,12 @@ Address DHook_GetGameStats()
 public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
+	
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(Client(client).IsBoss)
+			TF2_RespawnPlayer(client);
+	}
 }
 
 public MRESReturn DHook_RoundRespawn()

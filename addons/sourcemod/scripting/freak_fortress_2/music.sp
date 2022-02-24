@@ -386,6 +386,7 @@ public Action Music_Command(int client, int args)
 				}
 				else
 				{
+					Menu_Command(client);
 					PlaylistMenu(client);
 				}
 			}
@@ -396,6 +397,7 @@ public Action Music_Command(int client, int args)
 		}
 		else
 		{
+			Menu_Command(client);
 			Music_MainMenu(client);
 		}
 	}

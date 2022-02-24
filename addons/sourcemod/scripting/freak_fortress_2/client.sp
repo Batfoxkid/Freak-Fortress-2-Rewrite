@@ -161,7 +161,7 @@ methodmap Client
 	{
 		public get()
 		{
-			return Damage[this][0] + GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 14);	// m_iDamageDone
+			return GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 14);	// m_iDamageDone
 		}
 	}
 	

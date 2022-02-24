@@ -4,18 +4,45 @@
 	void SDKHook_BossCreated(int client)
 */
 
+#tryinclude <tf_ontakedamage>
+
+#define OTD_LIBRARY		"tf_ontakedamage"
+
+#if !defined __tf_ontakedamage_included
+enum CritType
+{
+	CritType_None = 0,
+	CritType_MiniCrit,
+	CritType_Crit
+};
+#endif
+
 static char SoundCache[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
+static bool OTDLoaded;
 
 void SDKHook_PluginStart()
 {
 	AddNormalSoundHook(SDKHook_NormalSHook);
+	
+	OTDLoaded = LibraryExists(OTD_LIBRARY);
+}
+
+void SDKHook_LibraryAdded(const char[] name)
+{
+	if(!OTDLoaded)
+		OTDLoaded = StrEqual(name, OTD_LIBRARY);
+}
+
+void SDKHook_LibraryRemoved(const char[] name)
+{
+	if(OTDLoaded)
+		OTDLoaded = !StrEqual(name, OTD_LIBRARY);
 }
 
 void SDKHook_HookClient(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
-	//SDKHook(client, SDKHook_SDKHook_TakeDamageAlive, SDKHook_TakeDamageAlive);
 }
 
 void SDKHook_BossCreated(int client)
@@ -48,6 +75,15 @@ public void OnEntityCreated(int entity, const char[] classname)
 
 public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
+	if(OTDLoaded)
+		return Plugin_Continue;
+	
+	CritType crit = (damagetype & DMG_CRIT) ? CritType_Crit : CritType_None;
+	return TF2_OnTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, crit);
+}
+
+public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom, CritType &critType)
+{
 	if(Client(victim).IsBoss)
 	{
 		if(!attacker)
@@ -71,7 +107,7 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 			if(IsInvuln(victim))
 				return Plugin_Continue;
 			
-			Weapons_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
+			Weapons_OnHitBossPre(attacker, victim, damage, weapon, view_as<int>(critType));
 			
 			switch(damagecustom)
 			{
@@ -98,7 +134,8 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 					}
 					
 					damage = 750.0 * multi;	// 2250 max damage
-					damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
+					damagetype |= DMG_PREVENT_PHYSICS_FORCE;
+					critType = CritType_Crit;
 					
 					Client(attacker).LastStabTime = gameTime;
 					
@@ -151,7 +188,7 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 				case TF_CUSTOM_TELEFRAG:
 				{
 					damage = 2000.0;
-					damagetype |= DMG_CRIT;
+					critType = CritType_Crit;
 					
 					int assister;
 					int entity = GetEntPropEnt(attacker, Prop_Send, "m_hGroundEntity");
@@ -244,7 +281,8 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 		if(!IsInvuln(victim))
 		{
 			bool changed;
-			if(((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH)) && SDKCall_CheckBlockBackstab(victim, attacker))
+			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH));
+			if(melee && SDKCall_CheckBlockBackstab(victim, attacker))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
 					TF2_RemoveCondition(victim, TFCond_RuneResist);
@@ -276,12 +314,42 @@ public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 				changed = true;
 			}*/
 			
-			if((damagetype & DMG_CRIT) &&
-			   GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") &&
-			   damage/4.0 < GetClientHealth(victim))
+			if(melee)
 			{
-				// Make random crits less brutal
-				damagetype &= ~DMG_CRIT;
+				if(critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
+				{
+					// Make random crits less brutal for Dead Ringers
+					critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
+					changed = true;
+				}
+				
+				// Vaccinator conditions
+				for(TFCond cond = TFCond_UberBulletResist; cond <= TFCond_UberFireResist; cond++)
+				{
+					if(TF2_IsPlayerInCondition(victim, cond))
+					{
+						// Uber Variant
+						damage *= 0.5;
+						critType = CritType_None;
+						changed = true;
+					}
+					
+					// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
+					if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
+					{
+						// Passive Variant
+						damage *= 0.9;
+						changed = true;
+					}
+				}
+			}
+			
+			if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
+			{
+				// 25% resist while disguised, a good middle ground
+				// which requires a Spy to be both disguised and cloaked
+				// to a tank a hit from a standard boss
+				damage *= 0.75;
 				changed = true;
 			}
 			

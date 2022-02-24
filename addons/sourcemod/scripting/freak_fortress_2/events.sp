@@ -4,10 +4,14 @@
 
 static bool FirstBlood;
 static bool LastMann;
+static Handle SyncHud;
 
 void Events_PluginStart()
 {
-	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_PostNoCopy);
+	SyncHud = CreateHudSynchronizer();
+	
+	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
+	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
@@ -82,7 +86,19 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 	if(client)
 	{
 		if(Client(client).IsBoss)
+		{
 			Bosses_Equip(client);
+		}
+		else if(Enabled && !Client(client).Minion)
+		{
+			// Because minion plugins don't swap em back
+			SetVariantString("");
+			AcceptEntityInput(client, "SetCustomModel");
+			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+			
+			if(RoundStatus == 0)
+				Weapons_ChangeMenu(client, CvarPreroundTime.IntValue);
+		}
 	}
 	return Plugin_Continue;
 }
@@ -277,7 +293,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					
 					if(alive > 2)
 					{
-						if(!FirstBlood || !Bosses_PlaySoundToAll(attacker, "sound_first_blood", _, attacker, SNDCHAN_VOICE, SNDLEVEL_AIRCRAFT, _, 2.0))
+						if(!FirstBlood || !Bosses_PlaySoundToAll(attacker, "sound_first_blood", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							int spree = 1;
 							if(Client(attacker).LastKillTime < engineTime + 5.0)
@@ -364,15 +380,132 @@ public Action Events_RemoveBossTimer(Handle timer, int userid)
 	return Plugin_Continue;
 }
 
-void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
+public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)
 {
-	PlayersAlive[0] = 0;
-	PlayersAlive[1] = 0;
-	PlayersAlive[2] = 0;
-	PlayersAlive[3] = 0;
+	if(Enabled)
+	{
+		int team = -1;
+		int[] clients = new int[MaxClients];
+		int total;
+		
+		for(int client=1; client<=MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+			{
+				clients[total++] = client;
+				
+				if(Client(client).IsBoss)
+				{
+					int current = GetClientTeam(client);
+					if(team == -1)
+					{
+						team = current;
+					}
+					else if(team && current != team)
+					{
+						team = 0;
+					}
+				}
+			}
+		}
+		
+		float time = CvarBonusRoundTime.FloatValue - 1.0;
+		for(int i; i<total; i++)
+		{
+			if(team <= TFTeam_Spectator || !Client(clients[i]).IsBoss)
+			{
+				SetHudTextParamsEx(-1.0, 0.5, 3.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1, time);
+				ShowSyncHudText(clients[i], SyncHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+			}
+		}
+		
+		if(team > TFTeam_Spectator)
+		{
+			int top[3];
+			int dmg[3];
+			for(int i; i<total; i++)
+			{
+				if(!Client(clients[i]).IsBoss)
+				{
+					int damage = Client(clients[i]).TotalDamage;
+					if(damage > dmg[0])
+					{
+						top[2] = top[1];
+						dmg[2] = dmg[1];
+						top[1] = top[0];
+						dmg[1] = dmg[0];
+						top[0] = clients[i];
+						dmg[0] = damage;
+					}
+					else if(damage > dmg[1])
+					{
+						top[2] = top[1];
+						dmg[2] = dmg[1];
+						top[1] = clients[i];
+						dmg[1] = damage;
+					}
+					else if(damage > dmg[2])
+					{
+						top[2] = clients[i];
+						dmg[2] = damage;
+					}
+				}
+			}
+			
+			char buffer[16];
+			for(int i; i<3; i++)
+			{
+				if(top[i])
+				{
+					float lifetime = 0.0; //(IsPlayerAlive(top[i]) ? GetGameTime() : GetEntPropFloat(top[i], Prop_Send, "m_flDeathTime")) - GetEntPropFloat(top[i], Prop_Send, "m_flSpawnTime");
+					int healing = Client(top[i]).Healing;
+					int kills = GetEntProp(top[i], Prop_Send, "m_RoundScoreData", 4, 2);	// m_iKills
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d", i+1);
+					event.SetInt(buffer, top[i]);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d", i+4);
+					event.SetInt(buffer, top[i]);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_damage", i+1);
+					event.SetInt(buffer, dmg[i]);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_damage", i+4);
+					event.SetInt(buffer, dmg[i]);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_healing", i+1);
+					event.SetInt(buffer, healing);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_healing", i+4);
+					event.SetInt(buffer, healing);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_lifetime", i+1);
+					event.SetFloat(buffer, lifetime);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_lifetime", i+4);
+					event.SetFloat(buffer, lifetime);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_kills", i+1);
+					event.SetInt(buffer, kills);
+					
+					FormatEx(buffer, sizeof(buffer), "player_%d_kills", i+4);
+					event.SetInt(buffer, kills);
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
+void Events_CheckAlivePlayers(int exclude=0, bool alive=true, bool resetMax=false)
+{
+	for(int i; i < TFTeam_MAX; i++)
+	{
+		PlayersAlive[i] = 0;
+	}
 	
 	int redBoss, bluBoss;
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(i != exclude && IsClientInGame(i) && (!alive || IsPlayerAlive(i)) && !Client(i).Minion)
 		{
@@ -389,10 +522,17 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
 		}
 	}
 	
+	for(int i; i < TFTeam_MAX; i++)
+	{
+		if(resetMax || MaxPlayersAlive[i] < PlayersAlive[i])
+			MaxPlayersAlive[i] = PlayersAlive[i];
+	}
+	
 	int team = Bosses_GetBossTeam();
 	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
 	
-	if(alive && RoundStatus == 1 && !LastMann && TotalPlayersAlive() == 2)
+	int total = TotalPlayersAlive();
+	if(alive && RoundStatus == 1 && !LastMann && total == 2)
 	{
 		LastMann = true;
 		
@@ -410,7 +550,7 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
 					{
 						if(IsClientInGame(client))
 						{
-							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_VOICE, _, _, 2.0))
+							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_AUTO, _, _, 2.0))
 							{
 								if((redBoss && (!bluBoss && GetClientTeam(client) == 3)) || (redBoss == client && !bluBoss))
 								{
@@ -437,4 +577,6 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true)
 			}
 		}
 	}
+	
+	Gamemode_CheckPointUnlock(total, !LastMann);
 }

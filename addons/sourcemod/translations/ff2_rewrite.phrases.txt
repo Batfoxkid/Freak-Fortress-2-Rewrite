@@ -2,7 +2,7 @@
 {
 	"Available Commands"
 	{
-		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines"
+		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines\n/ff2weapons - View Weapon Changes"
 	}
 	
 	"Boss Spawned As"
@@ -14,6 +14,11 @@
 	{
 		"#format"	"{1:N},{2:s},{3:d},{4:d}"
 		"en"		"{teamcolor}{1} {default}became {olive}{2} {default}with {olive}{3} (x{4}) {default}HP."
+	}
+	"You Dealt Damage Hud"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"		"You dealt {1} damage, healed {2} health, and assisted in {3} points."
 	}
 	"Boss Had Health Left"
 	{
@@ -30,6 +35,11 @@
 		"#format"	"{1:t},{2:d},{3:d}"
 		"en"		"{1} had {2} / {3} HP left."
 	}
+	"Team Had Players Left Hud"
+	{
+		"#format"	"{1:t},{2:d},{3:d}"
+		"en"		"{1} had {2} / {3} players alive."
+	}
 	"Team 0"
 	{
 		"en"		"YLW Team"
@@ -45,6 +55,10 @@
 	"Team 3"
 	{
 		"en"		"BLU Team"
+	}
+	"Point Unlocked"
+	{
+		"en"		"Control Point Unlocked"
 	}
 	"Lost Life"
 	{
@@ -105,6 +119,10 @@
 	"Command Voice"
 	{
 		"en"		"Toggle Boss Voicelines (/ff2voice)"
+	}
+	"Command Weapon"
+	{
+		"en"		"View Weapon Changes (/ff2weapons)"
 	}
 	
 	"Boss Voices Disabled"
@@ -297,5 +315,147 @@
 	"Music List"
 	{
 		"en"		"View Playlist"
+	}
+	
+	"Weapon Menu"
+	{
+		"en"		"FF2 Weapon Changes\n "
+	}
+	"Weapon Stripped"
+	{
+		"en"		"Stripped Existing Attributes"
+	}
+	"Primary"
+	{
+		"en"		"Primary"
+	}
+	"Secondary"
+	{
+		"en"		"Secondary"
+	}
+	"Melee"
+	{
+		"en"		"Melee"
+	}
+	"PDA"
+	{
+		"en"		"PDA"
+	}
+	"Utility"
+	{
+		"en"		"Utility"
+	}
+	"Building"
+	{
+		"en"		"Building"
+	}
+	"Action"
+	{
+		"en"		"Action"
+	}
+	"custom DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"{4}"
+	}
+	"damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% damage vs bosses"
+	}
+	"primary damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% primary weapon damage vs bosses"
+	}
+	"secondary damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% secondary weapon damage vs bosses"
+	}
+	"melee damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% melee weapon damage vs bosses"
+	}
+	"mod crit type on bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"100%% critical hit vs bosses"
+	}
+	"charge outlines bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Damage outlines bosses based on charge time"
+	}
+	"primary ammo from damage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Gains ammo for every {3} damage dealt to a boss"
+	}
+	"secondary ammo from damage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Gains ammo for every {3} damage dealt to a boss"
+	}
+	"multi boss rage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Decerases rage gained by bosses by {2}%%"
+	}
+	"nailgun custom slow"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"On Hit: Causes a stackable slowness on target"
+	}
+	"milk limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Healing is limited to {4} health when applied to a boss"
+	}
+	"airblast stale DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive airblasts on a boss increases airblast cooldown"
+	}
+	"hit stale DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss increases reload time"
+	}
+	"sentry death DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"On Death: Sentry explodes spectacularly"
+	}
+	"jarate limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Jarate is limited to {4} damage when applied to a boss"
+	}
+	"boost limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss decreases boost over time"
+	}
+	"garden damage DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% damage vs bosses while rocket jumping"
+	}
+	"teleport no spawn DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Unable to teleport to spawn"
+	}
+	"vaccinator DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Resistances effect boss melee hits"
+	}
+	"cloak on hit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Disables cloaking for {4} seconds when hitting a boss"
 	}
 }

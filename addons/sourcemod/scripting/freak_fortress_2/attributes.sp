@@ -160,7 +160,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 			}
 		}
 		
-		if(damage > 5.0 && Attributes_FindOnWeapon(client, weapon, 416))	// mod flaregun fires pellets with knockback
+		if(damage > 10.0 && Attributes_FindOnWeapon(client, weapon, 416))	// mod flaregun fires pellets with knockback
 		{
 			// Scorch Shot gets slower the more times it hits
 			Address address = TF2Attrib_GetByDefIndex(weapon, 5);

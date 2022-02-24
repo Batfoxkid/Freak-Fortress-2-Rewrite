@@ -8,17 +8,10 @@
 static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
+static int PointUnlock;
 static Handle HudTimer[TFTeam_MAX];
 static Handle SyncHud[TFTeam_MAX];
 static bool HasBoss[TFTeam_MAX];
-
-static int TeamColors[][] =
-{
-	{255, 255, 100, 255},
-	{100, 255, 100, 255},
-	{255, 100, 100, 255},
-	{100, 100, 255, 255}
-};
 
 void Gamemode_PluginStart()
 {
@@ -69,7 +62,9 @@ void Gamemode_RoundSetup()
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
-			CreateTimer(CvarPreroundTime.FloatValue / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+			float preround = CvarPreroundTime.FloatValue;
+			CreateTimer(preround / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
 			
 			int bosses = CvarBossVsBoss.IntValue;
 			if(bosses > 0)	// Boss vs Boss
@@ -237,18 +232,75 @@ public Action Gamemode_IntroTimer(Handle timer)
 			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, 2.0))
 			{
 				int team = GetClientTeam(client);
-				for(int i; i<MaxClients; i++)
+				int i;
+				for(; i<MaxClients; i++)
 				{
 					int boss = FindClientOfBossIndex(i);
 					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
-						return Plugin_Continue;
+						break;
 				}
 				
-				int boss = FindClientOfBossIndex(0);
-				if(boss != -1 && boss == client && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
-					break;
+				if(i == MaxClients)
+				{
+					int boss = FindClientOfBossIndex(0);
+					if(boss != -1)
+						Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0);
+				}
 			}
 		}
+	}
+	return Plugin_Continue;
+}
+
+public Action Gamemode_SetControlPoint(Handle timer)
+{
+	Events_CheckAlivePlayers();
+	
+	PointUnlock = 0;
+	int players = TotalPlayersAlive();
+	
+	float time;
+	bool found;
+	for(int i; i<MaxClients; i++)
+	{
+		int client = FindClientOfBossIndex(i);
+		if(client != -1)
+		{
+			if(Client(client).Cfg.GetFloat("pointtime", time))
+			{
+				found = true;
+				
+				int delay;
+				if(Client(client).Cfg.GetInt("pointdelay", delay))
+					time = float(delay * players) + time;
+			}
+			
+			if(Client(client).Cfg.GetInt("pointalive", PointUnlock))
+				found = true;
+				
+			if(found)
+				break;
+		}
+	}
+		
+	if(!found)
+	{
+		char buffer[256];
+		CvarCaptureTime.GetString(buffer, sizeof(buffer));
+		time = ParseFormula(buffer, players);
+		
+		CvarCaptureAlive.GetString(buffer, sizeof(buffer));
+		PointUnlock = RoundToCeil(ParseFormula(buffer, players));
+	}
+	
+	if(time > 0.001)
+	{
+		SetArenaCapEnableTime(time);
+	}
+	else if(time > -0.001)
+	{
+		SetArenaCapEnableTime(time);
+		SetControlPoint(false);
 	}
 	return Plugin_Continue;
 }
@@ -259,7 +311,7 @@ void Gamemode_RoundStart()
 	
 	if(Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
-		Events_CheckAlivePlayers();
+		Events_CheckAlivePlayers(_, _, true);
 		
 		int[] merc = new int[MaxClients];
 		int[] boss = new int[MaxClients];
@@ -323,6 +375,26 @@ void Gamemode_RoundStart()
 		}
 		
 		Music_RoundStart();
+	}
+}
+
+void Gamemode_CheckPointUnlock(int alive, bool notice)
+{
+	if(PointUnlock > 0 && alive <= PointUnlock)
+	{
+		if(notice && !GetControlPoint())
+		{
+			EmitGameSoundToAll("Announcer.AM_CapEnabledRandom");
+			for(int client=1; client<=MaxClients; client++)
+			{
+				if(IsClientInGame(client) && IsPlayerAlive(client))
+					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Point Unlocked");
+			}
+		}
+		
+		SetArenaCapEnableTime(0.0);
+		SetControlPoint(true);
+		PointUnlock = 0;
 	}
 }
 
@@ -434,45 +506,53 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	float time = CvarBonusRoundTime.FloatValue - 5.0;
+	bool spec = CvarSpecTeam.BoolValue;
+	float time = CvarBonusRoundTime.FloatValue - 1.0;
 	for(int i; i<TFTeam_MAX; i++)
 	{
-		if(HasBoss[i])
+		if(HasBoss[i] && bosses[i])
 		{
-			HasBoss[i] = false;
-			
-			if(bosses[i])
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
+			for(int a; a<total; a++)
 			{
-				SetHudTextParamsEx(-1.0, 0.4 - (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
-				for(int a; a<total; a++)
+				SetGlobalTransTarget(clients[a]);
+				
+				if(teamName[i])	// Team with a Name
 				{
-					SetGlobalTransTarget(clients[a]);
-					
-					if(teamName[i])	// Team with a Name
-					{
-						Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left", "_s", buffer, totalHealth[i], totalMax[i]);
-					}
-					else if(bosses[i] == 1)	// Solo Boss
-					{
-						Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
-					}
-					else	// Team without a Name
-					{
-						FormatEx(buffer, sizeof(buffer), "Team %d", i);
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
-					}
+					Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
+					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left", "_s", buffer, totalHealth[i], totalMax[i]);
 				}
-			}
-			else
-			{
-				for(int a; a<total; a++)
+				else if(bosses[i] == 1)	// Solo Boss
 				{
-					ClearSyncHud(clients[a], SyncHud[i]);
+					Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
+					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
+				}
+				else	// Team without a Name
+				{
+					FormatEx(buffer, sizeof(buffer), "Team %d", i);
+					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
 				}
 			}
 		}
+		else if(MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
+		{
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
+			for(int a; a<total; a++)
+			{
+				SetGlobalTransTarget(clients[a]);
+				FormatEx(buffer, sizeof(buffer), "Team %d", i);
+				ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
+			}
+		}
+		else if(HasBoss[i])
+		{
+			for(int a; a<total; a++)
+			{
+				ClearSyncHud(clients[a], SyncHud[i]);
+			}
+		}
+		
+		HasBoss[i] = false;
 		
 		if(HudTimer[i])
 		{
@@ -829,13 +909,13 @@ void Gamemode_PlayerRunCmd(int client)
 		{
 			int team = GetClientTeam(client);
 			if(PlayersAlive[team] < 3)
+			{
 				TF2_AddCondition(client, TFCond_CritCola, 0.5);
+				TF2_AddCondition(client, TFCond_MiniCritOnKill, 0.5);
+			}
 			
 			if(PlayersAlive[team] < 2)
-			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
-				Client(client).GlowFor = GetGameTime() + 0.5;
-			}
 		}
 		
 		if(Client(client).Glowing)

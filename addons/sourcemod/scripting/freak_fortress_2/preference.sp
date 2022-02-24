@@ -214,7 +214,15 @@ int Preference_PickBoss(int client, int team=-1)
 public Action Preference_BossMenuLegacy(int client, int args)
 {
 	FReplyToCommand(client, "%t", "Legacy Boss Menu Command");
-	return Preference_BossMenuCmd(client, 0);
+	
+	if(client)
+	{
+		ViewingPack[client] = Enabled ? Charset : -1;
+		ViewingPage[client] = 0;
+		ViewingBoss[client] = -1;
+		BossMenu(client);
+	}
+	return Plugin_Handled;
 }
 
 public Action Preference_BossMenuCmd(int client, int args)
@@ -317,6 +325,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 			ViewingBoss[client] = Bosses_GetByName(buffer, false, false, GetClientLanguage(client));
 		}
 		
+		Menu_Command(client);
 		BossMenu(client);
 	}
 	else
@@ -324,6 +333,8 @@ public Action Preference_BossMenuCmd(int client, int args)
 		ViewingPack[client] = Enabled ? Charset : -1;
 		ViewingPage[client] = 0;
 		ViewingBoss[client] = -1;
+		
+		Menu_Command(client);
 		BossMenu(client);
 	}
 	return Plugin_Handled;

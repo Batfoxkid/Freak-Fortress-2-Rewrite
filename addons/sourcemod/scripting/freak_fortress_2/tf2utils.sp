@@ -20,6 +20,7 @@ void TF2U_PluginLoad()
 	MarkNativeAsOptional("TF2Util_GetPlayerWearableCount");
 	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
 	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
+	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
 	#endif
 }
 
@@ -30,14 +31,14 @@ void TF2U_PluginStart()
 	#endif
 }
 
-void TF2U_LibraryAdded(const char[] name)
+stock void TF2U_LibraryAdded(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(!Loaded)
 		Loaded = StrEqual(name, TF2U_LIBRARY);
 }
 
-void TF2U_LibraryRemoved(const char[] name)
+stock void TF2U_LibraryRemoved(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
@@ -107,4 +108,18 @@ int TF2U_GetMaxOverheal(int client)
 	maxoverheal *= Attributes_FindOnPlayer(client, 800, true, 1.0);
 	maxoverheal *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
 	return maxhealth + (RoundFloat(maxoverheal / 5.0) * 5);
+}
+
+void TF2U_EquipPlayerWearable(int client, int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(Loaded)
+	{
+		TF2Util_EquipPlayerWearable(client, entity);
+	}
+	else
+	#endif
+	{
+		SDKCall_EquipWearable(client, entity);
+	}
 }

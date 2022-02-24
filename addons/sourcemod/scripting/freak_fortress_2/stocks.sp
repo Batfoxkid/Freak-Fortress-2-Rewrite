@@ -761,6 +761,52 @@ stock int TF2_GetClassnameSlot(const char[] classname, bool econ=false)
 	return TFWeaponSlot_Melee;
 }
 
+stock bool GetControlPoint()
+{
+	int entity = MaxClients + 1;
+	while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+	{
+		if(GetEntProp(entity, Prop_Data, "m_bLocked"))
+			return false;
+	}
+	return true;
+}
+
+stock void SetControlPoint(bool enable)
+{
+	/*int entity = MaxClients + 1;
+	while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+	{
+		AcceptEntityInput(entity, (enable ? "ShowModel" : "HideModel"));
+		SetVariantBool(enable);
+		AcceptEntityInput(entity, "SetLocked");
+	}*/
+	
+	if(enable)
+	{
+		int entity = FindEntityByClassname(-1, "tf_logic_arena");
+		if(entity != -1)
+			FireEntityOutput(entity, "OnCapEnabled", entity);
+	}
+	else
+	{
+		int entity = MaxClients + 1;
+		while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+		{
+			AcceptEntityInput(entity, "HideModel");
+			SetVariantBool(!enable);
+			AcceptEntityInput(entity, "SetLocked");
+		}
+	}
+}
+
+stock void SetArenaCapEnableTime(float time)
+{
+	int entity = FindEntityByClassname(-1, "tf_logic_arena");
+	if(entity != -1)
+		DispatchKeyValueFloat(entity, "CapEnableDelay", time);
+}
+
 stock void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();
@@ -825,6 +871,23 @@ stock void FShowActivity(int client, const char[] message, any ...)
 	SetGlobalTransTarget(client);
 	VFormat(buffer, sizeof(buffer), message, 3);
 	CShowActivity2(client, "\x01{olive}[FF2]{default} ", buffer);
+}
+
+stock void PrintSayText2(int client, int author, bool chat=true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
+{
+	BfWrite bf = view_as<BfWrite>(StartMessageOne("SayText2", client, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS)); 
+	
+	bf.WriteByte(author);
+	bf.WriteByte(chat);
+	
+	bf.WriteString(message); 
+	
+	bf.WriteString(param1); 
+	bf.WriteString(param2); 
+	bf.WriteString(param3);
+	bf.WriteString(param4);
+	
+	EndMessage();
 }
 
 stock void Debug(const char[] buffer, any ...)
