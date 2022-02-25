@@ -23,7 +23,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"2.0.0"
+#define PLUGIN_VERSION	"Beta 2/25/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -174,6 +174,8 @@ ConVar CvarSpecTeam;
 ConVar CvarBossVsBoss;
 ConVar CvarBossSewer;
 ConVar CvarHealthBar;
+ConVar CvarRefreshDmg;
+ConVar CvarRefreshTime;
 ConVar CvarBossTriple;
 ConVar CvarBossCrits;
 ConVar CvarBossHealing;
@@ -210,10 +212,12 @@ Handle ThisPlugin;
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/events.sp"
 #include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/forwards.sp"
 #include "freak_fortress_2/forwards_old.sp"
 #include "freak_fortress_2/gamemode.sp"
 #include "freak_fortress_2/menu.sp"
 #include "freak_fortress_2/music.sp"
+#include "freak_fortress_2/natives.sp"
 #include "freak_fortress_2/natives_old.sp"
 #include "freak_fortress_2/preference.sp"
 #include "freak_fortress_2/sdkcalls.sp"
@@ -239,7 +243,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	ThisPlugin = myself;
 	
+	Forward_PluginLoad();
 	ForwardOld_PluginLoad();
+	Native_PluginLoad();
 	NativeOld_PluginLoad();
 	TF2U_PluginLoad();
 	return APLRes_Success;

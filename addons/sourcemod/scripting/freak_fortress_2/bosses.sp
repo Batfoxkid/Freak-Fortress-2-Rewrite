@@ -1407,7 +1407,10 @@ void Bosses_Create(int client, int special, int team)
 	Client(client).SetLastPlayed(buffer);
 	
 	if(Client(client).Cfg)
+	{
+		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
+	}
 	
 	Client(client).Cfg = cfg.Clone(ThisPlugin);
 	Client(client).Cfg.SetInt("special", special);
@@ -1451,6 +1454,8 @@ void Bosses_Create(int client, int special, int team)
 	
 	if(!Enabled)
 		Music_RoundStart();
+	
+	Forward_OnBossCreated(client, Client(client).Cfg);
 	
 	if(Client(client).Cfg.GetInt("companion", i))
 	{
@@ -1918,6 +1923,7 @@ void Bosses_ClientDisconnect(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 	}
@@ -1928,6 +1934,8 @@ void Bosses_Remove(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		Forward_OnBossRemoved(client);
+		
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 		
@@ -2114,18 +2122,18 @@ void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability,
 
 static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
 {
+	bool result = true;
 	char buffer1[64];
 	if(cfg.Get("life", buffer1, sizeof(buffer1)))
 	{
-		bool found;
 		int life = Client(client).Lives;
 		int current;
 		char buffer2[12];
 		do
 		{
 			int add = SplitString(buffer1[current], " ", buffer2, sizeof(buffer2));
-			found = add != -1;
-			if(found)
+			result = add != -1;
+			if(result)
 			{
 				current += add;
 			}
@@ -2136,17 +2144,28 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 			
 			if(StringToInt(buffer2) == life)
 			{
-				found = true;
+				result = true;
 				break;
 			}
-		} while(found);
-		
-		if(!found)
+		} while(result);
+	}
+	
+	if(plugin[0])
+	{
+		FormatEx(buffer1, sizeof(buffer1), "%s.smx", plugin);
+	}
+	else
+	{
+		buffer1[0] = 0;
+	}
+	
+	if(Forward_OnAbilityPre(client, ability, plugin, cfg, result))
+	{
+		if(!ForwardOld_PreAbility(client, buffer1, ability, slot))
 			return;
 	}
 	
-	FormatEx(buffer1, sizeof(buffer1), "%s.smx", plugin);
-	if(!ForwardOld_PreAbility(client, buffer1, ability, slot))
+	if(!result)
 		return;
 	
 	int status = 3;
@@ -2234,7 +2253,9 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 	}
 	
+	Forward_OnAbility(client, ability, plugin, cfg, buffer1);
 	ForwardOld_OnAbility(client, buffer1, ability, status);
+	Forward_OnAbilityPost(client, ability, plugin, cfg);
 }
 
 public Action Bosses_UseBossCharge(Handle timer, DataPack data)

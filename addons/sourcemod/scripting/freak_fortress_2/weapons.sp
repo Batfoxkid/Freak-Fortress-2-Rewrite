@@ -258,19 +258,6 @@ void Weapons_ShowChanges(int client, int entity)
 						
 						if((!TF2ED_GetAttributeDefinitionString(attrib, "hidden", buffer3, sizeof(buffer3)) || !StringToInt(buffer3)) && TF2ED_GetAttributeDefinitionString(attrib, "description_string", buffer1, sizeof(buffer1)))
 						{
-							int type;
-							if(TF2ED_GetAttributeDefinitionString(attrib, "effect_type", buffer3, sizeof(buffer3)))
-							{
-								if(StrEqual(buffer3, "positive"))
-								{
-									type = 1;
-								}
-								else if(StrEqual(buffer3, "negative"))
-								{
-									type = -1;
-								}
-							}
-							
 							TF2ED_GetAttributeDefinitionString(attrib, "description_format", buffer3, sizeof(buffer3));
 							FormatValue(buffer2, buffer2, sizeof(buffer2), buffer3);
 							PrintSayText2(client, client, true, buffer1, buffer2);

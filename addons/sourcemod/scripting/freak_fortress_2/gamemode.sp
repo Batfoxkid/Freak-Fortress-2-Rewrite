@@ -762,7 +762,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 				}
 			}
 			
-			float refresh = 2.8;
+			float refresh = CvarRefreshTime.FloatValue;
 			if(setting == 1 || nobar)
 			{
 			}

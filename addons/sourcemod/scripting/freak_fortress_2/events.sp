@@ -105,9 +105,12 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 
 public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("patient"));
-	if(Client(client).IsBoss)
-		Gamemode_UpdateHUD(GetClientTeam(client), true);
+	if(CvarRefreshDmg.BoolValue)
+	{
+		int client = GetClientOfUserId(event.GetInt("patient"));
+		if(Client(client).IsBoss)
+			Gamemode_UpdateHUD(GetClientTeam(client), true);
+	}
 }
 
 public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -230,7 +233,8 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 			Client(victim).MaxLives = maxlives;
 		}
 		
-		Gamemode_UpdateHUD(team);
+		if(CvarRefreshDmg.BoolValue)
+			Gamemode_UpdateHUD(team);
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
 }

@@ -135,7 +135,7 @@ public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 	
 	for(int client=1; client<=MaxClients; client++)
 	{
-		if(Client(client).IsBoss)
+		if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) > TFTeam_Spectator)
 			TF2_RespawnPlayer(client);
 	}
 }

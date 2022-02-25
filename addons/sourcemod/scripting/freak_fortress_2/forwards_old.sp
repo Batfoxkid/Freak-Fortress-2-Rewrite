@@ -13,18 +13,18 @@
 	bool ForwardOld_OnMusicPerBoss(int client)
 */
 
-GlobalForward PreAbility;
-GlobalForward OnAbility;
-GlobalForward OnMusic;
-GlobalForward OnMusic2;
-GlobalForward OnTriggerHurt;
-GlobalForward OnSpecialSelected;
-GlobalForward OnAddQueuePoints;
-GlobalForward OnLoadCharacterSet;
-GlobalForward OnLoseLife;
-GlobalForward OnAlivePlayersChanged;
-GlobalForward OnBackstabbed;
-GlobalForward OnMusicPerBoss;
+static GlobalForward PreAbility;
+static GlobalForward OnAbility;
+static GlobalForward OnMusic;
+static GlobalForward OnMusic2;
+static GlobalForward OnTriggerHurt;
+static GlobalForward OnSpecialSelected;
+static GlobalForward OnAddQueuePoints;
+static GlobalForward OnLoadCharacterSet;
+static GlobalForward OnLoseLife;
+static GlobalForward OnAlivePlayersChanged;
+static GlobalForward OnBackstabbed;
+static GlobalForward OnMusicPerBoss;
 
 void ForwardOld_PluginLoad()
 {

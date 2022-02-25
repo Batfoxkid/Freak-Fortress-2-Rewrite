@@ -25,6 +25,8 @@ void ConVar_PluginStart()
 	CvarBossVsBoss = CreateConVar("ff2_game_bvb", "0", "How many bosses per a team, 0 to disable", FCVAR_NOTIFY, true, 0.0, true, float(MaxClients/2));
 	CvarBossSewer = CreateConVar("ff2_game_suicide", "1", "If bosses can use kill binds during the round", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	CvarHealthBar = CreateConVar("ff2_game_healthbar", "3", "If a health bar and/or text will be shown, 1 = Health Bar, 2 = Health Display, 3 = Both", FCVAR_NOTIFY, true, 0.0, true, 3.0);
+	CvarRefreshDmg = CreateConVar("ff2_game_healthbar_refreshdmg", "1", "Refresh health display when damage or healing is done", _, true, 0.0, true, 1.0);
+	CvarRefreshTime = CreateConVar("ff2_game_healthbar_refreshtime", "2.8", "Refresh rate of the health display", _, true, 0.0);
 	CvarBossTriple = CreateConVar("ff2_boss_triple", "1", "If v1 bosses will deal extra damage versus players by default", _, true, 0.0, true, 1.0);
 	CvarBossCrits = CreateConVar("ff2_boss_crits", "0", "If v1 bosses can perform random crits by default", _, true, 0.0, true, 1.0);
 	CvarBossHealing = CreateConVar("ff2_boss_healing", "0", "If v1 bosses can be healed by default, 1 = Self Healing Only, 2 = Other Healing Only, 3 = Both", _, true, 0.0, true, 3.0);
