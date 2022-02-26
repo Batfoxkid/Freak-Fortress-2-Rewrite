@@ -8,8 +8,8 @@
 /**
  * Emits a boss's random sound to a list of clients.
  * 
- * @param clients       Array of client indexes
- * @param numClients    Number of clients in the array
+ * @param clients		Array of client indexes
+ * @param numClients	Number of clients in the array
  * @param key			Boss's sound key
  * @param boss			Boss's client index
  * @param required		Required value for a sound
@@ -25,16 +25,29 @@
  * @param updatePos		Unknown (updates positions?)
  * @param soundtime		Alternate time to play sound for
  * 
- * @error				Invalid client index
+ * @error				Invalid client index or client is not a boss
  * 
  * @return				True if the sound was found, false otherwise
  */
 native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0);
 
 /**
+ * Activates a range of abilities within slots
+ * 
+ * @param boss	Boss's client index
+ * @param low	Low ability slot
+ * @param high	High ability slot
+ * 
+ * @error		Invalid client index or client is not a boss
+ * 
+ * @return		True if the sound was found, false otherwise
+ */
+native void FF2R_DoBossSlot(int boss, int low, int high=-2147483647);
+
+/**
  * Called when a boss gets removed
  * 
- * @param client	Client index, however they may not always be in-game
+ * @param client	Client index, however they may not always be in-game or have a boss cfg
  * 
  * @noreturn
  */
@@ -43,23 +56,23 @@ forward void FF2R_OnBossRemoved(int client);
 /**
  * Wrapper to emit sound to one client.
  * 
- * @param client        Client index
+ * @param client		Client index
  * @param key			Boss's sound key
  * @param boss			Boss's client index
  * @param required		Required value for a sound
- * @param entity        Entity to emit from
- * @param channel       Channel to emit with
- * @param level         Sound level
- * @param flags         Sound flags
- * @param volume        Sound volume
- * @param pitch         Sound pitch
- * @param speakerentity Unknown
- * @param origin        Sound origin
- * @param dir           Sound direction
- * @param updatePos     Unknown (updates positions?)
- * @param soundtime     Alternate time to play sound for
+ * @param entity		Entity to emit from
+ * @param channel		Channel to emit with
+ * @param level			Sound level
+ * @param flags			Sound flags
+ * @param volume		Sound volume
+ * @param pitch			Sound pitch
+ * @param speakerentity	Unknown
+ * @param origin		Sound origin
+ * @param dir			Sound direction
+ * @param updatePos		Unknown (updates positions?)
+ * @param soundtime		Alternate time to play sound for
  * 
- * @error				Invalid client index
+ * @error				Invalid client index or client is not a boss
  * 
  * @return				True if the sound was found, false otherwise
  */
@@ -81,19 +94,19 @@ stock void FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, co
  * @param key			Boss's sound key
  * @param boss			Boss's client index
  * @param required		Required value for a sound
- * @param entity        Entity to emit from
- * @param channel       Channel to emit with
- * @param level         Sound level
- * @param flags         Sound flags
- * @param volume        Sound volume
- * @param pitch         Sound pitch
- * @param speakerentity Unknown
- * @param origin        Sound origin
- * @param dir           Sound direction
- * @param updatePos     Unknown (updates positions?)
- * @param soundtime     Alternate time to play sound for
+ * @param entity		Entity to emit from
+ * @param channel		Channel to emit with
+ * @param level			Sound level
+ * @param flags			Sound flags
+ * @param volume		Sound volume
+ * @param pitch			Sound pitch
+ * @param speakerentity	Unknown
+ * @param origin		Sound origin
+ * @param dir			Sound direction
+ * @param updatePos		Unknown (updates positions?)
+ * @param soundtime		Alternate time to play sound for
  * 
- * @error				Invalid client index
+ * @error				Invalid client index or client is not a boss
  * 
  * @return				True if the sound was found, false otherwise
  */

@@ -7,6 +7,7 @@ void Native_PluginLoad()
 	CreateNative("FF2R_GetBossData", Native_GetBossData);
 	CreateNative("FF2R_SetBossData", Native_SetBossData);
 	CreateNative("FF2R_EmitBossSound", Native_EmitBossSound);
+	CreateNative("FF2R_DoBossSlot", Native_DoBossSlot);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -14,8 +15,8 @@ void Native_PluginLoad()
 public any Native_GetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0 || client >= MAXTF2PLAYERS)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+	if(client < 0 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not in-game", client);
 	
 	return Client(client).Cfg;
 }
@@ -23,8 +24,8 @@ public any Native_GetBossData(Handle plugin, int params)
 public any Native_SetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0 || client >= MAXTF2PLAYERS)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+	if(client < 0 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not in-game", client);
 	
 	if(Client(client).Cfg)
 		DeleteCfg(Client(client).Cfg);
@@ -57,4 +58,19 @@ public any Native_EmitBossSound(Handle plugin, int params)
 	GetNativeArray(14, dir, sizeof(dir));
 	
 	return Bosses_PlaySound(boss, clients, amount, sample, required, GetNativeCell(6), GetNativeCell(7), GetNativeCell(8), GetNativeCell(9), GetNativeCell(10), GetNativeCell(11), GetNativeCell(12), origin, dir, GetNativeCell(15), GetNativeCell(16));
+}
+
+public any Native_DoBossSlot(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients || !Client(client).Cfg)
+		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not a boss", client);
+	
+	int low = GetNativeCell(2);
+	int high = GetNativeCell(3);
+	if(high < low)
+		high = low;
+	
+	Bosses_UseSlot(client, low, high);
+	return 0;
 }
