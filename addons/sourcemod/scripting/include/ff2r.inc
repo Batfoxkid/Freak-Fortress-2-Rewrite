@@ -111,39 +111,10 @@ stock void FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] requ
 	return FF2R_EmitBossSound(clients, total, key, boss, required, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 }
 
-
 /**
  *	Below is related to using ConfigMap, though cfgmap is not required for this include, needed for the below
  */
 #if defined CFGMAP_FF2R
-
-
-/**
- * Get's the ConfigMap of the boss the player's playing as
- * 
- * @note			Don't close this handle
- * 
- * @param client	Client index
- * 
- * @error			Invalid client index
- * 
- * @return			ConfigMap handle if found, null otherwise
- */
-native ConfigMap FF2R_GetBossData(int client);
-
-/**
- * Changes primary handle the boss uses
- * 
- * @note			The previous handle the boss contains will be closed
- * 
- * @param client	Client index
- * @param cfg		ConfigMap handle, can be null to remove boss
- * 
- * @error			Invalid client index
- * 
- * @noreturn
- */
-native void FF2R_SetBossData(int client, ConfigMap cfg=null);
 
 methodmap ConfigData < ConfigMap
 {
@@ -173,6 +144,10 @@ methodmap ConfigData < ConfigMap
 		view_as<ConfigMap>(this).GetBool(key, value, false);
 		return value;
 	}
+	public ConfigData GetSection(const char[] key)
+	{
+		return view_as<ConfigData>(view_as<ConfigMap>(this).GetSection(key));
+	}
 	public void SetString(const char[] key, const char[] value)
 	{
 		view_as<ConfigMap>(this).Set(key, value);
@@ -192,10 +167,11 @@ methodmap AbilityData < ConfigData
 	public bool IsMyPlugin()
 	{
 		char plugin[64];
-		if(this.GetString("plugin_name", plugin, sizeof(plugin))
+		if(this.GetString("plugin_name", plugin, sizeof(plugin), ""))
 		{
 			char buffer[PLATFORM_MAX_PATH];
 			GetPluginFilename(INVALID_HANDLE, buffer, sizeof(buffer));
+			SplitString(buffer, ".smx", buffer, sizeof(buffer));
 			
 			int highest = -1;
 			for(int i = strlen(buffer)-1; i>0; i--)
@@ -225,6 +201,33 @@ methodmap BossData < ConfigData
 		return view_as<AbilityData>(view_as<ConfigMap>(this).GetSection(key));
 	}
 }
+
+/**
+ * Get's the ConfigMap of the boss the player's playing as
+ * 
+ * @note			Don't close this handle
+ * 
+ * @param client	Client index
+ * 
+ * @error			Invalid client index
+ * 
+ * @return			ConfigMap handle if found, null otherwise
+ */
+native BossData FF2R_GetBossData(int client);
+
+/**
+ * Changes primary handle the boss uses
+ * 
+ * @note			The previous handle the boss contains will be closed
+ * 
+ * @param client	Client index
+ * @param cfg		ConfigMap handle, can be null to remove boss
+ * 
+ * @error			Invalid client index
+ * 
+ * @noreturn
+ */
+native void FF2R_SetBossData(int client, BossData cfg=null);
 
 /**
  * Called when a boss gets created

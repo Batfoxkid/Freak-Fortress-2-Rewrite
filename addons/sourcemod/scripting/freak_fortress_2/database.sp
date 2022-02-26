@@ -76,7 +76,7 @@ public Action Database_QueryCmd(int args)
 	char buffer[1024];
 	GetCmdArgString(buffer, sizeof(buffer));
 	
-	ReplaceString(buffer, sizeof(buffer), "\"", "");
+	StripQuotes(buffer);
 	
 	Transaction tr = new Transaction();
 	tr.AddQuery(buffer);
