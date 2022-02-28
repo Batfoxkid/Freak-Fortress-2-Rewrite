@@ -344,7 +344,7 @@ static void FormatValue(const char[] value, char[] buffer, int length, const cha
 stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 {
 	#if defined __tf_custom_attributes_included
-	if(TCALoaded && weapon > MaxClients)
+	if(TCALoaded && weapon > MaxClients && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
 		if(kv)

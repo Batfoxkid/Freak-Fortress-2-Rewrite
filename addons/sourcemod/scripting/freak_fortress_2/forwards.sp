@@ -72,7 +72,6 @@ void Forward_OnAbility(int client, const char[] ability, const char[] plugin, Co
 		{
 			Handle plugi = ReadPlugin(iter);
 			GetPluginFilename(plugi, buffer, sizeof(buffer));
-			SplitString(buffer, ".smx", buffer, sizeof(buffer));
 			
 			int highest = -1;
 			for(int i = strlen(buffer)-1; i>0; i--)

@@ -690,12 +690,19 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 				kv = new KeyValues("character");
 				kv.ImportFromFile(filepath);
 				kv.SetString("filename", filename);
-				Kvs.SetValue(name, kv);
+				if(!Kvs.SetValue(name, kv))
+					RequestFrame(NativeOld_DeleteHandle, kv);
+				
 				return kv;
 			}
 		}
 	}
 	return INVALID_HANDLE;
+}
+
+public void NativeOld_DeleteHandle(Handle handle)
+{
+	delete handle;
 }
 
 public any NativeOld_StartMusic(Handle plugin, int params)

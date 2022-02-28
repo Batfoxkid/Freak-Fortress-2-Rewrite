@@ -1844,6 +1844,8 @@ static void EquipBoss(int client, bool weapons)
 					}
 				}
 			}
+			
+			delete snap;
 		}
 	}
 	

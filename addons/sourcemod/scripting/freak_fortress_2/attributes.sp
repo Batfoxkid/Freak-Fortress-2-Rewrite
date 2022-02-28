@@ -142,7 +142,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 		TF2_AddCondition(client, TFCond_MiniCritOnKill, 0.001);
 	}
 	
-	if(weapon > MaxClients)
+	if(weapon > MaxClients && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		if(Attributes_FindOnWeapon(client, weapon, 44))	// scattergun has knockback
 		{
@@ -209,6 +209,9 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 
 void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
 {
+	if(weapon > MaxClients && !HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+		weapon = -1;
+	
 	char classname[36];
 	int slot = TFWeaponSlot_Building;
 	if(weapon > MaxClients)

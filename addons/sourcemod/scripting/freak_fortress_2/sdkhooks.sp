@@ -139,7 +139,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					Client(attacker).LastStabTime = gameTime;
 					
-					if(!Client(attacker).IsBoss)
+					if(!Client(attacker).IsBoss && weapon > MaxClients)
 					{
 						SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+0.5);
 						
