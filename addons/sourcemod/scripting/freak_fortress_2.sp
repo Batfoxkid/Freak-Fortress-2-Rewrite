@@ -23,7 +23,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 2/28/2022"
+#define PLUGIN_VERSION	"Beta 2/29/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"

@@ -317,32 +317,29 @@ public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 
 public Action Menu_AddPointsCmd(int client, int args)
 {
-	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	if(args == 2)
 	{
-		if(args == 2)
+		char name[MAX_TARGET_LENGTH];
+		GetCmdArg(2, name, sizeof(name));
+		int points = StringToInt(name);
+		
+		GetCmdArg(1, name, sizeof(name));
+		
+		bool lang;
+		int matches;
+		int[] target = new int[MaxClients];
+		if((matches=ProcessTargetString(name, client, target, MaxClients, COMMAND_FILTER_CONNECTED, name, sizeof(name), lang)) > 0)
 		{
-			char name[MAX_TARGET_LENGTH];
-			GetCmdArg(2, name, sizeof(name));
-			int points = StringToInt(name);
-			
-			GetCmdArg(1, name, sizeof(name));
-			
-			bool lang;
-			int matches;
-			int[] target = new int[MaxClients];
-			if((matches=ProcessTargetString(name, client, target, MaxClients, COMMAND_FILTER_CONNECTED, name, sizeof(name), lang)) > 0)
-			{
-				AddQueuePoints(client, points, target, matches, name, lang);
-			}
-			else
-			{
-				ReplyToTargetError(client, matches);
-			}
+			AddQueuePoints(client, points, target, matches, name, lang);
 		}
 		else
 		{
-			ReplyToCommand(client, "[SM] Usage: ff2_addpoints <player> <points>");
+			ReplyToTargetError(client, matches);
 		}
+	}
+	else if(args || GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		ReplyToCommand(client, "[SM] Usage: ff2_addpoints <player> <points>");
 	}
 	else
 	{

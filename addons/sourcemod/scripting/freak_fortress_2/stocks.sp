@@ -11,7 +11,7 @@
 
 void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
 {
-	static const char Prefixes[][] = {"ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony"};	// VSP still a thing
+	static const char Prefixes[][] = { "ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony" };
 	
 	int length = strlen(cmd)+6;
 	char[] command = new char[length];

@@ -274,6 +274,8 @@ public any NativeOld_SetBossHealth(Handle plugin, int params)
 		Bosses_SetSpeed(client);
 		Gamemode_UpdateHUD(GetClientTeam(client), newHealth > lastHealth);
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetBossMaxHealth(Handle plugin, int params)
@@ -298,6 +300,8 @@ public any NativeOld_SetBossMaxHealth(Handle plugin, int params)
 		Bosses_SetSpeed(client);
 		Gamemode_UpdateHUD(GetClientTeam(client), (newHealth > lastHealth && Client(client).Lives > 1));
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetBossLives(Handle plugin, int params)
@@ -322,6 +326,8 @@ public any NativeOld_SetBossLives(Handle plugin, int params)
 		Bosses_SetSpeed(client);
 		Gamemode_UpdateHUD(GetClientTeam(client), newLives > lastLives);
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetBossMaxLives(Handle plugin, int params)
@@ -343,6 +349,8 @@ public any NativeOld_SetBossMaxLives(Handle plugin, int params)
 		Bosses_SetSpeed(client);
 		Gamemode_UpdateHUD(GetClientTeam(client));
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetBossCharge(Handle plugin, int params)
@@ -359,6 +367,8 @@ public any NativeOld_SetBossCharge(Handle plugin, int params)
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
 		Client(client).SetCharge(GetNativeCell(2), GetNativeCell(3));
+	
+	return 0;
 }
 
 public any NativeOld_GetBossRageDamage(Handle plugin, int params)
@@ -375,6 +385,8 @@ public any NativeOld_SetBossRageDamage(Handle plugin, int params)
 	int client = FindClientOfBossIndex(GetNativeCell(1));
 	if(client != -1)
 		Client(client).RageDamage = float(GetNativeCell(2));
+	
+	return 0;
 }
 
 public any NativeOld_GetRoundState(Handle plugin, int params)
@@ -387,6 +399,7 @@ public any NativeOld_GetRoundState(Handle plugin, int params)
 		case RoundState_RoundRunning, RoundState_Stalemate:
 			return 1;
 	}
+	
 	return 2;
 }
 
@@ -444,6 +457,8 @@ public any NativeOld_DoAbility(Handle plugin, int params)
 		GetNativeString(3, ability, sizeof(ability));
 		Bosses_UseAbility(client, plugi, ability, GetNativeCell(4), GetNativeCell(5));
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetAbilityArgument(Handle plugin, int params)
@@ -460,6 +475,7 @@ public any NativeOld_GetAbilityArgument(Handle plugin, int params)
 		
 		Bosses_GetArgInt(client, ability, arg, value);
 	}
+	
 	return value;
 }
 
@@ -477,6 +493,7 @@ public any NativeOld_GetAbilityArgumentFloat(Handle plugin, int params)
 		
 		Bosses_GetArgFloat(client, ability, arg, value);
 	}
+	
 	return value;
 }
 
@@ -497,7 +514,7 @@ public any NativeOld_GetAbilityArgumentString(Handle plugin, int params)
 		Bosses_GetArgString(client, ability, arg, buffer, size);
 	}
 	
-	SetNativeString(5, buffer, size);
+	return SetNativeString(5, buffer, size);
 }
 
 public any NativeOld_GetArgNamedI(Handle plugin, int params)
@@ -511,6 +528,7 @@ public any NativeOld_GetArgNamedI(Handle plugin, int params)
 		GetNativeString(4, arg, sizeof(arg));
 		Bosses_GetArgInt(client, ability, arg, value);
 	}
+	
 	return value;
 }
 
@@ -525,6 +543,7 @@ public any NativeOld_GetArgNamedF(Handle plugin, int params)
 		GetNativeString(4, arg, sizeof(arg));
 		Bosses_GetArgFloat(client, ability, arg, value);
 	}
+	
 	return value;
 }
 
@@ -542,7 +561,7 @@ public any NativeOld_GetArgNamedS(Handle plugin, int params)
 		Bosses_GetArgString(client, ability, arg, buffer, size);
 	}
 	
-	SetNativeString(5, buffer, size);
+	return SetNativeString(5, buffer, size);
 }
 
 public any NativeOld_GetDamage(Handle plugin, int params)
@@ -599,6 +618,7 @@ public any NativeOld_GetFF2flags(Handle plugin, int params)
 				flags += FF2FLAG_ROCKET_JUMPING;
 		}
 	}
+	
 	return flags;
 }
 
@@ -624,8 +644,12 @@ public any NativeOld_SetFF2flags(Handle plugin, int params)
 				pickups += 2;
 			
 			Client(client).Pickups = pickups;
+			
+			Client(client).Cfg.SetInt("cosmetics", (flags & FF2FLAG_ALLOW_BOSS_WEARABLES) ? 1 : 0);
 		}
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetQueuePoints(Handle plugin, int params)
@@ -648,6 +672,8 @@ public any NativeOld_SetQueuePoints(Handle plugin, int params)
 	{
 		Client(client).Queue = GetNativeCell(2);
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetSpecialKV(Handle plugin, int params)
@@ -697,6 +723,7 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 			}
 		}
 	}
+	
 	return INVALID_HANDLE;
 }
 
@@ -730,6 +757,8 @@ public any NativeOld_StartMusic(Handle plugin, int params)
 	{
 		Music_PlayNextSong(client);
 	}
+	
+	return 0;
 }
 
 public any NativeOld_StopMusic(Handle plugin, int params)
@@ -757,6 +786,8 @@ public any NativeOld_StopMusic(Handle plugin, int params)
 	{
 		Music_PlaySongToClient(client);
 	}
+	
+	return 0;
 }
 
 public any NativeOld_RandomSound(Handle plugin, int params)
@@ -835,6 +866,8 @@ public any NativeOld_EmitVoiceToAll(Handle plugin, int params)
 		if(entity > 0 && entity < MAXTF2PLAYERS && Client(entity).IsBoss)
 			Client(entity).Speaking = false;
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetClientGlow(Handle plugin, int params)
@@ -869,6 +902,8 @@ public any NativeOld_SetClientGlow(Handle plugin, int params)
 			Client(client).GlowFor += duration;
 		}
 	}
+	
+	return 0;
 }
 
 public any NativeOld_GetClientShield(Handle plugin, int params)
@@ -890,11 +925,13 @@ public any NativeOld_GetClientShield(Handle plugin, int params)
 				return 100.0;
 		}
 	}
+	
 	return -1.0;
 }
 
 public any NativeOld_SetClientShield(Handle plugin, int params)
 {
+	return 0;
 }
 
 public any NativeOld_RemoveClientShield(Handle plugin, int params)
@@ -916,12 +953,13 @@ public any NativeOld_RemoveClientShield(Handle plugin, int params)
 				TF2_RemoveWearable(client, entity);
 		}
 	}
+	
 	return -1.0;
 }
 
 public any NativeOld_LogError(Handle plugin, int params)
 {
-	ThrowNativeError(SP_ERROR_NATIVE, "User Error");
+	return ThrowNativeError(SP_ERROR_NATIVE, "User Error");
 }
 
 public any NativeOld_Debug(Handle plugin, int params)
@@ -931,6 +969,7 @@ public any NativeOld_Debug(Handle plugin, int params)
 
 public any NativeOld_SetCheats(Handle plugin, int params)
 {
+	return 0;
 }
 
 public any NativeOld_GetCheats(Handle plugin, int params)
@@ -974,6 +1013,8 @@ public any NativeOld_MakeBoss(Handle plugin, int params)
 			Client(client).Index = boss;
 		}
 	}
+	
+	return 0;
 }
 
 public any NativeOld_ChooseBoss(Handle plugin, int params)
@@ -1043,6 +1084,7 @@ public any NativeOld_VSHGetRoundState(Handle plugin, int params)
 		case RoundState_RoundRunning, RoundState_Stalemate:
 			return 1;
 	}
+	
 	return 2;
 }
 
@@ -1087,6 +1129,7 @@ public any NativeOld_FF2DataArgI(Handle plugin, int params)
 			Bosses_GetArgInt(client, AbilityCache[boss], arg, value, GetNativeCell(4));
 		}
 	}
+	
 	return value;
 }
 
@@ -1104,6 +1147,7 @@ public any NativeOld_FF2DataArgF(Handle plugin, int params)
 			Bosses_GetArgFloat(client, AbilityCache[boss], arg, value);
 		}
 	}
+	
 	return value;
 }
 
@@ -1121,6 +1165,7 @@ public any NativeOld_FF2DataArgB(Handle plugin, int params)
 			Bosses_GetArgBool(client, AbilityCache[boss], arg, value);
 		}
 	}
+	
 	return value;
 }
 

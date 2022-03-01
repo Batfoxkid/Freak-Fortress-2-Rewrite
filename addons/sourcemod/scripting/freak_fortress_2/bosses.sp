@@ -37,15 +37,16 @@ static int DownloadTable;
 
 void Bosses_PluginStart()
 {
-	RegAdminCmd("ff2_makeboss", Bosses_MakeBoss, ADMFLAG_CHEATS, "Force a specific boss on a player");
-	//RegAdminCmd("ff2_setrage", Bosses_SetRage, ADMFLAG_CHEATS, "Give RAGE to a boss");
-	RegAdminCmd("ff2_reloadcharset", Bosses_ReloadCharset, ADMFLAG_RCON, "Reloads the current boss pack");
-	RegServerCmd("ff2_checkboss", Bosses_DebugCache, "Check's the boss config cache");
-	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoad, "Loads freak subplugins");
-	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnload, "Unloads freak subplugins");
+	RegAdminCmd("ff2_makeboss", Bosses_MakeBossCmd, ADMFLAG_CHEATS, "Force a specific boss on a player");
+	RegAdminCmd("ff2_setcharge", Bosses_SetChargeCmd, ADMFLAG_CHEATS, "Give charge to a boss");
+	RegAdminCmd("ff2_setrage", Bosses_SetChargeCmd, ADMFLAG_CHEATS, "Give charge to a boss", _, FCVAR_HIDDEN);
+	RegAdminCmd("ff2_reloadcharset", Bosses_ReloadCharsetCmd, ADMFLAG_RCON, "Reloads the current boss pack");
+	RegServerCmd("ff2_checkboss", Bosses_DebugCacheCmd, "Check's the boss config cache");
+	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoadCmd, "Loads freak subplugins");
+	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnloadCmd, "Unloads freak subplugins");
 }
 
-public Action Bosses_DebugCache(int args)
+public Action Bosses_DebugCacheCmd(int args)
 {
 	if(args)
 	{
@@ -78,19 +79,19 @@ public Action Bosses_DebugCache(int args)
 	return Plugin_Handled;
 }
 
-public Action Bosses_DebugLoad(int args)
+public Action Bosses_DebugLoadCmd(int args)
 {
 	EnableSubplugins();
 	return Plugin_Handled;
 }
 
-public Action Bosses_DebugUnload(int args)
+public Action Bosses_DebugUnloadCmd(int args)
 {
 	DisableSubplugins();
 	return Plugin_Handled;
 }
 
-public Action Bosses_ReloadCharset(int client, int args)
+public Action Bosses_ReloadCharsetCmd(int client, int args)
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
@@ -98,9 +99,9 @@ public Action Bosses_ReloadCharset(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Bosses_MakeBoss(int client, int args)
+public Action Bosses_MakeBossCmd(int client, int args)
 {
-	if(args)
+	if(args && args < 4)
 	{
 		char buffer[64];
 		int special = -1;
@@ -128,47 +129,125 @@ public Action Bosses_MakeBoss(int client, int args)
 		
 		GetCmdArg(1, buffer, sizeof(buffer));
 		
-		bool isTrans;
-		int targets;
+		bool lang;
+		int matches;
 		int[] target = new int[MaxClients];
-		if((targets=ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), isTrans)) < 1)
+		if((matches=ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
 		{
-			ReplyToTargetError(client, targets);
-			return Plugin_Handled;
-		}
-	
-		for(int i; i<targets; i++)
-		{
-			if(!IsClientSourceTV(target[i]) && !IsClientReplay(target[i]))
+			for(int i; i<matches; i++)
 			{
-				if(args == 1)
+				if(!IsClientSourceTV(target[i]) && !IsClientReplay(target[i]))
 				{
-					if(Client(target[i]).IsBoss)
+					if(args == 1)
 					{
-						Bosses_Remove(target[i]);
-						continue;
+						if(Client(target[i]).IsBoss)
+						{
+							Bosses_Remove(target[i]);
+							LogAction(client, target[i], "\"%L\" removed \"%L\" being a boss", client, target[i]);
+							continue;
+						}
 					}
-				}
-				
-				int team2 = team;
-				if(team2 == -1)
-					team2 = GetClientTeam(target[i]);
-				
-				int special2 = special;
-				if(special2 == -1)
-				{
-					special2 = Preference_PickBoss(target[i], team2);
+					
+					int team2 = team;
+					if(team2 == -1)
+						team2 = GetClientTeam(target[i]);
+					
+					int special2 = special;
 					if(special2 == -1)
-						continue;
+					{
+						special2 = Preference_PickBoss(target[i], team2);
+						if(special2 == -1)
+							continue;
+					}
+					
+					Bosses_Create(target[i], special2, team2);
+					LogAction(client, target[i], "\"%L\" made \"%L\" a boss", client, target[i]);
 				}
-				
-				Bosses_Create(target[i], special2, team2);
 			}
+			
+			if(lang)
+			{
+				FShowActivity(client, "%t", "Created Boss On", buffer);
+			}
+			else
+			{
+				FShowActivity(client, "%t", "Created Boss On", "_s", buffer);
+			}
+		}
+		else
+		{
+			ReplyToTargetError(client, matches);
 		}
 	}
 	else
 	{
 		ReplyToCommand(client, "[SM] Usage: ff2_makeboss <client> [boss name / #index] [team]");
+	}
+	return Plugin_Handled;
+}
+
+public Action Bosses_SetChargeCmd(int client, int args)
+{
+	if(args && args < 4)
+	{
+		char buffer[64];
+		float charge;
+		if(args > 1)
+		{
+			GetCmdArg(2, buffer, sizeof(buffer));
+			charge = StringToFloat(buffer);
+		}
+		
+		int slot;
+		if(args > 2)
+		{
+			GetCmdArg(3, buffer, sizeof(buffer));
+			slot = StringToInt(buffer);
+		}
+		
+		GetCmdArg(1, buffer, sizeof(buffer));
+		
+		bool lang;
+		int matches;
+		int[] target = new int[MaxClients];
+		if((matches=ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
+		{
+			bool found;
+			for(int i; i<matches; i++)
+			{
+				if(!IsClientSourceTV(target[i]) && !IsClientReplay(target[i]) && Client(target[i]).IsBoss)
+				{
+					found = true;
+					
+					if(args == 1)
+						charge = Client(target[i]).RageMax;
+					
+					Client(target[i]).SetCharge(slot, charge);
+					LogAction(client, target[i], "\"%L\" set charge in slot \"%d\" to \"%f\" on \"%L\"", client, slot, charge, target[i]);
+				}
+			}
+			
+			if(!found)
+			{
+				ReplyToCommand(client, "[SM] %t", "Target must be boss");
+			}
+			else if(lang)
+			{
+				FShowActivity(client, "%t", "Set Charge On", buffer);
+			}
+			else
+			{
+				FShowActivity(client, "%t", "Set Charge On", "_s", buffer);
+			}
+		}
+		else
+		{
+			ReplyToTargetError(client, matches);
+		}
+	}
+	else
+	{
+		ReplyToCommand(client, "[SM] Usage: ff2_setcharge <client> [amount] [slot]");
 	}
 	return Plugin_Handled;
 }

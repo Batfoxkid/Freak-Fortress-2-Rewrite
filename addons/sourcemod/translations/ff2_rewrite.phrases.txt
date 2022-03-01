@@ -155,12 +155,28 @@
 	"Add Points To"
 	{
 		"#format"	"{1:d},{2:t}"
-		"en"		"gave {1} queue points to {2}."
+		"en"		"Gave {1} queue points to {2}."
 	}
 	"Remove Points From"
 	{
 		"#format"	"{1:d},{2:t}"
-		"en"		"removed {1} queue points from {2}."
+		"en"		"Removed {1} queue points from {2}."
+	}
+	
+	"Target must be boss"
+	{
+		"#format"	"{1:t}"
+		"en"		"This command can only be used on Freak Fortress 2 boss players."
+	}
+	"Created Boss On"
+	{
+		"#format"	"{1:t}"
+		"en"		"Toggled being a boss on {2}."
+	}
+	"Set Charge On"
+	{
+		"#format"	"{1:t}"
+		"en"		"Changed charge amount on {1}."
 	}
 	
 	"Boss Override Command"
