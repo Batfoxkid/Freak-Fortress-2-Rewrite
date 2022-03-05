@@ -43,7 +43,7 @@ public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 					if(JarateDamage[victim] < 0.0)
 						JarateDamage[victim] = 0.0;
 					
-					JarateDamage[victim] += 600.0;
+					JarateDamage[victim] += 1500.0;
 					JarateApplyer[victim] = attacker;
 				}
 				else if(StrEqual(classname, "tf_weapon_jar_milk"))
@@ -367,7 +367,16 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	
 	if(Attributes_FindOnWeapon(client, weapon, 175))	// jarate duration
 	{
+		if(JarateDamage[victim] < 0)
+			JarateDamage[victim] = 0.0;
+		
 		JarateApplyer[victim] = client;
+		JarateDamage[victim] += fdamage;
+	}
+	else if(Attributes_FindOnWeapon(client, weapon, 218))	// mark for death
+	{
+		MarkApplyer[victim] = client;
+		MarkDamage[victim] = 500.0;
 	}
 	else if(TF2_IsPlayerInCondition(victim, TFCond_Jarated))
 	{
@@ -377,10 +386,6 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 		
 		if(JarateDamage[victim] <= 0.0)
 			TF2_RemoveCondition(victim, TFCond_Jarated);
-	}
-	else if(Attributes_FindOnWeapon(client, weapon, 218))	// mark for death
-	{
-		MarkApplyer[victim] = client;
 	}
 	else if(TF2_IsPlayerInCondition(victim, TFCond_MarkedForDeath))
 	{

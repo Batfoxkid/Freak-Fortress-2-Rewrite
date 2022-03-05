@@ -190,8 +190,10 @@ public Action Configs_PackVote(Handle timer)
 				menu.AddItem(num, buffer);
 			}
 			
-			if(++i == start)
+			if(i == start)
 				break;
+			
+			i++;
 		}
 		
 		menu.Pagination = false;

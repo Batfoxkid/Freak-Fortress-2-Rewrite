@@ -508,20 +508,24 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true, bool resetMax=fals
 		PlayersAlive[i] = 0;
 	}
 	
+	bool spec = CvarSpecTeam.BoolValue;
 	int redBoss, bluBoss;
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(i != exclude && IsClientInGame(i) && (!alive || IsPlayerAlive(i)) && !Client(i).Minion)
+		if(i != exclude && IsClientInGame(i) && !Client(i).Minion)
 		{
 			int team = GetClientTeam(i);
-			PlayersAlive[team]++;
-			if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+			if((spec || team > TFTeam_Spectator) && ((!alive && team > TFTeam_Spectator) || IsPlayerAlive(i)))
 			{
-				bluBoss = i;
-			}
-			else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
-			{
-				redBoss = i;
+				PlayersAlive[team]++;
+				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				{
+					bluBoss = i;
+				}
+				else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				{
+					redBoss = i;
+				}
 			}
 		}
 	}

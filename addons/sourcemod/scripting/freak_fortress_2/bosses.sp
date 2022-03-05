@@ -286,7 +286,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
 		
 		ConfigMap cfg = new ConfigMap(FILE_CHARACTERS);
-		StringMapSnapshot snap = cfg.Snapshot();
+		SortedSnapshot snap = CreateSortedSnapshot(cfg);
 		
 		int pack;
 		PackVal val;
@@ -342,7 +342,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			if(!cfgSub)
 				continue;
 			
-			StringMapSnapshot snapSub = cfgSub.Snapshot();
+			SortedSnapshot snapSub = CreateSortedSnapshot(cfgSub);
 			if(!snapSub)
 				continue;
 			
@@ -730,6 +730,8 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	
 	int special = BossList.Length;
 	
+	bool clean = !CvarDebug.BoolValue;
+	
 	snap = cfg.Snapshot();
 	if(snap)
 	{
@@ -752,8 +754,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 				
 				if(!precache)
 				{
-					DeleteCfg(cfgsub);
-					cfg.Remove(section);
+					if(clean)
+					{
+						DeleteCfg(cfgsub);
+						cfg.Remove(section);
+					}
 					continue;
 				}
 				
@@ -787,7 +792,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							else
 							{
 								cfgsub.DeleteSection("worldmodel");
-								LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+								LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 							}
 						}
 						
@@ -912,13 +917,20 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							char[] key = new char[length];
 							snapsub.GetKey(a, key, length);
 							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
 							switch(val.tag)
 							{
 								case KeyValType_Section:
 								{
 									if(!FileExists(key, true))
 									{
-										LogError("[Boss] %s is missing file %s in %s", character, key, section);
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 									}
 									else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
 									{
@@ -995,8 +1007,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							}
 						}
 						
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
 					}
 					case Section_ModCache:
 					{
@@ -1006,6 +1021,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							char[] key = new char[length];
 							snapsub.GetKey(a, key, length);
 							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
 							switch(val.tag)
 							{
 								case KeyValType_Section:
@@ -1016,7 +1038,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else
 									{
-										LogError("[Boss] %s is missing file %s in %s", character, key, section);
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 									}
 								}
 								case KeyValType_Value:
@@ -1029,7 +1051,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, key, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 										}
 									}
 									else if(val.data[0])	// "1"	"models/example.mdl"
@@ -1040,15 +1062,18 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, val.data, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
 										}
 									}
 								}
 							}
 						}
 						
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
 					}
 					case Section_Download:
 					{
@@ -1058,6 +1083,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							char[] key = new char[length];
 							snapsub.GetKey(a, key, length);
 							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
 							switch(val.tag)
 							{
 								case KeyValType_Section:
@@ -1068,7 +1100,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else
 									{
-										LogError("[Boss] %s is missing file %s in %s", character, key, section);
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 									}
 								}
 								case KeyValType_Value:
@@ -1086,7 +1118,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												}
 												else
 												{
-													LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 												}
 											}
 											continue;
@@ -1103,7 +1135,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												}
 												else if(b != sizeof(MdlExts)-1)
 												{
-													LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 													break;
 												}
 											}
@@ -1116,7 +1148,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 											else
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, key, section);
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 											}
 										}
 									}
@@ -1128,15 +1160,18 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, val.data, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
 										}
 									}
 								}
 							}
 						}
 						
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
 					}
 					case Section_Model:
 					{
@@ -1146,6 +1181,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							char[] key = new char[length];
 							snapsub.GetKey(a, key, length);
 							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
 							switch(val.tag)
 							{
 								case KeyValType_Section:
@@ -1160,7 +1202,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else if(b != sizeof(MdlExts)-1)
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											break;
 										}
 									}
@@ -1179,7 +1221,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 											else if(b != sizeof(MdlExts)-1)
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 												break;
 											}
 										}
@@ -1196,7 +1238,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 											else if(b != sizeof(MdlExts)-1)
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 												break;
 											}
 										}
@@ -1205,8 +1247,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							}
 						}
 						
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
 					}
 					case Section_Material:
 					{
@@ -1216,6 +1261,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							char[] key = new char[length];
 							snapsub.GetKey(a, key, length);
 							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
 							switch(val.tag)
 							{
 								case KeyValType_Section:
@@ -1229,7 +1281,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else
 										{
-											LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 										}
 									}
 								}
@@ -1246,7 +1298,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 											else
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											}
 										}
 									}
@@ -1257,11 +1309,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
 											if(FileExists(buffer, true))
 											{
-												AddToStringTable(DownloadTable, buffer2);
+												AddToStringTable(DownloadTable, buffer);
 											}
 											else
 											{
-												LogError("[Boss] %s is missing file %s in %s", character, buffer, section);
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											}
 										}
 									}
@@ -1269,8 +1321,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							}
 						}
 						
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
 					}
 				}
 				
@@ -1448,11 +1503,11 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1,
 		GetLanguageInfo(lang, buffer, length);
 		Format(buffer, length, "%s_%s", string, buffer);
 		if(!cfg.Get(buffer, buffer, length))
-			 cfg.Get(string, buffer, length);
+			cfg.Get(string, buffer, length);
 	}
 	else
 	{
-		 cfg.Get(string, buffer, length);
+		cfg.Get(string, buffer, length);
 	}
 	
 	ReplaceString(buffer, length, "\\n", "\n");

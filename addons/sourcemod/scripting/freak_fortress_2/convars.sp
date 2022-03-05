@@ -19,7 +19,7 @@ void ConVar_PluginStart()
 {
 	CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	CvarCharset = CreateConVar("ff2_charset", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
-	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
+	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
 	CvarSpecTeam = CreateConVar("ff2_game_spec", "1", "If to handle spectator teams as real fighting teams", _, true, 0.0, true, 1.0);
 	CvarBossVsBoss = CreateConVar("ff2_game_bvb", "0", "How many bosses per a team, 0 to disable", FCVAR_NOTIFY, true, 0.0, true, float(MaxClients/2));

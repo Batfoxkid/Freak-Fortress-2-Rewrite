@@ -134,7 +134,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					}
 					
 					damage = 750.0 * multi;	// 2250 max damage
-					damagetype |= DMG_PREVENT_PHYSICS_FORCE;
+					damagetype |= DMG_PREVENT_PHYSICS_FORCE|DMG_CRIT;
 					critType = CritType_Crit;
 					
 					Client(attacker).LastStabTime = gameTime;
@@ -188,6 +188,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				case TF_CUSTOM_TELEFRAG:
 				{
 					damage = 2000.0;
+					damagetype |= DMG_CRIT;
 					critType = CritType_Crit;
 					
 					int assister;
@@ -320,6 +321,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				{
 					// Make random crits less brutal for Dead Ringers
 					critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
+					damagetype &= ~DMG_CRIT;
 					changed = true;
 				}
 				
@@ -331,6 +333,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						// Uber Variant
 						damage *= 0.5;
 						critType = CritType_None;
+						damagetype &= ~DMG_CRIT;
 						changed = true;
 					}
 					

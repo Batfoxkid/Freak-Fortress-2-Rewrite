@@ -193,7 +193,7 @@ void Gamemode_RoundSetup()
 public void TF2_OnWaitingForPlayersStart()
 {
 	Debug("TF2_OnWaitingForPlayersStart");
-	if(GameRules_GetProp("m_bInWaitingForPlayers", 1) && Enabled)
+	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		Waiting = false;
 		CvarTournament.BoolValue = false;
@@ -481,8 +481,15 @@ void Gamemode_RoundEnd(int winteam)
 				if(health > 0)
 				{
 					totalHealth[teams[i]] += health;
-					
-					for(int a; a<total; a++)
+				}
+				else
+				{
+					health = 0;
+				}
+				
+				for(int a; a<total; a++)
+				{
+					if(health || !Client(clients[a]).IsBoss)
 					{
 						Bosses_GetBossNameCfg(Client(clients[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
 						FPrintToChatEx(clients[a], clients[i], "%t", "Boss Had Health Left", buffer, clients[i], health, maxhealth);
@@ -618,7 +625,7 @@ void Gamemode_RoundEnd(int winteam)
 		int[] points = new int[MaxClients+1];
 		for(int i; i<total; i++)
 		{
-			points[clients[i]] = Client(clients[i]).IsBoss ? 0 : 10;
+			points[clients[i]] = (Client(clients[i]).IsBoss || (GetClientTeam(clients[i]) <= TFTeam_Spectator && !IsPlayerAlive(clients[i]))) ? 0 : 10;
 		}
 		
 		if(ForwardOld_OnAddQueuePoints(points, MaxClients+1))
@@ -909,10 +916,7 @@ void Gamemode_PlayerRunCmd(int client)
 		{
 			int team = GetClientTeam(client);
 			if(PlayersAlive[team] < 3)
-			{
-				TF2_AddCondition(client, TFCond_CritCola, 0.5);
-				TF2_AddCondition(client, TFCond_MiniCritOnKill, 0.5);
-			}
+				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
 			
 			if(PlayersAlive[team] < 2)
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);

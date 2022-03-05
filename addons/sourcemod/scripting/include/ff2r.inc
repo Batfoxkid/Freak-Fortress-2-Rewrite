@@ -137,12 +137,14 @@ methodmap ConfigData < ConfigMap
 		view_as<ConfigMap>(this).GetInt(key, value, base);
 		return value;
 	}
+	
 	public float GetFloat(const char[] key, float defaul=0.0)
 	{
 		float value = defaul;
 		view_as<ConfigMap>(this).GetFloat(key, value);
 		return value;
 	}
+	
 	public int GetString(const char[] key, char[] buffer, int length, const char[] defaul="")
 	{
 		int size = view_as<ConfigMap>(this).Get(key, buffer, length);
@@ -151,24 +153,29 @@ methodmap ConfigData < ConfigMap
 		
 		return size;
 	}
+	
 	public bool GetBool(const char[] key, bool defaul=false)
 	{
 		bool value = defaul;
 		view_as<ConfigMap>(this).GetBool(key, value, false);
 		return value;
 	}
+	
 	public ConfigData GetSection(const char[] key)
 	{
 		return view_as<ConfigData>(view_as<ConfigMap>(this).GetSection(key));
 	}
+	
 	public void SetString(const char[] key, const char[] value)
 	{
 		view_as<ConfigMap>(this).Set(key, value);
 	}
+	
 	public void SetBool(const char[] key, bool value)
 	{
 		view_as<ConfigMap>(this).SetInt(key, value ? 1 : 0);
 	}
+	
 	public void Remove(const char[] key)
 	{
 		view_as<ConfigMap>(this).SetVal(key, _, -1);
@@ -209,6 +216,7 @@ methodmap BossData < ConfigData
 	{
 		return view_as<BossData>(FF2R_GetBossData(client));
 	}
+	
 	public AbilityData GetAbility(const char[] key)
 	{
 		return view_as<AbilityData>(view_as<ConfigMap>(this).GetSection(key));

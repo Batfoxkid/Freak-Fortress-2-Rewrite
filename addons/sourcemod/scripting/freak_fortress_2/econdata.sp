@@ -1,4 +1,5 @@
 /*
+	void TFED_PluginLoad()
 	void TFED_PluginStart()
 	void TFED_LibraryAdded(const char[] name)
 	void TFED_LibraryRemoved(const char[] name)
@@ -9,7 +10,18 @@
 
 #define TFED_LIBRARY	"tf_econ_data"
 
+#if defined __tf_econ_data_included
 static bool Loaded;
+#endif
+
+void TFED_PluginLoad()
+{
+	#if defined __tf_econ_data_included
+	MarkNativeAsOptional("TF2Econ_GetItemDefinitionString");
+	MarkNativeAsOptional("TF2Econ_GetLocalizedItemName");
+	MarkNativeAsOptional("TF2Econ_GetAttributeDefinitionString");
+	#endif
+}
 
 void TFED_PluginStart()
 {

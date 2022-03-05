@@ -12,6 +12,7 @@
 #include <adminmenu>
 #include <tf2_stocks>
 #include <clientprefs>
+#include <adt_trie_sort>
 #include <cfgmap>
 #include <morecolors>
 #include <dhooks>
@@ -23,7 +24,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 2/29/2022"
+#define PLUGIN_VERSION	"Beta 3/5/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -248,6 +249,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	Native_PluginLoad();
 	NativeOld_PluginLoad();
 	TF2U_PluginLoad();
+	TFED_PluginLoad();
 	return APLRes_Success;
 }
 

@@ -570,7 +570,7 @@ public any NativeOld_GetDamage(Handle plugin, int params)
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
 		return 0;
 	
-	return Client(client).Damage;
+	return Client(client).TotalDamage;
 }
 
 public any NativeOld_GetFF2flags(Handle plugin, int params)
