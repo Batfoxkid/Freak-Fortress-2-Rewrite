@@ -481,6 +481,16 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		
 		if(team > -1)
 			return Plugin_Handled;
+		
+		int score = event.GetInt("blue_score_prev");
+		if(score > event.GetInt("blue_score"))
+			event.SetInt("blue_score", score);
+		
+		score = event.GetInt("red_score_prev");
+		if(score > event.GetInt("red_score"))
+			event.SetInt("red_score", score);
+		
+		return Plugin_Changed;
 	}
 	return Plugin_Continue;
 }
