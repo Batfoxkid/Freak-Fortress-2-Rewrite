@@ -1,14 +1,17 @@
 /*
 	void Events_PluginStart()
+	void Events_RoundSetup()
 */
 
 static bool FirstBlood;
 static bool LastMann;
-static Handle SyncHud;
+static Handle YourHud;
+static Handle TopHud;
 
 void Events_PluginStart()
 {
-	SyncHud = CreateHudSynchronizer();
+	YourHud = CreateHudSynchronizer();
+	TopHud = CreateHudSynchronizer();
 	
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
@@ -21,6 +24,18 @@ void Events_PluginStart()
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
+}
+
+void Events_RoundSetup()
+{
+	for(int client=1; client<=MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			ClearSyncHud(client, YourHud);
+			ClearSyncHud(client, TopHud);
+		}
+	}
 }
 
 public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -96,7 +111,7 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 			AcceptEntityInput(client, "SetCustomModel");
 			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
 			
-			if(RoundStatus == 0)
+			if(RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
 				Weapons_ChangeMenu(client, CvarPreroundTime.IntValue);
 		}
 	}
@@ -388,7 +403,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 {
 	if(Enabled)
 	{
-		int team = -1;
+		int team = -2;
 		int[] clients = new int[MaxClients];
 		int total;
 		
@@ -401,102 +416,71 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				if(Client(client).IsBoss)
 				{
 					int current = GetClientTeam(client);
-					if(team == -1)
+					if(team == -2)
 					{
 						team = current;
 					}
-					else if(team && current != team)
+					else if(current != team)
 					{
-						team = 0;
+						team = -1;
 					}
 				}
 			}
 		}
 		
-		float time = CvarBonusRoundTime.FloatValue - 1.0;
-		for(int i; i<total; i++)
+		char top[3][64] = { "---", "---", "---" };
+		int dmg[3];
+		if(team > -1)
 		{
-			if(team <= TFTeam_Spectator || !Client(clients[i]).IsBoss)
-			{
-				SetHudTextParamsEx(-1.0, 0.5, 3.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1, time);
-				ShowSyncHudText(clients[i], SyncHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
-			}
-		}
-		
-		if(team > TFTeam_Spectator)
-		{
-			int top[3];
-			int dmg[3];
 			for(int i; i<total; i++)
 			{
 				if(!Client(clients[i]).IsBoss)
 				{
-					int damage = Client(clients[i]).TotalDamage;
+					int damage = Client(clients[i]).TotalDamage + Client(clients[i]).Healing + Client(clients[i]).TotalAssist;
 					if(damage > dmg[0])
 					{
 						top[2] = top[1];
 						dmg[2] = dmg[1];
 						top[1] = top[0];
 						dmg[1] = dmg[0];
-						top[0] = clients[i];
+						
+						GetClientName(clients[i], top[0], sizeof(top[]));
 						dmg[0] = damage;
 					}
 					else if(damage > dmg[1])
 					{
 						top[2] = top[1];
 						dmg[2] = dmg[1];
-						top[1] = clients[i];
+						
+						GetClientName(clients[i], top[1], sizeof(top[]));
 						dmg[1] = damage;
 					}
 					else if(damage > dmg[2])
 					{
-						top[2] = clients[i];
+						GetClientName(clients[i], top[2], sizeof(top[]));
 						dmg[2] = damage;
 					}
 				}
 			}
-			
-			char buffer[16];
-			for(int i; i<3; i++)
+		}
+		
+		for(int i; i<total; i++)
+		{
+			if(team > -1)
 			{
-				if(top[i])
-				{
-					float lifetime = 0.0; //(IsPlayerAlive(top[i]) ? GetGameTime() : GetEntPropFloat(top[i], Prop_Send, "m_flDeathTime")) - GetEntPropFloat(top[i], Prop_Send, "m_flSpawnTime");
-					int healing = Client(top[i]).Healing;
-					int kills = GetEntProp(top[i], Prop_Send, "m_RoundScoreData", 4, 2);	// m_iKills
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d", i+1);
-					event.SetInt(buffer, top[i]);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d", i+4);
-					event.SetInt(buffer, top[i]);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_damage", i+1);
-					event.SetInt(buffer, dmg[i]);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_damage", i+4);
-					event.SetInt(buffer, dmg[i]);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_healing", i+1);
-					event.SetInt(buffer, healing);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_healing", i+4);
-					event.SetInt(buffer, healing);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_lifetime", i+1);
-					event.SetFloat(buffer, lifetime);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_lifetime", i+4);
-					event.SetFloat(buffer, lifetime);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_kills", i+1);
-					event.SetInt(buffer, kills);
-					
-					FormatEx(buffer, sizeof(buffer), "player_%d_kills", i+4);
-					event.SetInt(buffer, kills);
-				}
+				SetHudTextParamsEx(0.375, 0.7, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
+				ShowSyncHudText(clients[i], TopHud, "%T", "Top Damage Hud", clients[i], top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
+			}
+			
+			if(team > -2 || !Client(clients[i]).IsBoss)
+			{
+				SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
+				ShowSyncHudText(clients[i], YourHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
 			}
 		}
+		
+		if(team > -1)
+			return Plugin_Handled;
 	}
 	return Plugin_Continue;
 }
@@ -586,5 +570,6 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true, bool resetMax=fals
 		}
 	}
 	
-	Gamemode_CheckPointUnlock(total, !LastMann);
+	if(Enabled && RoundStatus == 1)
+		Gamemode_CheckPointUnlock(total, !LastMann);
 }

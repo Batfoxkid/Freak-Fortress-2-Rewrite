@@ -20,6 +20,11 @@
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"		"You dealt {1} damage, healed {2} health, and assisted in {3} points."
 	}
+	"Top Damage Hud"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:d},{5:s},{6:d}"
+		"en"		"\t1st: {1} - {2}\n\t2nd: {3} - {4}\n\t3rd: {5} - {6}"
+	}
 	"Boss Had Health Left"
 	{
 		"#format"	"{1:s},{2:N},{3:d},{4:d}"
@@ -447,7 +452,7 @@
 	"jarate limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Jarate is limited to {4} damage when applied to a boss"
+		"en"		"Jarate effect is limited to {4} damage when applied to a boss"
 	}
 	"boost limit DISPLAY ONLY"
 	{
@@ -473,5 +478,10 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Disables cloaking for {4} seconds when hitting a boss"
+	}
+	"cloak and dagger no DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Cloak Type: Normal."
 	}
 }

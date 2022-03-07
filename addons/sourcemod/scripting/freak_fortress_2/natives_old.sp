@@ -567,7 +567,7 @@ public any NativeOld_GetArgNamedS(Handle plugin, int params)
 public any NativeOld_GetDamage(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+	if(client < 1 || client > MaxClients || Client(client).IsBoss || !IsClientInGame(client))
 		return 0;
 	
 	return Client(client).TotalDamage;

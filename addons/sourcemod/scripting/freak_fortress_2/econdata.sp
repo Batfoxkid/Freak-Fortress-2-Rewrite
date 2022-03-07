@@ -46,7 +46,7 @@ stock void TFED_LibraryRemoved(const char[] name)
 	#endif
 }
 
-bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
+stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
 {
 	//TODO: Find a way to use m_pszItemIconClassname instead
 	
@@ -71,12 +71,12 @@ bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char
 		static const char SlotNames[][] = { "#TR_Primary", "#TR_Secondary", "#TR_Melee", "#TF_Weapon_PDA_Engineer", "#LoadoutSlot_Utility", "#LoadoutSlot_Building", "#LoadoutSlot_Action" };
 		int slot = TF2_GetClassnameSlot(classname);
 		if(slot >= 0 && slot < sizeof(SlotNames))
-			strcopy(name, maxlen, SlotNames[slot]);
+			return view_as<bool>(strcopy(name, maxlen, SlotNames[slot]));
 	}
 	return false;
 }
 
-bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
+stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
 {
 	#if defined __tf_econ_data_included
 	if(Loaded)

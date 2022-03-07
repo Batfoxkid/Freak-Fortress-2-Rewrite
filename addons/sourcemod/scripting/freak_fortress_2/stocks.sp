@@ -954,7 +954,7 @@ int GetBossQueue(int[] players, int maxsize, int team=-1)
 public int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
 {
 	if(Preference_DisabledBoss(elem1, Charset))
-		return 1;
+		return -1;
 	
 	if(Client(elem1).Queue > Client(elem2).Queue)
 		return -1;

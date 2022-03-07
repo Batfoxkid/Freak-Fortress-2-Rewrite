@@ -48,8 +48,14 @@ void Gamemode_RoundSetup()
 		{
 			Client(client).ResetByRound();
 			Bosses_Remove(client);
+			for(int i; i<TFTeam_MAX; i++)
+			{
+				ClearSyncHud(client, SyncHud[i]);
+			}
 		}
 	}
+	
+	Events_RoundSetup();
 	
 	if(Enabled)
 	{
@@ -380,6 +386,7 @@ void Gamemode_RoundStart()
 
 void Gamemode_CheckPointUnlock(int alive, bool notice)
 {
+	Debug("Gamemode_CheckPointUnlock | %d <= %d", alive, PointUnlock);
 	if(PointUnlock > 0 && alive <= PointUnlock)
 	{
 		if(notice && !GetControlPoint())
@@ -514,12 +521,11 @@ void Gamemode_RoundEnd(int winteam)
 	}
 	
 	bool spec = CvarSpecTeam.BoolValue;
-	float time = CvarBonusRoundTime.FloatValue - 1.0;
 	for(int i; i<TFTeam_MAX; i++)
 	{
 		if(HasBoss[i] && bosses[i])
 		{
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
 			for(int a; a<total; a++)
 			{
 				SetGlobalTransTarget(clients[a]);
@@ -543,7 +549,7 @@ void Gamemode_RoundEnd(int winteam)
 		}
 		else if(MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
 		{
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 3.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1, time);
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
 			for(int a; a<total; a++)
 			{
 				SetGlobalTransTarget(clients[a]);

@@ -15,3 +15,4 @@ Supported:
 
 https://github.com/nosoop/SM-TFUtils
 https://github.com/nosoop/SM-TFCustomWeaponsX
+https://github.com/nosoop/SM-TFOnTakeDamage

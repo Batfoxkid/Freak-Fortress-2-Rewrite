@@ -119,7 +119,7 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 
 void Music_PlayerRunCmd(int client)
 {
-	if(RoundStatus != 2 && NextThemeAt[client] < GetEngineTime())
+	if(RoundStatus != 2 && NextThemeAt[client] < GetGameTime())
 		Music_PlayNextSong(client);
 }
 
@@ -131,24 +131,24 @@ void Music_PlayNextSong(int client=0)
 		
 		if(CurrentSourceType[client])
 		{
-			int length = Bosses_GetConfigLength();
-			int start = GetRandomInt(0, length - 1);
-			
-			SoundEnum sound;
-			sound.Default();
-			int i = start;
-			do
+			int length = Playlist.Length;
+			if(length > 0)
 			{
-				if(i == length)
-					i = 0;
+				MusicEnum music;
+				Playlist.GetArray(GetRandomInt(0, length - 1), music);
 				
-				ConfigMap cfg = Bosses_GetConfig(start);
-				if(cfg && Bosses_GetRandomSoundCfg(cfg, "sound_bgm", sound))
+				ConfigMap cfg = Bosses_GetConfig(music.Special);
+				if(cfg)
 				{
-					Music_PlaySongToClient(client, sound.Sound, i, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
-					return;
+					SoundEnum sound;
+					sound.Default();
+					if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+					{
+						Music_PlaySongToClient(client, sound.Sound, music.Special, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+						return;
+					}
 				}
-			} while(++i != start);
+			}
 		}
 		else if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_bgm"))
 		{
@@ -204,14 +204,18 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 		strcopy(sample2, sizeof(sample2), sample);
 		ForwardOld_OnMusic(sample2, time, songName, songArtist);
 		
+		Debug("Song Time: %f", time);
+		
 		if(time)
 		{
-			time += GetEngineTime();
+			time += GetGameTime();
 		}
 		else
 		{
 			time = FAR_FUTURE;
 		}
+		
+		Debug("Next Time: %f", time);
 		
 		int count = RoundToCeil(volume);
 		float vol = volume / float(count);

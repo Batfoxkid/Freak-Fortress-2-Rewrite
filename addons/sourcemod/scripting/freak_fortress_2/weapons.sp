@@ -256,7 +256,7 @@ void Weapons_ShowChanges(int client, int entity)
 							strcopy(buffer2, sizeof(buffer2), attributes[current]);
 						}
 						
-						if((!TF2ED_GetAttributeDefinitionString(attrib, "hidden", buffer3, sizeof(buffer3)) || !StringToInt(buffer3)) && TF2ED_GetAttributeDefinitionString(attrib, "description_string", buffer1, sizeof(buffer1)))
+						if(buffer2[0] != 'R' && (!TF2ED_GetAttributeDefinitionString(attrib, "hidden", buffer3, sizeof(buffer3)) || !StringToInt(buffer3)) && TF2ED_GetAttributeDefinitionString(attrib, "description_string", buffer1, sizeof(buffer1)))
 						{
 							TF2ED_GetAttributeDefinitionString(attrib, "description_format", buffer3, sizeof(buffer3));
 							FormatValue(buffer2, buffer2, sizeof(buffer2), buffer3);

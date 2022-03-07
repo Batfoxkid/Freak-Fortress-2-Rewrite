@@ -288,6 +288,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
 					TF2_RemoveCondition(victim, TFCond_RuneResist);
 				
+				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, damagePosition);
 				return Plugin_Handled;
 			}
 			
