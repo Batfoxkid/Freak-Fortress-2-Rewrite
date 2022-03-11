@@ -3,7 +3,10 @@
 #endif
 #define _adt_trie_sort_included
 
+#include <adt_array>
 #include <adt_trie>
+
+#define ADTTRIESORTSIZE	512
 
 methodmap SortedSnapshot < ArrayList
 {
@@ -14,25 +17,25 @@ methodmap SortedSnapshot < ArrayList
 	
 	public int KeyBufferSize(int index)
 	{
-		static char buffer[512];
+		static char buffer[ADTTRIESORTSIZE];
 		return GetArrayString(this, index, buffer, sizeof(buffer));
 	}
 }
 
-SortedSnapshot CreateSortedSnapshot(Handle map)
+SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order=Sort_Ascending)
 {
 	ArrayList list;
 	StringMapSnapshot snap = view_as<StringMapSnapshot>(CreateTrieSnapshot(map));
 	if(snap)
 	{
-		list = new ArrayList(ByteCountToCells(512));
+		list = new ArrayList(ByteCountToCells(ADTTRIESORTSIZE));
 		
 		int entires = snap.Length;
 		for(int i; i<entires; i++)
 		{
 			int length = snap.KeyBufferSize(i) + 1;
-			if(length > 512)
-				length = 512;
+			if(length > ADTTRIESORTSIZE)
+				length = ADTTRIESORTSIZE;
 			
 			char[] buffer = new char[length];
 			snap.GetKey(i, buffer, length);
@@ -40,14 +43,21 @@ SortedSnapshot CreateSortedSnapshot(Handle map)
 			list.PushString(buffer);
 		}
 		
-		list.SortCustom(_SortedSnapshotSorting);
+		if(order == Sort_Random)
+		{
+			list.Sort(order, Sort_String);
+		}
+		else
+		{
+			list.SortCustom(_SortedSnapshotSorting, order == Sort_Ascending ? map : INVALID_HANDLE);
+		}
 	}
 	return view_as<SortedSnapshot>(list);
 }
 
 public int _SortedSnapshotSorting(int index1, int index2, Handle array, Handle data)
 {
-	static char buffer1[512], buffer2[512];
+	static char buffer1[ADTTRIESORTSIZE], buffer2[ADTTRIESORTSIZE];
 	
 	int length1 = GetArrayString(array, index1, buffer1, sizeof(buffer1));
 	int length2 = GetArrayString(array, index2, buffer2, sizeof(buffer2));
@@ -57,11 +67,11 @@ public int _SortedSnapshotSorting(int index1, int index2, Handle array, Handle d
 	
 	if(value1 > value2)
 	{
-		return 1;
+		return data ? 1 : -1;
 	}
 	else if(value2 > value1)
 	{
-		return -1;
+		return data ? -1 : 1;
 	}
 	else
 	{
@@ -72,15 +82,15 @@ public int _SortedSnapshotSorting(int index1, int index2, Handle array, Handle d
 				if(length2 == i)
 					break;
 				
-				return -1;
+				return data ? -1 : 1;
 			}
 			else if(length2 == i || buffer1[i] > buffer2[i])
 			{
-				return 1;
+				return data ? 1 : -1;
 			}
 			else if(buffer1[i] < buffer2[i])
 			{
-				return -1;
+				return data ? -1 : 1;
 			}
 		}
 	}

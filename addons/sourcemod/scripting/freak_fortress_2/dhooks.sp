@@ -6,6 +6,7 @@
 	void DHook_UnhookClient(int client)
 */
 
+static DynamicHook ChangeTeam;
 static DynamicHook ForceRespawn;
 static DynamicHook RoundRespawn;
 static DynamicHook SetWinningTeam;
@@ -15,6 +16,7 @@ static DynamicHook ApplyPostHit;
 static Address CTFGameStats;
 static int DamageTypeOffset = -1;
 
+static int ChangeTeamHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 
@@ -35,6 +37,7 @@ void DHook_Setup()
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
 	
+	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
 	RoundRespawn = CreateHook(gamedata, "CTeamplayRoundBasedRules::RoundRespawn");
 	SetWinningTeam = CreateHook(gamedata, "CTeamplayRules::SetWinningTeam");
@@ -94,6 +97,13 @@ void DHook_HookClient(int client)
 	}
 }
 
+void DHook_HookBoss(int client)
+{
+	DHook_UnhookBoss(client);
+	if(ChangeTeam && CvarAggressiveSwap.BoolValue)
+		ChangeTeamHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
+}
+
 void DHook_EntityCreated(int entity, const char[] classname)
 {
 	if(ApplyOnInjured && !StrContains(classname, "tf_weapon_knife"))
@@ -122,6 +132,15 @@ void DHook_UnhookClient(int client)
 {
 	DynamicHook.RemoveHook(ForceRespawnPreHook[client]);
 	DynamicHook.RemoveHook(ForceRespawnPostHook[client]);
+}
+
+void DHook_UnhookBoss(int client)
+{
+	if(ChangeTeamHook[client])
+	{
+		DynamicHook.RemoveHook(ChangeTeamHook[client]);
+		ChangeTeamHook[client] = 0;
+	}
 }
 
 Address DHook_GetGameStats()
@@ -160,6 +179,11 @@ public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 		return MRES_Supercede;
 	}
 	return MRES_Ignored;
+}
+
+public MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
+{
+	return MRES_Supercede;
 }
 
 public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)

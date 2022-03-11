@@ -399,6 +399,10 @@ public Action Music_Command(int client, int args)
 				FReplyToCommand(client, "%t", "Music Unknown Arg", buffer);
 			}
 		}
+		else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+		{
+			ReplyToCommand(client, "[SM] Usage: ff2_music <param>");
+		}
 		else
 		{
 			Menu_Command(client);
@@ -407,7 +411,31 @@ public Action Music_Command(int client, int args)
 	}
 	else
 	{
-		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+		MusicEnum music;
+		SoundEnum sound;
+		int length = Playlist.Length;
+		for(int i; i<length; i++)
+		{
+			Playlist.GetArray(i, music);
+			
+			sound.Default();
+			ConfigMap cfg = Bosses_GetConfig(music.Special);
+			if(cfg && Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+			{
+				if(!sound.Name[0])
+					Format(sound.Name, sizeof(sound.Name), "%T", "Unknown Song", LANG_SERVER);
+				
+				if(!sound.Artist[0])
+					Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", LANG_SERVER);
+				
+				int time = RoundToFloor(sound.Time);
+				PrintToServer("#%d %s - %s (%d:%02d) | '%d' '%s' '%s'", i, sound.Artist, sound.Name, time / 60, time % 60, music.Special, music.Section, music.Key);
+			}
+			else
+			{
+				PrintToServer("#%d | '%d' '%s' '%s'", i, music.Special, music.Section, music.Key);
+			}
+		}
 	}
 	
 	return Plugin_Handled;

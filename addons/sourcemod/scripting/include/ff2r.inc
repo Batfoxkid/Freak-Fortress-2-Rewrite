@@ -251,59 +251,57 @@ native BossData FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client, BossData cfg=null);
 
 /**
- * Called when a boss gets created
+ * Called when a boss gets created or updated, can get called more than once
  * 
  * @param client	Client index
  * @param cfg		Boss's ConfigMap
+ * @param setup		Setup is active
  * 
  * @noreturn
  */
-forward void FF2R_OnBossCreated(int client, BossData cfg);
+forward void FF2R_OnBossCreated(int client, BossData cfg, bool setup);
 
 /**
  * Called when an ability is about to be activated
  * 
  * @param client	Client index
  * @param ability	Ability name
- * @param plugin	Plugin name
  * @param result	True if the ability will activate, false otherwise
  * @param cfg		Boss's ConfigMap of the ability
  * 
  * @return		Plugin_Changed if result was changed, Plugin_Handled to ignore FF2_PreAbility, Plugin_Stop to stop the ability
  */
-forward Action FF2R_OnAbilityPre(int client, const char[] ability, const char[] plugin, AbilityData cfg, bool &result);
+forward Action FF2R_OnAbilityPre(int client, const char[] ability, AbilityData cfg, bool &result);
 
 /**
  * Called when an ability is activated, only called if the ability has no plugin_name or named for your plugin
  * 
  * @param client	Client index
  * @param ability	Ability name
- * @param plugin	Plugin name
  * @param cfg		Boss's ConfigMap of the ability
  * 
  * @noreturn		
  */
-forward void FF2R_OnAbility(int client, const char[] ability, const char[] plugin, AbilityData cfg);
+forward void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg);
 
 /**
  * Called when after an ability was activated
  * 
  * @param client	Client index
  * @param ability	Ability name
- * @param plugin	Plugin name
  * @param cfg		Boss's ConfigMap of the ability
  * 
  * @noreturn		
  */
-forward void FF2R_OnAbilityPost(int client, const char[] ability, const char[] plugin, AbilityData cfg);
+forward void FF2R_OnAbilityPost(int client, const char[] ability, AbilityData cfg);
 
 #else
 
 native void FF2R_SetBossData(int client, Handle cfg=null);
 forward void FF2R_OnBossCreated(int client);
-forward Action FF2R_OnAbilityPre(int client, const char[] ability, const char[] plugin, Handle cfg, bool &result);
-forward void FF2R_OnAbility(int client, const char[] ability, const char[] plugin);
-forward void FF2R_OnAbilityPost(int client, const char[] ability, const char[] plugin);
+forward Action FF2R_OnAbilityPre(int client, const char[] ability, Handle cfg, bool &result);
+forward void FF2R_OnAbility(int client, const char[] ability);
+forward void FF2R_OnAbilityPost(int client, const char[] ability);
 
 #endif
 

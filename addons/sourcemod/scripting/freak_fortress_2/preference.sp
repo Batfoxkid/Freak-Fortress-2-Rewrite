@@ -197,7 +197,7 @@ int Preference_PickBoss(int client, int team=-1)
 			special = list.Get((GetTime() + client) % length);
 			delete list;
 			
-			ForwardOld_OnSpecialSelected(Client(client).Index, special, true);
+			ForwardOld_OnSpecialSelected(Client(client).Index, special, false);
 		}
 		else
 		{
@@ -206,6 +206,10 @@ int Preference_PickBoss(int client, int team=-1)
 			LogError("[!!!] Could not find a valid boss in %s (#%d)", buffer, Charset);
 			return special;
 		}
+	}
+	else
+	{
+		ForwardOld_OnSpecialSelected(Client(client).Index, special, true);
 	}
 	
 	return special;
@@ -364,13 +368,18 @@ static void BossMenu(int client)
 			if(ViewingPack[client] >= 0)
 			{
 				Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
-				Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description");
-				menu.SetTitle("%t%s\n \n%s\n ", "Boss Selection Command", data, buffer);
+				if(Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description"))
+				{
+					menu.SetTitle("%t%s\n \n%s\n ", "Boss Selection Command", data, buffer);
+				}
+				else
+				{
+					menu.SetTitle("%t%s\n \n%s\n ", "Boss Selection Command", data, buffer);
+				}
 			}
-			else
+			else if(Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description"))
 			{
-				Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description");
-				menu.SetTitle("%t\n%s\n ", "Boss Selection Command", buffer);
+					menu.SetTitle("%t\n%s\n ", "Boss Selection Command", buffer);
 			}
 			
 			if(blacklist != 0)

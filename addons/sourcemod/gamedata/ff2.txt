@@ -49,6 +49,11 @@
 		}
 		"Offsets"
 		{
+			"CBaseEntity::ChangeTeam"
+			{
+				"linux"		"95"
+				"windows"	"94"
+			}
 			"CBasePlayer::ForceRespawn"
 			{
 				"linux"		"334"
@@ -97,6 +102,20 @@
 		}
 		"Functions"
 		{
+			"CBaseEntity::ChangeTeam"
+			{
+				"offset"	"CBaseEntity::ChangeTeam"
+				"hooktype"	"entity"
+				"return"	"void"
+				"this"		"entity"
+				"arguments"
+				{
+					"team"
+					{
+						"type"	"int"
+					}
+				}
+			}
 			"CBasePlayer::ForceRespawn"
 			{
 				"offset"	"CBasePlayer::ForceRespawn"

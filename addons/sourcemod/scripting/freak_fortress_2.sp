@@ -20,11 +20,11 @@
 #include <tf2attributes>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
-//#tryinclude <goomba>
+#tryinclude <goomba>
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 3/7/2022"
+#define PLUGIN_VERSION	"Beta 3/11/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -184,11 +184,12 @@ ConVar CvarBossKnockback;
 ConVar CvarPrefBlacklist;
 ConVar CvarCaptureTime;
 ConVar CvarCaptureAlive;
+ConVar CvarAggressiveSwap;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
 ConVar CvarPreroundTime;
-ConVar CvarBonusRoundTime;
+//ConVar CvarBonusRoundTime;
 ConVar CvarTournament;
 
 int PlayersAlive[4];
@@ -250,6 +251,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	NativeOld_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
+	Weapons_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -391,6 +393,18 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 	
 	result = false;
 	return Plugin_Changed;
+}
+
+public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
+{
+	if(damageMultiplier > 0.3 && victim > 0 && victim <= MaxClients && Client(victim).IsBoss)
+	{
+		damageMultiplier = 0.0;
+		damageBonus = 585.0;
+		JumpPower *= 1.5;
+		return Plugin_Changed;
+	}
+	return Plugin_Continue;
 }
 
 #file "freak_fortress_2.sp"	// RIP in SourceMod 1.11

@@ -47,7 +47,9 @@ void Gamemode_RoundSetup()
 		if(IsClientInGame(client))
 		{
 			Client(client).ResetByRound();
-			Bosses_Remove(client);
+			if(GetClientTeam(client) > TFTeam_Spectator)
+				Bosses_Remove(client);
+			
 			for(int i; i<TFTeam_MAX; i++)
 			{
 				ClearSyncHud(client, SyncHud[i]);
@@ -315,51 +317,53 @@ void Gamemode_RoundStart()
 {
 	RoundStatus = 1;
 	
-	if(Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	Events_CheckAlivePlayers(_, _, true);
+	
+	bool enabled = (Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1));
+	
+	int[] merc = new int[MaxClients];
+	int[] boss = new int[MaxClients];
+	int mercs, bosses;
+	
+	for(int client=1; client<=MaxClients; client++)
 	{
-		Events_CheckAlivePlayers(_, _, true);
-		
-		int[] merc = new int[MaxClients];
-		int[] boss = new int[MaxClients];
-		int mercs, bosses;
-		
-		for(int client=1; client<=MaxClients; client++)
+		if(IsClientInGame(client))
 		{
-			if(IsClientInGame(client))
+			if(Client(client).IsBoss)
 			{
-				if(Client(client).IsBoss)
+				boss[bosses++] = client;
+			}
+			else
+			{
+				merc[mercs++] = client;
+				
+				if(enabled && IsPlayerAlive(client))
 				{
-					boss[bosses++] = client;
-				}
-				else
-				{
-					merc[mercs++] = client;
+					TF2_RegeneratePlayer(client);
 					
-					if(IsPlayerAlive(client))
-					{
-						TF2_RegeneratePlayer(client);
-						
-						int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-						if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-							SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 0.0);
-					}
+					int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
+						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 0.0);
 				}
 			}
 		}
-		
-		char buffer[64];
-		bool specTeam = CvarSpecTeam.BoolValue;
-		for(int i; i<bosses; i++)
+	}
+	
+	char buffer[64];
+	bool specTeam = CvarSpecTeam.BoolValue;
+	for(int i; i<bosses; i++)
+	{
+		int team = GetClientTeam(boss[i]);
+		int amount = 1;
+		for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a<TFTeam_MAX; a++)
 		{
-			int team = GetClientTeam(boss[i]);
-			int amount = 1;
-			for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a<TFTeam_MAX; a++)
-			{
-				if(team != a)
-					amount += PlayersAlive[a];
-			}
-			
-			int maxhealth = Bosses_SetHealth(boss[i], amount);
+			if(team != a)
+				amount += PlayersAlive[a];
+		}
+		
+		int maxhealth = Bosses_SetHealth(boss[i], amount);
+		if(enabled)
+		{
 			int maxlives = Client(boss[i]).MaxLives;
 			
 			for(int a; a<mercs; a++)
@@ -380,8 +384,10 @@ void Gamemode_RoundStart()
 			}
 		}
 		
-		Music_RoundStart();
+		Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
 	}
+	
+	Music_RoundStart();
 }
 
 void Gamemode_CheckPointUnlock(int alive, bool notice)

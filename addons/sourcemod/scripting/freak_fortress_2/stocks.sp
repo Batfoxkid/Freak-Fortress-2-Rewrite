@@ -807,6 +807,17 @@ stock void SetArenaCapEnableTime(float time)
 		DispatchKeyValueFloat(entity, "CapEnableDelay", time);
 }
 
+stock int GetRoundStatus()
+{
+	if(RoundStatus || Enabled)
+		return RoundStatus;
+	
+	if(GameRules_GetProp("m_bInSetup", 1))
+		return 0;
+	
+	return 1;
+}
+
 stock void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();

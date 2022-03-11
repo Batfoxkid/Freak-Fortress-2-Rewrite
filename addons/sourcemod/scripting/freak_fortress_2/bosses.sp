@@ -1552,6 +1552,7 @@ void Bosses_Create(int client, int special, int team)
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);
 	
+	DHook_HookBoss(client);
 	Events_CheckAlivePlayers(_, false);
 	EnableSubplugins();
 	SDKHook_BossCreated(client);
@@ -1581,15 +1582,16 @@ void Bosses_Create(int client, int special, int team)
 			Client(client).Cfg.SetInt("healing", CvarBossHealing.IntValue);
 	}
 	
-	if((!Enabled || RoundStatus == 1) && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
+	bool active = GetRoundStatus() == 1;
+	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
 	
 	TF2_RegeneratePlayer(client);
 	
-	if(!Enabled)
+	if(active)
 		Music_RoundStart();
 	
-	Forward_OnBossCreated(client, Client(client).Cfg);
+	Forward_OnBossCreated(client, Client(client).Cfg, !active);
 	
 	if(Client(client).Cfg.GetInt("companion", i))
 	{
@@ -2059,6 +2061,7 @@ void Bosses_ClientDisconnect(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
@@ -2070,6 +2073,7 @@ void Bosses_Remove(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
 		
 		DeleteCfg(Client(client).Cfg);
@@ -2295,7 +2299,7 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 		buffer1[0] = 0;
 	}
 	
-	if(Forward_OnAbilityPre(client, ability, plugin, cfg, result))
+	if(Forward_OnAbilityPre(client, ability, cfg, result))
 	{
 		if(!ForwardOld_PreAbility(client, buffer1, ability, slot))
 			return;
@@ -2389,9 +2393,9 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 		SetHudTextParams(-1.0, 0.88, 0.15, 255, 255, 255, 255);
 	}
 	
-	Forward_OnAbility(client, ability, plugin, cfg, buffer1);
+	Forward_OnAbility(client, ability, cfg, buffer1);
 	ForwardOld_OnAbility(client, buffer1, ability, status);
-	Forward_OnAbilityPost(client, ability, plugin, cfg);
+	Forward_OnAbilityPost(client, ability, cfg);
 }
 
 public Action Bosses_UseBossCharge(Handle timer, DataPack data)

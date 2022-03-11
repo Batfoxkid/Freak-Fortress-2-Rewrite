@@ -25,6 +25,15 @@ static bool TCALoaded;
 
 static ConfigMap WeaponCfg;
 
+void Weapons_PluginLoad()
+{
+	#if defined __tf_custom_attributes_included
+	MarkNativeAsOptional("TF2CustAttr_GetAttributeKeyValues");
+	MarkNativeAsOptional("TF2CustAttr_GetFloat");
+	MarkNativeAsOptional("TF2CustAttr_SetString");
+	#endif
+}
+
 void Weapons_PluginStart()
 {
 	RegFreakCmd("classinfo", Weapons_ChangeMenuCmd, "View Weapon Changes", FCVAR_HIDDEN);

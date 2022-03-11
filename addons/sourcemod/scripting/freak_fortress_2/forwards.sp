@@ -2,9 +2,9 @@
 	void Forward_PluginLoad()
 	void Forward_OnBossCreated(int client, ConfigMap cfg)
 	void Forward_OnBossRemoved(int client)
-	bool Forward_OnAbilityPre(int client, const char[] ability, const char[] plugin, ConfigMap cfg, bool &result)
-	void Forward_OnAbility(int client, const char[] ability, const char[] plugin, ConfigMap cfg, const char[] pluginfull)
-	void Forward_OnAbilityPost(int client, const char[] ability, const char[] plugin, ConfigMap cfg)
+	bool Forward_OnAbilityPre(int client, const char[] ability, ConfigMap cfg, bool &result)
+	void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
+	void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 */
 
 static GlobalForward BossCreated;
@@ -15,18 +15,19 @@ static GlobalForward AbilityPost;
 
 void Forward_PluginLoad()
 {
-	BossCreated = new GlobalForward("FF2R_OnBossCreated", ET_Ignore, Param_Cell, Param_Cell);
+	BossCreated = new GlobalForward("FF2R_OnBossCreated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	BossRemoved = new GlobalForward("FF2R_OnBossRemoved", ET_Ignore, Param_Cell);
 	AbilityPre = new GlobalForward("FF2R_OnAbilityPre", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);
 	AbilityAll = new GlobalForward("FF2R_OnAbility", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
 	AbilityPost = new GlobalForward("FF2R_OnAbilityPost", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
 }
 
-void Forward_OnBossCreated(int client, ConfigMap cfg)
+void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
 {
 	Call_StartForward(BossCreated);
 	Call_PushCell(client);
 	Call_PushCell(cfg);
+	Call_PushCell(setup);
 	Call_Finish();
 }
 
@@ -37,7 +38,7 @@ void Forward_OnBossRemoved(int client)
 	Call_Finish();
 }
 
-bool Forward_OnAbilityPre(int client, const char[] ability, const char[] plugin, ConfigMap cfg, bool &result)
+bool Forward_OnAbilityPre(int client, const char[] ability, ConfigMap cfg, bool &result)
 {
 	bool result2 = result;
 	
@@ -45,7 +46,6 @@ bool Forward_OnAbilityPre(int client, const char[] ability, const char[] plugin,
 	Call_StartForward(AbilityPre);
 	Call_PushCell(client);
 	Call_PushString(ability);
-	Call_PushString(plugin);
 	Call_PushCell(cfg);
 	Call_PushCellRef(result2);
 	Call_Finish(action);
@@ -62,7 +62,7 @@ bool Forward_OnAbilityPre(int client, const char[] ability, const char[] plugin,
 	return action < Plugin_Handled;
 }
 
-void Forward_OnAbility(int client, const char[] ability, const char[] plugin, ConfigMap cfg, const char[] pluginfull)
+void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
 {
 	if(plugin[0])
 	{
@@ -83,7 +83,7 @@ void Forward_OnAbility(int client, const char[] ability, const char[] plugin, Co
 				}
 			}
 			
-			if(StrEqual(buffer[highest+1], pluginfull))
+			if(StrEqual(buffer[highest+1], plugin))
 			{
 				Function func = GetFunctionByName(plugi, "FF2R_OnAbility");
 				if(func != INVALID_FUNCTION)
@@ -91,7 +91,6 @@ void Forward_OnAbility(int client, const char[] ability, const char[] plugin, Co
 					Call_StartFunction(plugi, func);
 					Call_PushCell(client);
 					Call_PushString(ability);
-					Call_PushString(plugin);
 					Call_PushCell(cfg);
 					Call_Finish();
 				}
@@ -110,17 +109,15 @@ void Forward_OnAbility(int client, const char[] ability, const char[] plugin, Co
 	Call_StartForward(AbilityAll);
 	Call_PushCell(client);
 	Call_PushString(ability);
-	Call_PushString(plugin);
 	Call_PushCell(cfg);
 	Call_Finish();
 }
 
-void Forward_OnAbilityPost(int client, const char[] ability, const char[] plugin, ConfigMap cfg)
+void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 {
 	Call_StartForward(AbilityPost);
 	Call_PushCell(client);
 	Call_PushString(ability);
-	Call_PushString(plugin);
 	Call_PushCell(cfg);
 	Call_Finish();
 }

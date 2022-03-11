@@ -34,6 +34,7 @@ void ConVar_PluginStart()
 	CvarPrefBlacklist = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", FCVAR_NOTIFY, true, -1.0);
 	CvarCaptureTime = CreateConVar("ff2_game_capture_time", "n*15 + 60", "Amount of time until the control point unlocks, similar to tf_arena_override_cap_enable_time, can be a formula");
 	CvarCaptureAlive = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
+	CvarAggressiveSwap = CreateConVar("ff2_game_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
@@ -44,7 +45,7 @@ void ConVar_PluginStart()
 	CvarAllowSpectators = FindConVar("mp_allowspectators");
 	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");
 	CvarPreroundTime = FindConVar("tf_arena_preround_time");
-	CvarBonusRoundTime = FindConVar("mp_bonusroundtime");
+	//CvarBonusRoundTime = FindConVar("mp_bonusroundtime");
 	CvarTournament = FindConVar("mp_tournament");
 	CvarTournament.Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 	

@@ -24,6 +24,7 @@ void Events_PluginStart()
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
+	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
 }
 
 void Events_RoundSetup()
@@ -468,11 +469,11 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		{
 			if(team > -1)
 			{
-				SetHudTextParamsEx(0.375, 0.7, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
+				SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
 				ShowSyncHudText(clients[i], TopHud, "%T", "Top Damage Hud", clients[i], top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
 			}
 			
-			if(team > -2 || !Client(clients[i]).IsBoss)
+			if(team == -1 || !Client(clients[i]).IsBoss)
 			{
 				SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
 				ShowSyncHudText(clients[i], YourHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);

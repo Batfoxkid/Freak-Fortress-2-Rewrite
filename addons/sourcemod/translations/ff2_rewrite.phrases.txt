@@ -23,7 +23,7 @@
 	"Top Damage Hud"
 	{
 		"#format"	"{1:s},{2:d},{3:s},{4:d},{5:s},{6:d}"
-		"en"		"\t1st: {1} - {2}\n\t2nd: {3} - {4}\n\t3rd: {5} - {6}"
+		"en"		"1st: {1} - {2}\n2nd: {3} - {4}\n3rd: {5} - {6}"
 	}
 	"Boss Had Health Left"
 	{
