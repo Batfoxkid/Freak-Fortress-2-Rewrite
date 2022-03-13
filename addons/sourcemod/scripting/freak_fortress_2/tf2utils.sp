@@ -55,7 +55,7 @@ bool TF2U_GetWearable(int client, int &entity, int &index)
 		while(index < length)
 		{
 			entity = TF2Util_GetPlayerWearable(client, index++);
-			if(entity > MaxClients)
+			if(entity != -1)
 				return true;
 		}
 	}

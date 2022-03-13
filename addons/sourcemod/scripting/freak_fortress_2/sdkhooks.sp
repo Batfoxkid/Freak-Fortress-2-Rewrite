@@ -130,7 +130,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						
 						// 25 sec with stock knife, 37.5 sec with Kunai to restore full damage
 						multi = lowest*0.8 + ((gameTime - Client(attacker).LastStabTime) / 62.5);
-						multi = clamp(multi, lowest, 1.0);
+						multi = Clamp(multi, lowest, 1.0);
 					}
 					
 					damage = 750.0 * multi;	// 2250 max damage
@@ -139,7 +139,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					Client(attacker).LastStabTime = gameTime;
 					
-					if(!Client(attacker).IsBoss && weapon > MaxClients)
+					if(!Client(attacker).IsBoss && weapon != -1)
 					{
 						SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+0.5);
 						
@@ -148,7 +148,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", gameTime);
 						
 						int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
-						if(viewmodel > MaxClients)
+						if(viewmodel != -1)
 						{
 							int animation = 42;
 							switch(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
@@ -259,7 +259,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			
 			float gameTime = GetGameTime();
 			float pressure = (1.0 - ((gameTime - Client(victim).LastTriggerTime) / 2.5)) * Client(victim).LastTriggerDamage;
-			pressure = min(pressure, 0.0);
+			pressure = Min(pressure, 0.0);
 			
 			if(action == Plugin_Continue)
 			{
@@ -379,7 +379,7 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 						if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i)==team)
 						{
 							int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
-							if(entity > MaxClients &&
+							if(entity != -1 &&
 							   HasEntProp(entity, Prop_Send, "m_bHealing") &&
 							   GetEntProp(entity, Prop_Send, "m_bHealing") &&
 							   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)

@@ -6,6 +6,19 @@
 #define _ff2r_included
 
 /**
+ * Activates a range of abilities within slots
+ * 
+ * @param boss	Boss's client index
+ * @param low	Low ability slot
+ * @param high	High ability slot
+ * 
+ * @error		Invalid client index or client is not a boss
+ * 
+ * @return		True if the sound was found, false otherwise
+ */
+native void FF2R_DoBossSlot(int boss, int low, int high=-2147483647);
+
+/**
  * Emits a boss's random sound to a list of clients.
  * 
  * @param clients		Array of client indexes
@@ -32,17 +45,28 @@
 native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0);
 
 /**
- * Activates a range of abilities within slots
+ * Called when a player spawns, dies, disconnects, etc.
  * 
- * @param boss	Boss's client index
- * @param low	Low ability slot
- * @param high	High ability slot
+ * @note	Players counted as minions aren't counted
+ *
+ * @param alive	Array of players alive on team number
+ * @param total	Array of total players on team number
  * 
- * @error		Invalid client index or client is not a boss
- * 
- * @return		True if the sound was found, false otherwise
+ * @return		Plugin_Changed if the count was changed, Plugin_Handled to also prevent lastman and control point logic, Plugin_Stop to also prevent post forwards from being called
  */
-native void FF2R_DoBossSlot(int boss, int low, int high=-2147483647);
+forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
+
+/**
+ * Called when a player spawns, dies, disconnects, etc.
+ * 
+ * @note	Players counted as minions aren't counted
+ *
+ * @param alive	Array of players alive on team number
+ * @param total	Array of total players on team number
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnAliveChanged(const int alive[4], const int total[4]);
 
 /**
  * Called when a boss gets removed
@@ -76,7 +100,7 @@ forward void FF2R_OnBossRemoved(int client);
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock void FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
+stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
 {
 	int clients[1];
 	clients[0] = client;
@@ -110,7 +134,7 @@ stock void FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, co
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock void FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
+stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -297,9 +321,10 @@ forward void FF2R_OnAbilityPost(int client, const char[] ability, AbilityData cf
 
 #else
 
-native void FF2R_SetBossData(int client, Handle cfg=null);
+native bool FF2R_GetBossData(int client);
+native void FF2R_SetBossData(int client);
 forward void FF2R_OnBossCreated(int client);
-forward Action FF2R_OnAbilityPre(int client, const char[] ability, Handle cfg, bool &result);
+forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
 forward void FF2R_OnAbility(int client, const char[] ability);
 forward void FF2R_OnAbilityPost(int client, const char[] ability);
 
@@ -319,6 +344,7 @@ public SharedPlugin __pl_ff2r =
 #if !defined REQUIRE_PLUGIN
 public void __pl_ff2r_SetNTVOptional()
 {
+	MarkNativeAsOptional("FF2R_DoBossSlot");
 	MarkNativeAsOptional("FF2R_EmitBossSound");
 	MarkNativeAsOptional("FF2R_GetBossData");
 	MarkNativeAsOptional("FF2R_SetBossData");

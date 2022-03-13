@@ -20,8 +20,6 @@
 #define FF2FLAG_ALLOW_BOSS_WEARABLES		(1<<16)		//Used to allow boss having wearables (only for Official FF2)
 #define FF2FLAGS_SPAWN				~FF2FLAG_UBERREADY & ~FF2FLAG_ISBUFFED & ~FF2FLAG_TALKING & ~FF2FLAG_ALLOWSPAWNINBOSSTEAM & ~FF2FLAG_CHANGECVAR & ~FF2FLAG_ROCKET_JUMPING & FF2FLAG_USEBOSSTIMER & FF2FLAG_USINGABILITY
 
-static StringMap Kvs;
-
 void NativeOld_PluginLoad()
 {
 	CreateNative("FF2_IsFF2Enabled", NativeOld_IsEnabled);
@@ -113,36 +111,6 @@ void NativeOld_PluginLoad()
 	
 	RegPluginLibrary("freak_fortress_2");
 	RegPluginLibrary("saxtonhale");
-}
-
-void NativeOld_MapEnd()
-{
-	if(Kvs)
-	{
-		StringMapSnapshot snap = Kvs.Snapshot();
-		if(snap)
-		{
-			int entries = snap.Length;
-			if(entries)
-			{
-				KeyValues kv;
-				for(int i; i<entries; i++)
-				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] key = new char[length];
-					snap.GetKey(i, key, length);
-					
-					Kvs.GetValue(key, kv);
-					delete kv;
-				}
-			}
-			
-			delete snap;
-		}
-		
-		delete Kvs;
-		Kvs = null;
-	}
 }
 
 public any NativeOld_IsEnabled(Handle plugin, int params)
@@ -706,18 +674,10 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 				char name[PLATFORM_MAX_PATH];
 				GetPluginFilename(plugin, name, sizeof(name));
 				
-				if(!Kvs)
-					Kvs = new StringMap();
-				
-				KeyValues kv;
-				if(Kvs.GetValue(name, kv))
-					delete kv;
-				
-				kv = new KeyValues("character");
+				KeyValues kv = new KeyValues("character");
 				kv.ImportFromFile(filepath);
 				kv.SetString("filename", filename);
-				if(!Kvs.SetValue(name, kv))
-					RequestFrame(NativeOld_DeleteHandle, kv);
+				RequestFrame(NativeOld_DeleteHandle, kv);
 				
 				return kv;
 			}

@@ -5,6 +5,7 @@
 	bool Forward_OnAbilityPre(int client, const char[] ability, ConfigMap cfg, bool &result)
 	void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
 	void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
+	Action Forward_OnAliveChange()
 */
 
 static GlobalForward BossCreated;
@@ -12,14 +13,18 @@ static GlobalForward BossRemoved;
 static GlobalForward AbilityPre;
 static GlobalForward AbilityAll;
 static GlobalForward AbilityPost;
+static GlobalForward AliveChangePre;
+static GlobalForward AliveChangePost;
 
 void Forward_PluginLoad()
 {
 	BossCreated = new GlobalForward("FF2R_OnBossCreated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	BossRemoved = new GlobalForward("FF2R_OnBossRemoved", ET_Ignore, Param_Cell);
-	AbilityPre = new GlobalForward("FF2R_OnAbilityPre", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);
+	AbilityPre = new GlobalForward("FF2R_OnAbilityPre", ET_Event, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);
 	AbilityAll = new GlobalForward("FF2R_OnAbility", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
 	AbilityPost = new GlobalForward("FF2R_OnAbilityPost", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
+	AliveChangePre = new GlobalForward("FF2R_OnAliveChange", ET_Event, Param_Array, Param_Array);
+	AliveChangePost = new GlobalForward("FF2R_OnAliveChanged", ET_Ignore, Param_Array, Param_Array);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -120,4 +125,38 @@ void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 	Call_PushString(ability);
 	Call_PushCell(cfg);
 	Call_Finish();
+}
+
+Action Forward_OnAliveChange()
+{
+	int alive[TFTeam_MAX], maxalive[TFTeam_MAX];
+	for(int i; i<TFTeam_MAX; i++)
+	{
+		alive[i] = PlayersAlive[i];
+		maxalive[i] = MaxPlayersAlive[i];
+	}
+	
+	Action action;
+	Call_StartForward(AliveChangePre);
+	Call_PushArrayEx(alive, sizeof(alive), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(maxalive, sizeof(maxalive), SM_PARAM_COPYBACK);
+	Call_Finish(action);
+	
+	if(action >= Plugin_Changed)
+	{
+		for(int i; i<TFTeam_MAX; i++)
+		{
+			PlayersAlive[i] = alive[i];
+			MaxPlayersAlive[i] = maxalive[i];
+		}
+	}
+	
+	if(action < Plugin_Stop)
+	{
+		Call_StartForward(AliveChangePost);
+		Call_PushArray(PlayersAlive, sizeof(PlayersAlive));
+		Call_PushArray(MaxPlayersAlive, sizeof(MaxPlayersAlive));
+		Call_Finish();
+	}
+	return action;
 }

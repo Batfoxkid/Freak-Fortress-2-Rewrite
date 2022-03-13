@@ -363,7 +363,9 @@ static void BossMenu(int client)
 	char data[64], buffer[512];
 	if(ViewingBoss[client] >= 0)
 	{
-		if(Bosses_CanAccessBoss(client, ViewingBoss[client], false, _, false))
+		bool preview;
+		bool access = Bosses_CanAccessBoss(client, ViewingBoss[client], false, _, false, preview);
+		if(access || preview)
 		{
 			if(ViewingPack[client] >= 0)
 			{
@@ -382,7 +384,7 @@ static void BossMenu(int client)
 					menu.SetTitle("%t\n%s\n ", "Boss Selection Command", buffer);
 			}
 			
-			if(blacklist != 0)
+			if(access && blacklist != 0)
 			{
 				int count;
 				if(BossListing[client] && BossListing[client].FindValue(ViewingBoss[client]) != -1)
@@ -473,17 +475,22 @@ static void BossMenu(int client)
 			ConfigMap cfg;
 			for(int i; (cfg = Bosses_GetConfig(i)); i++)
 			{
-				if(cfg.GetInt("charset", index) && index == ViewingPack[client] && Bosses_CanAccessBoss(client, i, false, _, false))
+				if(cfg.GetInt("charset", index) && index == ViewingPack[client])
 				{
-					Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
-					if(blacklist != 0 && BossListing[client] && BossListing[client].FindValue(i) != -1)
+					bool preview;
+					bool access = Bosses_CanAccessBoss(client, i, false, _, false, preview);
+					if(access || preview)
 					{
-						found = true;
-						Format(buffer, sizeof(buffer), "%s %s", buffer, blacklist > 0 ? "❎" : "☑");
+						Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+						if(blacklist != 0 && BossListing[client] && BossListing[client].FindValue(i) != -1)
+						{
+							found = true;
+							Format(buffer, sizeof(buffer), "%s %s", buffer, access ? blacklist > 0 ? "❎" : "☑" : "🔒");
+						}
+						
+						IntToString(i, data, sizeof(data));
+						menu.AddItem(data, buffer);
 					}
-					
-					IntToString(i, data, sizeof(data));
-					menu.AddItem(data, buffer);
 				}
 			}
 			
@@ -733,6 +740,7 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 			}
 		}
 	}
+	return 0;
 }
 
 public Action Preference_ForceBossCmd(int client, int args)
@@ -836,6 +844,7 @@ public int Preference_ForceBossMenuH(Menu menu, MenuAction action, int client, i
 			ForceBossMenu(client, choice);
 		}
 	}
+	return 0;
 }
 
 static int GetBlacklistCount(int client, int charset)

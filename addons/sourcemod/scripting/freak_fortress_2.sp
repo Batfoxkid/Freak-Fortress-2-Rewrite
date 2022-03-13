@@ -24,7 +24,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 3/11/2022"
+#define PLUGIN_VERSION	"Beta 3/13/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -192,8 +192,8 @@ ConVar CvarPreroundTime;
 //ConVar CvarBonusRoundTime;
 ConVar CvarTournament;
 
-int PlayersAlive[4];
-int MaxPlayersAlive[4];
+int PlayersAlive[TFTeam_MAX];
+int MaxPlayersAlive[TFTeam_MAX];
 int Charset;
 bool Enabled;
 int RoundStatus;
@@ -329,7 +329,6 @@ public void OnConfigsExecuted()
 public void OnMapEnd()
 {
 	Bosses_MapEnd();
-	NativeOld_MapEnd();
 }
 
 public void OnPluginEnd()
@@ -406,5 +405,3 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 	}
 	return Plugin_Continue;
 }
-
-#file "freak_fortress_2.sp"	// RIP in SourceMod 1.11

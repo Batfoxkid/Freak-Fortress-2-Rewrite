@@ -23,7 +23,7 @@ methodmap Client
 	{
 		public get()
 		{
-			return BossMap[this] != null;
+			return BossMap[view_as<int>(this)] != null;
 		}
 	}
 	
@@ -31,11 +31,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return BossMap[this];
+			return BossMap[view_as<int>(this)];
 		}
 		public set(ConfigMap cfg)
 		{
-			BossMap[this] = cfg;
+			BossMap[view_as<int>(this)] = cfg;
 		}
 	}
 	
@@ -43,11 +43,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return Queue[this];
+			return Queue[view_as<int>(this)];
 		}
 		public set(int amount)
 		{
-			Queue[this] = amount;
+			Queue[view_as<int>(this)] = amount;
 		}
 	}
 	
@@ -55,11 +55,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return NoMusic[this];
+			return NoMusic[view_as<int>(this)];
 		}
 		public set(bool value)
 		{
-			NoMusic[this] = value;
+			NoMusic[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -67,33 +67,33 @@ methodmap Client
 	{
 		public get()
 		{
-			return NoVoice[this];
+			return NoVoice[view_as<int>(this)];
 		}
 		public set(bool value)
 		{
-			NoVoice[this] = value;
+			NoVoice[view_as<int>(this)] = value;
 		}
 	}
 	
 	public int GetLastPlayed(char[] buffer, int length)
 	{
-		return strcopy(buffer, length, LastPlayed[this]);
+		return strcopy(buffer, length, LastPlayed[view_as<int>(this)]);
 	}
 	
 	public void SetLastPlayed(const char[] buffer)
 	{
-		strcopy(LastPlayed[this], sizeof(LastPlayed[]), buffer);
+		strcopy(LastPlayed[view_as<int>(this)], sizeof(LastPlayed[]), buffer);
 	}
 	
 	property bool Minion
 	{
 		public get()
 		{
-			return Minion[this];
+			return Minion[view_as<int>(this)];
 		}
 		public set(bool value)
 		{
-			Minion[this] = value;
+			Minion[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -101,11 +101,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return Glowing[this];
+			return Glowing[view_as<int>(this)];
 		}
 		public set(bool value)
 		{
-			Glowing[this] = value;
+			Glowing[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -113,11 +113,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return GlowFor[this];
+			return GlowFor[view_as<int>(this)];
 		}
 		public set(float time)
 		{
-			GlowFor[this] = time;
+			GlowFor[view_as<int>(this)] = time;
 		}
 	}
 	
@@ -125,11 +125,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return OverlayFor[this];
+			return OverlayFor[view_as<int>(this)];
 		}
 		public set(float time)
 		{
-			OverlayFor[this] = time;
+			OverlayFor[view_as<int>(this)] = time;
 		}
 	}
 	
@@ -137,11 +137,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return RefreshAt[this];
+			return RefreshAt[view_as<int>(this)];
 		}
 		public set(float time)
 		{
-			RefreshAt[this] = time;
+			RefreshAt[view_as<int>(this)] = time;
 		}
 	}
 	
@@ -149,11 +149,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return Damage[this][0];
+			return Damage[view_as<int>(this)][0];
 		}
 		public set(int amount)
 		{
-			Damage[this][0] = amount;
+			Damage[view_as<int>(this)][0] = amount;
 		}
 	}
 	
@@ -177,11 +177,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return Assist[this];
+			return Assist[view_as<int>(this)];
 		}
 		public set(int amount)
 		{
-			Assist[this] = amount;
+			Assist[view_as<int>(this)] = amount;
 		}
 	}
 	
@@ -189,7 +189,7 @@ methodmap Client
 	{
 		public get()
 		{
-			return Assist[this]
+			return Assist[view_as<int>(this)]
 				+ (200 * GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 2))	// m_iKills
 				+ (500 * GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 12))	// m_iInvulns
 				+ (100 * GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 13))	// m_iTeleports
@@ -214,22 +214,22 @@ methodmap Client
 	{
 		public get()
 		{
-			return Index[this];
+			return Index[view_as<int>(this)];
 		}
 		public set(int index)
 		{
-			Index[this] = index;
+			Index[view_as<int>(this)] = index;
 		}
 	}
 	
 	public int GetDamage(int slot)
 	{
-		return Damage[this][slot + 1];
+		return Damage[view_as<int>(this)][slot + 1];
 	}
 	
 	public void SetDamage(int slot, int damage)
 	{
-		Damage[this][slot + 1] = damage;
+		Damage[view_as<int>(this)][slot + 1] = damage;
 	}
 	
 	// Below are helper functions

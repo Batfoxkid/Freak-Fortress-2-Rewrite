@@ -1451,7 +1451,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 	return similarBoss;
 }
 
-bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true)
+bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true, bool &preview=false)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1460,6 +1460,15 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=
 	bool blocked;
 	if(enabled && (!cfg.GetBool("enabled", blocked) || !blocked))
 		return false;
+	
+	cfg.GetBool("preview", preview, false);
+	
+	static char buffer1[512];
+	if(cfg.Get("steamid", buffer1, sizeof(buffer1)))
+	{
+		static char buffer2[64];
+		return GetClientAuthId(client, AuthId_SteamID64, buffer2, sizeof(buffer2)) && StrContains(buffer1, buffer2, false) != -1;
+	}
 	
 	blocked = false;
 	if(cfg.GetBool("blocked", blocked, false) && blocked)
@@ -1476,13 +1485,25 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=
 			return false;
 	}
 	
-	char buffer[16];
-	bool admin = view_as<bool>(cfg.Get("admin", buffer, sizeof(buffer)));
+	bool admin = view_as<bool>(cfg.Get("admin", buffer1, sizeof(buffer1)));
 	if(admin)
-		blocked = !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer), true);
+		blocked = (playing || !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer1), true));
 	
-	if((!admin || blocked) && !playing)	// If have both "admin" and "hidden", allow playing the boss randomly
-		cfg.GetBool("hidden", blocked, false);
+	if(!admin || blocked)
+	{
+		if(cfg.Get("cvar", buffer1, sizeof(buffer1)))
+		{
+			// If a cvar, check if it's enabled
+			ConVar cvar = FindConVar(buffer1);
+			if(!cvar || !cvar.BoolValue)
+				return false;
+			
+			blocked = false;
+		}
+		
+		if(!playing)	// If have both "admin" and "hidden", allow playing the boss randomly
+			cfg.GetBool("hidden", blocked, false);
+	}
 	
 	return !blocked;
 }
@@ -1671,6 +1692,8 @@ public Action Bosses_EquipTimer(Handle timer, int userid)
 	int client = GetClientOfUserId(userid);
 	if(client && Client(client).IsBoss)
 		EquipBoss(client, true);
+	
+	return Plugin_Continue;
 }
 
 static void EquipBoss(int client, bool weapons)
@@ -1767,9 +1790,6 @@ static void EquipBoss(int client, bool weapons)
 					GetClassWeaponClassname(class, classname, sizeof(classname));
 					bool wearable = StrContains(classname, "tf_weap") != 0;
 					
-					if(wearable)
-						Debug("Found Wearable");
-					
 					cfg.GetInt("index", index);
 					
 					int level = -1;
@@ -1778,8 +1798,19 @@ static void EquipBoss(int client, bool weapons)
 					int quality = 5;
 					cfg.GetInt("quality", quality);
 					
+					bool preserve;
+					cfg.GetBool("preserve", preserve);
+					
 					int kills;
-					bool override = (cfg.GetInt("override", kills) && kills);
+					bool override = false;
+					if(cfg.GetInt("override", kills))
+					{
+						override = view_as<bool>(kills);
+					}
+					else if(cfg.GetInt("giveattribs", kills))
+					{
+						override = !kills;
+					}
 					
 					kills = -1;
 					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
@@ -1852,7 +1883,7 @@ static void EquipBoss(int client, bool weapons)
 					else
 					{
 						PrintToServer(classname);
-						Handle item = TF2Items_CreateItem(OVERRIDE_ALL|FORCE_GENERATION);
+						Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
 						TF2Items_SetClassname(item, classname);
 						TF2Items_SetItemIndex(item, index);
 						TF2Items_SetLevel(item, level);

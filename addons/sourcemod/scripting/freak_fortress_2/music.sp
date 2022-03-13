@@ -202,7 +202,7 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 		float time = duration;
 		char sample2[PLATFORM_MAX_PATH];
 		strcopy(sample2, sizeof(sample2), sample);
-		ForwardOld_OnMusic(sample2, time, songName, songArtist);
+		ForwardOld_OnMusic(sample2, time, songName, songArtist, clients[0]);
 		
 		Debug("Song Time: %f", time);
 		
@@ -527,6 +527,7 @@ public int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 			}
 		}
 	}
+	return 0;
 }
 
 static void PlaylistMenu(int client, int page=0)
@@ -637,6 +638,7 @@ public int Music_PlaylistMenuH(Menu menu, MenuAction action, int client, int cho
 			PlaylistMenu(client, choice / 7 * 7);
 		}
 	}
+	return 0;
 }
 
 public void Music_DisplayTracks(DataPack pack)

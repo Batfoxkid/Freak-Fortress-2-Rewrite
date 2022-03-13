@@ -72,7 +72,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 	if(client)
 	{
 		int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-		if(weapon > MaxClients)
+		if(weapon != -1)
 		{
 			// Airblast gets slower the more times it hits
 			Address address = TF2Attrib_GetByDefIndex(weapon, 256);
@@ -139,7 +139,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		float multi = 100.0;
 		int weapon = event.GetInt("weaponid");
-		if(weapon > MaxClients)
+		if(weapon != -1)
 			multi *= Weapons_PlayerHurt(weapon);
 		
 		float rage = Client(victim).GetCharge(0) + (damage * multi / Client(victim).RageDamage);
@@ -531,8 +531,14 @@ void Events_CheckAlivePlayers(int exclude=0, bool alive=true, bool resetMax=fals
 			MaxPlayersAlive[i] = PlayersAlive[i];
 	}
 	
+	Action action = Forward_OnAliveChange();
+	if(action == Plugin_Stop)
+		return;
+	
 	int team = Bosses_GetBossTeam();
 	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
+	if(action == Plugin_Handled)
+		return;
 	
 	int total = TotalPlayersAlive();
 	if(alive && RoundStatus == 1 && !LastMann && total == 2)

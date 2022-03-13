@@ -2,7 +2,7 @@
 	void ForwardOld_Setup()
 	bool ForwardOld_PreAbility(int client, const char[] plugin, const char[] ability, int slot)
 	void ForwardOld_OnAbility(int client, const char[] plugin, const char[] ability)
-	bool ForwardOld_OnMusic(char[] path, float &time, char[] name, char[] artist)
+	bool ForwardOld_OnMusic(char[] path, float &time, char[] name, char[] artist, int client)
 	Action ForwardOld_OnTriggerHurt(int client, int entity, float &damage)
 	bool ForwardOld_OnSpecialSelected(int client, int &special, char name[64], bool preset)
 	bool ForwardOld_OnAddQueuePoints(int[] points, int size)
@@ -24,6 +24,7 @@ static GlobalForward OnLoadCharacterSet;
 static GlobalForward OnLoseLife;
 static GlobalForward OnAlivePlayersChanged;
 static GlobalForward OnBackstabbed;
+static GlobalForward OnMusicEx;
 static GlobalForward OnMusicPerBoss;
 
 void ForwardOld_PluginLoad()
@@ -39,7 +40,8 @@ void ForwardOld_PluginLoad()
 	OnLoseLife = new GlobalForward("FF2_OnLoseLife", ET_Hook, Param_Cell, Param_CellByRef, Param_Cell);
 	OnAlivePlayersChanged = new GlobalForward("FF2_OnAlivePlayersChanged", ET_Hook, Param_Cell, Param_Cell);
 	OnBackstabbed = new GlobalForward("FF2_OnBackStabbed", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	OnMusicPerBoss = new GlobalForward("FF2_OnMusicPerBoss", ET_Single, Param_Cell);	
+	OnMusicPerBoss = new GlobalForward("FF2_OnMusicPerBoss", ET_Single, Param_Cell);	// From DISC-FF Boss vs Boss
+	OnMusicEx = new GlobalForward("FF2_OnMusicEx", ET_Hook, Param_String, Param_FloatByRef, Param_Cell);	// From Versus Ponyville Reborn
 }
 
 bool ForwardOld_PreAbility(int client, const char[] plugin, const char[] ability, int slot)
@@ -65,7 +67,7 @@ void ForwardOld_OnAbility(int client, const char[] plugin, const char[] ability,
 	Call_Finish();
 }
 
-bool ForwardOld_OnMusic(char path[PLATFORM_MAX_PATH], float &time, char name[64], char artist[64])
+bool ForwardOld_OnMusic(char path[PLATFORM_MAX_PATH], float &time, char name[64], char artist[64], int client)
 {
 	char path2[PLATFORM_MAX_PATH], name2[64], artist2[64];
 	strcopy(path2, sizeof(path2), path);
@@ -82,23 +84,39 @@ bool ForwardOld_OnMusic(char path[PLATFORM_MAX_PATH], float &time, char name[64]
 	Call_PushStringEx(artist2, sizeof(artist2), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_Finish(action);
 	
-	switch(action)
+	if(action == Plugin_Changed)
 	{
-		case Plugin_Changed:
+		strcopy(path, sizeof(path), path2);
+		strcopy(name, sizeof(name), name2);
+		strcopy(artist, sizeof(artist), artist2);
+		time = time2;
+	}
+	else if(action == Plugin_Continue)
+	{
+		strcopy(path2, sizeof(path2), path);
+		time2 = time;
+		
+		Call_StartForward(OnMusic);
+		Call_PushStringEx(path2, sizeof(path2), SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushFloatRef(time2);
+		Call_Finish(action);
+		
+		if(action == Plugin_Changed)
 		{
 			strcopy(path, sizeof(path), path2);
-			strcopy(name, sizeof(name), name2);
-			strcopy(artist, sizeof(artist), artist2);
+			name[0] = 0;
+			artist[0] = 0;
 			time = time2;
 		}
-		default:
+		else if(action == Plugin_Continue)
 		{
 			strcopy(path2, sizeof(path2), path);
 			time2 = time;
 			
-			Call_StartForward(OnMusic);
+			Call_StartForward(OnMusicEx);
 			Call_PushStringEx(path2, sizeof(path2), SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_PushFloatRef(time2);
+			Call_PushCell(client);
 			Call_Finish(action);
 			
 			if(action == Plugin_Changed)

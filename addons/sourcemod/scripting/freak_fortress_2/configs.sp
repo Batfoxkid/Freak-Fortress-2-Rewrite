@@ -231,4 +231,5 @@ public int Configs_PackVoteH(Menu menu, MenuAction action, int param1, int param
 			FPrintToChatAll("%t", "Next Pack Voted", buffer2);
 		}
 	}
+	return 0;
 }

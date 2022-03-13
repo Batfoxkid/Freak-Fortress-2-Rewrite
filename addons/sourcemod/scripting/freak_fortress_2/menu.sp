@@ -151,6 +151,7 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 			}
 		}
 	}
+	return 0;
 }
 
 public Action Menu_VoiceToggle(int client, int args)
@@ -275,6 +276,7 @@ public int Menu_QueueMenuH(Menu menu, MenuAction action, int client, int choice)
 			}
 		}
 	}
+	return 0;
 }
 
 static void ResetQueueMenu(int client)
@@ -313,6 +315,7 @@ public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 			QueueMenu(client);
 		}
 	}
+	return 0;
 }
 
 public Action Menu_AddPointsCmd(int client, int args)
@@ -394,6 +397,7 @@ public int Menu_AddPointsTargetH(Menu menu, MenuAction action, int client, int c
 			AddPointsMenu(client, userid);
 		}
 	}
+	return 0;
 }
 
 public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int choice)
@@ -447,6 +451,7 @@ public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int c
 			AddPointsMenu(client);
 		}
 	}
+	return 0;
 }
 
 static void AddQueuePoints(int client, int points, int[] target, int matches, const char[] name, bool lang=false)

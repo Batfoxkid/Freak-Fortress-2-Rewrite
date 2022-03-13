@@ -622,6 +622,8 @@ stock void ApplySelfHealEvent(int entindex, int amount)
 
 stock bool TF2_GetItem(int client, int &weapon, int &pos)
 {
+	//TODO: Find out if we need to check m_bDisguiseWeapon
+	
 	static int maxWeapons;
 	if(!maxWeapons)
 		maxWeapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
@@ -634,7 +636,7 @@ stock bool TF2_GetItem(int client, int &weapon, int &pos)
 		weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", pos);
 		pos++;
 		
-		if(weapon > MaxClients)
+		if(weapon != -1)
 			return true;
 	}
 	return false;
@@ -774,19 +776,19 @@ stock bool GetControlPoint()
 
 stock void SetControlPoint(bool enable)
 {
-	/*int entity = MaxClients + 1;
-	while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
-	{
-		AcceptEntityInput(entity, (enable ? "ShowModel" : "HideModel"));
-		SetVariantBool(enable);
-		AcceptEntityInput(entity, "SetLocked");
-	}*/
-	
 	if(enable)
 	{
 		int entity = FindEntityByClassname(-1, "tf_logic_arena");
 		if(entity != -1)
 			FireEntityOutput(entity, "OnCapEnabled", entity);
+		
+		entity = MaxClients + 1;
+		while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+		{
+			AcceptEntityInput(entity, "ShowModel");
+			SetVariantBool(enable);
+			AcceptEntityInput(entity, "SetLocked");
+		}
 	}
 	else
 	{
@@ -912,7 +914,7 @@ stock void Debug(const char[] buffer, any ...)
 	}
 }
 
-stock any min(any value, any min)
+stock any Min(any value, any min)
 {
 	if(value < min)
 		return min;
@@ -920,7 +922,7 @@ stock any min(any value, any min)
 	return value;
 }
 
-stock any max(any value, any max)
+stock any Max(any value, any max)
 {
 	if(value > max)
 		return max;
@@ -928,7 +930,7 @@ stock any max(any value, any max)
 	return value;
 }
 
-stock any clamp(any value, any min, any max)
+stock any Clamp(any value, any min, any max)
 {
 	if(value > max)
 		return max;

@@ -30,7 +30,16 @@ public any Native_SetBossData(Handle plugin, int params)
 	if(Client(client).Cfg)
 		DeleteCfg(Client(client).Cfg);
 	
-	Client(client).Cfg = GetNativeCell(2);
+	// SourcePawn Bug!!
+	//Client(client).Cfg = params > 1 ? GetNativeCell(2) : null;
+	if(params > 1)
+	{
+		Client(client).Cfg = GetNativeCell(2);
+	}
+	else
+	{
+		Client(client).Cfg = null;
+	}
 	return 0;
 }
 

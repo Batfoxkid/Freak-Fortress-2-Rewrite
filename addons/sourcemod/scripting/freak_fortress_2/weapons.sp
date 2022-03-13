@@ -161,7 +161,7 @@ void Weapons_ChangeMenu(int client, int time=MENU_TIME_FOREVER)
 			FormatEx(buffer2, sizeof(buffer2), "%t", SlotNames[i]);
 			
 			int entity = GetPlayerWeaponSlot(client, i);
-			if(entity > MaxClients && FindWeaponSection(entity))
+			if(entity != -1 && FindWeaponSection(entity))
 			{
 				IntToString(EntIndexToEntRef(entity), buffer1, sizeof(buffer1));
 				menu.AddItem(buffer1, SlotNames[i]);
@@ -203,12 +203,13 @@ public int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 			char buffer[12];
 			menu.GetItem(choice, buffer, sizeof(buffer));
 			int entity = EntRefToEntIndex(StringToInt(buffer));
-			if(entity > MaxClients)
+			if(entity != -1)
 				Weapons_ShowChanges(client, entity);
 			
 			Weapons_ChangeMenu(client);
 		}
 	}
+	return 0;
 }
 
 void Weapons_ShowChanges(int client, int entity)
@@ -353,7 +354,7 @@ static void FormatValue(const char[] value, char[] buffer, int length, const cha
 stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 {
 	#if defined __tf_custom_attributes_included
-	if(TCALoaded && weapon > MaxClients && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
 		if(kv)
@@ -436,9 +437,11 @@ public void Weapons_SpawnFrame(int ref)
 	if(WeaponCfg)
 	{
 		int entity = EntRefToEntIndex(ref);
-		if(entity > MaxClients)
+		if(entity != -1 &&
+			(!HasEntProp(entity, Prop_Send, "m_bDisguiseWearable") || !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable")) &&
+			(!HasEntProp(entity, Prop_Send, "m_bDisguiseWeapon") || !GetEntProp(entity, Prop_Send, "m_bDisguiseWeapon")))
 		{
-			int client = GetEntPropEnt(client, Prop_Send, "m_hOwnerEntity");
+			int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 			if(client > 0 && client <= MaxClients && !Client(client).IsBoss && !Client(client).Minion)
 			{
 				ConfigMap cfg = FindWeaponSection(entity);

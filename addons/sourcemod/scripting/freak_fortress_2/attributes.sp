@@ -33,7 +33,7 @@ public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 		}
 		
 		int weapon = GetPlayerWeaponSlot(attacker, TFWeaponSlot_Secondary);
-		if(weapon > MaxClients)
+		if(weapon != -1)
 		{
 			char classname[36];
 			if(GetEntityClassname(weapon, classname, sizeof(classname)))
@@ -68,7 +68,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	if(Attributes_FindOnWeapon(client, weapon, 217))	// sanguisuge
 	{
 		int maxoverheal = TF2U_GetMaxOverheal(client) * 2;	// 250% overheal (from 200% overheal)
-		int health = GetClientHealth(health);
+		int health = GetClientHealth(client);
 		if(health < maxoverheal)
 		{
 			SetEntityHealth(client, maxoverheal);
@@ -95,7 +95,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 		if(client != i && IsClientInGame(i) && IsPlayerAlive(i))
 		{
 			int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
-			if(entity > MaxClients &&
+			if(entity != -1 &&
 			   HasEntProp(entity, Prop_Send, "m_bHealing") &&
 			   GetEntProp(entity, Prop_Send, "m_bHealing") &&
 			   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == client)
@@ -142,7 +142,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 		TF2_AddCondition(client, TFCond_MiniCritOnKill, 0.001);
 	}
 	
-	if(weapon > MaxClients && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		if(Attributes_FindOnWeapon(client, weapon, 44))	// scattergun has knockback
 		{
@@ -209,12 +209,12 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 
 void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
 {
-	if(weapon > MaxClients && !HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	if(weapon != -1 && !HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 		weapon = -1;
 	
 	char classname[36];
 	int slot = TFWeaponSlot_Building;
-	if(weapon > MaxClients)
+	if(weapon != -1)
 	{
 		if(GetEntityClassname(weapon, classname, sizeof(classname)))
 		{
@@ -306,7 +306,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 				if(GetVectorDistance(pos1, pos2, true) < 160000)
 				{
 					int maxhealth = SDKCall_GetMaxHealth(client);
-					int health = GetClientHealth(health);
+					int health = GetClientHealth(client);
 					if(health < maxhealth)
 					{
 						if(health+50 > maxhealth)
@@ -401,7 +401,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	if(value)
 	{
 		int maxhealth = SDKCall_GetMaxHealth(client);
-		int health = GetClientHealth(health);
+		int health = GetClientHealth(client);
 		if(health < maxhealth)
 		{
 			int healing = RoundFloat(value);
@@ -425,7 +425,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 		SDKCall_SetSpeed(client);
 		
 		int maxoverheal = TF2U_GetMaxOverheal(client);
-		int health = GetClientHealth(health);
+		int health = GetClientHealth(client);
 		if(health < maxoverheal)
 		{
 			if(health + 15 > maxoverheal)
@@ -445,7 +445,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	if(value)	// restore health on kill
 	{
 		int maxhealth = SDKCall_GetMaxHealth(client);
-		int health = GetClientHealth(health);
+		int health = GetClientHealth(client);
 		
 		int maxoverheal = TF2U_GetMaxOverheal(client);
 		if(health < maxoverheal)
@@ -465,7 +465,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 		}
 	}
 	
-	if(weapon > MaxClients && Attributes_FindOnWeapon(client, weapon, 226))	// honorbound
+	if(weapon != -1 && Attributes_FindOnWeapon(client, weapon, 226))	// honorbound
 	{
 		SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
 		SetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy", GetEntProp(client, Prop_Send, "m_iKillCountSinceLastDeploy")+1);
@@ -500,7 +500,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	{
 		if(slot == TFWeaponSlot_Building)
 		{
-			if(inflictor > MaxClients && GetEntityClassname(inflictor, classname, sizeof(classname)) && !StrContains(classname, "obj_sentrygun"))
+			if(inflictor != -1 && GetEntityClassname(inflictor, classname, sizeof(classname)) && !StrContains(classname, "obj_sentrygun"))
 				SetEntProp(inflictor, Prop_Send, "m_iKills", GetEntProp(inflictor, Prop_Send, "m_iKills") + 1);
 			
 			weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Grenade);
@@ -533,7 +533,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 				event.SetInt("crit_type", streak > 10);
 				event.SetString("weapon_logclassname", "ff2_killstreak");
 				
-				if(weapon > MaxClients)
+				if(weapon != -1)
 				{
 					char buffer[32];
 					if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
@@ -569,7 +569,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 			event.SetInt("crit_type", 0);
 			event.SetString("weapon_logclassname", "ff2_killstreak");
 			
-			if(weapon > MaxClients)
+			if(weapon != -1)
 			{
 				char buffer[32];
 				if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
@@ -665,7 +665,7 @@ float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=fals
 		}
 	}
 	
-	if(entity > MaxClients)
+	if(entity != -1)
 	{
 		if(Attributes_GetByDefIndex(entity, index, value))
 		{

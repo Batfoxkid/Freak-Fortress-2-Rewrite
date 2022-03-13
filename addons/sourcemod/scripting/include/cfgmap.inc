@@ -40,13 +40,6 @@ enum KeyValType {
 	KeyValType_Value,    /// char[*]
 };
 
-enum struct PackVal {
-	char       data[512];
-	ConfigMap  cfg;
-	int        size;
-	KeyValType tag;
-}
-
 enum { SEC_SCOPE_SIZE=512 };
 enum struct KeyValState {
 	SMCParser  parser;
@@ -628,6 +621,13 @@ methodmap ConfigMap < StringMap {
 	}
 };
 
+enum struct PackVal {
+	char       data[512];
+	ConfigMap  cfg;
+	int        size;
+	KeyValType tag;
+}
+
 public SMCResult ConfigMap_OnNewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
 	/// if we hit a new (sub)section,
@@ -798,9 +798,7 @@ stock void PrintCfg(ConfigMap cfg) {
 				PrintToServer("ConfigMap :: key: '%s', val.size: '%i'", key_buffer, val.size);
 			case KeyValType_Section: {
 				PrintToServer("ConfigMap :: \t\tkey: '%s', Section", key_buffer);
-				val.data.Reset();
-				ConfigMap section = val.data.ReadCell();
-				PrintCfg(section);
+				PrintCfg(val.cfg);
 			}
 		}
 	}
