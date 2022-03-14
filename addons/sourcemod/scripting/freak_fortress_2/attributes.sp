@@ -3,8 +3,9 @@
 	bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon)
 	void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagetype, int weapon)
 	void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
-	float Attributes_FindOnPlayer(int client, int index, bool multi=false, float defaul=0.0)
-	float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=false, float defaul=0.0)
+	float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
+	float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = false, float defaul = 0.0)
+	bool Attributes_GetByDefIndex(int entity, int index, float &value)
 */
 
 static float JarateDamage[MAXTF2PLAYERS];
@@ -90,7 +91,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 		SetEntProp(client, Prop_Send, "m_iRevengeCrits", GetEntProp(client, Prop_Send, "m_iRevengeCrits")+RoundFloat(value));
 	
 	int assister = -1;
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(client != i && IsClientInGame(i) && IsPlayerAlive(i))
 		{
@@ -124,7 +125,7 @@ bool Attributes_OnBackstabBoss(int client, int victim, float &damage, int weapon
 	event.SetInt("kill_streak_wep", stabs);
 	
 	int team = GetClientTeam(client);
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(i == client || i == assister || (!silent && i == victim) || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
 			event.FireToClient(i);
@@ -245,7 +246,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 			velocity[2] = 50.0;
 			
 			int team = GetClientTeam(client);  
-			for(int i; i<amount; i++)
+			for(int i; i < amount; i++)
 			{
 				int entity = CreateEntityByName("item_healthkit_small");
 				if(IsValidEntity(entity))
@@ -298,7 +299,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 		int entity;
 		float pos1[3], pos2[3];
 		GetClientAbsOrigin(client, pos1);
-		for(int target=1; target<=MaxClients; target++)
+		for(int target = 1; target <= MaxClients; target++)
 		{
 			if(client!=target && IsClientInGame(target) && IsPlayerAlive(target))
 			{
@@ -514,7 +515,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 			SetEntProp(client, Prop_Send, "m_nStreaks", streak, _, slot);
 			
 			int total = streak;
-			for(int i; i<4; i++)
+			for(int i; i < 4; i++)
 			{
 				if(i != slot)
 					total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
@@ -541,7 +542,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 				}
 				
 				int team = GetClientTeam(client);
-				for(int i=1; i<=MaxClients; i++)
+				for(int i = 1; i <= MaxClients; i++)
 				{
 					if(i == client || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
 						event.FireToClient(i);
@@ -553,7 +554,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 		else if(damagecustom != TF_CUSTOM_BACKSTAB && damagecustom != TF_CUSTOM_TELEFRAG && DamageGoal(2250, Client(client).GetDamage(slot), lastWeaponDamage))
 		{
 			int total;
-			for(int i; i<4; i++)
+			for(int i; i < 4; i++)
 			{
 				total += GetEntProp(client, Prop_Send, "m_nStreaks", _, i);
 			}
@@ -582,7 +583,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	}
 }
 
-float Attributes_FindOnPlayer(int client, int index, bool multi=false, float defaul=0.0)
+float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
 {
 	float total = defaul;
 	bool found = Attributes_GetByDefIndex(client, index, total);
@@ -637,7 +638,7 @@ float Attributes_FindOnPlayer(int client, int index, bool multi=false, float def
 	return total;
 }
 
-float Attributes_FindOnWeapon(int client, int entity, int index, bool multi=false, float defaul=0.0)
+float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = false, float defaul = 0.0)
 {
 	float total = defaul;
 	bool found = Attributes_GetByDefIndex(client, index, total);
@@ -703,7 +704,7 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 	static int indexes[20];
 	static float values[20];
 	int count = TF2Attrib_GetSOCAttribs(entity, indexes, values, 20);
-	for(int i; i<count; i++)
+	for(int i; i < count; i++)
 	{
 		if(indexes[i] == index)
 		{
@@ -715,7 +716,7 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 	if(!GetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", 1))
 	{
 		count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
-		for(int i; i<count; i++)
+		for(int i; i < count; i++)
 		{
 			if(indexes[i] == index)
 			{

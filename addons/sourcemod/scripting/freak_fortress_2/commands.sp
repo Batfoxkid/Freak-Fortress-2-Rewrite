@@ -32,7 +32,7 @@ public Action Command_Voicemenu(int client, const char[] command, int args)
 					if(rageType != 2)
 					{
 						float rageMin, charge;
-						if(rageDamage <= 1.0 || (charge=Client(client).GetCharge(0)) >= (rageMin=Client(client).RageMin))
+						if(rageDamage <= 1.0 || (charge = Client(client).GetCharge(0)) >= (rageMin = Client(client).RageMin))
 						{
 							if(rageDamage > 1.0)
 							{
@@ -81,7 +81,7 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 		return Plugin_Continue;
 	
 	int reds, blus;
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(client != i && IsClientInGame(i))
 		{

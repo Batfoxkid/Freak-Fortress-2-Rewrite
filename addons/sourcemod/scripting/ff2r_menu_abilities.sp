@@ -21,7 +21,12 @@
 				"display"	"0.0"	// Starting display amount. If left blank, "start" is used
 				"rolling"	"0.0"	// Rolling animation speed
 				
-				"ontick"	"0.0"	// Gain every menu tick
+				"ontick"		"0.0"	// Gain every menu tick
+				"onkill"		"0.0"	// Gain on a kill
+				"onbossdeath"	"0.0"	// Gain when a boss dies
+				"onhurt"		"0.0"	// Gain for every point of damage taken
+				"ondamage"		"0.0"	// Gain for every point of damage dealt
+				"onairblast"	"0.0"	// Gain when airblasted
 			}
 		}
 		
@@ -72,7 +77,7 @@
 
 #include "freak_fortress_2/formula_parser.sp"
 
-#define PLUGIN_VERSION	"Beta 3/13/2022"
+#define PLUGIN_VERSION	"Beta 3/14/2022"
 
 #define ABILITY_NAME	"special_menu_manager"
 
@@ -121,8 +126,12 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	HookEvent("player_death", OnPlayerDeath, EventHookMode_Post);
+	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
+	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
+	
 	// Lateload Support
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -151,7 +160,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			Enabled = true;
 			
 			int players;
-			for(int i; i<4; i++)
+			for(int i; i < 4; i++)
 			{
 				players += PlayersAlive[i];
 			}
@@ -164,7 +173,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				if(snap)
 				{
 					int entries = snap.Length;
-					for(int i; i<entries; i++)
+					for(int i; i < entries; i++)
 					{
 						int length = snap.KeyBufferSize(i)+1;
 						char[] key = new char[length];
@@ -195,7 +204,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				if(snap)
 				{
 					int entries = snap.Length;
-					for(int i; i<entries; i++)
+					for(int i; i < entries; i++)
 					{
 						int length = snap.KeyBufferSize(i)+1;
 						char[] key = new char[length];
@@ -216,7 +225,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 									if(snap2)
 									{
 										int entries2 = snap2.Length;
-										for(int a; a<entries2; a++)
+										for(int a; a < entries2; a++)
 										{
 											length = snap2.KeyBufferSize(a)+1;
 											char[] key2 = new char[length];
@@ -250,7 +259,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 	}
 }
 
-float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul="")
+float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = "")
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);
@@ -270,7 +279,7 @@ public void FF2R_OnBossRemoved(int client)
 	if(ViewingMenu[client])
 		CancelClientMenu(client, false);
 	
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(MenuTimer[i])
 			return;
@@ -287,7 +296,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 
 public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 {
-	for(int i; i<4; i++)
+	for(int i; i < 4; i++)
 	{
 		PlayersAlive[i] = alive[i];
 	}
@@ -334,7 +343,7 @@ public bool ShowMenuAll(int client, bool ticked)
 				ShowMenu(client, client, boss, ability, enabled, ticked);
 			
 			int team1 = GetClientTeam(client);
-			for(int i=1; i<=MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
 				if(client != i && IsClientInGame(i) && IsClientObserver(i) && GetEntPropEnt(i, Prop_Send, "m_hObserverTarget") == client && (ViewingMenu[i] || (enabled && GetClientMenu(i) == MenuSource_None)))
 				{
@@ -377,7 +386,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 		if(snap)
 		{
 			var1 = snap.Length;
-			for(int i; i<var1; i++)
+			for(int i; i < var1; i++)
 			{
 				int length = snap.KeyBufferSize(i)+1;
 				char[] key = new char[length];
@@ -477,7 +486,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 			
 			int team = GetClientTeam(client);
 			int dead, allies;
-			for(int i=1; i<=MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
 				if(i != client && IsClientInGame(i))
 				{
@@ -501,7 +510,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 			float gameTime = GetGameTime();
 			
 			int entries = snap.Length;
-			for(int i; i<entries; i++)
+			for(int i; i < entries; i++)
 			{
 				int length = snap.KeyBufferSize(i)+1;
 				char[] key = new char[length];
@@ -536,7 +545,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 								if(snap2)
 								{
 									int entries2 = snap2.Length;
-									for(int a; a<entries2; a++)
+									for(int a; a < entries2; a++)
 									{
 										length = snap2.KeyBufferSize(a)+1;
 										char[] key2 = new char[length];
@@ -707,7 +716,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 									{
 										int team = GetClientTeam(client);
 										int dead, allies;
-										for(int i=1; i<=MaxClients; i++)
+										for(int i = 1; i <= MaxClients; i++)
 										{
 											if(i != client && IsClientInGame(i))
 											{
@@ -757,7 +766,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 												if(snap)
 												{
 													int entries = snap.Length;
-													for(int i; i<entries; i++)
+													for(int i; i < entries; i++)
 													{
 														int length = snap.KeyBufferSize(i)+1;
 														char[] key = new char[length];
@@ -783,7 +792,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 													
 													if(!blocked)
 													{
-														for(int i; i<entries; i++)
+														for(int i; i < entries; i++)
 														{
 															int length = snap.KeyBufferSize(i)+1;
 															char[] key = new char[length];
@@ -843,7 +852,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 		{
 			int team = GetClientTeam(client);
 			int allies;
-			for(int i=1; i<=MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
 				if(i != client && IsClientInGame(i))
 				{
@@ -861,7 +870,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 			int rands;
 			int entries = snap.Length;
 			int[] rand = new int[entries];
-			for(int i; i<entries; i++)
+			for(int i; i < entries; i++)
 			{
 				int length = snap.KeyBufferSize(i)+1;
 				char[] key = new char[length];
@@ -887,7 +896,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 			if(slots > 0)
 			{
 				SortIntegers(rand, rands, Sort_Random);
-				for(int i; i<rands; i++)
+				for(int i; i < rands; i++)
 				{
 					int length = snap.KeyBufferSize(rand[i])+1;
 					char[] key = new char[length];
@@ -915,7 +924,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 			
 			if(slots > 0)
 			{
-				for(int i; i<rands; i++)
+				for(int i; i < rands; i++)
 				{
 					int length = snap.KeyBufferSize(rand[i])+1;
 					char[] key = new char[length];
@@ -940,7 +949,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 			
 			if(slots > 0)
 			{
-				for(int i; i<rands; i++)
+				for(int i; i < rands; i++)
 				{
 					int length = snap.KeyBufferSize(rand[i])+1;
 					char[] key = new char[length];
@@ -987,7 +996,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 								if(snap)
 								{
 									int entries = snap.Length;
-									for(int i; i<entries; i++)
+									for(int i; i < entries; i++)
 									{
 										int length = snap.KeyBufferSize(i)+1;
 										char[] key = new char[length];
@@ -1037,7 +1046,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			
 			if(!(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
 			{
-				for(int i=1; i<=MaxClients; i++)
+				for(int i = 1; i <= MaxClients; i++)
 				{
 					if(i == victim || i == attacker || IsClientInGame(i))
 						AddManaEvent(i, "onbossdeath");
@@ -1074,7 +1083,7 @@ public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast
 	}
 }
 
-void AddManaEvent(int client, const char[] event, float multi=1.0)
+void AddManaEvent(int client, const char[] event, float multi = 1.0)
 {
 	if(MenuTimer[client])
 	{
@@ -1092,7 +1101,7 @@ void AddManaEvent(int client, const char[] event, float multi=1.0)
 					{
 						bool found;
 						int entries = snap.Length;
-						for(int i; i<entries; i++)
+						for(int i; i < entries; i++)
 						{
 							int length = snap.KeyBufferSize(i)+1;
 							char[] key = new char[length];
@@ -1135,7 +1144,7 @@ void AddManaEvent(int client, const char[] event, float multi=1.0)
 	}
 }
 
-float GetBossCharge(ConfigData cfg, const char[] slot, float defaul=0.0)
+float GetBossCharge(ConfigData cfg, const char[] slot, float defaul = 0.0)
 {
 	int length = strlen(slot)+7;
 	char[] buffer = new char[length];
@@ -1151,7 +1160,7 @@ void SetBossCharge(ConfigData cfg, const char[] slot, float amount)
 	cfg.SetFloat(buffer, amount);
 }
 
-bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang=-1, const char[] string="name")
+bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
 {
 	if(lang != -1)
 	{

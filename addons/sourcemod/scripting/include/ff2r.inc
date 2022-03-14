@@ -16,7 +16,7 @@
  * 
  * @return		True if the sound was found, false otherwise
  */
-native void FF2R_DoBossSlot(int boss, int low, int high=-2147483647);
+native void FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
 
 /**
  * Emits a boss's random sound to a list of clients.
@@ -42,7 +42,7 @@ native void FF2R_DoBossSlot(int boss, int low, int high=-2147483647);
  * 
  * @return				True if the sound was found, false otherwise
  */
-native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0);
+native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0);
 
 /**
  * Called when a player spawns, dies, disconnects, etc.
@@ -100,7 +100,7 @@ forward void FF2R_OnBossRemoved(int client);
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
+stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
 {
 	int clients[1];
 	clients[0] = client;
@@ -134,12 +134,12 @@ stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, co
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=2.0, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=false, float soundtime=0.0)
+stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
 	
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i))
 			clients[total++] = i;
@@ -155,21 +155,21 @@ stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] requ
 
 methodmap ConfigData < ConfigMap
 {
-	public int GetInt(const char[] key, int defaul=0, int base=10)
+	public int GetInt(const char[] key, int defaul = 0, int base = 10)
 	{
 		int value = defaul;
 		view_as<ConfigMap>(this).GetInt(key, value, base);
 		return value;
 	}
 	
-	public float GetFloat(const char[] key, float defaul=0.0)
+	public float GetFloat(const char[] key, float defaul = 0.0)
 	{
 		float value = defaul;
 		view_as<ConfigMap>(this).GetFloat(key, value);
 		return value;
 	}
 	
-	public int GetString(const char[] key, char[] buffer, int length, const char[] defaul="")
+	public int GetString(const char[] key, char[] buffer, int length, const char[] defaul = "")
 	{
 		int size = view_as<ConfigMap>(this).Get(key, buffer, length);
 		if(!size)
@@ -178,7 +178,7 @@ methodmap ConfigData < ConfigMap
 		return size;
 	}
 	
-	public bool GetBool(const char[] key, bool defaul=false)
+	public bool GetBool(const char[] key, bool defaul = false)
 	{
 		bool value = defaul;
 		view_as<ConfigMap>(this).GetBool(key, value, false);
@@ -218,7 +218,7 @@ methodmap AbilityData < ConfigData
 			SplitString(buffer, ".smx", buffer, sizeof(buffer));
 			
 			int highest = -1;
-			for(int i = strlen(buffer)-1; i>0; i--)
+			for(int i = strlen(buffer)-1; i > 0; i--)
 			{
 				if(buffer[i] == '/' || buffer[i] == '\\')
 				{
@@ -272,7 +272,7 @@ native BossData FF2R_GetBossData(int client);
  * 
  * @noreturn
  */
-native void FF2R_SetBossData(int client, BossData cfg=null);
+native void FF2R_SetBossData(int client, BossData cfg = null);
 
 /**
  * Called when a boss gets created or updated, can get called more than once
@@ -323,7 +323,7 @@ forward void FF2R_OnAbilityPost(int client, const char[] ability, AbilityData cf
 
 native bool FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client);
-forward void FF2R_OnBossCreated(int client);
+forward void FF2R_OnBossCreated(int client, any cfg, bool setup);
 forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
 forward void FF2R_OnAbility(int client, const char[] ability);
 forward void FF2R_OnAbilityPost(int client, const char[] ability);

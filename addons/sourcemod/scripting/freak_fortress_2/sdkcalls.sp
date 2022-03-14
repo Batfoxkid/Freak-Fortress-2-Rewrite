@@ -3,7 +3,9 @@
 	void SDKCall_EquipWearable(int client, int entity)
 	int SDKCall_GetMaxHealth(int client)
 	void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
+	bool SDKCall_CheckBlockBackstab(int client, int attacker)
 	void SDKCall_SetSpeed(int client)
+	void SDKCall_ChangeClientTeam(int client, int newTeam)
 */
 
 static Handle SDKEquipWearable;
@@ -141,7 +143,7 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 	if(SDKTeamAddPlayer && SDKTeamRemovePlayer)
 	{
 		int entity = MaxClients+1;
-		while((entity=FindEntityByClassname(entity, "tf_team")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_team")) != -1)
 		{
 			int entityTeam = GetEntProp(entity, Prop_Send, "m_iTeamNum");
 			if(entityTeam == clientTeam)

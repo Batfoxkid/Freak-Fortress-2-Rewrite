@@ -22,7 +22,7 @@ methodmap SortedSnapshot < ArrayList
 	}
 }
 
-SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order=Sort_Ascending)
+SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order = Sort_Ascending)
 {
 	ArrayList list;
 	StringMapSnapshot snap = view_as<StringMapSnapshot>(CreateTrieSnapshot(map));
@@ -31,7 +31,7 @@ SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order=Sort_Ascending)
 		list = new ArrayList(ByteCountToCells(ADTTRIESORTSIZE));
 		
 		int entires = snap.Length;
-		for(int i; i<entires; i++)
+		for(int i; i < entires; i++)
 		{
 			int length = snap.KeyBufferSize(i) + 1;
 			if(length > ADTTRIESORTSIZE)

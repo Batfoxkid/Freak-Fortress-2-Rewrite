@@ -1,5 +1,7 @@
 /*
 	void SDKHook_PluginStart()
+	void SDKHook_LibraryAdded(const char[] name)
+	void SDKHook_LibraryRemoved(const char[] name)
 	void SDKHook_HookClient(int client)
 	void SDKHook_BossCreated(int client)
 */
@@ -187,7 +189,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				}
 				case TF_CUSTOM_TELEFRAG:
 				{
-					damage = 2000.0;
+					damage = 1666.67;
 					damagetype |= DMG_CRIT;
 					critType = CritType_Crit;
 					
@@ -221,7 +223,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					event.SetInt("crit_type", 2);
 					
 					int team = GetClientTeam(attacker);
-					for(int i=1; i<=MaxClients; i++)
+					for(int i = 1; i <= MaxClients; i++)
 					{
 						if(i == attacker || i == assister || i == victim || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
 							event.FireToClient(i);
@@ -385,7 +387,7 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 				if(damagecustom != TF_CUSTOM_TELEFRAG)
 				{
 					int team = GetClientTeam(attacker);
-					for(int i=1; i<=MaxClients; i++)
+					for(int i = 1; i <= MaxClients; i++)
 					{
 						if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i)==team)
 						{
@@ -417,7 +419,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 		int client = entity;
 		if(TF2_IsPlayerInCondition(entity, TFCond_Disguised))
 		{
-			for(int i; i<numClients; i++)
+			for(int i; i < numClients; i++)
 			{
 				if(clients[i] == entity)	// Get the sound from the Spy/enemies to avoid teammates hearing it
 				{
@@ -449,7 +451,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 				int[] clients2 = new int[numClients];
 				int amount;
 				
-				for(int i; i<numClients; i++)
+				for(int i; i < numClients; i++)
 				{
 					if(!Client(clients[i]).NoVoice)
 					{
@@ -477,7 +479,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 				strcopy(sample, sizeof(sample), sound.Sound);
 				
 				Client(entity).Speaking = true;
-				for(int i=1; i<count; i++)
+				for(int i = 1; i < count; i++)
 				{
 					EmitSound(clients, numClients, sample, entity, channel, level, flags, volume, pitch);
 				}

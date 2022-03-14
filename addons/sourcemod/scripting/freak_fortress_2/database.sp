@@ -2,7 +2,7 @@
 	void Database_Setup()
 	void Database_PluginEnd()
 	void Database_ClientAuthorized(int client)
-	void Database_ClientDisconnect(int client, DBPriority prioity=DBPrio_Normal)
+	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
 */
 
 #define DATABASE			"ff2"
@@ -52,9 +52,9 @@ public Action Database_SteamIdCmd(int args)
 		bool isTrans;
 		int targets;
 		int[] target = new int[MaxClients];
-		if((targets=ProcessTargetString(buffer, 0, target, MaxClients, 0, buffer, sizeof(buffer), isTrans)) > 0)
+		if((targets = ProcessTargetString(buffer, 0, target, MaxClients, 0, buffer, sizeof(buffer), isTrans)) > 0)
 		{
-			for(int i; i<targets; i++)
+			for(int i; i < targets; i++)
 			{
 				PrintToServer("%N: %d", target[i], GetSteamAccountID(target[i], false));
 			}
@@ -90,14 +90,14 @@ public void Database_QueryCallback(Database db, any data, int numQueries, DBResu
 	
 	char buffer[256];
 	int length = results[0].RowCount;
-	for(int i; i<length; i++)
+	for(int i; i < length; i++)
 	{
 		#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>10
 		results[0].FetchRow();
 		#endif
 		
 		int length2 = results[0].FieldCount;
-		for(int a; a<length2; a++)
+		for(int a; a < length2; a++)
 		{
 			results[0].FetchString(1, buffer, sizeof(buffer));
 			PrintToServer("%d-%d '%s'", i, a, buffer);
@@ -117,7 +117,7 @@ public void Database_QueryFail(Database db, any data, int numQueries, const char
 public void Database_SetupCallback(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
 {
 	DataBase = data;
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientAuthorized(client))
 			Database_ClientAuthorized(client);
@@ -128,7 +128,7 @@ void Database_PluginEnd()
 {
 	if(DataBase)
 	{
-		for(int client=1; client<=MaxClients; client++)
+		for(int client = 1; client <= MaxClients; client++)
 		{
 			if(IsClientInGame(client))
 				Database_ClientDisconnect(client, DBPrio_High);
@@ -187,6 +187,7 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 			tr.AddQuery(buffer);	
 		}
 		
+		Preference_ClearBosses(client);
 		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
 		if(results[1].RowCount)
 		{
@@ -224,7 +225,7 @@ public void Database_ClientRetry(Database db, any data, int numQueries, const ch
 		Database_ClientAuthorized(client);
 }
 
-void Database_ClientDisconnect(int client, DBPriority priority=DBPrio_Normal)
+void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 {
 	if(DataBase && !IsFakeClient(client) && Cached[client])
 	{

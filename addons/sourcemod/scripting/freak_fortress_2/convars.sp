@@ -62,7 +62,7 @@ void ConVar_PluginStart()
 	ConVar_Add("mp_waitingforplayers_time", "90.0", false);
 }
 
-static void ConVar_Add(const char[] name, const char[] value, bool enforce=true)
+static void ConVar_Add(const char[] name, const char[] value, bool enforce = true)
 {
 	CvarInfo info;
 	info.cvar = FindConVar(name);
@@ -102,7 +102,7 @@ void ConVar_Enable()
 	if(!CvarHooked)
 	{
 		int length = CvarList.Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			CvarInfo info;
 			CvarList.GetArray(i, info);
@@ -122,7 +122,7 @@ void ConVar_Disable()
 	if(CvarHooked)
 	{
 		int length = CvarList.Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			CvarInfo info;
 			CvarList.GetArray(i, info);

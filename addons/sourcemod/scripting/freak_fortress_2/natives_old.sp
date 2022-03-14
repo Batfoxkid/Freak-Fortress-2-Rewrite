@@ -800,7 +800,7 @@ public any NativeOld_EmitVoiceToAll(Handle plugin, int params)
 	int[] clients = new int[MaxClients];
 	int amount;
 	
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i) && !Client(i).NoVoice)
 			clients[amount++] = i;
@@ -818,7 +818,7 @@ public any NativeOld_EmitVoiceToAll(Handle plugin, int params)
 		if(entity > 0 && entity < MAXTF2PLAYERS && Client(entity).IsBoss)
 			Client(entity).Speaking = true;
 		
-		for(int i; i<size; i++)
+		for(int i; i < size; i++)
 		{
 			EmitSound(clients, amount, sample, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 		}
@@ -872,14 +872,14 @@ public any NativeOld_GetClientShield(Handle plugin, int params)
 	if(client > 0 && client <= MaxClients && IsClientInGame(client))
 	{
 		int entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 				return 100.0;
 		}
 		
 		entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 				return 100.0;
@@ -900,14 +900,14 @@ public any NativeOld_RemoveClientShield(Handle plugin, int params)
 	if(client > 0 && client <= MaxClients && IsClientInGame(client))
 	{
 		int entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 				TF2_RemoveWearable(client, entity);
 		}
 		
 		entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 				TF2_RemoveWearable(client, entity);

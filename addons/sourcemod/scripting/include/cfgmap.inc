@@ -40,6 +40,15 @@ enum KeyValType {
 	KeyValType_Value,    /// char[*]
 };
 
+#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<11
+enum struct PackVal {
+	char       data[512];
+	ConfigMap  cfg;
+	int        size;
+	KeyValType tag;
+}
+#endif
+
 enum { SEC_SCOPE_SIZE=512 };
 enum struct KeyValState {
 	SMCParser  parser;
@@ -621,12 +630,14 @@ methodmap ConfigMap < StringMap {
 	}
 };
 
+#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>10
 enum struct PackVal {
 	char       data[512];
 	ConfigMap  cfg;
 	int        size;
 	KeyValType tag;
 }
+#endif
 
 public SMCResult ConfigMap_OnNewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {

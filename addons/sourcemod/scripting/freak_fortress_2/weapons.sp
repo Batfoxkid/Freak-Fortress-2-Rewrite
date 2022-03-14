@@ -1,10 +1,13 @@
 /*
+	void Weapons_PluginLoad()
 	void Weapons_PluginStart()
 	void Weapons_LibraryAdded(const char[] name)
 	void Weapons_LibraryRemoved(const char[] name)
-	bool Weapons_ConfigsExecuted(bool force=false)
-	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int &damagetype, int weapon)
-	void Weapons_OnWeaponSwitch(int client, int weapon)
+	bool Weapons_ConfigsExecuted(bool force = false)
+	void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
+	void Weapons_ShowChanges(int client, int entity)
+	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
+	float Weapons_PlayerHurt(int entity)
 	void Weapons_EntityCreated(int entity, const char[] classname)
 */
 
@@ -118,7 +121,7 @@ public Action Weapons_ChangeMenuCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-bool Weapons_ConfigsExecuted(bool force=false)
+bool Weapons_ConfigsExecuted(bool force = false)
 {
 	ConfigMap cfg;
 	if(Enabled || force)
@@ -140,7 +143,7 @@ bool Weapons_ConfigsExecuted(bool force=false)
 	return true;
 }
 
-void Weapons_ChangeMenu(int client, int time=MENU_TIME_FOREVER)
+void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 {
 	if(Client(client).IsBoss)
 	{
@@ -156,7 +159,7 @@ void Weapons_ChangeMenu(int client, int time=MENU_TIME_FOREVER)
 		static const char SlotNames[][] = { "Primary", "Secondary", "Melee", "PDA", "Utility", "Building", "Action" };
 		
 		char buffer1[12], buffer2[32];
-		for(int i; i<6; i++)
+		for(int i; i < 6; i++)
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", SlotNames[i]);
 			
@@ -285,7 +288,7 @@ void Weapons_ShowChanges(int client, int entity)
 						if(entries)
 						{
 							PackVal val;
-							for(int i; i<entries; i++)
+							for(int i; i < entries; i++)
 							{
 								int length = snap.KeyBufferSize(i)+1;
 								char[] key = new char[length];
@@ -507,7 +510,7 @@ public void Weapons_SpawnFrame(int ref)
 							if(entries)
 							{
 								PackVal val;
-								for(int i; i<entries; i++)
+								for(int i; i < entries; i++)
 								{
 									int length = snap.KeyBufferSize(i)+1;
 									char[] key = new char[length];
@@ -574,7 +577,7 @@ static ConfigMap FindWeaponSection(int entity)
 			{
 				int index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
 				char buffer2[12];
-				for(int i; i<entries; i++)
+				for(int i; i < entries; i++)
 				{
 					int length = snap.KeyBufferSize(i)+1;
 					char[] key = new char[length];

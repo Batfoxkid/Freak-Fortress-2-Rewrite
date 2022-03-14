@@ -2,33 +2,35 @@
 	void Bosses_PluginStart()
 	void Bosses_BuildPacks(int &charset, const char[] mapname)
 	void Bosses_MapEnd()
+	void Bosses_PluginEnd()
 	int Bosses_GetCharset(int charset, char[] buffer, int length)
 	int Bosses_GetCharsetLength()
 	ConfigMap Bosses_GetConfig(int special)
 	int Bosses_GetConfigLength()
-	int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int lang=-1, const char[] string="name")
-	bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true)
-	int Bosses_GetBossName(int special, char[] buffer, int length, int lang=-1, const char[] string="name")
-	int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1, const char[] string="name")
+	int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, int lang = -1, const char[] string = "name")
+	bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
+	int Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
+	int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
 	void Bosses_Create(int client, int special, int team)
 	void Bosses_SetHealth(int client, int players)
 	void Bosses_Equip(int client)
+	void Bosses_UpdateHealth(int client)
 	void Bosses_SetSpeed(int client)
 	void Bosses_ClientDisconnect(int client)
 	void Bosses_Remove(int client)
-	any Bosses_GetBossTeam()
-	void Bosses_ShowHud(int client)
+	int Bosses_GetBossTeam()
+	void Bosses_PlayerRunCmd(int client, int buttons)
 	void Bosses_UseSlot(int client, int low, int high)
-	void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability, int slot, int buttonmode=0)
-	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base=10)
+	void Bosses_UseAbility(int client, const char[] plugin = "", const char[] ability, int slot, int buttonmode = 0)
+	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base = 10)
 	int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, float &value)
 	int Bosses_GetArgString(int client, const char[] ability, const char[] argument, char[] value, int length)
-	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required="")
-	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required="")
+	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required = "")
+	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required = "")
 	int Bosses_GetSpecificSoundCfg(ConfigMap cfg, const char[] section, char[] key, int length, SoundEnum sound)
-	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
-	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
-	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 */
 
 static ArrayList BossList;
@@ -132,9 +134,9 @@ public Action Bosses_MakeBossCmd(int client, int args)
 		bool lang;
 		int matches;
 		int[] target = new int[MaxClients];
-		if((matches=ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
+		if((matches = ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
 		{
-			for(int i; i<matches; i++)
+			for(int i; i < matches; i++)
 			{
 				if(!IsClientSourceTV(target[i]) && !IsClientReplay(target[i]))
 				{
@@ -210,10 +212,10 @@ public Action Bosses_SetChargeCmd(int client, int args)
 		bool lang;
 		int matches;
 		int[] target = new int[MaxClients];
-		if((matches=ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
+		if((matches = ProcessTargetString(buffer, client, target, MaxClients, 0, buffer, sizeof(buffer), lang)) > 0)
 		{
 			bool found;
-			for(int i; i<matches; i++)
+			for(int i; i < matches; i++)
 			{
 				if(!IsClientSourceTV(target[i]) && !IsClientReplay(target[i]) && Client(target[i]).IsBoss)
 				{
@@ -257,7 +259,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	if(BossList)
 	{
 		int length = BossList.Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			DeleteCfg(BossList.Get(i));
 		}
@@ -296,7 +298,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			char name[64];
 			if(ForwardOld_OnLoadCharacterSet(charset, name) && name[0])
 			{
-				for(int i; i<entries; i++)	// Boss Packs
+				for(int i; i < entries; i++)	// Boss Packs
 				{
 					int length = snap.KeyBufferSize(i)+1;
 					char[] packname = new char[length];
@@ -329,7 +331,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			}
 		}
 		
-		for(int i; i<entries; i++)	// Boss Packs
+		for(int i; i < entries; i++)	// Boss Packs
 		{
 			int length = snap.KeyBufferSize(i)+1;
 			char[] packname = new char[length];
@@ -352,7 +354,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				bool precache = charset == pack;
 				PackList.PushString(packname);
 				
-				for(int a; a<entriesSub; a++)	// Bosses in this Pack
+				for(int a; a < entriesSub; a++)	// Bosses in this Pack
 				{
 					length = snapSub.KeyBufferSize(a)+1;
 					char[] bossname = new char[length];
@@ -428,7 +430,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	
 	PackVal val;
 	int length = BossList.Length;
-	for(int i; i<length; i++)
+	for(int i; i < length; i++)
 	{
 		ConfigMap cfg = BossList.Get(i);
 		if(cfg.GetVal("enabled", val))
@@ -439,7 +441,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				strcopy(companion, val.size, val.data);
 				
 				bool found;
-				for(int a; a<length; a++)
+				for(int a; a < length; a++)
 				{
 					ConfigMap cfgsub = BossList.Get(a);
 					if(cfgsub.GetVal("enabled", val))
@@ -473,7 +475,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	}
 }
 
-static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current="")
+static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = "")
 {
 	char filepath[PLATFORM_MAX_PATH];
 	if(current[0])
@@ -602,7 +604,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(snap)
 	{
 		int entries = snap.Length;
-		for(i=0; i<entries; i++)
+		for(i = 0; i < entries; i++)
 		{
 			int length = snap.KeyBufferSize(i)+1;
 			char[] key = new char[length];
@@ -633,7 +635,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 				if(entries)
 				{
 					int size;
-					for(i=0; i<entries; i++)
+					for(i = 0; i < entries; i++)
 					{
 						int length = snap.KeyBufferSize(i)+1;
 						if(size > length)
@@ -669,7 +671,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					if(entries)
 					{
 						bool found;
-						for(i=0; i<entries; i++)
+						for(i = 0; i < entries; i++)
 						{
 							int length = snap.KeyBufferSize(i)+1;
 							char[] key = new char[length];
@@ -702,7 +704,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						int entries = snap.Length;
 						if(entries)
 						{
-							for(i=0; i<entries; i++)
+							for(i = 0; i < entries; i++)
 							{
 								int length = snap.KeyBufferSize(i)+1;
 								char[] key = new char[length];
@@ -739,7 +741,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 		if(entries)
 		{
 			char buffer2[PLATFORM_MAX_PATH];
-			for(i=0; i<entries; i++)
+			for(i = 0; i < entries; i++)
 			{
 				int length = snap.KeyBufferSize(i)+1;
 				char[] section = new char[length];
@@ -806,7 +808,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					case Section_Sound:
 					{
 						bool bgm = StrEqual(section, "sound_bgm");
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							int length2 = snapsub.KeyBufferSize(a)+2;
 							char[] key = new char[length2];
@@ -911,7 +913,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Precache:
 					{
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
 							char[] key = new char[length];
@@ -1015,7 +1017,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_ModCache:
 					{
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
 							char[] key = new char[length];
@@ -1077,7 +1079,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Download:
 					{
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+1;
 							char[] key = new char[length];
@@ -1109,7 +1111,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										if(val.data[1] == 'a')	// mat, material
 										{
-											for(int b; b<sizeof(MatExts); b++)
+											for(int b; b < sizeof(MatExts); b++)
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 												if(FileExists(buffer, true))
@@ -1125,7 +1127,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
 										{
-											for(int b; b<sizeof(MdlExts); b++)
+											for(int b; b < sizeof(MdlExts); b++)
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
 												if(FileExists(buffer, true))
@@ -1175,7 +1177,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Model:
 					{
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+10;
 							char[] key = new char[length];
@@ -1192,7 +1194,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
-									for(int b; b<sizeof(MdlExts); b++)
+									for(int b; b < sizeof(MdlExts); b++)
 									{
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
 										if(FileExists(buffer, true))
@@ -1211,7 +1213,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									if(length > val.size)	// "models/example"	"mdl"
 									{
-										for(int b; b<sizeof(MdlExts); b++)
+										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
 											if(FileExists(buffer, true))
@@ -1228,7 +1230,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else			// "1"	"models/example"
 									{
-										for(int b; b<sizeof(MdlExts); b++)
+										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
 											if(FileExists(buffer, true))
@@ -1255,7 +1257,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Material:
 					{
-						for(int a; a<entriessub; a++)
+						for(int a; a < entriessub; a++)
 						{
 							length = snapsub.KeyBufferSize(a)+5;
 							char[] key = new char[length];
@@ -1272,7 +1274,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
-									for(int b; b<sizeof(MatExts); b++)
+									for(int b; b < sizeof(MatExts); b++)
 									{
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 										if(FileExists(buffer, true))
@@ -1289,7 +1291,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									if(length > val.size)	// "materials/example"	"mat"
 									{
-										for(int b; b<sizeof(MatExts); b++)
+										for(int b; b < sizeof(MatExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 											if(FileExists(buffer, true))
@@ -1304,7 +1306,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else			// "1"	"materials/example"
 									{
-										for(int b; b<sizeof(MatExts); b++)
+										for(int b; b < sizeof(MatExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
 											if(FileExists(buffer, true))
@@ -1361,7 +1363,7 @@ void Bosses_MapEnd()
 
 void Bosses_PluginEnd()
 {
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		Bosses_Remove(i);
 	}
@@ -1393,7 +1395,7 @@ int Bosses_GetConfigLength()
 	return BossList.Length;
 }
 
-int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int lang=-1, const char[] string="name")
+int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, int lang = -1, const char[] string = "name")
 {
 	int similarBoss = -1;
 	if(BossList)
@@ -1406,7 +1408,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 		if(lang != -1)
 			GetLanguageInfo(lang, language, sizeof(language));
 		
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			bool found;
 			ConfigMap cfg = BossList.Get(i);
@@ -1432,7 +1434,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 							size2 = size1;
 						
 						int amount;
-						for(int c; c<size2; c++)
+						for(int c; c < size2; c++)
 						{
 							if(CharToLower(name[c]) == CharToLower(buffer[c]))
 								amount++;
@@ -1451,7 +1453,7 @@ int Bosses_GetByName(const char[] name, bool exact=true, bool enabled=true, int 
 	return similarBoss;
 }
 
-bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=-1, bool enabled=true, bool &preview=false)
+bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1508,7 +1510,7 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing=false, int team=
 	return !blocked;
 }
 
-int Bosses_GetBossName(int special, char[] buffer, int length, int lang=-1, const char[] string="name")
+int Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1517,7 +1519,7 @@ int Bosses_GetBossName(int special, char[] buffer, int length, int lang=-1, cons
 	return Bosses_GetBossNameCfg(cfg, buffer, length, lang, string);
 }
 
-int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang=-1, const char[] string="name")
+int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
 {
 	if(lang != -1)
 	{
@@ -1768,7 +1770,7 @@ static void EquipBoss(int client, bool weapons)
 			{
 				value = false;
 				PackVal val;
-				for(i=0; i<entries; i++)
+				for(i = 0; i < entries; i++)
 				{
 					static char classname[36];
 					snap.GetKey(i, classname, sizeof(classname));
@@ -1965,7 +1967,7 @@ static void EquipBoss(int client, bool weapons)
 								SetEntProp(entity, Prop_Data, "m_iSubType", 3);
 								for(level = 0; level < 4; level++)
 								{
-									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level==3, _, level);
+									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
 								}
 							}
 						}
@@ -2113,7 +2115,7 @@ void Bosses_Remove(int client)
 		if(!Enabled)
 		{
 			bool found;
-			for(int i=1; i<=MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
 				if(Client(i).IsBoss)
 				{
@@ -2144,7 +2146,7 @@ void Bosses_Remove(int client)
 	}
 }
 
-any Bosses_GetBossTeam()
+int Bosses_GetBossTeam()
 {
 	static int bossTeam = TFTeam_Blue;
 	int client = FindClientOfBossIndex(0);
@@ -2223,7 +2225,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 void Bosses_UseSlot(int client, int low, int high)
 {
 	char buffer[12];
-	for(int slot=low; slot<=high; slot++)
+	for(int slot = low; slot<=high; slot++)
 	{
 		if(slot < 1 || slot > 3)
 		{
@@ -2241,7 +2243,7 @@ void Bosses_UseSlot(int client, int low, int high)
 	if(entries)
 	{
 		PackVal val;
-		for(int i; i<entries; i++)
+		for(int i; i < entries; i++)
 		{
 			int length = snap.KeyBufferSize(i)+1;
 			char[] ability = new char[length];
@@ -2278,7 +2280,7 @@ void Bosses_UseSlot(int client, int low, int high)
 	delete snap;
 }
 
-void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability, int slot, int buttonmode=0)
+void Bosses_UseAbility(int client, const char[] plugin = "", const char[] ability, int slot, int buttonmode = 0)
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(cfg)
@@ -2291,7 +2293,7 @@ void Bosses_UseAbility(int client, const char[] plugin="", const char[] ability,
 	}
 }
 
-static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const char[] ability, int slot, int buttonmode=0)
+static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const char[] ability, int slot, int buttonmode = 0)
 {
 	bool result = true;
 	char buffer1[64];
@@ -2441,7 +2443,7 @@ public Action Bosses_UseBossCharge(Handle timer, DataPack data)
 	return Plugin_Continue;
 }
 
-int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base=10)
+int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base = 10)
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(!cfg)
@@ -2477,12 +2479,12 @@ int Bosses_GetArgString(int client, const char[] ability, const char[] argument,
 	return cfg.Get(argument, value, length);
 }
 
-int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required="")
+int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required = "")
 {
 	return Bosses_GetRandomSoundCfg(Client(client).Cfg, section, sound, required);
 }
 
-int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sound, const char[] required="")
+int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sound, const char[] required = "")
 {
 	int size;
 	
@@ -2497,7 +2499,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 			int entries = snap.Length;
 			int[] list = new int[entries];
 			char buffer[PLATFORM_MAX_PATH];
-			for(int i; i<entries; i++)
+			for(int i; i < entries; i++)
 			{
 				int length = snap.KeyBufferSize(i)+1;
 				char[] key = new char[length];
@@ -2586,7 +2588,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							
 							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 							{
-								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
 							}
 							else
@@ -2615,7 +2617,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							{
 								if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 								{
-									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 										size = strlen(sound.Sound);
 								}
 								else
@@ -2660,7 +2662,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 								
 								if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
 								{
-									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 										size = strlen(sound.Sound);
 								}
 							}
@@ -2705,7 +2707,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 				
 				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 				{
-					if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+					if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 						size = strlen(sound.Sound);
 				}
 				else
@@ -2734,7 +2736,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 				{
 					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 					{
-						if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+						if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
 					}
 					else
@@ -2779,7 +2781,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 					
 					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
 					{
-						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity==SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
 					}
 				}
@@ -2793,7 +2795,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 	return size;
 }
 
-bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	SoundEnum sound;
 	sound.Entity = entity;
@@ -2815,7 +2817,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 		int[] clients2 = new int[numClients];
 		int amount;
 		
-		for(int i; i<numClients; i++)
+		for(int i; i < numClients; i++)
 		{
 			if(!Client(clients[i]).NoVoice)
 				clients2[amount++] = clients[i];
@@ -2831,7 +2833,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 				sound.Volume /= float(count);
 			
 			Client(boss).Speaking = true;
-			for(int i; i<count; i++)
+			for(int i; i < count; i++)
 			{
 				EmitSound(clients2, amount, sound.Sound, sound.Entity, sound.Channel, sound.Level, sound.Flags, sound.Volume, sound.Pitch, speakerentity, origin, dir, updatePos, soundtime);
 			}
@@ -2846,7 +2848,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 		int cflags = GetCommandFlags("r_screenoverlay");
 		SetCommandFlags("r_screenoverlay", cflags & ~FCVAR_CHEAT);
 		
-		for(int i; i<numClients; i++)
+		for(int i; i < numClients; i++)
 		{
 			if(clients[i] != boss)
 			{
@@ -2860,19 +2862,19 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	return true;
 }
 
-bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	int clients[1];
 	clients[0] = client;
 	return Bosses_PlaySound(boss, clients, 1, key, required, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 }
 
-bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required="", int entity=SOUND_FROM_PLAYER, int channel=SNDCHAN_AUTO, int level=SNDLEVEL_NORMAL, int flags=SND_NOFLAGS, float volume=SNDVOL_NORMAL, int pitch=SNDPITCH_NORMAL, int speakerentity=-1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos=true, float soundtime=0.0)
+bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
 	
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 			clients[total++] = client;

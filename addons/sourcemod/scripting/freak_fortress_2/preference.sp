@@ -1,10 +1,11 @@
 /*
 	void Preference_PluginStart()
 	void Preference_AddBoss(int client, const char[] name)
+	void Preference_ClearGroups(int client)
 	bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 	void Preference_ClearBosses(int client)
 	bool Preference_DisabledBoss(int client, int charset)
-	int Preference_PickBoss(int client, int team)
+	int Preference_PickBoss(int client, int team = -1)
 	void Preference_BossMenu(int client)
 */
 
@@ -48,7 +49,7 @@ void Preference_ClearGroups(int client)
 	{
 		int value;
 		int length = BossListing[client].Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
 			if(cfg && cfg.GetInt("companion", value))
@@ -93,14 +94,14 @@ bool Preference_DisabledBoss(int client, int charset)
 	return false;
 }
 
-int Preference_PickBoss(int client, int team=-1)
+int Preference_PickBoss(int client, int team = -1)
 {
 	int special = BossOverride;
 	if(special == -1)
 	{
 		ArrayList list = new ArrayList();
 		int length = Bosses_GetConfigLength();
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			if(Bosses_CanAccessBoss(client, i, true, team))
 				list.Push(i);
@@ -117,7 +118,7 @@ int Preference_PickBoss(int client, int team=-1)
 				
 				bool found;
 				int length2 = BossListing[client].Length;
-				for(int i; i<length2; i++)
+				for(int i; i < length2; i++)
 				{
 					special = BossListing[client].Get(i);
 					int index = count > 0 ? list2.FindValue(special) : list.FindValue(special);
@@ -160,7 +161,7 @@ int Preference_PickBoss(int client, int team=-1)
 			
 			count = 0;
 			int[] bosses = new int[MaxClients];
-			for(int i=1; i<=MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
 				if(i != client && Client(i).IsBoss)
 					bosses[count++] = i;
@@ -168,7 +169,7 @@ int Preference_PickBoss(int client, int team=-1)
 			
 			if(length > count)
 			{
-				for(int i; i<count; i++)
+				for(int i; i < count; i++)
 				{
 					if(Client(bosses[i]).Cfg.GetInt("special", special))
 					{
@@ -256,7 +257,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 					CancelClientMenu(client);
 				
 				int index;
-				if(BossListing[client] && (index=BossListing[client].FindValue(special)) != -1)
+				if(BossListing[client] && (index = BossListing[client].FindValue(special)) != -1)
 				{
 					BossListing[client].Erase(index);
 					
@@ -528,7 +529,7 @@ static void BossMenu(int client)
 		int disables, enables;
 		
 		int length = Bosses_GetCharsetLength();
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			if(Preference_DisabledBoss(client, i))
 			{
@@ -561,7 +562,7 @@ static void BossMenu(int client)
 			menu.AddItem("-1", data);
 		}
 		
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			Bosses_GetCharset(i, buffer, sizeof(buffer));
 			if(Enabled && i == Charset)
@@ -669,7 +670,7 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						if(BossListing[client])
 						{
 							int length = BossListing[client].Length;
-							for(int i; i<length; i++)
+							for(int i; i < length; i++)
 							{
 								ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
 								if(cfg && cfg.GetInt("charset", value) && value == ViewingPack[client])
@@ -700,7 +701,7 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						if(BossListing[client])
 						{
 							int length = BossListing[client].Length;
-							for(int i; i<length; i++)
+							for(int i; i < length; i++)
 							{
 								if(BossListing[client].FindValue(i) < 0)
 								{
@@ -809,7 +810,7 @@ static void ForceBossMenu(int client, int item)
 	char num[12];
 	int lang = GetClientLanguage(client);
 	int length = Bosses_GetConfigLength();
-	for(int i; i<length; i++)
+	for(int i; i < length; i++)
 	{
 		if(Bosses_CanAccessBoss(client, i, true))
 		{
@@ -854,7 +855,7 @@ static int GetBlacklistCount(int client, int charset)
 	{
 		int value;
 		int length = BossListing[client].Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
 			if(cfg && cfg.GetInt("charset", value) && value == charset)

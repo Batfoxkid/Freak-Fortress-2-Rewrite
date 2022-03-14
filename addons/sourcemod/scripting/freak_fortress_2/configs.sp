@@ -36,7 +36,7 @@ bool Configs_CheckMap(const char[] mapname)
 				enableResult = -1;
 				
 				PackVal val;
-				for(int i; i<entries; i++)
+				for(int i; i < entries; i++)
 				{
 					int length = snap.KeyBufferSize(i)+1;
 					char[] buffer = new char[length];
@@ -112,7 +112,7 @@ public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] n
 				if(entries)
 				{
 					PackVal val;
-					for(int i; i<entries; i++)
+					for(int i; i < entries; i++)
 					{
 						int length = snap.KeyBufferSize(i)+1;
 						char[] buffer = new char[length];
@@ -179,7 +179,7 @@ public Action Configs_PackVote(Handle timer)
 		char buffer[64], num[12];
 		
 		int i = start + 1;
-		for(int a; a<8; a++)
+		for(int a; a < 8; a++)
 		{
 			if(i >= length)
 				i = 0;

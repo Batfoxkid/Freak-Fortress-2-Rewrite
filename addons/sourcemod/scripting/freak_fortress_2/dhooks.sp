@@ -1,9 +1,13 @@
 /*
 	void DHook_Setup()
 	void DHook_MapStart()
-	void DHook_PluginEnd()
 	void DHook_HookClient(int client)
+	void DHook_HookBoss(int client)
+	void DHook_EntityCreated(int entity, const char[] classname)
+	void DHook_PluginEnd()
 	void DHook_UnhookClient(int client)
+	void DHook_UnhookBoss(int client)
+	Address DHook_GetGameStats()
 */
 
 static DynamicHook ChangeTeam;
@@ -19,6 +23,8 @@ static int DamageTypeOffset = -1;
 static int ChangeTeamHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
+static bool WasMiniBoss[MAXTF2PLAYERS];
+static bool WasFakeClient[MAXTF2PLAYERS];
 
 static int PrefClass;
 static int EffectClass;
@@ -32,7 +38,10 @@ void DHook_Setup()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
+	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
+	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
+	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
@@ -121,7 +130,7 @@ void DHook_EntityCreated(int entity, const char[] classname)
 
 void DHook_PluginEnd()
 {
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 			DHook_UnhookClient(client);
@@ -152,23 +161,41 @@ public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
 	
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) > TFTeam_Spectator)
 			TF2_RespawnPlayer(client);
 	}
 }
 
-public MRESReturn DHook_RoundRespawn()
+public MRESReturn DHook_ApplyRoboSapperEffectsPre(int entity, DHookReturn ret, DHookParam param)
 {
-	Gamemode_RoundSetup();
-	return MRES_Ignored;
+	int client = param.Get(1);
+	if(Client(client).IsBoss)
+	{
+		WasMiniBoss[client] = view_as<bool>(GetEntProp(client, Prop_Send, "m_bIsMiniBoss"));
+		if(!WasMiniBoss[client])
+			SetEntProp(client, Prop_Send, "m_bIsMiniBoss", true);
+	}
 }
 
-public MRESReturn DHook_ResetRoundStats(Address address)
+public MRESReturn DHook_ApplyRoboSapperEffectsPost(int entity, DHookReturn ret, DHookParam param)
 {
-	CTFGameStats = address;
-	return MRES_Ignored;
+	int client = param.Get(1);
+	if(!WasMiniBoss[client] && Client(client).IsBoss)
+		SetEntProp(client, Prop_Send, "m_bIsMiniBoss", false);
+}
+
+public MRESReturn DHook_CanBuildPre()
+{
+	if(Enabled)
+		GameRules_SetProp("m_bPlayingMannVsMachine", true);
+}
+
+public MRESReturn DHook_CanBuildPost()
+{
+	if(Enabled)
+		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 }
 
 public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
@@ -189,6 +216,58 @@ public MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 {
 	return (Client(client).Minion || Client(client).IsBoss) ? MRES_Supercede : MRES_Ignored;
+}
+
+public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
+{
+	if(Enabled)
+	{
+		GameRules_SetProp("m_bPlayingMannVsMachine", true);
+		
+		int client = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
+		for(int target = 1; target <= MaxClients; target++)
+		{
+			if(client != target && IsClientInGame(target))
+			{
+				int flags = GetEntityFlags(target);
+				WasFakeClient[target] = view_as<bool>(flags & FL_FAKECLIENT);
+				
+				if(Client(target).IsBoss)
+				{
+					if(!WasFakeClient[target])
+						SetEntityFlags(target, flags | FL_FAKECLIENT);
+				}
+				else if(WasFakeClient[target])
+				{
+					SetEntityFlags(target, flags & ~FL_FAKECLIENT);
+				}
+			}
+		}
+	}
+}
+
+public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
+{
+	if(Enabled)
+	{
+		GameRules_SetProp("m_bPlayingMannVsMachine", false);
+		
+		int client = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
+		for(int target = 1; target <= MaxClients; target++)
+		{
+			if(client != target && IsClientInGame(client))
+			{
+				if(WasFakeClient[client])
+				{
+					SetEntityFlags(client, GetEntityFlags(client) | FL_FAKECLIENT);
+				}
+				else
+				{
+					SetEntityFlags(client, GetEntityFlags(client) & ~FL_FAKECLIENT);
+				}
+			}
+		}
+	}
 }
 
 public MRESReturn DHook_ForceRespawnPre(int client)
@@ -241,6 +320,18 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 	return MRES_Ignored;
 }
 
+public MRESReturn DHook_ResetRoundStats(Address address)
+{
+	CTFGameStats = address;
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_RoundRespawn()
+{
+	Gamemode_RoundSetup();
+	return MRES_Ignored;
+}
+
 public MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
 	if(Enabled && RoundStatus == 1 && CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
@@ -248,7 +339,7 @@ public MRESReturn DHook_SetWinningTeam(DHookParam param)
 		Events_CheckAlivePlayers();
 		
 		int found = -1;
-		for(int i; i<TFTeam_MAX; i++)
+		for(int i; i < TFTeam_MAX; i++)
 		{
 			if(PlayersAlive[i])
 			{

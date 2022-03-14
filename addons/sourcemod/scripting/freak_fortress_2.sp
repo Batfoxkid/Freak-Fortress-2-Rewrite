@@ -3,8 +3,6 @@
 		-Batfoxkid
 */
 
-// mp_bonusroundtime 1; tf_arena_preround_time 1; mp_disable_respawn_times 1; sv_cheats 1; tf_bot_quota 12; ff2_game_bvb 12 
-
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -24,7 +22,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 3/13/2022"
+#define PLUGIN_VERSION	"Beta 3/14/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -280,7 +278,7 @@ public void OnPluginStart()
 	TFED_PluginStart();
 	Weapons_PluginStart();
 	
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);

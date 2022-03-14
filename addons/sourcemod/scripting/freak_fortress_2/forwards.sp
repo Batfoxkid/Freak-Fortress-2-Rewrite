@@ -20,9 +20,9 @@ void Forward_PluginLoad()
 {
 	BossCreated = new GlobalForward("FF2R_OnBossCreated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	BossRemoved = new GlobalForward("FF2R_OnBossRemoved", ET_Ignore, Param_Cell);
-	AbilityPre = new GlobalForward("FF2R_OnAbilityPre", ET_Event, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);
-	AbilityAll = new GlobalForward("FF2R_OnAbility", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
-	AbilityPost = new GlobalForward("FF2R_OnAbilityPost", ET_Ignore, Param_Cell, Param_String, Param_String, Param_Cell);
+	AbilityPre = new GlobalForward("FF2R_OnAbilityPre", ET_Event, Param_Cell, Param_String, Param_Cell, Param_CellByRef);
+	AbilityAll = new GlobalForward("FF2R_OnAbility", ET_Ignore, Param_Cell, Param_String, Param_Cell);
+	AbilityPost = new GlobalForward("FF2R_OnAbilityPost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	AliveChangePre = new GlobalForward("FF2R_OnAliveChange", ET_Event, Param_Array, Param_Array);
 	AliveChangePost = new GlobalForward("FF2R_OnAliveChanged", ET_Ignore, Param_Array, Param_Array);
 }
@@ -79,7 +79,7 @@ void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const ch
 			GetPluginFilename(plugi, buffer, sizeof(buffer));
 			
 			int highest = -1;
-			for(int i = strlen(buffer)-1; i>0; i--)
+			for(int i = strlen(buffer)-1; i > 0; i--)
 			{
 				if(buffer[i] == '/' || buffer[i] == '\\')
 				{
@@ -130,7 +130,7 @@ void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 Action Forward_OnAliveChange()
 {
 	int alive[TFTeam_MAX], maxalive[TFTeam_MAX];
-	for(int i; i<TFTeam_MAX; i++)
+	for(int i; i < TFTeam_MAX; i++)
 	{
 		alive[i] = PlayersAlive[i];
 		maxalive[i] = MaxPlayersAlive[i];
@@ -144,7 +144,7 @@ Action Forward_OnAliveChange()
 	
 	if(action >= Plugin_Changed)
 	{
-		for(int i; i<TFTeam_MAX; i++)
+		for(int i; i < TFTeam_MAX; i++)
 		{
 			PlayersAlive[i] = alive[i];
 			MaxPlayersAlive[i] = maxalive[i];

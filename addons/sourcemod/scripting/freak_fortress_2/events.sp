@@ -1,6 +1,7 @@
 /*
 	void Events_PluginStart()
 	void Events_RoundSetup()
+	void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
 */
 
 static bool FirstBlood;
@@ -29,7 +30,7 @@ void Events_PluginStart()
 
 void Events_RoundSetup()
 {
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -37,6 +38,101 @@ void Events_RoundSetup()
 			ClearSyncHud(client, TopHud);
 		}
 	}
+}
+
+void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
+{
+	for(int i; i < TFTeam_MAX; i++)
+	{
+		PlayersAlive[i] = 0;
+	}
+	
+	bool spec = CvarSpecTeam.BoolValue;
+	int redBoss, bluBoss;
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(i != exclude && IsClientInGame(i) && !Client(i).Minion)
+		{
+			int team = GetClientTeam(i);
+			if((spec || team > TFTeam_Spectator) && ((!alive && team > TFTeam_Spectator) || IsPlayerAlive(i)))
+			{
+				PlayersAlive[team]++;
+				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				{
+					bluBoss = i;
+				}
+				else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				{
+					redBoss = i;
+				}
+			}
+		}
+	}
+	
+	for(int i; i < TFTeam_MAX; i++)
+	{
+		if(resetMax || MaxPlayersAlive[i] < PlayersAlive[i])
+			MaxPlayersAlive[i] = PlayersAlive[i];
+	}
+	
+	Action action = Forward_OnAliveChange();
+	if(action == Plugin_Stop)
+		return;
+	
+	int team = Bosses_GetBossTeam();
+	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team == 3 ? 2 : 3], PlayersAlive[team == 3 ? 3 : 2]);
+	if(action == Plugin_Handled)
+		return;
+	
+	int total = TotalPlayersAlive();
+	if(alive && RoundStatus == 1 && !LastMann && total == 2)
+	{
+		LastMann = true;
+		
+		bool found;
+		for(int i = CvarSpecTeam.BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
+		{
+			if(PlayersAlive[i])
+			{
+				if(found)
+				{
+					int reds, blus;
+					int[] red = new int[MaxClients];
+					int[] blu = new int[MaxClients];
+					for(int client = 1; client <= MaxClients; client++)
+					{
+						if(IsClientInGame(client))
+						{
+							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_AUTO, _, _, 2.0))
+							{
+								if((redBoss && (!bluBoss && GetClientTeam(client) == 3)) || (redBoss == client && !bluBoss))
+								{
+									red[reds++] = client;
+								}
+								else if(bluBoss)
+								{
+									blu[blus++] = client;
+								}
+							}
+						}
+					}
+					
+					if(reds)
+						Bosses_PlaySound(redBoss, red, reds, "sound_lastman", _, _, _, _, _, 2.0);
+					
+					if(blus)
+						Bosses_PlaySound(bluBoss, blu, blus, "sound_lastman", _, _, _, _, _, 2.0);
+					
+					break;
+				}
+				
+				found = true;
+			}
+		}
+	}
+	
+	if(Enabled && RoundStatus == 1)
+		Gamemode_CheckPointUnlock(total, !LastMann);
 }
 
 public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -203,7 +299,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					int[] boss = new int[MaxClients];
 					int[] merc = new int[MaxClients];
 					
-					for(int i=1; i<=MaxClients; i++)
+					for(int i = 1; i <= MaxClients; i++)
 					{
 						if(IsClientInGame(i))
 						{
@@ -280,7 +376,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				int[] boss = new int[MaxClients];
 				int[] merc = new int[MaxClients];
 				
-				for(int i=1; i<=MaxClients; i++)
+				for(int i = 1; i <= MaxClients; i++)
 				{
 					if(IsClientInGame(i))
 					{
@@ -375,7 +471,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				else if(Enabled)
 				{
 					int entity = MaxClients + 1;
-					while((entity=FindEntityByClassname(entity, "obj_sentrygun")) != -1)
+					while((entity = FindEntityByClassname(entity, "obj_sentrygun")) != -1)
 					{
 						if(GetEntPropEnt(entity, Prop_Send, "m_hBuilder") == victim && !GetEntProp(entity, Prop_Send, "m_bMiniBuilding"))
 						{
@@ -408,7 +504,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		int[] clients = new int[MaxClients];
 		int total;
 		
-		for(int client=1; client<=MaxClients; client++)
+		for(int client = 1; client <= MaxClients; client++)
 		{
 			if(IsClientInGame(client))
 			{
@@ -433,7 +529,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		int dmg[3];
 		if(team > -1)
 		{
-			for(int i; i<total; i++)
+			for(int i; i < total; i++)
 			{
 				if(!Client(clients[i]).IsBoss)
 				{
@@ -465,7 +561,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 			}
 		}
 		
-		for(int i; i<total; i++)
+		for(int i; i < total; i++)
 		{
 			if(team > -1)
 			{
@@ -494,99 +590,4 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
-}
-
-void Events_CheckAlivePlayers(int exclude=0, bool alive=true, bool resetMax=false)
-{
-	for(int i; i < TFTeam_MAX; i++)
-	{
-		PlayersAlive[i] = 0;
-	}
-	
-	bool spec = CvarSpecTeam.BoolValue;
-	int redBoss, bluBoss;
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(i != exclude && IsClientInGame(i) && !Client(i).Minion)
-		{
-			int team = GetClientTeam(i);
-			if((spec || team > TFTeam_Spectator) && ((!alive && team > TFTeam_Spectator) || IsPlayerAlive(i)))
-			{
-				PlayersAlive[team]++;
-				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
-				{
-					bluBoss = i;
-				}
-				else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
-				{
-					redBoss = i;
-				}
-			}
-		}
-	}
-	
-	for(int i; i < TFTeam_MAX; i++)
-	{
-		if(resetMax || MaxPlayersAlive[i] < PlayersAlive[i])
-			MaxPlayersAlive[i] = PlayersAlive[i];
-	}
-	
-	Action action = Forward_OnAliveChange();
-	if(action == Plugin_Stop)
-		return;
-	
-	int team = Bosses_GetBossTeam();
-	ForwardOld_OnAlivePlayersChanged(PlayersAlive[team==3 ? 2 : 3], PlayersAlive[team==3 ? 3 : 2]);
-	if(action == Plugin_Handled)
-		return;
-	
-	int total = TotalPlayersAlive();
-	if(alive && RoundStatus == 1 && !LastMann && total == 2)
-	{
-		LastMann = true;
-		
-		bool found;
-		for(int i = CvarSpecTeam.BoolValue ? 0 : 2; i<sizeof(PlayersAlive); i++)
-		{
-			if(PlayersAlive[i])
-			{
-				if(found)
-				{
-					int reds, blus;
-					int[] red = new int[MaxClients];
-					int[] blu = new int[MaxClients];
-					for(int client=1; client<=MaxClients; client++)
-					{
-						if(IsClientInGame(client))
-						{
-							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_AUTO, _, _, 2.0))
-							{
-								if((redBoss && (!bluBoss && GetClientTeam(client) == 3)) || (redBoss == client && !bluBoss))
-								{
-									red[reds++] = client;
-								}
-								else if(bluBoss)
-								{
-									blu[blus++] = client;
-								}
-							}
-						}
-					}
-					
-					if(reds)
-						Bosses_PlaySound(redBoss, red, reds, "sound_lastman", _, _, _, _, _, 2.0);
-					
-					if(blus)
-						Bosses_PlaySound(bluBoss, blu, blus, "sound_lastman", _, _, _, _, _, 2.0);
-					
-					break;
-				}
-				
-				found = true;
-			}
-		}
-	}
-	
-	if(Enabled && RoundStatus == 1)
-		Gamemode_CheckPointUnlock(total, !LastMann);
 }

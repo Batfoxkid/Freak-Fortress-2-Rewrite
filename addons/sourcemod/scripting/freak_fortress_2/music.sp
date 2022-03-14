@@ -4,11 +4,12 @@
 	void Music_AddSong(int special, const char[] section, const char[] key)
 	void Music_ClientDisconnect()
 	void Music_RoundStart()
+	void Music_RoundEnd(int[] clients, int amount, int winner)
 	void Music_PlayerRunCmd(int client)
-	void Music_PlayNextSong(int client=0)
-	void Music_PlaySong(int[] clients, int numClients, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
-	void Music_PlaySongToClient(int client, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
-	void Music_PlaySongToAll(const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+	void Music_PlayNextSong(int client = 0)
+	void Music_PlaySong(int[] clients, int numClients, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+	void Music_PlaySongToClient(int client, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+	void Music_PlaySongToAll(const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 	void Music_MainMenu(int client)
 */
 
@@ -56,7 +57,7 @@ void Music_ClientDisconnect(int client)
 
 void Music_RoundStart()
 {
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(NextThemeAt[i] == FAR_FUTURE)
 			NextThemeAt[i] = 0.0;
@@ -65,7 +66,7 @@ void Music_RoundStart()
 
 void Music_RoundEnd(int[] clients, int amount, int winner)
 {
-	for(int i; i<amount; i++)
+	for(int i; i < amount; i++)
 	{
 		if(CurrentTheme[clients[i]][0])
 		{
@@ -123,7 +124,7 @@ void Music_PlayerRunCmd(int client)
 		Music_PlayNextSong(client);
 }
 
-void Music_PlayNextSong(int client=0)
+void Music_PlayNextSong(int client = 0)
 {
 	if(client)
 	{
@@ -152,7 +153,7 @@ void Music_PlayNextSong(int client=0)
 		}
 		else if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_bgm"))
 		{
-			for(int i; i<MaxClients; i++)
+			for(int i; i < MaxClients; i++)
 			{
 				int boss = FindClientOfBossIndex(i);
 				if(boss != -1 && Bosses_PlaySoundToClient(boss, client, "sound_bgm"))
@@ -168,7 +169,7 @@ void Music_PlayNextSong(int client=0)
 	}
 	else
 	{
-		for(int i=1; i<=MaxClients; i++)
+		for(int i = 1; i <= MaxClients; i++)
 		{
 			if(IsClientInGame(i))
 				Music_PlayNextSong(i);
@@ -176,13 +177,13 @@ void Music_PlayNextSong(int client=0)
 	}
 }
 
-void Music_PlaySong(const int[] clients, int numClients, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySong(const int[] clients, int numClients, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
-	for(int i; i<numClients; i++)
+	for(int i; i < numClients; i++)
 	{
 		if(CurrentTheme[clients[i]][0])
 		{
-			for(int a; a<CurrentVolume[clients[i]]; a++)
+			for(int a; a < CurrentVolume[clients[i]]; a++)
 			{
 				StopSound(clients[i], SNDCHAN_STATIC, CurrentTheme[clients[i]]);
 			}
@@ -223,7 +224,7 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 		int[] clients2 = new int[numClients];
 		int amount;
 		
-		for(int i; i<numClients; i++)
+		for(int i; i < numClients; i++)
 		{
 			if(name[0] || artist[0])
 			{
@@ -246,14 +247,14 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 			}
 		}
 		
-		for(int i; i<count; i++)
+		for(int i; i < count; i++)
 		{
 			EmitSound(clients2, amount, sample2, _, SNDCHAN_STATIC, SNDLEVEL_NONE, _, vol, pitch);
 		}
 	}
 	else
 	{
-		for(int i; i<numClients; i++)
+		for(int i; i < numClients; i++)
 		{
 			CurrentTheme[clients[i]][0] = 0;
 			NextThemeAt[clients[i]] = FAR_FUTURE;
@@ -261,19 +262,19 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample="",
 	}
 }
 
-void Music_PlaySongToClient(int client, const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySongToClient(int client, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
 	int clients[1];
 	clients[0] = client;
 	Music_PlaySong(clients, 1, sample, source, name, artist, duration, volume, pitch);
 }
 
-void Music_PlaySongToAll(const char[] sample="", int source=0, const char[] name="", const char[] artist="", float duration=0.0, float volume=1.0, int pitch=SNDPITCH_NORMAL)
+void Music_PlaySongToAll(const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
 	int[] clients = new int[MaxClients];
 	int total;
 	
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 			clients[total++] = client;
@@ -356,7 +357,7 @@ public Action Music_Command(int client, int args)
 				{
 					MusicEnum music;
 					int length = Playlist.Length;
-					for(int i; i<length; i++)
+					for(int i; i < length; i++)
 					{
 						Playlist.GetArray(i, music);
 						
@@ -414,7 +415,7 @@ public Action Music_Command(int client, int args)
 		MusicEnum music;
 		SoundEnum sound;
 		int length = Playlist.Length;
-		for(int i; i<length; i++)
+		for(int i; i < length; i++)
 		{
 			Playlist.GetArray(i, music);
 			
@@ -530,7 +531,7 @@ public int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 	return 0;
 }
 
-static void PlaylistMenu(int client, int page=0)
+static void PlaylistMenu(int client, int page = 0)
 {
 	Menu menu = new Menu(Music_PlaylistMenuH);
 	
@@ -545,7 +546,7 @@ static void PlaylistMenu(int client, int page=0)
 	
 	if(special1 == -1 || !ForwardOld_OnMusicPerBoss(client))
 	{
-		for(int i; i<MaxClients; i++)
+		for(int i; i < MaxClients; i++)
 		{
 			int boss = FindClientOfBossIndex(i);
 			if(boss != -1 && Client(boss).Cfg.GetInt("special", special2))
@@ -557,7 +558,7 @@ static void PlaylistMenu(int client, int page=0)
 	
 	MusicEnum music;
 	int length = Playlist.Length;
-	for(int i; i<length; i++)
+	for(int i; i < length; i++)
 	{
 		Playlist.GetArray(i, music);
 		

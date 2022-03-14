@@ -4,9 +4,11 @@
 	void TFED_LibraryAdded(const char[] name)
 	void TFED_LibraryRemoved(const char[] name)
 	bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
+	bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
+	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 */
 
-#tryinclude <tf_econ_data>
+#tryinclude <tf_econ_data > 
 
 #define TFED_LIBRARY	"tf_econ_data"
 
@@ -46,7 +48,7 @@ stock void TFED_LibraryRemoved(const char[] name)
 	#endif
 }
 
-stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
+stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 {
 	//TODO: Find a way to use m_pszItemIconClassname instead
 	
@@ -59,7 +61,7 @@ stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] bu
 	return false;
 }
 
-bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname="")
+bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
 {
 	#if defined __tf_econ_data_included
 	if(Loaded && TF2Econ_GetLocalizedItemName(itemdef, name, maxlen))
@@ -76,7 +78,7 @@ bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char
 	return false;
 }
 
-stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue="")
+stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 {
 	#if defined __tf_econ_data_included
 	if(Loaded)

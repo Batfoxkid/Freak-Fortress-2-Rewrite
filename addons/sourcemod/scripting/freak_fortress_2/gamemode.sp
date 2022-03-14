@@ -1,8 +1,14 @@
 /*
+	void Gamemode_PluginStart()
 	void Gamemode_MapStart()
 	void Gamemode_RoundSetup()
 	void Gamemode_RoundStart()
-	void Gamemode_RoundEnd()
+	void Gamemode_CheckPointUnlock(int alive, bool notice)
+	void Gamemode_OverrideWinner(int team = -1)
+	void Gamemode_RoundEnd(int winteam)
+	void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
+	void Gamemode_SetClientGlow(int client, float duration)void Gamemode_SetClientGlow(int client, float duration)
+	void Gamemode_PlayerRunCmd(int client)
 */
 
 static bool Waiting;
@@ -15,7 +21,7 @@ static bool HasBoss[TFTeam_MAX];
 
 void Gamemode_PluginStart()
 {
-	for(int i; i<TFTeam_MAX; i++)
+	for(int i; i < TFTeam_MAX; i++)
 	{
 		SyncHud[i] = CreateHudSynchronizer();
 	}
@@ -25,7 +31,7 @@ void Gamemode_MapStart()
 {
 	//TODO: If a round as been played before, Waiting for Players will never end - Late loading without players on breaks FF2 currently
 	Waiting = true;
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i))
 		{
@@ -42,7 +48,7 @@ void Gamemode_RoundSetup()
 	HealingFor = 0.0;
 	RoundStatus = 0;
 	WinnerOverride = -1;
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -50,7 +56,7 @@ void Gamemode_RoundSetup()
 			if(GetClientTeam(client) > TFTeam_Spectator)
 				Bosses_Remove(client);
 			
-			for(int i; i<TFTeam_MAX; i++)
+			for(int i; i < TFTeam_MAX; i++)
 			{
 				ClearSyncHud(client, SyncHud[i]);
 			}
@@ -79,7 +85,7 @@ void Gamemode_RoundSetup()
 			{
 				int reds;
 				int[] red = new int[MaxClients];
-				for(int client=1; client<=MaxClients; client++)
+				for(int client = 1; client <= MaxClients; client++)
 				{
 					if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
 						red[reds++] = client;
@@ -90,7 +96,7 @@ void Gamemode_RoundSetup()
 					SortIntegers(red, reds, Sort_Random);
 					
 					int team = TFTeam_Red + (GetTime() % 2);
-					for(int i; i<reds; i++)
+					for(int i; i < reds; i++)
 					{
 						ChangeClientTeam(red[i], team);
 						team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
@@ -101,7 +107,7 @@ void Gamemode_RoundSetup()
 					int[] blu = new int[MaxClients];
 					int blus = GetBossQueue(blu, MaxClients, TFTeam_Blue);
 					
-					for(int i; i<bosses && i<blus; i++)
+					for(int i; i < bosses && i < blus; i++)
 					{
 						if(!Client(blu[i]).IsBoss)
 						{
@@ -110,7 +116,7 @@ void Gamemode_RoundSetup()
 						}
 					}
 					
-					for(int i; i<bosses && i<reds; i++)
+					for(int i; i < bosses && i < reds; i++)
 					{
 						if(!Client(red[i]).IsBoss)
 						{
@@ -128,7 +134,7 @@ void Gamemode_RoundSetup()
 					int team;
 					int special = Preference_PickBoss(boss[0]);
 					ConfigMap cfg;
-					if((cfg=Bosses_GetConfig(special)))
+					if((cfg = Bosses_GetConfig(special)))
 					{
 						cfg.GetInt("bossteam", team);
 						switch(team)
@@ -159,14 +165,14 @@ void Gamemode_RoundSetup()
 					
 					int count;
 					int[] players = new int[MaxClients];
-					for(int client=1; client<=MaxClients; client++)
+					for(int client = 1; client <= MaxClients; client++)
 					{
 						if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
 							players[count++] = client;
 					}
 					
 					team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
-					for(int i; i<count; i++)
+					for(int i; i < count; i++)
 					{
 						ChangeClientTeam(players[i], team);
 					}
@@ -175,7 +181,7 @@ void Gamemode_RoundSetup()
 				{
 					int count;
 					int[] players = new int[MaxClients];
-					for(int client=1; client<=MaxClients; client++)
+					for(int client = 1; client <= MaxClients; client++)
 					{
 						if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
 							players[count++] = client;
@@ -186,7 +192,7 @@ void Gamemode_RoundSetup()
 						SortIntegers(players, count, Sort_Random);
 						
 						int team = TFTeam_Red + (GetTime() % 2);
-						for(int i; i<count; i++)
+						for(int i; i < count; i++)
 						{
 							ChangeClientTeam(players[i], team);
 							team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
@@ -222,7 +228,7 @@ public Action Gamemode_TimerRespawn(Handle timer)
 		return Plugin_Stop;
 
 	GameRules_SetProp("m_bInWaitingForPlayers", false, 1);
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsPlayerAlive(client) && GetClientTeam(client) > 1 && GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))
 			TF2_RespawnPlayer(client);
@@ -233,7 +239,7 @@ public Action Gamemode_TimerRespawn(Handle timer)
 
 public Action Gamemode_IntroTimer(Handle timer)
 {
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -241,7 +247,7 @@ public Action Gamemode_IntroTimer(Handle timer)
 			{
 				int team = GetClientTeam(client);
 				int i;
-				for(; i<MaxClients; i++)
+				for(; i < MaxClients; i++)
 				{
 					int boss = FindClientOfBossIndex(i);
 					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
@@ -269,7 +275,7 @@ public Action Gamemode_SetControlPoint(Handle timer)
 	
 	float time;
 	bool found;
-	for(int i; i<MaxClients; i++)
+	for(int i; i < MaxClients; i++)
 	{
 		int client = FindClientOfBossIndex(i);
 		if(client != -1)
@@ -325,7 +331,7 @@ void Gamemode_RoundStart()
 	int[] boss = new int[MaxClients];
 	int mercs, bosses;
 	
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -351,11 +357,11 @@ void Gamemode_RoundStart()
 	
 	char buffer[64];
 	bool specTeam = CvarSpecTeam.BoolValue;
-	for(int i; i<bosses; i++)
+	for(int i; i < bosses; i++)
 	{
 		int team = GetClientTeam(boss[i]);
 		int amount = 1;
-		for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a<TFTeam_MAX; a++)
+		for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a < TFTeam_MAX; a++)
 		{
 			if(team != a)
 				amount += PlayersAlive[a];
@@ -366,7 +372,7 @@ void Gamemode_RoundStart()
 		{
 			int maxlives = Client(boss[i]).MaxLives;
 			
-			for(int a; a<mercs; a++)
+			for(int a; a < mercs; a++)
 			{
 				Bosses_GetBossNameCfg(Client(boss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(merc[a]));
 				if(maxlives > 1)
@@ -398,7 +404,7 @@ void Gamemode_CheckPointUnlock(int alive, bool notice)
 		if(notice && !GetControlPoint())
 		{
 			EmitGameSoundToAll("Announcer.AM_CapEnabledRandom");
-			for(int client=1; client<=MaxClients; client++)
+			for(int client = 1; client <= MaxClients; client++)
 			{
 				if(IsClientInGame(client) && IsPlayerAlive(client))
 					ShowGameText(client, "ico_notify_flag_moving_alt", _, "%t", "Point Unlocked");
@@ -411,7 +417,7 @@ void Gamemode_CheckPointUnlock(int alive, bool notice)
 	}
 }
 
-void Gamemode_OverrideWinner(int team=-1)
+void Gamemode_OverrideWinner(int team = -1)
 {
 	WinnerOverride = team;
 }
@@ -427,7 +433,7 @@ void Gamemode_RoundEnd(int winteam)
 	int[] teams = new int[MaxClients];
 	int total;
 	
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
@@ -460,7 +466,7 @@ void Gamemode_RoundEnd(int winteam)
 	
 	char buffer[64];
 	int bosses[TFTeam_MAX], totalHealth[TFTeam_MAX], totalMax[TFTeam_MAX], lastBoss[TFTeam_MAX], lowestBoss[TFTeam_MAX], lowestIndex[TFTeam_MAX], teamName[TFTeam_MAX], teamIndex[TFTeam_MAX];
-	for(int i; i<total; i++)
+	for(int i; i < total; i++)
 	{
 		if(Client(clients[i]).IsBoss)
 		{
@@ -500,7 +506,7 @@ void Gamemode_RoundEnd(int winteam)
 					health = 0;
 				}
 				
-				for(int a; a<total; a++)
+				for(int a; a < total; a++)
 				{
 					if(health || !Client(clients[a]).IsBoss)
 					{
@@ -527,12 +533,12 @@ void Gamemode_RoundEnd(int winteam)
 	}
 	
 	bool spec = CvarSpecTeam.BoolValue;
-	for(int i; i<TFTeam_MAX; i++)
+	for(int i; i < TFTeam_MAX; i++)
 	{
 		if(HasBoss[i] && bosses[i])
 		{
 			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
-			for(int a; a<total; a++)
+			for(int a; a < total; a++)
 			{
 				SetGlobalTransTarget(clients[a]);
 				
@@ -556,7 +562,7 @@ void Gamemode_RoundEnd(int winteam)
 		else if(MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
 		{
 			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
-			for(int a; a<total; a++)
+			for(int a; a < total; a++)
 			{
 				SetGlobalTransTarget(clients[a]);
 				FormatEx(buffer, sizeof(buffer), "Team %d", i);
@@ -565,7 +571,7 @@ void Gamemode_RoundEnd(int winteam)
 		}
 		else if(HasBoss[i])
 		{
-			for(int a; a<total; a++)
+			for(int a; a < total; a++)
 			{
 				ClearSyncHud(clients[a], SyncHud[i]);
 			}
@@ -590,7 +596,7 @@ void Gamemode_RoundEnd(int winteam)
 	else
 	{
 		int index = 99;
-		for(int i; i<TFTeam_MAX; i++)
+		for(int i; i < TFTeam_MAX; i++)
 		{
 			if(lowestIndex[i] < index)
 			{
@@ -603,7 +609,7 @@ void Gamemode_RoundEnd(int winteam)
 	// Gather who hears global and play locals
 	int globalCount;
 	int[] globalSound = new int[total];
-	for(int i; i<total; i++)
+	for(int i; i < total; i++)
 	{
 		if(clients[i] != globalBoss && Client(clients[i]).IsBoss)
 		{
@@ -635,14 +641,14 @@ void Gamemode_RoundEnd(int winteam)
 	if(Enabled && total)
 	{
 		int[] points = new int[MaxClients+1];
-		for(int i; i<total; i++)
+		for(int i; i < total; i++)
 		{
 			points[clients[i]] = (Client(clients[i]).IsBoss || (GetClientTeam(clients[i]) <= TFTeam_Spectator && !IsPlayerAlive(clients[i]))) ? 0 : 10;
 		}
 		
 		if(ForwardOld_OnAddQueuePoints(points, MaxClients+1))
 		{
-			for(int i; i<total; i++)
+			for(int i; i < total; i++)
 			{
 				Client(clients[i]).Queue += points[clients[i]];
 			}
@@ -650,7 +656,7 @@ void Gamemode_RoundEnd(int winteam)
 	}
 }
 
-void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
+void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 {
 	if(!Enabled || RoundStatus == 1)
 	{
@@ -660,7 +666,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 			int lastCount, count;
 			if(HasBoss[team])
 			{
-				for(int i; i<TFTeam_MAX; i++)
+				for(int i; i < TFTeam_MAX; i++)
 				{
 					if(HasBoss[i])
 						count++;
@@ -672,7 +678,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 			{
 				count++;
 				HasBoss[team] = true;
-				for(int i; i<TFTeam_MAX; i++)
+				for(int i; i < TFTeam_MAX; i++)
 				{
 					if(i != team && HasBoss[i])
 					{
@@ -686,14 +692,14 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 			int[] clients = new int[MaxClients];
 			int total;
 			
-			for(int client=1; client<=MaxClients; client++)
+			for(int client = 1; client <= MaxClients; client++)
 			{
 				if(IsClientInGame(client))
 					clients[total++] = client;
 			}
 			
 			int health, lives, maxhealth, maxcombined, combined, bosses;
-			for(int i; i<total; i++)
+			for(int i; i < total; i++)
 			{
 				if(Client(clients[i]).IsBoss && GetClientTeam(clients[i]) == team)
 				{
@@ -721,7 +727,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 				{
 					float x = (team == TFTeam_Red || team == TFTeam_Spectator) ? 0.53 : 0.43;
 					float y = team <= TFTeam_Spectator ? 0.18 : 0.12;
-					for(int i; i<total; i++)
+					for(int i; i < total; i++)
 					{
 						if(GetClientButtons(clients[i]) & IN_SCORE)
 							continue;
@@ -751,7 +757,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 				}
 				else
 				{
-					for(int i; i<total; i++)
+					for(int i; i < total; i++)
 					{
 						if(GetClientButtons(clients[i]) & IN_SCORE)
 							continue;
@@ -788,7 +794,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 			else if(count < 3)
 			{
 				int entity = MaxClients + 1;
-				while((entity=FindEntityByClassname(entity, "eyeball_boss")) != -1)
+				while((entity = FindEntityByClassname(entity, "eyeball_boss")) != -1)
 				{
 					if(GetEntProp(entity, Prop_Send, "m_iTeamNum") > TFTeam_Blue)
 						break;
@@ -854,7 +860,7 @@ void Gamemode_UpdateHUD(int team, bool healing=false, bool nobar=false)
 static int SetTeamBasedHealthBar(int health1, int team1)
 {
 	int team2;
-	for(int i; i<TFTeam_MAX; i++)
+	for(int i; i < TFTeam_MAX; i++)
 	{
 		if(i != team1 && HasBoss[i])
 		{
@@ -864,7 +870,7 @@ static int SetTeamBasedHealthBar(int health1, int team1)
 	}
 	
 	int health2 = 1;
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(Client(client).IsBoss && GetClientTeam(client) == team2 && IsPlayerAlive(client))
 		{

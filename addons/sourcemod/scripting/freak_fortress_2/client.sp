@@ -1,3 +1,52 @@
+/*
+	bool IsBoss
+	ConfigMap Cfg
+	int Queue
+	bool NoMusic
+	bool NoVoice
+	int GetLastPlayed(char[] buffer, int length)
+	void SetLastPlayed(const char[] buffer)
+	bool Minion
+	bool Glowing
+	float GlowFor
+	float OverlayFor
+	float RefreshAt
+	int Damage
+	int TotalDamage
+	int Healing
+	int Assist
+	int TotalAssist
+	int Stabs
+	int Index
+	int GetDamage(int slot)
+	void SetDamage(int slot, int damage)
+	int Lives
+	int MaxLives
+	int MaxHealth
+	int Health
+	float RageDamage
+	float RageMin
+	float RageMax
+	int RageMode
+	bool BlockVo
+	bool Crits
+	bool Triple
+	int Knockback
+	int Pickups
+	float LastStabTime
+	float LastTriggerDamage
+	float LastTriggerTime
+	int KillSpree
+	float LastKillTime
+	float PassiveAt
+	bool Speaking
+	float GetCharge(int slot)
+	void SetCharge(int slot, float value)
+	void ResetByDeath()
+	void ResetByRound()
+	void ResetByAll()
+*/
+
 static ConfigMap BossMap[MAXTF2PLAYERS] = {null, ...};
 static int Queue[MAXTF2PLAYERS];
 static bool NoMusic[MAXTF2PLAYERS];

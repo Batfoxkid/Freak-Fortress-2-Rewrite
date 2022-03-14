@@ -67,7 +67,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 		PrintToServer("%d bosses precached", ready);
 		
 		ready = 0;
-		for(amount=1; amount<=MaxClients; amount++)
+		for(amount = 1; amount<=MaxClients; amount++)
 		{
 			if(Client(amount).IsBoss)
 				ready++;
@@ -175,7 +175,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 		bool specTeam = CvarSpecTeam.BoolValue;
 		int amount;
 		int[] clients = new int[MaxClients];
-		for(int i=1; i<=MaxClients; i++)
+		for(int i = 1; i <= MaxClients; i++)
 		{
 			if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
 				clients[amount++] = i;
@@ -185,7 +185,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 		{
 			SortCustom1D(clients, amount, GetBossQueueSort);
 			
-			for(int i; i<amount; i++)
+			for(int i; i < amount; i++)
 			{
 				ReplyToCommand(client, "%s%d: %N", clients[i]==client ? " " : "", Client(clients[i]).Queue, clients[i]);
 			}
@@ -214,7 +214,7 @@ static void QueueMenu(int client)
 	bool specTeam = CvarSpecTeam.BoolValue;
 	int amount;
 	int[] clients = new int[MaxClients];
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
 			clients[amount++] = i;
@@ -225,7 +225,7 @@ static void QueueMenu(int client)
 	
 	char buffer[64];
 	bool exitButton = Menu_BackButton(client);
-	for(int i; exitButton ? i<7 : i<8; i++)
+	for(int i; exitButton ? i < 7 : i < 8; i++)
 	{
 		if(clients[i])
 		{
@@ -331,7 +331,7 @@ public Action Menu_AddPointsCmd(int client, int args)
 		bool lang;
 		int matches;
 		int[] target = new int[MaxClients];
-		if((matches=ProcessTargetString(name, client, target, MaxClients, COMMAND_FILTER_CONNECTED, name, sizeof(name), lang)) > 0)
+		if((matches = ProcessTargetString(name, client, target, MaxClients, COMMAND_FILTER_CONNECTED, name, sizeof(name), lang)) > 0)
 		{
 			AddQueuePoints(client, points, target, matches, name, lang);
 		}
@@ -351,7 +351,7 @@ public Action Menu_AddPointsCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-static void AddPointsMenu(int client, const char[] userid=NULL_STRING)
+static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 {
 	int target = userid[0] ? GetClientOfUserId(StringToInt(userid)) : 0;
 	if(target)
@@ -454,9 +454,9 @@ public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int c
 	return 0;
 }
 
-static void AddQueuePoints(int client, int points, int[] target, int matches, const char[] name, bool lang=false)
+static void AddQueuePoints(int client, int points, int[] target, int matches, const char[] name, bool lang = false)
 {
-	for(int i; i<matches; i++)
+	for(int i; i < matches; i++)
 	{
 		Client(target[i]).Queue += points;
 		if(points < 0)

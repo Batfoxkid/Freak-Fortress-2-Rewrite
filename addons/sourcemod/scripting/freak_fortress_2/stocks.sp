@@ -1,21 +1,46 @@
 /*
-	void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
+	void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
 	SectionType GetSectionType(const char[] buffer)
-	int FindClientOfBossIndex(int boss=0)
+	int FindClientOfBossIndex(int boss = 0)
 	TFClassType GetClassOfName(const char[] buffer)
 	void GetClassWeaponClassname(TFClassType class, char[] name, int length)
-	int GetKillsOfWeaponRank(int rank=-1, int index=0)
-	int GetKillsOfCosmeticRank(int rank=-1, int index=0)
+	int TotalPlayersAlive()
+	int GetKillsOfWeaponRank(int rank = -1, int index = 0)
+	int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
+	void ShowGameText(int client, const char[] icon = "leaderboard_streak", int color = 0, const char[] buffer, any ...)
+	void ApplyAllyHealEvent(int healer, int patient, int amount)
+	void ApplySelfHealEvent(int entindex, int amount)
+	bool TF2_GetItem(int client, int &weapon, int &pos)
+	void TF2_RemoveItem(int client, int weapon)
+	void TF2_RemoveAllItems(int client)
+	bool IsInvuln(int client)
+	bool TF2_IsCritBoosted(int client)
+	int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
+	bool GetControlPoint()
+	void SetControlPoint(bool enable)
+	void SetArenaCapEnableTime(float time)
+	int GetRoundStatus()
+	void FPrintToChat(int client, const char[] message, any ...)
+	void FPrintToChatEx(int client, int author, const char[] message, any ...)
+	void FPrintToChatAll(const char[] message, any ...)
+	void FReplyToCommand(int client, const char[] message, any ...)
+	void FShowActivity(int client, const char[] message, any ...)
+	void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
 	void Debug(const char[] buffer, any ...)
+	any Min(any value, any min)
+	any Max(any value, any max)
+	any Clamp(any value, any min, any max)
+	int GetBossQueue(int[] players, int maxsize, int team = -1)
+	int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
 */
 
-void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description="", int flags=0)
+void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
 {
 	static const char Prefixes[][] = { "ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony" };
 	
 	int length = strlen(cmd)+6;
 	char[] command = new char[length];
-	for(int i; i<sizeof(Prefixes); i++)
+	for(int i; i < sizeof(Prefixes); i++)
 	{
 		Format(command, length, "%s%s", Prefixes[i], cmd);
 		RegConsoleCmd(command, callback, description, i ? flags|FCVAR_HIDDEN : flags);
@@ -51,9 +76,9 @@ SectionType GetSectionType(const char[] buffer)
 	return Section_Ability;
 }
 
-int FindClientOfBossIndex(int boss=0)
+int FindClientOfBossIndex(int boss = 0)
 {
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(Client(client).Index == boss)
 		{
@@ -114,7 +139,7 @@ int TotalPlayersAlive()
 	return amount;
 }
 
-int GetKillsOfWeaponRank(int rank=-1, int index=0)
+int GetKillsOfWeaponRank(int rank = -1, int index = 0)
 {
 	switch(rank)
 	{
@@ -244,13 +269,13 @@ int GetKillsOfWeaponRank(int rank=-1, int index=0)
 	}
 }
 
-stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
+stock int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 {
 	switch(rank)
 	{
 		case 0:
 		{
-			if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+			if(index == 133 || index == 444 || index == 655)	// Gunboats, Mantreads, or Spirit of Giving
 			{
 				return 0;
 			}
@@ -261,7 +286,7 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 1:
 		{
-			if(index==133 || index==444 || index==655)	// Gunboats, Mantreads, or Spirit of Giving
+			if(index == 133 || index == 444 || index == 655)	// Gunboats, Mantreads, or Spirit of Giving
 			{
 				return GetRandomInt(1, 2);
 			}
@@ -272,11 +297,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 2:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(3, 4);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(3, 6);
 			}
@@ -287,11 +312,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 3:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(5, 6);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(7, 11);
 			}
@@ -302,11 +327,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 4:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(7, 9);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(12, 19);
 			}
@@ -317,11 +342,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 5:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(10, 13);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(20, 27);
 			}
@@ -332,11 +357,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 6:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(14, 17);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(28, 36);
 			}
@@ -347,11 +372,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 7:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(18, 22);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(37, 46);
 			}
@@ -362,11 +387,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 8:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(23, 27);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(47, 56);
 			}
@@ -377,11 +402,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 9:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(28, 34);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(57, 67);
 			}
@@ -392,11 +417,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 10:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(35, 49);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(68, 78);
 			}
@@ -407,11 +432,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 11:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(50, 74);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(79, 90);
 			}
@@ -422,11 +447,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 12:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(75, 98);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(91, 103);
 			}
@@ -437,11 +462,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 13:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return 99;
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(104, 119);
 			}
@@ -452,11 +477,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 14:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(100, 149);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(120, 137);
 			}
@@ -467,11 +492,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 15:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(150, 249);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(138, 157);
 			}
@@ -482,11 +507,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 16:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(250, 499);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(158, 178);
 			}
@@ -497,11 +522,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 17:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(500, 749);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(179, 209);
 			}
@@ -512,11 +537,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 18:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(750, 783);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(210, 249);
 			}
@@ -527,11 +552,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 19:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(784, 849);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(250, 299);
 			}
@@ -542,11 +567,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		case 20:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(850, 999);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(300, 399);
 			}
@@ -557,11 +582,11 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 		}
 		default:
 		{
-			if(index==133 || index==444)	// Gunboats or Mantreads
+			if(index == 133 || index == 444)	// Gunboats or Mantreads
 			{
 				return GetRandomInt(0, 999);
 			}
-			else if(index==655)	// Spirit of Giving
+			else if(index == 655)	// Spirit of Giving
 			{
 				return GetRandomInt(0, 399);
 			}
@@ -573,7 +598,7 @@ stock int GetKillsOfCosmeticRank(int rank=-1, int index=0)
 	}
 }
 
-stock void ShowGameText(int client, const char[] icon="leaderboard_streak", int color=0, const char[] buffer, any ...)
+stock void ShowGameText(int client, const char[] icon = "leaderboard_streak", int color = 0, const char[] buffer, any ...)
 {
 	BfWrite bf;
 	if(client)
@@ -690,7 +715,7 @@ stock bool TF2_IsCritBoosted(int client)
 			TF2_IsPlayerInCondition(client, TFCond_CritRuneTemp));
 }
 
-stock int TF2_GetClassnameSlot(const char[] classname, bool econ=false)
+stock int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 {
 	if(StrEqual(classname, "player"))
 	{
@@ -766,7 +791,7 @@ stock int TF2_GetClassnameSlot(const char[] classname, bool econ=false)
 stock bool GetControlPoint()
 {
 	int entity = MaxClients + 1;
-	while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+	while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 	{
 		if(GetEntProp(entity, Prop_Data, "m_bLocked"))
 			return false;
@@ -783,7 +808,7 @@ stock void SetControlPoint(bool enable)
 			FireEntityOutput(entity, "OnCapEnabled", entity);
 		
 		entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+		while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 		{
 			AcceptEntityInput(entity, "ShowModel");
 			SetVariantBool(enable);
@@ -793,7 +818,7 @@ stock void SetControlPoint(bool enable)
 	else
 	{
 		int entity = MaxClients + 1;
-		while((entity=FindEntityByClassname(entity, "team_control_point")) != -1)
+		while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 		{
 			AcceptEntityInput(entity, "HideModel");
 			SetVariantBool(!enable);
@@ -846,7 +871,7 @@ stock void FPrintToChatAll(const char[] message, any ...)
 {
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
-	for(int i=1; i<=MaxClients; i++)
+	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || CSkipList[i])
 		{
@@ -886,7 +911,7 @@ stock void FShowActivity(int client, const char[] message, any ...)
 	CShowActivity2(client, "\x01{olive}[FF2]{default} ", buffer);
 }
 
-stock void PrintSayText2(int client, int author, bool chat=true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
+stock void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
 {
 	BfWrite bf = view_as<BfWrite>(StartMessageOne("SayText2", client, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS)); 
 	
@@ -941,12 +966,12 @@ stock any Clamp(any value, any min, any max)
 	return value;
 }
 
-int GetBossQueue(int[] players, int maxsize, int team=-1)
+int GetBossQueue(int[] players, int maxsize, int team = -1)
 {
 	int size;
 	int[] queue = new int[MaxClients];
 	bool spec = CvarSpecTeam.BoolValue;
-	for(int client=1; client<=MaxClients; client++)
+	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(!Client(client).IsBoss && IsClientInGame(client) && ((team == -1 && (GetClientTeam(client) > TFTeam_Spectator || (spec && IsPlayerAlive(client)))) || (team != -1 && GetClientTeam(client) == team)))
 			queue[size++] = client;
@@ -957,7 +982,7 @@ int GetBossQueue(int[] players, int maxsize, int team=-1)
 	if(size > maxsize)
 		size = maxsize;
 	
-	for(int i; i<size; i++)
+	for(int i; i < size; i++)
 	{
 		players[i] = queue[i];
 	}

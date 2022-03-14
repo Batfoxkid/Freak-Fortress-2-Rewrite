@@ -1,9 +1,11 @@
 /*
+	void TF2U_PluginLoad()
 	void TF2U_PluginStart()
 	void TF2U_LibraryAdded(const char[] name)
 	void TF2U_LibraryRemoved(const char[] name)
 	bool TF2U_GetWearable(int client, int &entity, int &index)
 	int TF2U_GetMaxOverheal(int client)
+	void TF2U_EquipPlayerWearable(int client, int entity)
 */
 
 #tryinclude <tf2utils>
@@ -67,7 +69,7 @@ bool TF2U_GetWearable(int client, int &entity, int &index)
 		
 		if(index > -2)
 		{
-			while((index=FindEntityByClassname(index, "tf_wear*")) != -1)
+			while((index = FindEntityByClassname(index, "tf_wear*")) != -1)
 			{
 				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client)
 				{
@@ -80,7 +82,7 @@ bool TF2U_GetWearable(int client, int &entity, int &index)
 		}
 		
 		entity = -index;
-		while((entity=FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
+		while((entity = FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
 			{
