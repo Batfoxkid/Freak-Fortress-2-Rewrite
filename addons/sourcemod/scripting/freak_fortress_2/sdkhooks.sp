@@ -246,6 +246,10 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			{
 				Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
 			}
+			
+			if(critType == CritType_None && (damagetype & DMG_CRIT))
+				critType = CritType_Crit;
+			
 			return Plugin_Changed;
 		}
 		else
@@ -274,6 +278,10 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			
 			Client(victim).LastTriggerTime = gameTime;
 			Client(victim).LastTriggerDamage = pressure + damage;
+			
+			if(critType == CritType_None && (damagetype & DMG_CRIT))
+				critType = CritType_Crit;
+			
 			return Plugin_Changed;
 		}
 	}
@@ -356,6 +364,9 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				damage *= 0.75;
 				changed = true;
 			}
+			
+			if(changed && critType == CritType_None && (damagetype & DMG_CRIT))
+				critType = CritType_Crit;
 			
 			return changed ? Plugin_Changed : Plugin_Continue;
 		}
