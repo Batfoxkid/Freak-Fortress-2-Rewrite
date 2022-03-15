@@ -552,6 +552,9 @@ public any NativeOld_GetFF2flags(Handle plugin, int params)
 	if(Client(client).Minion)
 		flags += FF2FLAG_CLASSTIMERDISABLED;
 	
+	if(Client(client).NoHud)
+		flags += FF2FLAG_HUDDISABLED;
+	
 	if(Client(client).IsBoss)
 	{
 		if(Client(client).Speaking)
@@ -602,6 +605,7 @@ public any NativeOld_SetFF2flags(Handle plugin, int params)
 		int flags = GetNativeCell(2);
 		
 		Client(client).Minion = view_as<bool>(flags & FF2FLAG_CLASSTIMERDISABLED);
+		Client(client).NoHud = view_as<bool>(flags & FF2FLAG_HUDDISABLED);
 		
 		if(Client(client).IsBoss)
 		{
@@ -919,7 +923,10 @@ public any NativeOld_RemoveClientShield(Handle plugin, int params)
 
 public any NativeOld_LogError(Handle plugin, int params)
 {
-	return ThrowNativeError(SP_ERROR_NATIVE, "User Error");
+	char buffer[256];
+	FormatNativeString(0, 1, 2, sizeof(buffer), _, buffer);
+	LogError(buffer);
+	return 0;
 }
 
 public any NativeOld_Debug(Handle plugin, int params)
@@ -1097,9 +1104,9 @@ public any NativeOld_FF2DataArgF(Handle plugin, int params)
 {
 	int boss = GetNativeCell(1);
 	float value = GetNativeCell(3);
-	int client = FindClientOfBossIndex(boss);
 	if(boss >= 0 && boss < 13)
 	{
+		int client = FindClientOfBossIndex(boss);
 		if(client != -1)
 		{
 			char arg[64];

@@ -222,8 +222,7 @@ bool ForwardOld_OnLoadCharacterSet(int &charset, char name[64])
 		return false;
 	
 	charset = charset2;
-	strcopy(name, sizeof(name), name2);
-	return true;
+	return view_as<bool>(strcopy(name, sizeof(name), name2));
 }
 
 Action ForwardOld_OnLoseLife(int client, int &lives, int maxlives)

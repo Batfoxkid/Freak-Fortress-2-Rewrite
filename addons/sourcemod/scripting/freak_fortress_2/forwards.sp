@@ -6,6 +6,8 @@
 	void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
 	void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 	Action Forward_OnAliveChange()
+	Action Forward_OnBossPrecache(ConfigMap cfg, bool &precache)
+	void Forward_OnBossPrecached(ConfigMap cfg, bool precache, int index)
 */
 
 static GlobalForward BossCreated;
@@ -15,6 +17,8 @@ static GlobalForward AbilityAll;
 static GlobalForward AbilityPost;
 static GlobalForward AliveChangePre;
 static GlobalForward AliveChangePost;
+static GlobalForward BossPrecachePre;
+static GlobalForward BossPrecachePost;
 
 void Forward_PluginLoad()
 {
@@ -25,6 +29,8 @@ void Forward_PluginLoad()
 	AbilityPost = new GlobalForward("FF2R_OnAbilityPost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	AliveChangePre = new GlobalForward("FF2R_OnAliveChange", ET_Event, Param_Array, Param_Array);
 	AliveChangePost = new GlobalForward("FF2R_OnAliveChanged", ET_Ignore, Param_Array, Param_Array);
+	BossPrecachePre = new GlobalForward("FF2R_OnBossPrecache", ET_Event, Param_Cell, Param_CellByRef);
+	BossPrecachePost = new GlobalForward("FF2R_OnBossPrecached", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -159,4 +165,29 @@ Action Forward_OnAliveChange()
 		Call_Finish();
 	}
 	return action;
+}
+
+Action Forward_OnBossPrecache(ConfigMap cfg, bool &precache)
+{
+	bool precache2 = precache;
+	
+	Action action;
+	Call_StartForward(BossPrecachePre);
+	Call_PushCell(cfg);
+	Call_PushCellRef(precache2);
+	Call_Finish(action);
+	
+	if(action >= Plugin_Changed)
+		precache = precache2;
+	
+	return action;
+}
+
+void Forward_OnBossPrecached(ConfigMap cfg, bool precache, int index)
+{
+	Call_StartForward(BossPrecachePost);
+	Call_PushCell(cfg);
+	Call_PushCell(precache);
+	Call_PushCell(index);
+	Call_Finish();
 }

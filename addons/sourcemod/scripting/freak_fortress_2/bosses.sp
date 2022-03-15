@@ -296,7 +296,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		if(charset != -1)
 		{
 			char name[64];
-			if(ForwardOld_OnLoadCharacterSet(charset, name) && name[0])
+			if(ForwardOld_OnLoadCharacterSet(charset, name))
 			{
 				for(int i; i < entries; i++)	// Boss Packs
 				{
@@ -525,7 +525,7 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 	delete listing;
 }
 
-static void LoadCharacter(const char[] character, int charset, const char[] map, bool precache)
+static void LoadCharacter(const char[] character, int charset, const char[] map, bool precached)
 {
 	char buffer[PLATFORM_MAX_PATH];
 	FormatEx(buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, character);
@@ -546,56 +546,67 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 		return;
 	}
 	
-	int i;
-	if(cfg.GetInt("version", i) && i != MAJOR_REVISION && i != 99)
+	bool precache = precached;
+	Action action = Forward_OnBossPrecache(cfg, precache);
+	if(action == Plugin_Stop)
 	{
-		if(i == 2)
-		{
-			LogError("[Boss] %s is only compatible with Official Freak Fortress 2.0 Branch", character);
-		}
-		else
-		{
-			LogError("[Boss] %s is only compatible with base FF2 v%d", character, i);
-		}
-		
 		DeleteCfg(full);
 		return;
 	}
 	
-	if(cfg.GetInt("version_minor", i))
+	if(action != Plugin_Handled)
 	{
-		int stable = -1;
-		cfg.GetInt("version_stable", stable);
-		
-		if(i > MINOR_REVISION || (i == MINOR_REVISION && stable > STABLE_REVISION))
+		int i;
+		if(cfg.GetInt("version", i) && i != MAJOR_REVISION && i != 99)
 		{
-			if(stable < 0)
+			if(i == 2)
 			{
-				LogError("[Boss] %s is only compatible with base FF2 v%d.%d and newer", character, MAJOR_REVISION, i);
+				LogError("[Boss] %s is only compatible with Official Freak Fortress 2.0 Branch", character);
 			}
 			else
 			{
-				LogError("[Boss] %s is only compatible with base FF2 v%d.%d.%d and newer", character, MAJOR_REVISION, i, stable);
+				LogError("[Boss] %s is only compatible with base FF2 v%d", character, i);
 			}
 			
 			DeleteCfg(full);
 			return;
 		}
-	}
-	
-	if(cfg.GetInt("fversion", i) && i != 2)
-	{
-		if(i == 1)
+		
+		if(cfg.GetInt("version_minor", i))
 		{
-			LogError("[Boss] %s is only compatible with Unofficial Freak Fortress", character);
-		}
-		else
-		{
-			LogError("[Boss] %s is only compatible with forked FF2 v%d", character, i);
+			int stable = -1;
+			cfg.GetInt("version_stable", stable);
+			
+			if(i > MINOR_REVISION || (i == MINOR_REVISION && stable > STABLE_REVISION))
+			{
+				if(stable < 0)
+				{
+					LogError("[Boss] %s is only compatible with base FF2 v%d.%d and newer", character, MAJOR_REVISION, i);
+				}
+				else
+				{
+					LogError("[Boss] %s is only compatible with base FF2 v%d.%d.%d and newer", character, MAJOR_REVISION, i, stable);
+				}
+				
+				DeleteCfg(full);
+				return;
+			}
 		}
 		
-		DeleteCfg(full);
-		return;
+		if(cfg.GetInt("fversion", i) && i != 2)
+		{
+			if(i == 1)
+			{
+				LogError("[Boss] %s is only compatible with Unofficial Freak Fortress", character);
+			}
+			else
+			{
+				LogError("[Boss] %s is only compatible with forked FF2 v%d", character, i);
+			}
+			
+			DeleteCfg(full);
+			return;
+		}
 	}
 	
 	// Delete the full ConfigMap but not our needed ConfigMap
@@ -604,7 +615,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(snap)
 	{
 		int entries = snap.Length;
-		for(i = 0; i < entries; i++)
+		for(int i; i < entries; i++)
 		{
 			int length = snap.KeyBufferSize(i)+1;
 			char[] key = new char[length];
@@ -623,45 +634,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	
 	delete full;
 	
-	if(precache)
+	if(action != Plugin_Handled)
 	{
-		ConfigMap cfgsub = cfg.GetSection("map_listing");
-		if(cfgsub)
+		if(precache)
 		{
-			snap = cfgsub.Snapshot();
-			if(snap)
-			{
-				int entries = snap.Length;
-				if(entries)
-				{
-					int size;
-					for(i = 0; i < entries; i++)
-					{
-						int length = snap.KeyBufferSize(i)+1;
-						if(size > length)
-							continue;
-						
-						char[] mapname = new char[length];
-						snap.GetKey(i, mapname, length);
-						cfgsub.GetArray(mapname, val, sizeof(val));
-						if(val.tag != KeyValType_Value)
-							continue;
-						
-						int amount = ReplaceString(mapname, length, "*", "");
-						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
-						{
-							precache = view_as<bool>(StringToInt(val.data));
-							size = length;
-						}
-					}
-				}
-				delete snap;
-			}
-		}
-		else
-		{
-			// Backwards Compatibility Below
-			cfgsub = cfg.GetSection("map_only");
+			ConfigMap cfgsub = cfg.GetSection("map_listing");
 			if(cfgsub)
 			{
 				snap = cfgsub.Snapshot();
@@ -670,32 +647,34 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					int entries = snap.Length;
 					if(entries)
 					{
-						bool found;
-						for(i = 0; i < entries; i++)
+						int size;
+						for(int i; i < entries; i++)
 						{
 							int length = snap.KeyBufferSize(i)+1;
-							char[] key = new char[length];
-							snap.GetKey(i, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
+							if(size > length)
+								continue;
+							
+							char[] mapname = new char[length];
+							snap.GetKey(i, mapname, length);
+							cfgsub.GetArray(mapname, val, sizeof(val));
 							if(val.tag != KeyValType_Value)
 								continue;
 							
-							if(!StrContains(map, val.data, false))
+							int amount = ReplaceString(mapname, length, "*", "");
+							if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 							{
-								found = true;
-								break;
+								precache = view_as<bool>(StringToInt(val.data));
+								size = length;
 							}
 						}
-						
-						if(!found)
-							precache = false;
 					}
 					delete snap;
 				}
 			}
 			else
 			{
-				cfgsub = cfg.GetSection("map_exclude");
+				// Backwards Compatibility Below
+				cfgsub = cfg.GetSection("map_only");
 				if(cfgsub)
 				{
 					snap = cfgsub.Snapshot();
@@ -704,7 +683,8 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						int entries = snap.Length;
 						if(entries)
 						{
-							for(i = 0; i < entries; i++)
+							bool found;
+							for(int i; i < entries; i++)
 							{
 								int length = snap.KeyBufferSize(i)+1;
 								char[] key = new char[length];
@@ -715,337 +695,359 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								
 								if(!StrContains(map, val.data, false))
 								{
-									precache = false;
+									found = true;
 									break;
 								}
 							}
+							
+							if(!found)
+								precache = false;
 						}
 						delete snap;
 					}
 				}
+				else
+				{
+					cfgsub = cfg.GetSection("map_exclude");
+					if(cfgsub)
+					{
+						snap = cfgsub.Snapshot();
+						if(snap)
+						{
+							int entries = snap.Length;
+							if(entries)
+							{
+								for(int i; i < entries; i++)
+								{
+									int length = snap.KeyBufferSize(i)+1;
+									char[] key = new char[length];
+									snap.GetKey(i, key, length);
+									cfgsub.GetArray(key, val, sizeof(val));
+									if(val.tag != KeyValType_Value)
+										continue;
+									
+									if(!StrContains(map, val.data, false))
+									{
+										precache = false;
+										break;
+									}
+								}
+							}
+							delete snap;
+						}
+					}
+				}
 			}
 		}
+		
+		if(precache && cfg.Get("model", buffer, sizeof(buffer)) && buffer[0])
+			PrecacheModel(buffer);
 	}
 	
-	if(precache && cfg.Get("model", buffer, sizeof(buffer)) && buffer[0])
-		PrecacheModel(buffer);
-	
-	int special = BossList.Length;
-	
-	bool clean = !CvarDebug.BoolValue;
-	
-	snap = cfg.Snapshot();
-	if(snap)
+	if(action != Plugin_Handled)
 	{
-		int entries = snap.Length;
-		if(entries)
+		int special = BossList.Length;
+		bool clean = !CvarDebug.BoolValue;
+		
+		snap = cfg.Snapshot();
+		if(snap)
 		{
-			char buffer2[PLATFORM_MAX_PATH];
-			for(i = 0; i < entries; i++)
+			int entries = snap.Length;
+			if(entries)
 			{
-				int length = snap.KeyBufferSize(i)+1;
-				char[] section = new char[length];
-				snap.GetKey(i, section, length);
-				cfg.GetArray(section, val, sizeof(val));
-				if(val.tag != KeyValType_Section)
-					continue;
-				
-				ConfigMap cfgsub = val.cfg;
-				if(!cfgsub)
-					continue;
-				
-				if(!precache)
+				char buffer2[PLATFORM_MAX_PATH];
+				for(int i; i < entries; i++)
 				{
-					if(clean)
+					int length = snap.KeyBufferSize(i)+1;
+					char[] section = new char[length];
+					snap.GetKey(i, section, length);
+					cfg.GetArray(section, val, sizeof(val));
+					if(val.tag != KeyValType_Section)
+						continue;
+					
+					ConfigMap cfgsub = val.cfg;
+					if(!cfgsub)
+						continue;
+					
+					if(!precache)
 					{
-						DeleteCfg(cfgsub);
-						cfg.Remove(section);
-					}
-					continue;
-				}
-				
-				StringMapSnapshot snapsub = cfgsub.Snapshot();
-				if(!snapsub)
-					continue;
-				
-				static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
-				static const char MatExts[][] = {"vtf", "vmt"};
-				
-				int entriessub = snapsub.Length;
-				switch(GetSectionType(section))
-				{
-					case Section_Ability:
-					{
-						if(!StrContains(section, "ability") && cfgsub.Get("name", buffer, sizeof(buffer)))
-						{
-							cfgsub.SetVal("name", _, -1);
-							cfg.Remove(section);
-							cfg.SetArray(buffer, val, sizeof(val));
-						}
-					}
-					case Section_Weapon:
-					{
-						if(cfgsub.Get("worldmodel", buffer, sizeof(buffer)) && buffer[0])
-						{
-							if(FileExists(buffer, true))
-							{
-								cfgsub.SetInt("worldmodel", PrecacheModel(buffer));
-							}
-							else
-							{
-								cfgsub.DeleteSection("worldmodel");
-								LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-							}
-						}
-						
-						if((!StrContains(section, "weapon") || !StrContains(section, "wearable")) && cfgsub.Get("name", buffer, sizeof(buffer)))
-						{
-							cfgsub.SetVal("name", _, -1);
-							cfg.Remove(section);
-							cfg.SetArray(buffer, val, sizeof(val));
-						}
-					}
-					case Section_Sound:
-					{
-						bool bgm = StrEqual(section, "sound_bgm");
-						for(int a; a < entriessub; a++)
-						{
-							int length2 = snapsub.KeyBufferSize(a)+2;
-							char[] key = new char[length2];
-							snapsub.GetKey(a, key, length2);
-							cfgsub.GetArray(key, val, sizeof(val));
-							switch(val.tag)
-							{
-								case KeyValType_Section:
-								{
-									bool music = bgm;
-									if(!music)
-									{
-										ConfigMap cfgsound = val.cfg;
-										if(cfgsound)
-											music = view_as<bool>(cfgsound.GetInt("time", length2));
-									}
-									
-									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
-									{
-										if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
-										{
-											cfgsub.Remove(key);
-											Format(key, length2, "#%s", key);
-											cfgsub.SetArray(key, val, sizeof(val));
-										}
-										
-										PrecacheSound(key);
-									}
-									else
-									{
-										PrecacheScriptSound(key);
-									}
-									
-									if(music)
-										Music_AddSong(special, section, key);
-								}
-								case KeyValType_Value:
-								{
-									if(IsNotExtraArg(key))
-									{
-										strcopy(buffer, sizeof(buffer), val.data);
-										
-										bool music = bgm;
-										if(length2 > val.size)	// "example.mp3"	""
-										{
-											if(!music)
-											{
-												Format(buffer, sizeof(buffer), "%smusic", buffer);
-												music = view_as<bool>(cfgsub.GetInt(section, length2));
-											}
-											
-											if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
-											{
-												if(music && StrContains(key, "#") != 0)
-												{
-													cfgsub.Remove(key);
-													Format(key, length2, "#%s", key);
-													cfgsub.SetArray(key, val, sizeof(val));
-												}
-												
-												PrecacheSound(key);
-											}
-											else
-											{
-												PrecacheScriptSound(key);
-											}
-										}
-										else	// "1"	"example.mp3"
-										{
-											if(!music)
-											{
-												Format(buffer2, sizeof(buffer2), "%smusic", key);
-												music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
-											}
-											
-											if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
-											{
-												if(music && StrContains(buffer, "#") != 0)
-												{
-													Format(buffer, sizeof(buffer), "#%s", buffer);
-													cfgsub.Set(key, buffer);
-												}
-												
-												PrecacheSound(buffer);
-											}
-											else
-											{
-												PrecacheScriptSound(buffer);
-											}
-											
-											Format(buffer2, sizeof(buffer2), "slot%s", key);
-											if(!cfgsub.GetInt(buffer2, length))
-												cfgsub.SetInt(buffer2, 0);
-										}
-										
-										if(music)
-											Music_AddSong(special, section, key);
-									}
-								}
-							}
-						}
-					}
-					case Section_Precache:
-					{
-						for(int a; a < entriessub; a++)
-						{
-							length = snapsub.KeyBufferSize(a)+1;
-							char[] key = new char[length];
-							snapsub.GetKey(a, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
-							
-							if(!key[0] || !IsNotExtraArg(key))
-							{
-								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-								continue;
-							}
-							
-							switch(val.tag)
-							{
-								case KeyValType_Section:
-								{
-									if(!FileExists(key, true))
-									{
-										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-									}
-									else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
-									{
-										PrecacheSound(key);
-									}
-									else
-									{
-										PrecacheModel(key);
-									}
-								}
-								case KeyValType_Value:
-								{
-									if(length > val.size)	// "models/example.mdl"	"mdl"
-									{
-										if(val.data[0] == 'm')	// mdl, model, mat, material
-										{
-											PrecacheModel(key);
-										}
-										else if(val.data[0] == 'g' || val.data[2] == 'r')	// gs, gamesound, script
-										{
-											PrecacheScriptSound(key);
-										}
-										else if(val.data[0] == 's')
-										{
-											if(val.data[1] == 'e')	// sentence
-											{
-												PrecacheSentenceFile(key);
-											}
-											else	// snd, sound
-											{
-												PrecacheSound(key);
-											}
-										}
-										else if(val.data[0] == 'd')	// decal
-										{
-											PrecacheDecal(key);
-										}
-										else if(val.data[0])	// generic
-										{
-											PrecacheGeneric(key);
-										}
-									}
-									else			// "mdl"	"models/example.mdl"
-									{
-										if(key[0] == 'm')	// mdl, model, mat, material
-										{
-											PrecacheModel(val.data);
-										}
-										else if(key[0] == 'g' || key[2] == 'r')	// gs, gamesound, script
-										{
-											PrecacheScriptSound(val.data);
-										}
-										else if(key[0] == 's')
-										{
-											if(key[1] == 'e')	// sentence
-											{
-												PrecacheSentenceFile(val.data);
-											}
-											else	// snd, sound
-											{
-												PrecacheSound(val.data);
-											}
-										}
-										else if(key[0] == 'd')	// decal
-										{
-											PrecacheDecal(val.data);
-										}
-										else if(key[0])	// generic
-										{
-											PrecacheGeneric(val.data);
-										}
-									}
-								}
-							}
-						}
-						
 						if(clean)
 						{
 							DeleteCfg(cfgsub);
 							cfg.Remove(section);
 						}
+						continue;
 					}
-					case Section_ModCache:
+					
+					StringMapSnapshot snapsub = cfgsub.Snapshot();
+					if(!snapsub)
+						continue;
+					
+					static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
+					static const char MatExts[][] = {"vtf", "vmt"};
+					
+					int entriessub = snapsub.Length;
+					switch(GetSectionType(section))
 					{
-						for(int a; a < entriessub; a++)
+						case Section_Ability:
 						{
-							length = snapsub.KeyBufferSize(a)+1;
-							char[] key = new char[length];
-							snapsub.GetKey(a, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
-							
-							if(!key[0] || !IsNotExtraArg(key))
+							if(!StrContains(section, "ability") && cfgsub.Get("name", buffer, sizeof(buffer)))
 							{
-								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-								continue;
+								cfgsub.DeleteSection("name");
+								cfg.Remove(section);
+								cfg.SetArray(buffer, val, sizeof(val));
+							}
+						}
+						case Section_Weapon:
+						{
+							if(cfgsub.Get("worldmodel", buffer, sizeof(buffer)) && buffer[0])
+							{
+								if(FileExists(buffer, true))
+								{
+									cfgsub.SetInt("worldmodel", PrecacheModel(buffer));
+								}
+								else
+								{
+									cfgsub.DeleteSection("worldmodel");
+									LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+								}
 							}
 							
-							switch(val.tag)
+							if((!StrContains(section, "weapon") || !StrContains(section, "wearable")) && cfgsub.Get("name", buffer, sizeof(buffer)))
 							{
-								case KeyValType_Section:
+								cfgsub.DeleteSection("name");
+								cfg.Remove(section);
+								cfg.SetArray(buffer, val, sizeof(val));
+							}
+						}
+						case Section_Sound:
+						{
+							bool bgm = StrEqual(section, "sound_bgm");
+							for(int a; a < entriessub; a++)
+							{
+								int length2 = snapsub.KeyBufferSize(a)+2;
+								char[] key = new char[length2];
+								snapsub.GetKey(a, key, length2);
+								cfgsub.GetArray(key, val, sizeof(val));
+								switch(val.tag)
 								{
-									if(FileExists(key, true))
+									case KeyValType_Section:
 									{
-										PrecacheModel(key);
+										bool music = bgm;
+										if(!music)
+										{
+											ConfigMap cfgsound = val.cfg;
+											if(cfgsound)
+												music = view_as<bool>(cfgsound.GetInt("time", length2));
+										}
+										
+										if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+										{
+											if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
+											{
+												cfgsub.Remove(key);
+												Format(key, length2, "#%s", key);
+												cfgsub.SetArray(key, val, sizeof(val));
+											}
+											
+											PrecacheSound(key);
+										}
+										else
+										{
+											PrecacheScriptSound(key);
+										}
+										
+										if(music)
+											Music_AddSong(special, section, key);
 									}
-									else
+									case KeyValType_Value:
 									{
-										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+										if(IsNotExtraArg(key))
+										{
+											strcopy(buffer, sizeof(buffer), val.data);
+											
+											bool music = bgm;
+											if(length2 > val.size)	// "example.mp3"	""
+											{
+												if(!music)
+												{
+													Format(buffer, sizeof(buffer), "%smusic", buffer);
+													music = view_as<bool>(cfgsub.GetInt(section, length2));
+												}
+												
+												if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
+												{
+													if(music && StrContains(key, "#") != 0)
+													{
+														cfgsub.Remove(key);
+														Format(key, length2, "#%s", key);
+														cfgsub.SetArray(key, val, sizeof(val));
+													}
+													
+													PrecacheSound(key);
+												}
+												else
+												{
+													PrecacheScriptSound(key);
+												}
+											}
+											else	// "1"	"example.mp3"
+											{
+												if(!music)
+												{
+													Format(buffer2, sizeof(buffer2), "%smusic", key);
+													music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
+												}
+												
+												if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
+												{
+													if(music && StrContains(buffer, "#") != 0)
+													{
+														Format(buffer, sizeof(buffer), "#%s", buffer);
+														cfgsub.Set(key, buffer);
+													}
+													
+													PrecacheSound(buffer);
+												}
+												else
+												{
+													PrecacheScriptSound(buffer);
+												}
+												
+												Format(buffer2, sizeof(buffer2), "slot%s", key);
+												if(!cfgsub.GetInt(buffer2, length))
+													cfgsub.SetInt(buffer2, 0);
+											}
+											
+											if(music)
+												Music_AddSong(special, section, key);
+										}
 									}
 								}
-								case KeyValType_Value:
+							}
+						}
+						case Section_Precache:
+						{
+							for(int a; a < entriessub; a++)
+							{
+								length = snapsub.KeyBufferSize(a)+1;
+								char[] key = new char[length];
+								snapsub.GetKey(a, key, length);
+								cfgsub.GetArray(key, val, sizeof(val));
+								
+								if(!key[0] || !IsNotExtraArg(key))
 								{
-									if(length > val.size)	// "models/example.mdl"	"mdl"
+									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+									continue;
+								}
+								
+								switch(val.tag)
+								{
+									case KeyValType_Section:
+									{
+										if(!FileExists(key, true))
+										{
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+										}
+										else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+										{
+											PrecacheSound(key);
+										}
+										else
+										{
+											PrecacheModel(key);
+										}
+									}
+									case KeyValType_Value:
+									{
+										if(length > val.size)	// "models/example.mdl"	"mdl"
+										{
+											if(val.data[0] == 'm')	// mdl, model, mat, material
+											{
+												PrecacheModel(key);
+											}
+											else if(val.data[0] == 'g' || val.data[2] == 'r')	// gs, gamesound, script
+											{
+												PrecacheScriptSound(key);
+											}
+											else if(val.data[0] == 's')
+											{
+												if(val.data[1] == 'e')	// sentence
+												{
+													PrecacheSentenceFile(key);
+												}
+												else	// snd, sound
+												{
+													PrecacheSound(key);
+												}
+											}
+											else if(val.data[0] == 'd')	// decal
+											{
+												PrecacheDecal(key);
+											}
+											else if(val.data[0])	// generic
+											{
+												PrecacheGeneric(key);
+											}
+										}
+										else			// "mdl"	"models/example.mdl"
+										{
+											if(key[0] == 'm')	// mdl, model, mat, material
+											{
+												PrecacheModel(val.data);
+											}
+											else if(key[0] == 'g' || key[2] == 'r')	// gs, gamesound, script
+											{
+												PrecacheScriptSound(val.data);
+											}
+											else if(key[0] == 's')
+											{
+												if(key[1] == 'e')	// sentence
+												{
+													PrecacheSentenceFile(val.data);
+												}
+												else	// snd, sound
+												{
+													PrecacheSound(val.data);
+												}
+											}
+											else if(key[0] == 'd')	// decal
+											{
+												PrecacheDecal(val.data);
+											}
+											else if(key[0])	// generic
+											{
+												PrecacheGeneric(val.data);
+											}
+										}
+									}
+								}
+							}
+							
+							if(clean)
+							{
+								DeleteCfg(cfgsub);
+								cfg.Remove(section);
+							}
+						}
+						case Section_ModCache:
+						{
+							for(int a; a < entriessub; a++)
+							{
+								length = snapsub.KeyBufferSize(a)+1;
+								char[] key = new char[length];
+								snapsub.GetKey(a, key, length);
+								cfgsub.GetArray(key, val, sizeof(val));
+								
+								if(!key[0] || !IsNotExtraArg(key))
+								{
+									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+									continue;
+								}
+								
+								switch(val.tag)
+								{
+									case KeyValType_Section:
 									{
 										if(FileExists(key, true))
 										{
@@ -1056,162 +1058,156 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 										}
 									}
-									else if(val.data[0])	// "1"	"models/example.mdl"
+									case KeyValType_Value:
 									{
-										if(FileExists(val.data, true))
-										{
-											PrecacheModel(val.data);
-										}
-										else
-										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
-										}
-									}
-								}
-							}
-						}
-						
-						if(clean)
-						{
-							DeleteCfg(cfgsub);
-							cfg.Remove(section);
-						}
-					}
-					case Section_Download:
-					{
-						for(int a; a < entriessub; a++)
-						{
-							length = snapsub.KeyBufferSize(a)+1;
-							char[] key = new char[length];
-							snapsub.GetKey(a, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
-							
-							if(!key[0] || !IsNotExtraArg(key))
-							{
-								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-								continue;
-							}
-							
-							switch(val.tag)
-							{
-								case KeyValType_Section:
-								{
-									if(FileExists(key, true))
-									{
-										AddToStringTable(DownloadTable, key);
-									}
-									else
-									{
-										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-									}
-								}
-								case KeyValType_Value:
-								{
-									if(length > val.size)	// "models/example"	"mdl"
-									{
-										if(val.data[1] == 'a')	// mat, material
-										{
-											for(int b; b < sizeof(MatExts); b++)
-											{
-												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-												if(FileExists(buffer, true))
-												{
-													AddToStringTable(DownloadTable, buffer);
-												}
-												else
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-												}
-											}
-											continue;
-										}
-										else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
-										{
-											for(int b; b < sizeof(MdlExts); b++)
-											{
-												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-												if(FileExists(buffer, true))
-												{
-													if(b)
-														AddToStringTable(DownloadTable, buffer);
-												}
-												else if(b != sizeof(MdlExts)-1)
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-													break;
-												}
-											}
-										}
-										else
+										if(length > val.size)	// "models/example.mdl"	"mdl"
 										{
 											if(FileExists(key, true))
 											{
-												AddToStringTable(DownloadTable, key);
+												PrecacheModel(key);
 											}
 											else
 											{
 												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 											}
 										}
-									}
-									else			// "1"	"sound/example.mp3"
-									{
-										if(FileExists(val.data, true))
+										else if(val.data[0])	// "1"	"models/example.mdl"
 										{
-											AddToStringTable(DownloadTable, val.data);
+											if(FileExists(val.data, true))
+											{
+												PrecacheModel(val.data);
+											}
+											else
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
+											}
+										}
+									}
+								}
+							}
+							
+							if(clean)
+							{
+								DeleteCfg(cfgsub);
+								cfg.Remove(section);
+							}
+						}
+						case Section_Download:
+						{
+							for(int a; a < entriessub; a++)
+							{
+								length = snapsub.KeyBufferSize(a)+1;
+								char[] key = new char[length];
+								snapsub.GetKey(a, key, length);
+								cfgsub.GetArray(key, val, sizeof(val));
+								
+								if(!key[0] || !IsNotExtraArg(key))
+								{
+									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+									continue;
+								}
+								
+								switch(val.tag)
+								{
+									case KeyValType_Section:
+									{
+										if(FileExists(key, true))
+										{
+											AddToStringTable(DownloadTable, key);
 										}
 										else
 										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 										}
 									}
-								}
-							}
-						}
-						
-						if(clean)
-						{
-							DeleteCfg(cfgsub);
-							cfg.Remove(section);
-						}
-					}
-					case Section_Model:
-					{
-						for(int a; a < entriessub; a++)
-						{
-							length = snapsub.KeyBufferSize(a)+10;
-							char[] key = new char[length];
-							snapsub.GetKey(a, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
-							
-							if(!key[0] || !IsNotExtraArg(key))
-							{
-								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-								continue;
-							}
-							
-							switch(val.tag)
-							{
-								case KeyValType_Section:
-								{
-									for(int b; b < sizeof(MdlExts); b++)
+									case KeyValType_Value:
 									{
-										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-										if(FileExists(buffer, true))
+										if(length > val.size)	// "models/example"	"mdl"
 										{
-											if(b)
-												AddToStringTable(DownloadTable, buffer);
+											if(val.data[1] == 'a')	// mat, material
+											{
+												for(int b; b < sizeof(MatExts); b++)
+												{
+													FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
+													if(FileExists(buffer, true))
+													{
+														AddToStringTable(DownloadTable, buffer);
+													}
+													else
+													{
+														LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+													}
+												}
+												continue;
+											}
+											else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
+											{
+												for(int b; b < sizeof(MdlExts); b++)
+												{
+													FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
+													if(FileExists(buffer, true))
+													{
+														if(b)
+															AddToStringTable(DownloadTable, buffer);
+													}
+													else if(b != sizeof(MdlExts)-1)
+													{
+														LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+														break;
+													}
+												}
+											}
+											else
+											{
+												if(FileExists(key, true))
+												{
+													AddToStringTable(DownloadTable, key);
+												}
+												else
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+												}
+											}
 										}
-										else if(b != sizeof(MdlExts)-1)
+										else			// "1"	"sound/example.mp3"
 										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-											break;
+											if(FileExists(val.data, true))
+											{
+												AddToStringTable(DownloadTable, val.data);
+											}
+											else
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
+											}
 										}
 									}
 								}
-								case KeyValType_Value:
+							}
+							
+							if(clean)
+							{
+								DeleteCfg(cfgsub);
+								cfg.Remove(section);
+							}
+						}
+						case Section_Model:
+						{
+							for(int a; a < entriessub; a++)
+							{
+								length = snapsub.KeyBufferSize(a)+10;
+								char[] key = new char[length];
+								snapsub.GetKey(a, key, length);
+								cfgsub.GetArray(key, val, sizeof(val));
+								
+								if(!key[0] || !IsNotExtraArg(key))
 								{
-									if(length > val.size)	// "models/example"	"mdl"
+									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+									continue;
+								}
+								
+								switch(val.tag)
+								{
+									case KeyValType_Section:
 									{
 										for(int b; b < sizeof(MdlExts); b++)
 										{
@@ -1228,68 +1224,70 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 										}
 									}
-									else			// "1"	"models/example"
+									case KeyValType_Value:
 									{
-										for(int b; b < sizeof(MdlExts); b++)
+										if(length > val.size)	// "models/example"	"mdl"
 										{
-											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
-											if(FileExists(buffer, true))
+											for(int b; b < sizeof(MdlExts); b++)
 											{
-												if(b)
-													AddToStringTable(DownloadTable, buffer);
+												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
+												if(FileExists(buffer, true))
+												{
+													if(b)
+														AddToStringTable(DownloadTable, buffer);
+												}
+												else if(b != sizeof(MdlExts)-1)
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+													break;
+												}
 											}
-											else if(b != sizeof(MdlExts)-1)
+										}
+										else			// "1"	"models/example"
+										{
+											for(int b; b < sizeof(MdlExts); b++)
 											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-												break;
+												FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
+												if(FileExists(buffer, true))
+												{
+													if(b)
+														AddToStringTable(DownloadTable, buffer);
+												}
+												else if(b != sizeof(MdlExts)-1)
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+													break;
+												}
 											}
 										}
 									}
 								}
 							}
-						}
-						
-						if(clean)
-						{
-							DeleteCfg(cfgsub);
-							cfg.Remove(section);
-						}
-					}
-					case Section_Material:
-					{
-						for(int a; a < entriessub; a++)
-						{
-							length = snapsub.KeyBufferSize(a)+5;
-							char[] key = new char[length];
-							snapsub.GetKey(a, key, length);
-							cfgsub.GetArray(key, val, sizeof(val));
 							
-							if(!key[0] || !IsNotExtraArg(key))
+							if(clean)
 							{
-								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-								continue;
+								DeleteCfg(cfgsub);
+								cfg.Remove(section);
 							}
-							
-							switch(val.tag)
+						}
+						case Section_Material:
+						{
+							for(int a; a < entriessub; a++)
 							{
-								case KeyValType_Section:
+								length = snapsub.KeyBufferSize(a)+5;
+								char[] key = new char[length];
+								snapsub.GetKey(a, key, length);
+								cfgsub.GetArray(key, val, sizeof(val));
+								
+								if(!key[0] || !IsNotExtraArg(key))
 								{
-									for(int b; b < sizeof(MatExts); b++)
-									{
-										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-										if(FileExists(buffer, true))
-										{
-											AddToStringTable(DownloadTable, buffer);
-										}
-										else
-										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-										}
-									}
+									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+									continue;
 								}
-								case KeyValType_Value:
+								
+								switch(val.tag)
 								{
-									if(length > val.size)	// "materials/example"	"mat"
+									case KeyValType_Section:
 									{
 										for(int b; b < sizeof(MatExts); b++)
 										{
@@ -1304,47 +1302,71 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 										}
 									}
-									else			// "1"	"materials/example"
+									case KeyValType_Value:
 									{
-										for(int b; b < sizeof(MatExts); b++)
+										if(length > val.size)	// "materials/example"	"mat"
 										{
-											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
-											if(FileExists(buffer, true))
+											for(int b; b < sizeof(MatExts); b++)
 											{
-												AddToStringTable(DownloadTable, buffer);
+												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
+												if(FileExists(buffer, true))
+												{
+													AddToStringTable(DownloadTable, buffer);
+												}
+												else
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												}
 											}
-											else
+										}
+										else			// "1"	"materials/example"
+										{
+											for(int b; b < sizeof(MatExts); b++)
 											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
+												if(FileExists(buffer, true))
+												{
+													AddToStringTable(DownloadTable, buffer);
+												}
+												else
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												}
 											}
 										}
 									}
 								}
 							}
-						}
-						
-						if(clean)
-						{
-							DeleteCfg(cfgsub);
-							cfg.Remove(section);
+							
+							if(clean)
+							{
+								DeleteCfg(cfgsub);
+								cfg.Remove(section);
+							}
 						}
 					}
+					
+					delete snapsub;
 				}
-				
-				delete snapsub;
 			}
+			
+			delete snap;
 		}
-		
-		delete snap;
 	}
+	
+	if(!cfg.GetVal("name", val))
+		cfg.Set("name", character);
 	
 	cfg.Set("filename", character);
 	cfg.SetInt("charset", charset);
 	if(precache)
+	{
 		cfg.SetInt("enabled", 1);
-	
-	if(!cfg.GetVal("name", val))
-		cfg.Set("name", character);
+	}
+	else
+	{
+		cfg.DeleteSection("enabled");
+	}
 	
 	TFClassType class = TFClass_Scout;
 	if(cfg.Get("class", buffer, sizeof(buffer)))
@@ -1352,7 +1374,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	
 	cfg.SetInt("class", view_as<int>(class));
 	
-	BossList.Push(cfg);
+	Forward_OnBossPrecached(cfg, precache, BossList.Push(cfg));
 }
 
 void Bosses_MapEnd()
@@ -1804,15 +1826,7 @@ static void EquipBoss(int client, bool weapons)
 					cfg.GetBool("preserve", preserve);
 					
 					int kills;
-					bool override = false;
-					if(cfg.GetInt("override", kills))
-					{
-						override = view_as<bool>(kills);
-					}
-					else if(cfg.GetInt("giveattribs", kills))
-					{
-						override = !kills;
-					}
+					bool override = (cfg.GetInt("override", kills) && kills);
 					
 					kills = -1;
 					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
@@ -2167,10 +2181,10 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 			Bosses_UseSlot(client, 1, 3);
 		}
 		
-		time = GetEngineTime();
-		if(Client(client).RefreshAt < time)
+		if(!Client(client).NoHud && !(buttons & IN_SCORE))
 		{
-			if(!(buttons & IN_SCORE))
+			time = GetEngineTime();
+			if(Client(client).RefreshAt < time)
 			{
 				Client(client).RefreshAt = time + 0.2;
 				

@@ -202,7 +202,7 @@ methodmap ConfigData < ConfigMap
 	
 	public void Remove(const char[] key)
 	{
-		view_as<ConfigMap>(this).SetVal(key, _, -1);
+		view_as<ConfigMap>(this).DeleteSection(key);
 	}
 }
 
@@ -275,17 +275,6 @@ native BossData FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client, BossData cfg = null);
 
 /**
- * Called when a boss gets created or updated, can get called more than once
- * 
- * @param client	Client index
- * @param cfg		Boss's ConfigMap
- * @param setup		Setup is active
- * 
- * @noreturn
- */
-forward void FF2R_OnBossCreated(int client, BossData cfg, bool setup);
-
-/**
  * Called when an ability is about to be activated
  * 
  * @param client	Client index
@@ -319,14 +308,50 @@ forward void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg);
  */
 forward void FF2R_OnAbilityPost(int client, const char[] ability, AbilityData cfg);
 
+/**
+ * Called when a boss gets created or updated, can get called more than once
+ * 
+ * @param client	Client index
+ * @param cfg		Boss's ConfigMap
+ * @param setup		Setup is active
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnBossCreated(int client, BossData cfg, bool setup);
+
+/**
+ * Called before a boss gets loaded
+ * 
+ * @note			The cfg at this state contains every key the boss has without clean up
+ * 
+ * @param cfg		Boss's ConfigMap
+ * @param enabled	If the boss will be precached and playable
+ * 
+ * @return			Plugin_Changed if the result was changed, Plugin_Handled to ignore precache logic such as downloads, Plugin_Stop to blockk the boss from being loaded
+ */
+forward Action FF2R_OnBossPrecache(BossData cfg, bool &enabled);
+
+/**
+ * Called after a boss gets loaded
+ * 
+ * @param cfg		Boss's ConfigMap
+ * @param enabled	If the boss is precached and playable
+ * @param index		Boss's assigned index
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnBossPrecached(BossData cfg, bool enabled, int index);
+
 #else
 
 native bool FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client);
-forward void FF2R_OnBossCreated(int client, any cfg, bool setup);
-forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
+//forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
 forward void FF2R_OnAbility(int client, const char[] ability);
 forward void FF2R_OnAbilityPost(int client, const char[] ability);
+//forward void FF2R_OnBossCreated(int client, any cfg, bool setup);
+//forward Action FF2R_OnBossPrecache(any cfg, bool &enabled);
+//forward void FF2R_OnBossPrecached(any cfg, bool enabled, int index);
 
 #endif
 

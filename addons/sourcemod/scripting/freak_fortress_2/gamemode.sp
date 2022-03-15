@@ -540,22 +540,25 @@ void Gamemode_RoundEnd(int winteam)
 			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
 			for(int a; a < total; a++)
 			{
-				SetGlobalTransTarget(clients[a]);
-				
-				if(teamName[i])	// Team with a Name
+				if(!Client(clients[a]).NoHud)
 				{
-					Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
-					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left", "_s", buffer, totalHealth[i], totalMax[i]);
-				}
-				else if(bosses[i] == 1)	// Solo Boss
-				{
-					Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
-					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
-				}
-				else	// Team without a Name
-				{
-					FormatEx(buffer, sizeof(buffer), "Team %d", i);
-					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
+					SetGlobalTransTarget(clients[a]);
+					
+					if(teamName[i])	// Team with a Name
+					{
+						Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
+						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left", "_s", buffer, totalHealth[i], totalMax[i]);
+					}
+					else if(bosses[i] == 1)	// Solo Boss
+					{
+						Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
+						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
+					}
+					else	// Team without a Name
+					{
+						FormatEx(buffer, sizeof(buffer), "Team %d", i);
+						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
+					}
 				}
 			}
 		}
@@ -564,9 +567,12 @@ void Gamemode_RoundEnd(int winteam)
 			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
 			for(int a; a < total; a++)
 			{
-				SetGlobalTransTarget(clients[a]);
-				FormatEx(buffer, sizeof(buffer), "Team %d", i);
-				ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
+				if(!Client(clients[a]).NoHud)
+				{
+					SetGlobalTransTarget(clients[a]);
+					FormatEx(buffer, sizeof(buffer), "Team %d", i);
+					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
+				}
 			}
 		}
 		else if(HasBoss[i])
@@ -729,7 +735,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 					float y = team <= TFTeam_Spectator ? 0.18 : 0.12;
 					for(int i; i < total; i++)
 					{
-						if(GetClientButtons(clients[i]) & IN_SCORE)
+						if(Client(clients[i]).NoHud || (GetClientButtons(clients[i]) & IN_SCORE))
 							continue;
 						
 						if(IsPlayerAlive(clients[i]))
@@ -759,7 +765,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				{
 					for(int i; i < total; i++)
 					{
-						if(GetClientButtons(clients[i]) & IN_SCORE)
+						if(Client(clients[i]).NoHud || (GetClientButtons(clients[i]) & IN_SCORE))
 							continue;
 						
 						if(IsPlayerAlive(clients[i]))

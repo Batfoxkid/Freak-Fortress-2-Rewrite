@@ -4,6 +4,7 @@
 	int Queue
 	bool NoMusic
 	bool NoVoice
+	bool NoHud
 	int GetLastPlayed(char[] buffer, int length)
 	void SetLastPlayed(const char[] buffer)
 	bool Minion
@@ -51,6 +52,7 @@ static ConfigMap BossMap[MAXTF2PLAYERS] = {null, ...};
 static int Queue[MAXTF2PLAYERS];
 static bool NoMusic[MAXTF2PLAYERS];
 static bool NoVoice[MAXTF2PLAYERS];
+static bool NoHud[MAXTF2PLAYERS];
 static char LastPlayed[MAXTF2PLAYERS][64];
 static bool Minion[MAXTF2PLAYERS];
 static bool Glowing[MAXTF2PLAYERS];
@@ -121,6 +123,18 @@ methodmap Client
 		public set(bool value)
 		{
 			NoVoice[view_as<int>(this)] = value;
+		}
+	}
+	
+	property bool NoHud
+	{
+		public get()
+		{
+			return NoHud[view_as<int>(this)];
+		}
+		public set(bool value)
+		{
+			NoHud[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -619,6 +633,7 @@ methodmap Client
 		this.Queue = 0;
 		this.NoMusic = false;
 		this.NoVoice = false;
+		this.NoHud = false;
 		this.SetLastPlayed("");
 		this.OverlayFor = 0.0;
 		this.GlowFor = 0.0;
