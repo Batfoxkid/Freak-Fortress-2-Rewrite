@@ -23,6 +23,7 @@ void Events_PluginStart()
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
+	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
@@ -593,4 +594,42 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
+}
+
+public void Events_RPSTaunt(Event event, const char[] name, bool dontBroadcast)
+{
+	int victim = event.GetInt("loser");
+	if(Client(victim).IsBoss)
+	{
+		int attacker = event.GetInt("winner");
+		if(GetClientTeam(victim) != GetClientTeam(attacker))
+		{
+			Client(victim).RPSHit = attacker;
+			if(Client(victim).MaxLives > 1)
+			{
+				Client(victim).RPSDamage = GetClientHealth(victim);
+			}
+			else if(!Client(victim).RPSDamage)
+			{
+				int damage = Client(victim).Health / 2;
+				if(damage < 999)
+					damage = 999;
+				
+				Client(victim).RPSDamage = damage;
+			}
+		}
+	}
+	else if(Client(victim).Queue > 0)
+	{
+		int attacker = event.GetInt("winner");
+		if(GetClientTeam(victim) == GetClientTeam(attacker))
+		{
+			int queue = 5;
+			if(Client(victim).Queue < queue)
+				queue = Client(victim).Queue;
+			
+			Client(victim).Queue -= queue;
+			Client(attacker).Queue += queue;
+		}
+	}
 }

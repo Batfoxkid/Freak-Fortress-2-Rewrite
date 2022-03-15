@@ -609,6 +609,34 @@ methodmap Client
 		this.Cfg.SetFloat(buffer, value);
 	}
 	
+	property int RPSHit
+	{
+		public get()
+		{
+			int value;
+			this.Cfg.GetInt("rpshit", value);
+			return value;
+		}
+		public set(int value)
+		{
+			this.Cfg.SetInt("rpshit", value);
+		}
+	}
+	
+	property int RPSDamage
+	{
+		public get()
+		{
+			int value;
+			this.Cfg.GetInt("rpsdmg", value);
+			return value;
+		}
+		public set(int value)
+		{
+			this.Cfg.SetInt("rpsdmg", value);
+		}
+	}
+	
 	public void ResetByDeath()
 	{
 		this.GlowFor = 0.0;
