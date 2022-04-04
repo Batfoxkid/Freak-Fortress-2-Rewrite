@@ -581,7 +581,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		}
 		
 		if(team > -1)
-			return Plugin_Handled;
+			event.BroadcastDisabled = true;
 		
 		int score = event.GetInt("blue_score_prev");
 		if(score > event.GetInt("blue_score"))

@@ -92,9 +92,7 @@ public void Database_QueryCallback(Database db, any data, int numQueries, DBResu
 	int length = results[0].RowCount;
 	for(int i; i < length; i++)
 	{
-		#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>10
 		results[0].FetchRow();
-		#endif
 		
 		int length2 = results[0].FieldCount;
 		for(int a; a < length2; a++)
@@ -102,10 +100,6 @@ public void Database_QueryCallback(Database db, any data, int numQueries, DBResu
 			results[0].FetchString(1, buffer, sizeof(buffer));
 			PrintToServer("%d-%d '%s'", i, a, buffer);
 		}
-		
-		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
-		results[0].FetchRow();
-		#endif
 	}
 }
 
@@ -166,11 +160,7 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 	{
 		char buffer[256];
 		Transaction tr;
-		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
-		if(results[0].RowCount)
-		#else
 		if(results[0].FetchRow())
-		#endif
 		{
 			Client(client).Queue = results[0].FetchInt(1);
 			Client(client).NoMusic = !results[0].FetchInt(2);
@@ -180,21 +170,13 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 		}
 		else if(!results[0].MoreRows)
 		{
-			if(!tr)
-				tr = new Transaction();
+			tr = new Transaction();
 			
 			FormatEx(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_GENERAL ... " (steamid) VALUES (%d)", GetSteamAccountID(client));
 			tr.AddQuery(buffer);	
 		}
 		
 		Preference_ClearBosses(client);
-		#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<=10
-		if(results[1].RowCount)
-		{
-			results[1].FetchString(1, buffer, sizeof(buffer));
-			Preference_AddBoss(client, buffer);
-		}
-		#endif
 		
 		while(results[1].MoreRows)
 		{

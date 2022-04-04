@@ -1599,8 +1599,13 @@ void Bosses_Create(int client, int special, int team)
 	
 	DHook_HookBoss(client);
 	Events_CheckAlivePlayers(_, false);
-	EnableSubplugins();
 	SDKHook_BossCreated(client);
+	
+	SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
+	SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
+	SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
+	
+	EnableSubplugins();
 	
 	int i = 1;
 	bool value = CvarSpecTeam.BoolValue;
@@ -2125,6 +2130,10 @@ void Bosses_Remove(int client)
 		
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
+		
+		SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
+		SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
+		SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
 		
 		if(!Enabled)
 		{
