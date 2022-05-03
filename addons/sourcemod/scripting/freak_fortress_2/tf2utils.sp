@@ -10,6 +10,8 @@
 
 #tryinclude <tf2utils>
 
+#pragma semicolon 1
+
 #define TF2U_LIBRARY	"nosoop_tf2utils"
 
 #if defined __nosoop_tf2_utils_included
@@ -48,7 +50,7 @@ stock void TF2U_LibraryRemoved(const char[] name)
 	#endif
 }
 
-bool TF2U_GetWearable(int client, int &entity, int &index)
+stock bool TF2U_GetWearable(int client, int &entity, int &index)
 {
 	/*#if defined __nosoop_tf2_utils_included
 	if(Loaded)
@@ -94,7 +96,7 @@ bool TF2U_GetWearable(int client, int &entity, int &index)
 	return false;
 }
 
-int TF2U_GetMaxOverheal(int client)
+stock int TF2U_GetMaxOverheal(int client)
 {
 	if(Client(client).IsBoss)
 		return Client(client).MaxHealth * Client(client).MaxLives;

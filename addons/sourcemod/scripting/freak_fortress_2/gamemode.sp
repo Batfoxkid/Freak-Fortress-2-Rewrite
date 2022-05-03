@@ -11,6 +11,8 @@
 	void Gamemode_PlayerRunCmd(int client)
 */
 
+#pragma semicolon 1
+
 static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
@@ -111,7 +113,7 @@ void Gamemode_RoundSetup()
 					{
 						if(!Client(blu[i]).IsBoss)
 						{
-							Bosses_Create(blu[i], Preference_PickBoss(blu[i], TFTeam_Blue), TFTeam_Blue);
+							Bosses_CreateFromSpecial(blu[i], Preference_PickBoss(blu[i], TFTeam_Blue), TFTeam_Blue);
 							Client(blu[i]).Queue = 0;
 						}
 					}
@@ -120,7 +122,7 @@ void Gamemode_RoundSetup()
 					{
 						if(!Client(red[i]).IsBoss)
 						{
-							Bosses_Create(red[i], Preference_PickBoss(red[i], TFTeam_Red), TFTeam_Red);
+							Bosses_CreateFromSpecial(red[i], Preference_PickBoss(red[i], TFTeam_Red), TFTeam_Red);
 							Client(red[i]).Queue = 0;
 						}
 					}
@@ -153,7 +155,7 @@ void Gamemode_RoundSetup()
 							}
 						}
 						
-						Bosses_Create(boss[0], special, team);
+						Bosses_CreateFromSpecial(boss[0], special, team);
 						Client(boss[0]).Queue = 0;
 					}
 					else

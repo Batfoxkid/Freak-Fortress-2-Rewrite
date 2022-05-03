@@ -2,12 +2,18 @@
 	void Native_PluginLoad()
 */
 
+#pragma semicolon 1
+
 void Native_PluginLoad()
 {
 	CreateNative("FF2R_GetBossData", Native_GetBossData);
 	CreateNative("FF2R_SetBossData", Native_SetBossData);
 	CreateNative("FF2R_EmitBossSound", Native_EmitBossSound);
 	CreateNative("FF2R_DoBossSlot", Native_DoBossSlot);
+	CreateNative("FF2R_GetSpecialData", Native_GetSpecialData);
+	CreateNative("FF2R_CreateBoss", Native_CreateBoss);
+	CreateNative("FF2R_GetClientMinion", Native_GetClientMinion);
+	CreateNative("FF2R_SetClientMinion", Native_SetClientMinion);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -15,8 +21,8 @@ void Native_PluginLoad()
 public any Native_GetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients || !IsClientInGame(client))
-		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not in-game", client);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
 	
 	return Client(client).Cfg;
 }
@@ -24,30 +30,45 @@ public any Native_GetBossData(Handle plugin, int params)
 public any Native_SetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients || !IsClientInGame(client))
-		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not in-game", client);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
 	
-	if(Client(client).Cfg)
-		DeleteCfg(Client(client).Cfg);
+	ConfigMap cfg;
+	bool forwards = true;
 	
-	// SourcePawn Bug!!
-	//Client(client).Cfg = params > 1 ? GetNativeCell(2) : null;
-	if(params > 1)
+	if(params > 2)
 	{
-		Client(client).Cfg = GetNativeCell(2);
+		cfg = GetNativeCell(2);
+		if(cfg)
+			cfg = cfg.Clone(ThisPlugin);
+		
+		forwards = GetNativeCell(3);
 	}
 	else
 	{
-		Client(client).Cfg = null;
+		forwards = GetNativeCell(2);
 	}
+	
+	if(Client(client).Cfg)
+	{
+		if(forwards)
+			Forward_OnBossRemoved(client);
+		
+		DeleteCfg(Client(client).Cfg);
+	}
+	
+	Client(client).Cfg = cfg;
+	if(forwards)
+		Forward_OnBossCreated(client, cfg, GetRoundStatus() == 1);
+	
 	return 0;
 }
 
 public any Native_EmitBossSound(Handle plugin, int params)
 {
 	int boss = GetNativeCell(4);
-	if(boss < 0 || boss > MaxClients || !Client(boss).Cfg)
-		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not a boss", boss);
+	if(boss < 1 || boss > MaxClients || !Client(boss).Cfg)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not a boss", boss);
 	
 	int amount = GetNativeCell(2);
 	int[] clients = new int[amount];
@@ -72,8 +93,8 @@ public any Native_EmitBossSound(Handle plugin, int params)
 public any Native_DoBossSlot(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients || !Client(client).Cfg)
-		return ThrowNativeError(SP_ERROR_INDEX, "Client index %d is not a boss", client);
+	if(client < 1 || client > MaxClients || !Client(client).Cfg)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not a boss", client);
 	
 	int low = GetNativeCell(2);
 	int high = GetNativeCell(3);
@@ -81,5 +102,49 @@ public any Native_DoBossSlot(Handle plugin, int params)
 		high = low;
 	
 	Bosses_UseSlot(client, low, high);
+	return 0;
+}
+
+public any Native_GetSpecialData(Handle plugin, int params)
+{
+	return Bosses_GetConfig(GetNativeCell(1));
+}
+
+public any Native_CreateBoss(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	if(params > 2)
+	{
+		ConfigMap cfg = GetNativeCell(2);
+		if(cfg)
+		{
+			Bosses_CreateFromConfig(client, cfg, GetNativeCell(3));
+			return 0;
+		}
+	}
+	
+	Bosses_Remove(client);
+	return 0;
+}
+
+public any Native_GetClientMinion(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	return Client(client).Minion;
+}
+
+public any Native_SetClientMinion(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	Client(client).Minion = GetNativeCell(2);
 	return 0;
 }

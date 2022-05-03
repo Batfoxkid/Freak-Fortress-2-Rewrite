@@ -64,8 +64,6 @@
 		"plugin_name"	"ff2r_menu_abilities"
 */
 
-#pragma semicolon 1
-
 #include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
@@ -73,6 +71,7 @@
 #include <cfgmap>
 #include <ff2r>
 
+#pragma semicolon 1
 #pragma newdecls required
 
 #include "freak_fortress_2/formula_parser.sp"
@@ -83,7 +82,6 @@
 
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
-#define NOPE_AVI		"vo/engineer_no01.mp3"
 
 #define MAG_MAGIC		0x0001	// Can be blocked by sapper effect
 #define MAG_MIND		0x0002	// Can't be blocked by stun effects

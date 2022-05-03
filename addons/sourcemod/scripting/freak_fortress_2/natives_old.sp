@@ -2,6 +2,8 @@
 	void NativeOld_PluginLoad()
 */
 
+#pragma semicolon 1
+
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
 #define FF2FLAG_CLASSTIMERDISABLED 		(1<<3)		//Used to prevent clients' timer
@@ -194,7 +196,7 @@ public any NativeOld_GetName(Handle plugin, int params)
 	
 	int lang = GetNativeCell(5);
 	if(lang < 0 || lang > MaxClients || !IsClientInGame(lang))
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", lang);
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", lang);
 	
 	lang = lang ? GetClientLanguage(lang) : GetServerLanguage();
 	
@@ -545,7 +547,7 @@ public any NativeOld_GetFF2flags(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	int flags = FF2FLAG_USEBOSSTIMER|FF2FLAG_CLASSHELPED|FF2FLAG_HASONGIVED;
 	
@@ -598,7 +600,7 @@ public any NativeOld_SetFF2flags(Handle plugin, int params)
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
 	{
-		ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	}
 	else
 	{
@@ -628,7 +630,7 @@ public any NativeOld_GetQueuePoints(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	return Client(client).Queue;
 }
@@ -638,7 +640,7 @@ public any NativeOld_SetQueuePoints(Handle plugin, int params)
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
 	{
-		ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	}
 	else
 	{
@@ -654,7 +656,7 @@ public any NativeOld_GetSpecialKV(Handle plugin, int params)
 	if(index != -1)
 	{
 		if(index < -1)
-			return ThrowNativeError(SP_ERROR_INDEX, "Invalid index %d", index);
+			return ThrowNativeError(SP_ERROR_NATIVE, "Invalid index %d", index);
 		
 		ConfigMap cfg;
 		if(params < 2 || GetNativeCell(2))
@@ -711,7 +713,7 @@ public any NativeOld_StartMusic(Handle plugin, int params)
 	}
 	else if(client > MaxClients)
 	{
-		ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	}
 	else if(!IsClientInGame(client))
 	{
@@ -740,7 +742,7 @@ public any NativeOld_StopMusic(Handle plugin, int params)
 	}
 	else if(client > MaxClients)
 	{
-		ThrowNativeError(SP_ERROR_INDEX, "Invalid client index %d", client);
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	}
 	else if(!IsClientInGame(client))
 	{
@@ -976,7 +978,7 @@ public any NativeOld_MakeBoss(Handle plugin, int params)
 			if(special < 0)
 				special = Preference_PickBoss(client, team);
 			
-			Bosses_Create(client, special, team);
+			Bosses_CreateFromSpecial(client, special, team);
 			Client(client).Index = boss;
 		}
 	}
@@ -1062,7 +1064,7 @@ public any NativeOld_FF2Data(Handle plugin, int params)
 {
 	int boss = GetNativeCell(1);
 	if(boss < 0 || boss > 12)
-		return ThrowNativeError(SP_ERROR_INDEX, "Invalid index %d", boss);
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid index %d", boss);
 	
 	GetNativeString(3, AbilityCache[boss], sizeof(AbilityCache[]));
 	GetNativeString(2, PluginCache[boss], sizeof(PluginCache[]));

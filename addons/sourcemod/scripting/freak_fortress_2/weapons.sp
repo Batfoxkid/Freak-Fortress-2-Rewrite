@@ -14,6 +14,8 @@
 #tryinclude <cwx>
 #tryinclude <tf_custom_attributes>
 
+#pragma semicolon 1
+
 #define CWX_LIBRARY		"cwx"
 #define TCA_LIBRARY		"tf2custattr"
 #define FILE_WEAPONS	"data/freak_fortress_2/weapons.cfg"
@@ -408,6 +410,8 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 				}
 			}
 		}
+		
+		delete kv;
 	}
 	#endif
 }

@@ -10,6 +10,8 @@
 	void Forward_OnBossPrecached(ConfigMap cfg, bool precache, int index)
 */
 
+#pragma semicolon 1
+
 static GlobalForward BossCreated;
 static GlobalForward BossRemoved;
 static GlobalForward AbilityPre;

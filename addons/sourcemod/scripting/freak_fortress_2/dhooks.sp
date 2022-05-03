@@ -10,6 +10,8 @@
 	Address DHook_GetGameStats()
 */
 
+#pragma semicolon 1
+
 static DynamicHook ChangeTeam;
 static DynamicHook ForceRespawn;
 static DynamicHook RoundRespawn;

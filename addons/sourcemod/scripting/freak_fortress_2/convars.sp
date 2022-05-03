@@ -4,6 +4,8 @@
 	void ConVar_Disable()
 */
 
+#pragma semicolon 1
+
 enum struct CvarInfo
 {
 	ConVar cvar;

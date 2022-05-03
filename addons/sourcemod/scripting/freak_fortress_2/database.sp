@@ -5,6 +5,8 @@
 	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
 */
 
+#pragma semicolon 1
+
 #define DATABASE			"ff2"
 #define DATATABLE_GENERAL	"ff2_data_v1"
 #define DATATABLE_LISTING	"ff2_listing_v1"

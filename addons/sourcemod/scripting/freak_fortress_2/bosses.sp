@@ -11,7 +11,8 @@
 	bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
 	int Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
 	int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
-	void Bosses_Create(int client, int special, int team)
+	void Bosses_CreateFromSpecial(int client, int special, int team)
+	void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	void Bosses_SetHealth(int client, int players)
 	void Bosses_Equip(int client)
 	void Bosses_UpdateHealth(int client)
@@ -32,6 +33,8 @@
 	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 */
+
+#pragma semicolon 1
 
 static ArrayList BossList;
 static ArrayList PackList;
@@ -162,7 +165,7 @@ public Action Bosses_MakeBossCmd(int client, int args)
 							continue;
 					}
 					
-					Bosses_Create(target[i], special2, team2);
+					Bosses_CreateFromSpecial(target[i], special2, team2);
 					LogAction(client, target[i], "\"%L\" made \"%L\" a boss", client, target[i]);
 				}
 			}
@@ -1430,9 +1433,9 @@ int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, 
 		if(lang != -1)
 			GetLanguageInfo(lang, language, sizeof(language));
 		
+		bool found;
 		for(int i; i < length; i++)
 		{
-			bool found;
 			ConfigMap cfg = BossList.Get(i);
 			if(!enabled || (cfg.GetBool("enabled", found) && found))
 			{
@@ -1561,12 +1564,23 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -
 	return strlen(buffer);
 }
 
-void Bosses_Create(int client, int special, int team)
+void Bosses_CreateFromSpecial(int client, int special, int team)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
 		return;
 	
+	char buffer[128];
+	cfg.Get("filename", buffer, sizeof(buffer));
+	Client(client).SetLastPlayed(buffer);
+	
+	Bosses_CreateFromConfig(client, cfg, team);
+	
+	Client(client).Cfg.SetInt("special", special);
+}
+
+void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
+{
 	if(Client(client).Index < 0)
 	{
 		for(int i; ; i++)
@@ -1579,12 +1593,6 @@ void Bosses_Create(int client, int special, int team)
 		}
 	}
 	
-	Debug("%N %d", client, Client(client).Index);
-	
-	char buffer[512];
-	cfg.Get("filename", buffer, sizeof(buffer));
-	Client(client).SetLastPlayed(buffer);
-	
 	if(Client(client).Cfg)
 	{
 		Forward_OnBossRemoved(client);
@@ -1592,7 +1600,6 @@ void Bosses_Create(int client, int special, int team)
 	}
 	
 	Client(client).Cfg = cfg.Clone(ThisPlugin);
-	Client(client).Cfg.SetInt("special", special);
 	
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);
@@ -1632,6 +1639,7 @@ void Bosses_Create(int client, int special, int team)
 			Client(client).Cfg.SetInt("healing", CvarBossHealing.IntValue);
 	}
 	
+	char buffer[512];
 	bool active = GetRoundStatus() == 1;
 	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
@@ -1655,7 +1663,7 @@ void Bosses_Create(int client, int special, int team)
 		
 		if(count)
 		{
-			Bosses_Create(players[GetRandomInt(0, count - 1)], i, team);
+			Bosses_CreateFromSpecial(players[GetRandomInt(0, count - 1)], i, team);
 		}
 		else
 		{
@@ -1835,7 +1843,7 @@ static void EquipBoss(int client, bool weapons)
 					
 					kills = -1;
 					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
-						kills = GetRandomInt(0, 20);
+						kills = GetURandomInt() % 21;
 					
 					if(kills >= 0)
 						kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
@@ -1882,7 +1890,6 @@ static void EquipBoss(int client, bool weapons)
 					int entity = -1;
 					if(wearable)
 					{
-						PrintToServer(classname);
 						entity = CreateEntityByName(classname);
 						if(IsValidEntity(entity))
 						{
@@ -1898,12 +1905,11 @@ static void EquipBoss(int client, bool weapons)
 						else
 						{
 							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Invalid classname '%s' for %s", classname, buffer);
+							LogError("[Boss] Invalid classname '%s' for '%s'", classname, buffer);
 						}
 					}
 					else
 					{
-						PrintToServer(classname);
 						Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
 						TF2Items_SetClassname(item, classname);
 						TF2Items_SetItemIndex(item, index);
@@ -1920,8 +1926,7 @@ static void EquipBoss(int client, bool weapons)
 							else
 							{
 								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-								LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
-								continue;
+								LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
 							}
 						}
 						
@@ -1950,11 +1955,11 @@ static void EquipBoss(int client, bool weapons)
 							else
 							{
 								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-								LogError("[Boss] Bad weapon attribute passed for %s on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+								LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
 							}
 						}
 						
-						if(kills != -1)
+						if(kills >= 0)
 						{
 							TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
 							if(wearable)
@@ -1977,13 +1982,14 @@ static void EquipBoss(int client, bool weapons)
 							{
 								for(level = 0; level < 4; level++)
 								{
-									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level!=3, _, level);
+									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
 								}
 							}
 							else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
 							{
 								SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
 								SetEntProp(entity, Prop_Data, "m_iSubType", 3);
+								
 								for(level = 0; level < 4; level++)
 								{
 									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
@@ -2011,6 +2017,11 @@ static void EquipBoss(int client, bool weapons)
 							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
 							SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
 						}
+						
+						level = 255;
+						index = 255;
+						kills = 255;
+						count = 255;
 						
 						override = view_as<bool>(cfg.GetInt("alpha", level));
 						override = (cfg.GetInt("red", index) || override);
@@ -2211,7 +2222,8 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 					buffer[1] = 0;
 				}
 				
-				if(Client(client).RageDamage < 99999.0)
+				float ragedamage = Client(client).RageDamage;
+				if(ragedamage >= 0.0 && ragedamage < 99999.0)
 				{
 					float rage = Client(client).GetCharge(0);
 					float ragemin = Client(client).RageMin;

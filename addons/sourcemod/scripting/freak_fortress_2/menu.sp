@@ -5,6 +5,8 @@
 	void Menu_MainMenu(int client)
 */
 
+#pragma semicolon 1
+
 static bool InMainMenu[MAXTF2PLAYERS];
 
 void Menu_PluginStart()

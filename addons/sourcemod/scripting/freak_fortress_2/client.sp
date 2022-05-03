@@ -48,6 +48,8 @@
 	void ResetByAll()
 */
 
+#pragma semicolon 1
+
 static ConfigMap BossMap[MAXTF2PLAYERS] = {null, ...};
 static int Queue[MAXTF2PLAYERS];
 static bool NoMusic[MAXTF2PLAYERS];

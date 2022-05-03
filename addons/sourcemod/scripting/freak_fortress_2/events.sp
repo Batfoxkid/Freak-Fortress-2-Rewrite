@@ -4,6 +4,8 @@
 	void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
 */
 
+#pragma semicolon 1
+
 static bool FirstBlood;
 static bool LastMann;
 static Handle YourHud;

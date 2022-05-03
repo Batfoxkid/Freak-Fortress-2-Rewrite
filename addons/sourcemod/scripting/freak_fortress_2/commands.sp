@@ -2,6 +2,8 @@
 	void Command_PluginStart()
 */
 
+#pragma semicolon 1
+
 void Command_PluginStart()
 {
 	AddCommandListener(Command_Voicemenu, "voicemenu");
@@ -26,7 +28,7 @@ public Action Command_Voicemenu(int client, const char[] command, int args)
 			if(arg[0] == '0')
 			{
 				float rageDamage = Client(client).RageDamage;
-				if(rageDamage < 99999.0)
+				if(rageDamage >= 0.0 && rageDamage < 99999.0)
 				{
 					int rageType = Client(client).RageMode;
 					if(rageType != 2)

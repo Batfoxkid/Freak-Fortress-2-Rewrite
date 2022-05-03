@@ -13,6 +13,8 @@
 	bool ForwardOld_OnMusicPerBoss(int client)
 */
 
+#pragma semicolon 1
+
 static GlobalForward PreAbility;
 static GlobalForward OnAbility;
 static GlobalForward OnMusic;

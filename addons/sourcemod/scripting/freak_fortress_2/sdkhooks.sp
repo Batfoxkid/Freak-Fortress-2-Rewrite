@@ -6,6 +6,8 @@
 	void SDKHook_BossCreated(int client)
 */
 
+#pragma semicolon 1
+
 #tryinclude <tf_ontakedamage>
 
 #define OTD_LIBRARY		"tf_ontakedamage"

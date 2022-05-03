@@ -8,6 +8,8 @@
 	void SDKCall_ChangeClientTeam(int client, int newTeam)
 */
 
+#pragma semicolon 1
+
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
 static Handle SDKTeamAddPlayer;

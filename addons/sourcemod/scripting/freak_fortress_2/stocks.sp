@@ -34,6 +34,8 @@
 	int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
 */
 
+#pragma semicolon 1
+
 void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
 {
 	static const char Prefixes[][] = { "ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony" };
@@ -103,7 +105,7 @@ TFClassType GetClassOfName(const char[] buffer)
 
 void GetClassWeaponClassname(TFClassType class, char[] name, int length)
 {
-	if(StrEqual(name, "saxxy"))
+	if(!StrContains(name, "saxxy"))
 	{ 
 		switch(class)
 		{
@@ -850,7 +852,7 @@ stock void FPrintToChat(int client, const char[] message, any ...)
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
-	Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
+	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
 	VFormat(buffer2, sizeof(buffer2), buffer, 3);
 	CReplaceColorCodes(buffer2);
 	CSendMessage(client, buffer2);
@@ -861,7 +863,7 @@ stock void FPrintToChatEx(int client, int author, const char[] message, any ...)
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
-	Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
+	Format(buffer, sizeof(buffer), "\x01%ts", "Prefix", message);
 	VFormat(buffer2, sizeof(buffer2), buffer, 4);
 	CReplaceColorCodes(buffer2, author);
 	CSendMessage(client, buffer2, author);
@@ -880,7 +882,7 @@ stock void FPrintToChatAll(const char[] message, any ...)
 		}
 		
 		SetGlobalTransTarget(i);
-		Format(buffer, sizeof(buffer), "\x01{olive}[FF2]{default} %s", message);
+		Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
 		VFormat(buffer2, sizeof(buffer2), buffer, 2);
 		CReplaceColorCodes(buffer2);
 		CSendMessage(i, buffer2);
@@ -908,7 +910,7 @@ stock void FShowActivity(int client, const char[] message, any ...)
 	char buffer[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
 	VFormat(buffer, sizeof(buffer), message, 3);
-	CShowActivity2(client, "\x01{olive}[FF2]{default} ", buffer);
+	CShowActivity2(client, "\x01%t%s", "Prefix", buffer);
 }
 
 stock void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")

@@ -4,6 +4,8 @@
 	bool Configs_CheckMap(const char[] mapname)
 */
 
+#pragma semicolon 1
+
 #define FILE_MAPS	"data/freak_fortress_2/maps.cfg"
 
 static bool VotedPack;

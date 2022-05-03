@@ -340,6 +340,28 @@ methodmap ConfigMap < StringMap {
 		}
 		return null;
 	}
+	
+	/**
+	 *
+	 * name:      SetSection
+	 * @param     key_path : key path to the data you need.
+	 * @return    ConfigMap subsection if successful, null otherwise.
+	 */
+	public ConfigMap SetSection(const char[] key_path) {
+		if( this==null ) {
+			return null;
+		}
+		
+		this.SetVal(key_path, .val_size = -1);
+		
+		// TODO: Get this to work with subsections
+		PackVal val;
+		val.tag = KeyValType_Section;
+		val.cfg = view_as< ConfigMap >(new StringMap());
+		val.size = sizeof(val.cfg);
+		this.SetArray(key_path, val, sizeof(val));
+		return val.cfg;
+	}
 
 	/**
 	 *

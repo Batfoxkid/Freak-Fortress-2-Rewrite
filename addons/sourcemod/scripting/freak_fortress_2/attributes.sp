@@ -8,6 +8,8 @@
 	bool Attributes_GetByDefIndex(int entity, int index, float &value)
 */
 
+#pragma semicolon 1
+
 static float JarateDamage[MAXTF2PLAYERS];
 static int JarateApplyer[MAXTF2PLAYERS];
 static float MarkDamage[MAXTF2PLAYERS];

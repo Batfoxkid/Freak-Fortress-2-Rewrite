@@ -45,9 +45,34 @@ native void FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
 native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0);
 
 /**
+ * Gets if a player is considered a minion which ignores weapon changes and players alive count
+ * 
+ * @param client	Client index
+ * 
+ * @error			Invalid client index
+ * 
+ * @return			True if the player is a minion, false otherwise
+ */
+native bool FF2R_GetClientMinion(int client);
+
+/**
+ * Sets if a player is considered a minion which ignores weapon changes and players alive count
+ * 
+ * @note			Minion status is removed when a player dies
+ * 
+ * @param client	Client index
+ * @param value		If the player is a minion
+ * 
+ * @error			Invalid client index or client is not in game
+ * 
+ * @noreturn
+ */
+native void FF2R_SetClientMinion(int client, bool value);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
- * @note	Players counted as minions aren't counted
+ * @note		Players counted as minions aren't counted
  *
  * @param alive	Array of players alive on team number
  * @param total	Array of total players on team number
@@ -59,7 +84,7 @@ forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
 /**
  * Called when a player spawns, dies, disconnects, etc.
  * 
- * @note	Players counted as minions aren't counted
+ * @note		Players counted as minions aren't counted
  *
  * @param alive	Array of players alive on team number
  * @param total	Array of total players on team number
@@ -200,6 +225,11 @@ methodmap ConfigData < ConfigMap
 		view_as<ConfigMap>(this).SetInt(key, value ? 1 : 0);
 	}
 	
+	public ConfigData SetSection(const char[] key)
+	{
+		return view_as<ConfigData>(view_as<ConfigMap>(this).SetSection(key));
+	}
+	
 	public void Remove(const char[] key)
 	{
 		view_as<ConfigMap>(this).DeleteSection(key);
@@ -210,6 +240,9 @@ methodmap AbilityData < ConfigData
 {
 	public bool IsMyPlugin()
 	{
+		if(!this)
+			return false;
+		
 		char plugin[64];
 		if(this.GetString("plugin_name", plugin, sizeof(plugin), ""))
 		{
@@ -264,15 +297,32 @@ native BossData FF2R_GetBossData(int client);
  * Changes primary handle the boss uses
  * 
  * @note			The previous handle the boss contains will be closed
+ * @note			Handle input is cloned and calling plugin may still DeleteCfg when necessary
  * 
  * @param client	Client index
- * @param cfg		ConfigMap handle, can be null to remove boss
+ * @param cfg		ConfigMap handle, can be null to remove boss 
+ * @param forwards	If to call FF2R_OnBossCreated and FF2R_OnBossRemoved respectively
  * 
- * @error			Invalid client index
+ * @error			Invalid client index or client is not in game
  * 
  * @noreturn
  */
-native void FF2R_SetBossData(int client, BossData cfg = null);
+native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards = false);
+
+/**
+ * Creates or removes a boss on a player
+ * 
+ * @note			Handle input is cloned and calling plugin may still DeleteCfg when necessary
+ * 
+ * @param client	Client index
+ * @param cfg		ConfigMap handle, can be null to remove boss 
+ * @param team		Team number the player is assigned to
+ * 
+ * @error			Invalid client index or client is not in game
+ * 
+ * @return			ConfigMap handle of created boss, null given on boss remove
+ */
+native BossData FF2R_CreateBoss(int client, ConfigMap cfg = null, int team = 0);
 
 /**
  * Called when an ability is about to be activated
@@ -282,7 +332,7 @@ native void FF2R_SetBossData(int client, BossData cfg = null);
  * @param result	True if the ability will activate, false otherwise
  * @param cfg		Boss's ConfigMap of the ability
  * 
- * @return		Plugin_Changed if result was changed, Plugin_Handled to ignore FF2_PreAbility, Plugin_Stop to stop the ability
+ * @return			Plugin_Changed if result was changed, Plugin_Handled to ignore FF2_PreAbility, Plugin_Stop to stop the ability
  */
 forward Action FF2R_OnAbilityPre(int client, const char[] ability, AbilityData cfg, bool &result);
 
@@ -345,7 +395,9 @@ forward void FF2R_OnBossPrecached(BossData cfg, bool enabled, int index);
 #else
 
 native bool FF2R_GetBossData(int client);
-native void FF2R_SetBossData(int client);
+native void FF2R_SetBossData(int client, bool forwards = true);
+native bool FF2R_GetSpecialData(int special);
+native bool FF2R_CreateBoss(int client);
 //forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
 forward void FF2R_OnAbility(int client, const char[] ability);
 forward void FF2R_OnAbilityPost(int client, const char[] ability);
@@ -373,5 +425,7 @@ public void __pl_ff2r_SetNTVOptional()
 	MarkNativeAsOptional("FF2R_EmitBossSound");
 	MarkNativeAsOptional("FF2R_GetBossData");
 	MarkNativeAsOptional("FF2R_SetBossData");
+	MarkNativeAsOptional("FF2R_GetSpecialData");
+	MarkNativeAsOptional("FF2R_CreateBoss");
 }
 #endif

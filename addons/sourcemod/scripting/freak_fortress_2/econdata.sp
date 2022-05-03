@@ -8,7 +8,9 @@
 	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 */
 
-#tryinclude <tf_econ_data > 
+#tryinclude <tf_econ_data> 
+
+#pragma semicolon 1
 
 #define TFED_LIBRARY	"tf_econ_data"
 

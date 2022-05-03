@@ -1,5 +1,9 @@
 "Phrases"
 {
+	"Prefix"
+	{
+		"en"		"{olive}[FF2]{default} "
+	}
 	"Available Commands"
 	{
 		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines\n/ff2weapons - View Weapon Changes"
@@ -210,6 +214,10 @@
 	{
 		"en"		"Removed queued boss override"
 	}
+	"No Description"
+	{
+		"en"		"No Description"
+	}
 	
 	"Boss Selection Command"
 	{
@@ -265,6 +273,65 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"Create Team for {1}"
+	}
+	"Boss Party Menu"
+	{
+		"#format"	"{1:s}"
+		"en"		"FF2 Boss Party\n {1}\n "
+	}
+	"Boss Party Leave"
+	{
+		"en"		" \nLeave Party"
+	}
+	"Boss Party Blank"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1}: -"
+	}
+	"Boss Party Member"
+	{
+		"#format"	"{1:s},{2:N}"
+		"en"		"{1}: {2}"
+	}
+	"Boss Party Invite"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1}: - (Invite)"
+	}
+	"Boss Party Kick"
+	{
+		"#format"	"{1:s},{2:N}"
+		"en"		"{1}: {2} (Kick)"
+	}
+	"Party You Kicked"
+	{
+		"#format"	"{1:s}"
+		"en"		"{red}You were kicked from the party as {olive}{1}{red}."
+	}
+	"Party You Left"
+	{
+		"#format"	"{1:s}"
+		"en"		"You have left the party as {olive}{1}{default}."
+	}
+	"Party Member Joined"
+	{
+		"#format"	"{1:N},{2:s}"
+		"en"		"{olive}{1} {red}joined the party as {olive}{2}{red}."
+	}
+	"Party Member Kicked"
+	{
+		"#format"	"{1:N},{2:s}"
+		"en"		"{olive}{1} {red}was kicked from party as {olive}{2}{red}."
+	}
+	"Party Member Left"
+	{
+		"#format"	"{1:N},{2:s}"
+		"en"		"{olive}{1} {red}left the party as {olive}{2}{red}."
+	}
+	"Party Leader Left"
+	{
+		"#format"	"{1:N},{2:s},{3:N}"
+		"en"		"{olive}{1} {red}left the party as {olive}{2}{red}. {olive}{2} {red}now controls the party."
 	}
 	"Legacy Boss Menu Command"
 	{
@@ -336,6 +403,20 @@
 	"Music List"
 	{
 		"en"		"View Playlist"
+	}
+	
+	"Boss Solo Rage"
+	{
+		"#format"	"{1:s}"
+		"en"		"{teamcolor}{1}{default} used solo rage!"
+	}
+	"Boss Solo Rage Success"
+	{
+		"en"		"{blue}It's super effective!"
+	}
+	"Boss Solo Rage Failure"
+	{
+		"en"		"{red}It's not very effective..."
 	}
 	
 	"Weapon Menu"

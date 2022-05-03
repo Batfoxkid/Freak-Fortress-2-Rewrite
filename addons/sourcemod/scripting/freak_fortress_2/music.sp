@@ -13,6 +13,8 @@
 	void Music_MainMenu(int client)
 */
 
+#pragma semicolon 1
+
 enum struct MusicEnum
 {
 	int Special;
