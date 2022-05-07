@@ -1663,7 +1663,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 		int[] players = new int[MaxClients];
 		for(int player = 1; player <= MaxClients; player++)
 		{
-			if(player != client && IsClientInGame(player) && (!Enabled && GetClientTeam(player) == team) && !Client(player).IsBoss)
+			if(player != client && IsClientInGame(player) && (Enabled || GetClientTeam(player) == team) && !Client(player).IsBoss)
 				players[count++] = player;
 		}
 		

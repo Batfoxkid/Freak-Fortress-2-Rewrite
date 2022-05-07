@@ -442,7 +442,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									}
 									
 									static const char classnames[][] = {"custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
-									if(class >= sizeof(classnames))
+									if(view_as<int>(class) >= sizeof(classnames))
 										class = TFClass_Unknown;
 									
 									char buffer[20];

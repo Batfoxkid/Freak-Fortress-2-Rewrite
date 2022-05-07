@@ -237,8 +237,6 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 			
 			DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			
-			Preference_ClearGroups(client);
-			
 			tr = new Transaction();
 			
 			FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_LISTING ... " WHERE steamid = %d;", id);
