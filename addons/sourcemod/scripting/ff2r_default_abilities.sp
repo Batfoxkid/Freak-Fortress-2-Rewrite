@@ -269,6 +269,7 @@
 #include <ff2r>
 #include <tf2items>
 #include <tf2attributes>
+#undef REQUIRE_PLUGIN
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -276,7 +277,7 @@
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/tf2utils.sp"
 
-#define PLUGIN_VERSION	"Beta 5/2/2022"
+#define PLUGIN_VERSION	"Beta 5/7/2022"
 
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
@@ -297,7 +298,7 @@ bool CloneIdle[MAXTF2PLAYERS];
 Handle TimescaleTimer;
 float MatrixFor[MAXTF2PLAYERS];
 float MatrixDelay[MAXTF2PLAYERS];
-char MatrixName[MAXTF2PLAYERS];
+char MatrixName[MAXTF2PLAYERS][64];
 MoveType LastMoveType[MAXTF2PLAYERS];
 bool SpecialCharge[MAXTF2PLAYERS];
 
@@ -344,6 +345,8 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	LoadTranslations("ff2_rewrite.phrases");
+	
 	TF2U_PluginStart();
 	
 	CvarCheats = FindConVar("sv_cheats");
@@ -359,7 +362,13 @@ public void OnPluginStart()
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
+		{
 			OnClientPutInServer(client);
+			
+			BossData cfg = FF2R_GetBossData(client);
+			if(cfg)
+				FF2R_OnBossCreated(client, cfg, false);
+		}
 	}
 }
 
@@ -434,7 +443,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		bool attack2 = view_as<bool>(buttons & IN_ATTACK2);
 		bool reload = view_as<bool>(buttons & IN_RELOAD);
 		
-		if(!attack2 && !reload)
+		if(!(attack2 && reload))
 		{
 			if(attack2)
 			{
@@ -463,7 +472,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				AbilityData ability;
 				if(boss && (ability = boss.GetAbility(MatrixName[client])))
 				{
-					int alive = GetTotalPlayersAlive();
+					int team1 = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
+					int alive = GetTotalPlayersAlive(team1);
 					float timescale = CvarTimeScale.FloatValue;
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
@@ -494,10 +504,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 						int target = TR_GetEntityIndex(trace);
 						if(target > 0 && target <= MaxClients)
 						{
-							int team = GetClientTeam(target);
-							if(SpecTeam || team > view_as<int>(TFTeam_Spectator))
+							int team2 = GetClientTeam(target);
+							if(SpecTeam || team2 > view_as<int>(TFTeam_Spectator))
 							{
-								bool friendly = (!CvarFriendlyFire.BoolValue && GetClientTeam(client) == team);
+								bool friendly = (team1 == team2);
 								if(friendly || !IsInvuln(target))
 								{
 									GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
@@ -573,7 +583,7 @@ public void TF2_OnConditionAdded(int client, TFCond cond)
 					boss.GetString("slot", slot, sizeof(slot), "0");
 					float charge = GetBossCharge(boss, slot);
 					
-					int alive = GetTotalPlayersAlive();
+					int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 					
 					if(GetFormula(ability, "minimum", alive, 10.0) < charge && GetFormula(ability, "maximum", alive, 90.0) > charge)
 					{
@@ -659,20 +669,20 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	if(!StrContains(ability, "rage_stunsg", false))
 	{
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive()), Timer_RageStunSg, pack));
-		pack.WriteCell(GetClientUserId(client));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStunSg, pack));
+		pack.WriteCell(client);
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_stun", false))
 	{
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive()), Timer_RageStun, pack));
-		pack.WriteCell(GetClientUserId(client));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStun, pack));
+		pack.WriteCell(client);
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_uber", false))
 	{
-		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(), 5.0);
+		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 5.0);
 		
 		SpecialUber[client] = GetGameTime() + duration;
 		SetEntProp(client, Prop_Data, "m_takedamage", 0);
@@ -683,11 +693,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		char file[128];
 		cfg.GetString("path", file, sizeof(file));
 		
-		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(), 6.0);
+		int team = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
+		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
 		bool blind = cfg.GetBool("blind");
 		bool muffle = cfg.GetBool("muffle");
-		
-		int team = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
 		
 		int flags = GetCommandFlags("r_screenoverlay");
 		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
@@ -783,7 +792,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		
 		if(victims)
 		{
-			int alive = GetTotalPlayersAlive();
+			int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team1);
 			float stun = GetFormula(cfg, "stun", alive, 2.0);
 			if(stun > 0.0)
 			{
@@ -825,8 +834,8 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		SetEntityMoveType(client, MOVETYPE_NONE);
 		
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "initial", GetTotalPlayersAlive(), 0.15), Timer_RageExplosiveDance, pack));
-		pack.WriteCell(GetClientUserId(client));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "initial", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 0.15), Timer_RageExplosiveDance, pack));
+		pack.WriteCell(client);
 		pack.WriteString(ability);
 		pack.WriteCell(0);
 	}
@@ -883,7 +892,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				ability = boss.GetAbility("special_cbs_multimelee");
 				if(ability.IsMyPlugin())	// TODO: Change this for the "melee steal" ideaa
 				{
-					int index;
+					int index = -1;
 					StringMapSnapshot snap = ability.Snapshot();
 					if(snap)
 					{
@@ -896,7 +905,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 							char[] buffer = new char[length];
 							snap.GetKey(entry, buffer, length);
 							
-							index = ability.GetInt(buffer);
+							index = ability.GetInt(buffer, index);
 						}
 						
 						delete snap;
@@ -920,8 +929,10 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 									if(StrEqual(buffer, classname))
 									{
 										ConfigData cfg = boss.GetSection(buffer);
-										cfg.SetInt("index", index);
-										Rage_NewWeapon(attacker, boss.GetSection(buffer), buffer);
+										if(index != -1)
+											cfg.SetInt("index", index);
+										
+										Rage_NewWeapon(attacker, cfg, buffer);
 										break;
 									}
 								}
@@ -939,7 +950,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					ability.GetString("model", model, sizeof(model), "error.mdl");
 					
 					if(ability.GetBool("remove ragdolls"))
-						CreateTimer(0.05, Timer_DissolveRagdoll, userid, TIMER_FLAG_NO_MAPCHANGE);
+						CreateTimer(0.05, Timer_RemoveRagdoll, userid, TIMER_FLAG_NO_MAPCHANGE);
 					
 					int entity = CreateEntityByName("prop_physics_override");
 					if(IsValidEntity(entity))
@@ -955,10 +966,10 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						pos[2] += 20;
 						TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
 						
-						float duration = GetFormula(ability, "duration", GetTotalPlayersAlive(), 0.0);
+						float duration = GetFormula(ability, "duration", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(attacker)), 0.0);
 						if(duration > 0.5)
 						{
-							FormatEx(model, sizeof(model), "OnUser1 !self:Kill::%f:1,0,1", duration);
+							FormatEx(model, sizeof(model), "OnUser1 !self:Kill::%.1f:1", duration);
 							SetVariantString(model);
 							AcceptEntityInput(entity, "AddOutput");
 							AcceptEntityInput(entity, "FireUser1");
@@ -1080,7 +1091,10 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 	AbilityData cfg = boss.GetAbility(buffer);
 	if(cfg.IsMyPlugin())
 	{
-		int alive = GetTotalPlayersAlive();
+		int team = GetClientTeam(client);
+		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
+		int alive = GetTotalPlayersAlive(friendly ? -1 : team);
+		
 		float duration = GetFormula(cfg, "duration", alive, 5.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
 		distance *= distance;
@@ -1089,7 +1103,6 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		float slowdown = GetFormula(cfg, "slowdown", alive, 0.34);
 		bool sound = cfg.GetBool("sound");
 		int uber = cfg.GetInt("uber");
-		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
 		bool basejumper = cfg.GetBool("basejumper");
 		float maxduration = GetFormula(cfg, "max", alive, duration);
 		float addduration = GetFormula(cfg, "add", alive, 0.0);
@@ -1100,7 +1113,6 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
-		int team = GetClientTeam(client);
 		
 		int victims;
 		int[] victim = new int[MaxClients - 1];
@@ -1141,6 +1153,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		else if(victims == 1)
 		{
 			duration = soloduration;
+			SoloVictim[victim[0]] = true;
 			
 			for(int target = 1; target <= MaxClients; target++)
 			{
@@ -1189,7 +1202,10 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 	AbilityData cfg = boss.GetAbility(buffer);
 	if(cfg.IsMyPlugin())
 	{
-		int alive = GetTotalPlayersAlive();
+		int team = GetClientTeam(client);
+		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
+		int alive = GetTotalPlayersAlive(friendly ? -1 : team);
+		
 		float duration = GetFormula(cfg, "duration", alive, 7.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
 		distance *= distance;
@@ -1199,7 +1215,6 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 		float rockets = GetFormula(cfg, "rocket", alive, 0.4);
 		
 		int buildings = cfg.GetInt("building", 1);
-		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
 		
 		float maxduration = GetFormula(cfg, "max", alive, duration);
 		float addduration = GetFormula(cfg, "add", alive, 0.0);
@@ -1210,7 +1225,6 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
-		int team = GetClientTeam(client);
 		
 		int victims;
 		int[] victim = new int[MaxClients - 1];
@@ -1328,7 +1342,7 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	int flags = GetCommandFlags("r_screenoverlay");
 	SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
 	
-	float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(), 6.0);
+	float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
 	bool more = cfg.GetInt("count", 12) > phase;
 	int blind = cfg.GetInt("blind");
 	int muffle = cfg.GetInt("muffle", 1);
@@ -1384,7 +1398,9 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 {
 	static char classname[36], attributes[2048];
-	cfg.GetString("classname", classname, sizeof(classname));
+	if(!cfg.GetString("classname", classname, sizeof(classname)))
+		cfg.GetString("name", classname, sizeof(classname), ability);
+	
 	cfg.GetString("attributes", attributes, sizeof(attributes));
 	
 	GetClassWeaponClassname(TF2_GetPlayerClass(client), classname, sizeof(classname));
@@ -1421,7 +1437,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	if(count % 2)
 		count--;
 	
-	int alive = GetTotalPlayersAlive();
+	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	int attribs;
 	int entity = -1;
 	if(wearable)
@@ -1534,7 +1550,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			{
 				kills = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
 				if(kills >= 0)
-					SetEntProp(client, Prop_Data, "m_iAmmo", level, _, kills);
+					SetEntProp(client, Prop_Data, "m_iAmmo", index, _, kills);
 			}
 		}
 		
@@ -1582,7 +1598,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			}
 			else
 			{
-				ClientCommand(client, "use %s", classname);
+				FakeClientCommand(client, "use %s", classname);
 			}
 		}
 	}
@@ -1590,13 +1606,12 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 
 void Rage_CloneAttack(int client, ConfigData cfg)
 {
-	int amount = RoundToCeil(GetFormula(cfg, "amount", GetTotalPlayersAlive(), 1.0));
+	int team = GetClientTeam(client);
+	int amount = RoundToCeil(GetFormula(cfg, "amount", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team), 1.0));
 	if(amount > 0)
 	{
 		float pos[3];
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
-		
-		int team = GetClientTeam(client);
 		
 		int owner = cfg.GetBool("die on boss death", true) ? client : -1;
 		ConfigData minion = cfg.GetSection("character");
@@ -1732,12 +1747,17 @@ public Action CloneTakeDamage(int victim, int &attacker, int &inflictor, float &
 
 void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 {
-	int alive = GetTotalPlayersAlive();
+	int team = GetClientTeam(client);
+	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team);
 	float timescale = GetFormula(cfg, "timescale", alive, 0.1);
 	if(timescale <= 0.0)
 		timescale = 1.0;
 	
 	float duration = GetFormula(cfg, "duration", alive, 2.0) * timescale;
+	
+	char particle[48];
+	if(cfg.GetString("particle", particle, sizeof(particle), team % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
+		AttachParticle(client, particle, duration);
 	
 	float gameTime = GetGameTime();
 	MatrixFor[client] = gameTime + duration;
@@ -1821,7 +1841,7 @@ public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 
 void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int count)
 {
-	int alive = GetTotalPlayersAlive();
+	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	float damage = GetFormula(cfg, "damage", alive, 180.0);
 	float distance = GetFormula(cfg, "distance", alive, 350.0);
 	int magnitude = RoundFloat(GetFormula(cfg, "magnitude", alive, 280.0));
@@ -1829,7 +1849,7 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 	int amount = cfg.GetInt("amount", 5);
 	
 	if(count == 0 && cfg.GetBool("taunt", true))
-		ClientCommand(client, "+taunt");
+		FakeClientCommand(client, "taunt");
 	
 	bool ground = view_as<bool>(GetEntityFlags(client) & FL_ONGROUND);
 	
@@ -1868,8 +1888,8 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 	if(cfg.GetInt("count", 35) > count)
 	{
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", count, 0.12), Timer_RageTradeSpam, pack));
-		pack.WriteCell(GetClientUserId(client));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", count, 0.12), Timer_RageExplosiveDance, pack));
+		pack.WriteCell(client);
 		pack.WriteString(ability);
 		pack.WriteCell(count + 1);
 	}
@@ -1904,7 +1924,7 @@ void SpawnManyObjects(int client, ConfigData cfg)
 	char model[128];
 	cfg.GetString("model", model, sizeof(model), "error.mdl");
 	
-	int alive = GetTotalPlayersAlive();
+	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	int skin = cfg.GetInt("skin");
 	int amount = RoundFloat(GetFormula(cfg, "amount", alive, 14.0));
 	float distance = GetFormula(cfg, "distance", alive, 30.0);
@@ -2026,11 +2046,14 @@ public Action Timer_RemoveRagdoll(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
-int GetTotalPlayersAlive()
+int GetTotalPlayersAlive(int team = -1)
 {
-	int amount = PlayersAlive[2] + PlayersAlive[3];
-	if(SpecTeam)
-		amount += PlayersAlive[0] + PlayersAlive[1];
+	int amount;
+	for(int i = SpecTeam ? 0 : 2; i < sizeof(PlayersAlive); i++)
+	{
+		if(i != team)
+			amount += PlayersAlive[i];
+	}
 	
 	return amount;
 }
@@ -2163,23 +2186,24 @@ int AttachParticle(int entity, const char[] name, float lifetime)
 	{
 		float position[3];
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+		position[2] += 75.0;
 		TeleportEntity(particle, position, NULL_VECTOR, NULL_VECTOR);
 		
 		DispatchKeyValue(particle, "effect_name", name);
 		DispatchSpawn(particle);
 		
 		SetVariantString("!activator");
-		AcceptEntityInput(particle, "SetParent", particle, particle, 0);
+		AcceptEntityInput(particle, "SetParent", entity);
 		SetEntPropEnt(particle, Prop_Send, "m_hOwnerEntity", entity);
 		
 		ActivateEntity(particle);
 		AcceptEntityInput(particle, "start");
 		
 		char buffer[64];
-		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%f:1", lifetime);
+		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
 		SetVariantString(buffer);
-		AcceptEntityInput(entity, "AddOutput");
-		AcceptEntityInput(entity, "FireUser1");
+		AcceptEntityInput(particle, "AddOutput");
+		AcceptEntityInput(particle, "FireUser1");
 	}
 	return particle;
 }

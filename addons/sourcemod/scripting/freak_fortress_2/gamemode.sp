@@ -549,7 +549,7 @@ void Gamemode_RoundEnd(int winteam)
 					if(teamName[i])	// Team with a Name
 					{
 						Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left", "_s", buffer, totalHealth[i], totalMax[i]);
+						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", "_s", buffer, totalHealth[i], totalMax[i]);
 					}
 					else if(bosses[i] == 1)	// Solo Boss
 					{
@@ -564,7 +564,7 @@ void Gamemode_RoundEnd(int winteam)
 				}
 			}
 		}
-		else if(MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
+		else if(Enabled && MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
 		{
 			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
 			for(int a; a < total; a++)

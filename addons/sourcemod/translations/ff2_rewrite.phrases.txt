@@ -174,13 +174,12 @@
 	
 	"Target must be boss"
 	{
-		"#format"	"{1:t}"
 		"en"		"This command can only be used on Freak Fortress 2 boss players."
 	}
 	"Created Boss On"
 	{
 		"#format"	"{1:t}"
-		"en"		"Toggled being a boss on {2}."
+		"en"		"Toggled being a boss on {1}."
 	}
 	"Set Charge On"
 	{

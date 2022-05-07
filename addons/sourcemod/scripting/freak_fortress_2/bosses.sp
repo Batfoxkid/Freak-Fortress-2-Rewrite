@@ -816,12 +816,15 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								}
 							}
 							
-							if((!StrContains(section, "weapon") || !StrContains(section, "wearable")) && cfgsub.Get("name", buffer, sizeof(buffer)))
+							/*if(!StrContains(section, "weapon") || !StrContains(section, "wearable"))
 							{
 								cfgsub.DeleteSection("name");
 								cfg.Remove(section);
+								if(!cfgsub.Get("name", buffer, sizeof(buffer)))
+									strcopy(buffer, sizeof(buffer), "tf_wearable");
+								
 								cfg.SetArray(buffer, val, sizeof(val));
-							}
+							}*/
 						}
 						case Section_Sound:
 						{
@@ -1647,7 +1650,10 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	TF2_RegeneratePlayer(client);
 	
 	if(active)
+	{
+		Bosses_PlaySoundToAll(client, "sound_begin", _, _, _, _, _, 2.0);
 		Music_RoundStart();
+	}
 	
 	Forward_OnBossCreated(client, Client(client).Cfg, !active);
 	
@@ -1818,10 +1824,10 @@ static void EquipBoss(int client, bool weapons)
 						continue;
 					
 					if(StrContains(classname, "tf_") != 0 &&
-					  !StrEqual(classname, "saxxy") &&
-					  !cfg.Get("name", classname, sizeof(classname)))
+					  !StrEqual(classname, "saxxy"))
 					{
-						continue;
+						if(!cfg.Get("name", classname, sizeof(classname)))
+							strcopy(classname, sizeof(classname), "tf_wearable");
 					}
 					
 					GetClassWeaponClassname(class, classname, sizeof(classname));
@@ -1836,12 +1842,12 @@ static void EquipBoss(int client, bool weapons)
 					cfg.GetInt("quality", quality);
 					
 					bool preserve;
-					cfg.GetBool("preserve", preserve);
+					cfg.GetBool("preserve", preserve, false);
 					
-					int kills;
-					bool override = (cfg.GetInt("override", kills) && kills);
+					bool override;
+					cfg.GetBool("override", override, false);
 					
-					kills = -1;
+					int kills = -1;
 					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
 						kills = GetURandomInt() % 21;
 					
@@ -1853,20 +1859,20 @@ static void EquipBoss(int client, bool weapons)
 					
 					bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
 					
-					if(!wearable && value)
+					if(!wearable && !override)
 					{
-						if(found)
+						if(value)
 						{
-							Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
+							if(found)
+							{
+								Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
+							}
+							else
+							{
+								strcopy(buffer, sizeof(buffer), "2 ; 3.1");
+							}
 						}
-						else
-						{
-							strcopy(buffer, sizeof(buffer), "2 ; 3.1");
-						}
-					}
-					else if(!wearable && !override)
-					{
-						if(found)
+						else if(found)
 						{
 							Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
 						}
@@ -1997,9 +2003,9 @@ static void EquipBoss(int client, bool weapons)
 							}
 						}
 						
-						level = wearable ? 1 : 0;
-						cfg.GetInt("show", level);
-						if(level)
+						override = wearable;
+						cfg.GetBool("show", override, false);
+						if(override)
 						{
 							if(cfg.GetInt("worldmodel", index) && index)
 							{
@@ -3021,5 +3027,10 @@ static void DisableSubplugins()
 
 static bool IsNotExtraArg(const char[] key)
 {
-	return (StrContains(key, "time") != 0 && StrContains(key, "name") == -1 && StrContains(key, "artist") == -1 && StrContains(key, "vo") != 0 && StrContains(key, "slot") != 0);
+	if(StrContains(key, "time") == 0 || StrContains(key, "name") != -1 || StrContains(key, "artist") != -1 || StrContains(key, "vo") == 0 || StrContains(key, "slot") == 0)
+	{
+		if(StrContains(key, "/") == -1 && StrContains(key, "\\") == -1 && StrContains(key, ".") == -1)
+			return false;
+	}
+	return true;
 }

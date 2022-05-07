@@ -863,7 +863,7 @@ stock void FPrintToChatEx(int client, int author, const char[] message, any ...)
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
-	Format(buffer, sizeof(buffer), "\x01%ts", "Prefix", message);
+	Format(buffer, sizeof(buffer), "\x01%t%s", "Prefix", message);
 	VFormat(buffer2, sizeof(buffer2), buffer, 4);
 	CReplaceColorCodes(buffer2, author);
 	CSendMessage(client, buffer2, author);
@@ -907,10 +907,11 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 
 stock void FShowActivity(int client, const char[] message, any ...)
 {
-	char buffer[MAX_BUFFER_LENGTH];
+	char tag[MAX_BUFFER_LENGTH], buffer[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
 	VFormat(buffer, sizeof(buffer), message, 3);
-	CShowActivity2(client, "\x01%t%s", "Prefix", buffer);
+	Format(tag, sizeof(tag), "%t", "Prefix");
+	CShowActivity2(client, tag, "%s", buffer);
 }
 
 stock void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")

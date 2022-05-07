@@ -415,16 +415,16 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 						if(!FirstBlood || !Bosses_PlaySoundToAll(attacker, "sound_first_blood", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							int spree = 1;
-							if(Client(attacker).LastKillTime < engineTime + 5.0)
+							if(Client(attacker).LastKillTime > engineTime - 5.0)
 								spree += Client(attacker).KillSpree;
 							
 							Client(attacker).KillSpree = spree;
 							if(spree != 3 || !Bosses_PlaySoundToAll(attacker, "sound_kspree", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 							{
-								bool played = view_as<bool>(GetURandomInt() % 2);
-								if(!played)
+								bool played;
+								if(GetURandomInt() % 2)
 								{
-									TFClassType class = Client(victim).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(attacker);
+									TFClassType class = Client(victim).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(victim);
 									if(deadRinger && TF2_IsPlayerInCondition(victim, TFCond_Disguised) && GetClientTeam(attacker) == GetEntProp(victim, Prop_Send, "m_nDisguiseTeam"))
 									{
 										int target = GetEntProp(victim, Prop_Send, "m_iDisguiseTargetIndex");
@@ -442,6 +442,8 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									}
 									
 									static const char classnames[][] = {"custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
+									if(class >= sizeof(classnames))
+										class = TFClass_Unknown;
 									
 									char buffer[20];
 									FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);

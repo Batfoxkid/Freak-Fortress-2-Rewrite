@@ -547,7 +547,7 @@ methodmap Client
 		}
 		public set(int amount)
 		{
-			this.Cfg.SetInt("lastkilltime", amount);
+			this.Cfg.SetInt("killspree", amount);
 		}
 	}
 	
