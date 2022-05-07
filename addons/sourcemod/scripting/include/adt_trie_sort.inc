@@ -43,6 +43,8 @@ SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order = Sort_Ascending
 			list.PushString(buffer);
 		}
 		
+		delete snap;
+		
 		if(order == Sort_Random)
 		{
 			list.Sort(order, Sort_String);
