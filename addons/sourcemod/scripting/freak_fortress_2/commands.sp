@@ -4,8 +4,21 @@
 
 #pragma semicolon 1
 
+enum FF2FilterSearch 
+{
+	FF2FilterSearch_Boss,
+	FF2FilterSearch_Minion
+}
+
 void Command_PluginStart()
 {
+	AddMultiTargetFilter("@hale", FF2TargetFilter, "all current bosses", false);
+	AddMultiTargetFilter("@!hale", FF2TargetFilter, "all current non-boss players", false);
+	AddMultiTargetFilter("@boss", FF2TargetFilter, "all current bosses", false);
+	AddMultiTargetFilter("@!boss", FF2TargetFilter, "all current non-boss players", false);
+	AddMultiTargetFilter("@minion", FF2TargetFilter, "all current minion players", false);
+	AddMultiTargetFilter("@!minion", FF2TargetFilter, "all current non-minion players", false);
+
 	AddCommandListener(Command_Voicemenu, "voicemenu");
 	AddCommandListener(Command_KermitSewerSlide, "explode");
 	AddCommandListener(Command_KermitSewerSlide, "kill");
@@ -14,6 +27,54 @@ void Command_PluginStart()
 	AddCommandListener(Command_AutoTeam, "autoteam");
 	AddCommandListener(Command_JoinClass, "joinclass");
 	AddCommandListener(Command_EurekaTeleport, "eureka_teleport");
+}
+
+public bool FF2TargetFilter(const char[] pattern, ArrayList clients)
+{
+	FF2FilterSearch filterSearch = StrContains(pattern, "minion", true) != -1 ? FF2FilterSearch_Minion : FF2FilterSearch_Boss;
+	bool isOppositeFilter = pattern[1] == '!';
+
+	switch(filterSearch)
+	{
+		case FF2FilterSearch_Boss:
+		{
+			for(int client = 1; client <= MaxClients; client++)
+			{
+				if(!IsClientInGame(client))
+					continue;
+
+				if(Client(client).IsBoss)
+				{
+					if(!isOppositeFilter)
+						clients.Push(client);
+				}
+				else if(isOppositeFilter)
+				{
+					clients.Push(client);
+				}
+			}
+		}
+		case FF2FilterSearch_Minion:
+		{
+			for(int client = 1; client <= MaxClients; client++)
+			{
+				if(!IsClientInGame(client))
+					continue;
+
+				if(Client(client).Minion)
+				{
+					if(!isOppositeFilter)
+						clients.Push(client);
+				}
+				else if(isOppositeFilter)
+				{
+					clients.Push(client);
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 public Action Command_Voicemenu(int client, const char[] command, int args)
