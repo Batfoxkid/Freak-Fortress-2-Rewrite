@@ -1,0 +1,42 @@
+name: Package
+
+on:
+  push:
+    branches: main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      
+      - name: Environments
+        run: |
+          echo "SM_VERSION=1.10" >> $GITHUB_ENV
+      
+      - name: Install
+        run: |
+          bash scripts/install.sh
+      
+      - name: Set Version
+        run: |
+          bash scripts/date.sh
+      
+      - name: Compile
+        run: |
+          cd build/addons/sourcemod/scripting
+          ./spcomp freak_fortress_2.sp -o ../plugins/freak_fortress_2.smx
+          ./spcomp ff2r_default_abilities.sp -o ../plugins/ff2r_default_abilities.smx
+          ./spcomp ff2r_menu_abilities.sp -o ../plugins/ff2r_menu_abilities.smx
+      
+      - name: Package
+        run: |
+          bash scripts/package.sh
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: Text-Store-${{env.DATE_VERSION}}
+          path: ./build/package

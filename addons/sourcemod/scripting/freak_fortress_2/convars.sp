@@ -19,7 +19,7 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	ConVar version = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
+	CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
 	CvarCharset = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
 	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
@@ -42,10 +42,10 @@ void ConVar_PluginStart()
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_solo_shame", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	
-	bool add = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
+	//bool add = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
 	AutoExecConfig(true, "FF2Rewrite");
 	
-	char buffer[64];
+	/*char buffer[64];
 	version.GetString(buffer, sizeof(buffer));
 	if(!StrEqual(buffer, "Rewrite " ... PLUGIN_VERSION))
 	{
@@ -68,7 +68,7 @@ void ConVar_PluginStart()
 			file.WriteLine("// !!! Any custom commands saved in this file will be lost upon a FF2 update !!!");
 			file.Close();
 		}
-	}
+	}*/
 	
 	CvarAllowSpectators = FindConVar("mp_allowspectators");
 	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");
