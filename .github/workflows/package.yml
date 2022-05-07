@@ -38,5 +38,5 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
         with:
-          name: Text-Store-${{env.DATE_VERSION}}
+          name: FF2R-${{env.DATE_VERSION}}
           path: ./build/package
