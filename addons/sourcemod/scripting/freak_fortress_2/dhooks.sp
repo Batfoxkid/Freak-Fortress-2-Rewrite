@@ -179,6 +179,8 @@ public MRESReturn DHook_ApplyRoboSapperEffectsPre(int entity, DHookReturn ret, D
 		if(!WasMiniBoss[client])
 			SetEntProp(client, Prop_Send, "m_bIsMiniBoss", true);
 	}
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ApplyRoboSapperEffectsPost(int entity, DHookReturn ret, DHookParam param)
@@ -186,18 +188,24 @@ public MRESReturn DHook_ApplyRoboSapperEffectsPost(int entity, DHookReturn ret, 
 	int client = param.Get(1);
 	if(!WasMiniBoss[client] && Client(client).IsBoss)
 		SetEntProp(client, Prop_Send, "m_bIsMiniBoss", false);
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBuildPre()
 {
 	if(Enabled)
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanBuildPost()
 {
 	if(Enabled)
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
@@ -205,8 +213,10 @@ public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 	if(Client(client).IsBoss || Client(client).Minion)
 	{
 		ret.Value = false;
+		
 		return MRES_Supercede;
 	}
+
 	return MRES_Ignored;
 }
 
@@ -246,6 +256,8 @@ public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 			}
 		}
 	}
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
@@ -270,6 +282,8 @@ public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
 			}
 		}
 	}
+
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ForceRespawnPre(int client)
@@ -285,6 +299,7 @@ public MRESReturn DHook_ForceRespawnPre(int client)
 			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", class);
 		}
 	}
+
 	return MRES_Ignored;
 }
 
@@ -303,6 +318,7 @@ public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 		return MRES_Ignored;
 	
 	ret.Value += TF2_GetPlayerClass(client) == TFClass_Scout ? 1 : 2;
+
 	return MRES_Override;
 }
 
@@ -325,12 +341,14 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 public MRESReturn DHook_ResetRoundStats(Address address)
 {
 	CTFGameStats = address;
+
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
+
 	return MRES_Ignored;
 }
 
@@ -363,8 +381,10 @@ public MRESReturn DHook_SetWinningTeam(DHookParam param)
 		}
 		
 		param.Set(1, found);
+
 		return MRES_ChangedOverride;
 	}
+
 	return MRES_Ignored;
 }
 
@@ -381,6 +401,7 @@ public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 			StoreToAddress(address, damagetype | DMG_BURN, NumberType_Int32);
 		}
 	}
+
 	return MRES_Ignored;
 }
 
@@ -392,6 +413,7 @@ public MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 		StoreToAddress(view_as<Address>(param.Get(3) + DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
 		KnifeWasChanged = -1;
 	}
+
 	return MRES_Ignored;
 }
 
@@ -403,6 +425,7 @@ public MRESReturn DHook_ApplyPostHitPre(int entity, DHookParam param)
 		EffectClass = GetEntProp(client, Prop_Send, "m_iClass");
 		SetEntProp(client, Prop_Send, "m_iClass", TFClass_Spy);
 	}
+
 	return MRES_Ignored;
 }
 
@@ -413,5 +436,6 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 		SetEntProp(param.Get(2), Prop_Send, "m_iClass", EffectClass);
 		EffectClass = -1;
 	}
+
 	return MRES_Ignored;
 }
