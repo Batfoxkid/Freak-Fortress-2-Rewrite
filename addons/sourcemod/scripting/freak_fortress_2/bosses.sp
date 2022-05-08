@@ -2935,47 +2935,50 @@ static void EnableSubplugins()
 		
 		FileType filetype;
 		DirectoryListing dir = OpenDirectory(path);
-		while(dir.GetNext(filename, sizeof(filename), filetype))
+		if(dir)
 		{
-			if(filetype == FileType_File)
+			while(dir.GetNext(filename, sizeof(filename), filetype))
 			{
-				int pos = strlen(filename) - 4;
-				if(pos > 0)
+				if(filetype == FileType_File)
 				{
-					if(StrEqual(filename[pos], ".smx"))
+					int pos = strlen(filename) - 4;
+					if(pos > 0)
 					{
-						FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
-						
-						DataPack pack = new DataPack();
-						pack.WriteString(filepath1);
-						RequestFrame(Bosses_RenameSubplugin, pack);
-					}
-					else if(StrEqual(filename[pos], ".ff2"))
-					{
-						FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
-						
-						strcopy(filename[pos], 5, ".smx");
-						FormatEx(filepath2, sizeof(filepath2), "%s/%s", path, filename);
-						
-						if(FileExists(filepath2))
+						if(StrEqual(filename[pos], ".smx"))
 						{
-							DeleteFile(filepath1);
+							FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
+							
+							DataPack pack = new DataPack();
+							pack.WriteString(filepath1);
+							RequestFrame(Bosses_RenameSubplugin, pack);
 						}
-						else
+						else if(StrEqual(filename[pos], ".ff2"))
 						{
-							RenameFile(filepath2, filepath1);
-							InsertServerCommand("sm plugins load freaks/%s", filename);
+							FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
+							
+							strcopy(filename[pos], 5, ".smx");
+							FormatEx(filepath2, sizeof(filepath2), "%s/%s", path, filename);
+							
+							if(FileExists(filepath2))
+							{
+								DeleteFile(filepath1);
+							}
+							else
+							{
+								RenameFile(filepath2, filepath1);
+								InsertServerCommand("sm plugins load freaks/%s", filename);
+							}
+							
+							DataPack pack = new DataPack();
+							pack.WriteString(filepath2);
+							RequestFrame(Bosses_RenameSubplugin, pack);
 						}
-						
-						DataPack pack = new DataPack();
-						pack.WriteString(filepath2);
-						RequestFrame(Bosses_RenameSubplugin, pack);
 					}
 				}
 			}
+			
+			ServerExecute();
 		}
-		
-		ServerExecute();
 	}
 }
 
