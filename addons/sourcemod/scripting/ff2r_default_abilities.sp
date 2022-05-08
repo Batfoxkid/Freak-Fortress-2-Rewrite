@@ -428,11 +428,7 @@ public void OnClientDisconnect(int client)
 	CloneOwner[client] = 0;
 	CloneIdle[client] = false;
 	
-	if(OverlayTimer[client])
-	{
-		KillTimer(OverlayTimer[client]);
-		OverlayTimer[client] = null;
-	}
+	delete OverlayTimer[client];
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3])
@@ -651,11 +647,12 @@ public void FF2R_OnBossRemoved(int client)
 	int length = BossTimers[client].Length;
 	for(int i; i<length; i++)
 	{
-		KillTimer(BossTimers[client].Get(i));
+		Handle timer = BossTimers[client].Get(i);
+
+		delete timer;
 	}
 	
 	delete BossTimers[client];
-	BossTimers[client] = null;
 	
 	for(int target = 1; target <= MaxClients; target++)
 	{
@@ -670,14 +667,14 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	{
 		DataPack pack;
 		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStunSg, pack));
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_stun", false))
 	{
 		DataPack pack;
 		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStun, pack));
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_uber", false))
@@ -707,8 +704,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		{
 			if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 			{
-				if(OverlayTimer[target])
-					KillTimer(OverlayTimer[target]);
+				delete OverlayTimer[target];
 				
 				ClientCommand(target, "r_screenoverlay \"%s\"", file);
 				OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
@@ -835,7 +831,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		
 		DataPack pack;
 		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "initial", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 0.15), Timer_RageExplosiveDance, pack));
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 		pack.WriteCell(0);
 	}
@@ -1079,7 +1075,10 @@ public Action Hook_ProjectileSpawned(int entity)
 public Action Timer_RageStun(Handle timer, DataPack pack)
 {
 	pack.Reset();
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	// If we error out here, something went wrong somewhere else
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
@@ -1185,13 +1184,17 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 			}
 		}
 	}
+
 	return Plugin_Continue;
 }
 
 public Action Timer_RageStunSg(Handle timer, DataPack pack)
 {
 	pack.Reset();
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1319,7 +1322,10 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 public Action Timer_RageTradeSpam(Handle timer, DataPack pack)
 {
 	pack.Reset();
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1330,6 +1336,8 @@ public Action Timer_RageTradeSpam(Handle timer, DataPack pack)
 	AbilityData ability = boss.GetAbility(buffer);
 	if(ability.IsMyPlugin())
 		Rage_TradeSpam(client, ability, buffer, pack.ReadCell());
+
+	return Plugin_Handled;
 }
 
 void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
@@ -1353,8 +1361,7 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	{
 		if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 		{
-			if(OverlayTimer[target])
-				KillTimer(OverlayTimer[target]);
+			delete OverlayTimer[target];
 			
 			ClientCommand(target, "r_screenoverlay \"%s%d\"", file, phase);
 			OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
@@ -1764,8 +1771,7 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 	MatrixDelay[client] = gameTime + (GetFormula(cfg, "initial", alive, 0.5) * timescale);
 	strcopy(MatrixName[client], sizeof(MatrixName[]), ability);
 	
-	if(TimescaleTimer)
-		KillTimer(TimescaleTimer);
+	delete TimescaleTimer;
 	
 	TimescaleSound(client, CvarTimeScale.FloatValue, timescale);
 	
@@ -1826,7 +1832,10 @@ void TimescaleSound(int client, float current, float newvalue)
 public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 {
 	pack.Reset();
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1837,6 +1846,8 @@ public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 	AbilityData ability = boss.GetAbility(buffer);
 	if(ability.IsMyPlugin())
 		Rage_ExplosiveDance(client, ability, buffer, pack.ReadCell());
+
+	return Plugin_Handled;
 }
 
 void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int count)
@@ -1889,7 +1900,7 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 	{
 		DataPack pack;
 		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", count, 0.12), Timer_RageExplosiveDance, pack));
-		pack.WriteCell(client);
+		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 		pack.WriteCell(count + 1);
 	}
