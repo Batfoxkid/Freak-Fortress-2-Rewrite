@@ -182,7 +182,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 		char classname[36];
 		if(GetEntityClassname(weapon, classname, sizeof(classname)))
 		{
-			if(StrEqual(classname, "tf_wepaon_cannon"))
+			if(StrEqual(classname, "tf_weapon_cannon"))
 			{
 				// Loose Cannon gets slower the more times it hits
 				Address address = TF2Attrib_GetByDefIndex(weapon, 96);
@@ -197,7 +197,7 @@ void Attributes_OnHitBossPre(int client, int victim, float damage, int &damagety
 					TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
 				}
 			}
-			else if(StrEqual(classname, "tf_wepaon_stickbomb"))
+			else if(StrEqual(classname, "tf_weapon_stickbomb"))
 			{
 				// Ullapool Caber gets a critical explosion
 				if(!GetEntProp(weapon, Prop_Send, "m_iDetonated"))
