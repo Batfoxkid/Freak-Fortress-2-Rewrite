@@ -1076,6 +1076,9 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	// If we error out here, something went wrong somewhere else
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
@@ -1181,6 +1184,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 			}
 		}
 	}
+
 	return Plugin_Continue;
 }
 
@@ -1188,6 +1192,9 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1316,6 +1323,9 @@ public Action Timer_RageTradeSpam(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1326,6 +1336,8 @@ public Action Timer_RageTradeSpam(Handle timer, DataPack pack)
 	AbilityData ability = boss.GetAbility(buffer);
 	if(ability.IsMyPlugin())
 		Rage_TradeSpam(client, ability, buffer, pack.ReadCell());
+
+	return Plugin_Handled;
 }
 
 void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
@@ -1821,6 +1833,9 @@ public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
+
+	if(!client)
+		return Plugin_Handled;
 	
 	BossTimers[client].Erase(BossTimers[client].FindValue(timer));
 	
@@ -1831,6 +1846,8 @@ public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 	AbilityData ability = boss.GetAbility(buffer);
 	if(ability.IsMyPlugin())
 		Rage_ExplosiveDance(client, ability, buffer, pack.ReadCell());
+
+	return Plugin_Handled;
 }
 
 void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int count)
