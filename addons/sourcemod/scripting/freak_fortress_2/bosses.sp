@@ -1602,6 +1602,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 		DeleteCfg(Client(client).Cfg);
 	}
 	
+	EnableSubplugins();
+	
 	Client(client).Cfg = cfg.Clone(ThisPlugin);
 	
 	if(GetClientTeam(client) != team)
@@ -1614,8 +1616,6 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
 	SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
 	SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
-	
-	EnableSubplugins();
 	
 	int i = 1;
 	bool value = CvarSpecTeam.BoolValue;
