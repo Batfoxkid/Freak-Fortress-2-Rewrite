@@ -729,7 +729,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				}
 			}
 			
-			if(setting > 1)
+			if(setting > 1 && maxcombined)
 			{
 				if(count > 1)
 				{
@@ -811,39 +811,46 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				if(entity == -1)
 				{
 					entity = FindEntityByClassname(MaxClients+1, "monster_resource");
-					if(entity == -1)
+					if(!maxcombined)
 					{
-						entity = CreateEntityByName("monster_resource");
-						DispatchSpawn(entity);
-					}
-					
-					float gameTime = GetGameTime();
-					if(healing)
-						HealingFor = gameTime + 1.0;
-					
-					if(HealingFor > gameTime)
-					{
-						SetEntProp(entity, Prop_Send, "m_iBossState", true);
-						refresh = HealingFor - gameTime;
+						RemoveEntity(entity);
 					}
 					else
 					{
-						SetEntProp(entity, Prop_Send, "m_iBossState", false);
+						if(entity == -1)
+						{
+							entity = CreateEntityByName("monster_resource");
+							DispatchSpawn(entity);
+						}
+						
+						float gameTime = GetGameTime();
+						if(healing)
+							HealingFor = gameTime + 1.0;
+						
+						if(HealingFor > gameTime)
+						{
+							SetEntProp(entity, Prop_Send, "m_iBossState", true);
+							refresh = HealingFor - gameTime;
+						}
+						else
+						{
+							SetEntProp(entity, Prop_Send, "m_iBossState", false);
+						}
+						
+						int amount;
+						if(count == 2)
+						{
+							amount = SetTeamBasedHealthBar(combined, team);
+						}
+						else if(combined)
+						{
+							amount = combined * 255 / maxcombined;
+							if(!amount)
+								amount = 1;
+						}
+						
+						SetEntProp(entity, Prop_Send, "m_iBossHealthPercentageByte", amount, 2);
 					}
-					
-					int amount;
-					if(count == 2)
-					{
-						amount = SetTeamBasedHealthBar(combined, team);
-					}
-					else if(combined)
-					{
-						amount = combined * 255 / maxcombined;
-						if(!amount)
-							amount = 1;
-					}
-					
-					SetEntProp(entity, Prop_Send, "m_iBossHealthPercentageByte", amount, 2);
 				}
 			}
 			else if(lastCount < 3)
