@@ -219,99 +219,151 @@ public int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 
 void Weapons_ShowChanges(int client, int entity)
 {
-	if(WeaponCfg)
+	if(!WeaponCfg)
+		return;
+
+	ConfigMap cfg = FindWeaponSection(entity);
+
+	if(!cfg)
+		return;
+
+	int itemDefIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+
+	char localizedWeaponName[64];
+	GetEntityClassname(entity, localizedWeaponName, sizeof(localizedWeaponName));
+
+	if(!TF2ED_GetLocalizedItemName(itemDefIndex, localizedWeaponName, sizeof(localizedWeaponName), localizedWeaponName))
+		return;
+
+	SetGlobalTransTarget(client);
+	
+	bool found;
+	char buffer2[64];
+	
+	if(cfg.GetBool("strip", found, false))
 	{
-		ConfigMap cfg = FindWeaponSection(entity);
-		if(cfg)
+		Format(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%%s3 (%t):", "Weapon Stripped");
+		CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
+		PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+	}
+	else
+	{
+		strcopy(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%s3:");
+		CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
+		PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+	}
+
+	char value[16];
+	char description[64];
+	char type[32];
+
+	switch(cfg.GetKeyValType("attributes"))
+	{
+		case KeyValType_Value:
 		{
-			char buffer1[64];
-			GetEntityClassname(entity, buffer1, sizeof(buffer1));
-			if(TF2ED_GetLocalizedItemName(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), buffer1, sizeof(buffer1), buffer1))
+			int current = 0;
+
+			char attributes[512];
+			cfg.Get("attributes", attributes, sizeof(attributes));
+
+			do
 			{
-				SetGlobalTransTarget(client);
+				int add = SplitString(attributes[current], ";", value, sizeof(value));
+				if(add == -1)
+					break;
 				
-				bool found;
-				char buffer2[64];
-				if(cfg.GetBool("strip", found, false))
-				{
-					Format(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%%s3 (%t):", "Weapon Stripped");
-					CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
-					PrintSayText2(client, client, true, buffer2, _, _, buffer1);
-				}
+				int attrib = StringToInt(value);
+				if(!attrib)
+					break;
+				
+				current += add;
+				add = SplitString(attributes[current], ";", value, sizeof(value));
+				found = add != -1;
+
+				if(found)
+					current += add;
 				else
-				{
-					strcopy(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%s3:");
-					CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
-					PrintSayText2(client, client, true, buffer2, _, _, buffer1);
-				}
+					strcopy(value, sizeof(value), attributes[current]);
 				
-				char attributes[512], buffer3[32];
-				if(cfg.Get("attributes", attributes, sizeof(attributes)))
+				bool isHidden = (TF2ED_GetAttributeDefinitionString(attrib, "hidden", type, sizeof(type)) && StringToInt(type));
+				bool doesDescriptionExist = TF2ED_GetAttributeDefinitionString(attrib, "description_string", description, sizeof(description));
+
+				if(value[0] != 'R' && !isHidden && doesDescriptionExist)
 				{
-					int current;
-					do
-					{
-						int add = SplitString(attributes[current], ";", buffer2, sizeof(buffer2));
-						if(add == -1)
-							break;
-						
-						int attrib = StringToInt(buffer2);
-						if(!attrib)
-							break;
-						
-						current += add;
-						add = SplitString(attributes[current], ";", buffer2, sizeof(buffer2));
-						found = add != -1;
-						if(found)
-						{
-							current += add;
-						}
-						else
-						{
-							strcopy(buffer2, sizeof(buffer2), attributes[current]);
-						}
-						
-						if(buffer2[0] != 'R' && (!TF2ED_GetAttributeDefinitionString(attrib, "hidden", buffer3, sizeof(buffer3)) || !StringToInt(buffer3)) && TF2ED_GetAttributeDefinitionString(attrib, "description_string", buffer1, sizeof(buffer1)))
-						{
-							TF2ED_GetAttributeDefinitionString(attrib, "description_format", buffer3, sizeof(buffer3));
-							FormatValue(buffer2, buffer2, sizeof(buffer2), buffer3);
-							PrintSayText2(client, client, true, buffer1, buffer2);
-						}
-					} while(found);
+					TF2ED_GetAttributeDefinitionString(attrib, "description_format", type, sizeof(type));
+					FormatValue(value, value, sizeof(value), type);
+					PrintSayText2(client, client, true, description, value);
 				}
+			} while(found);
+		}
+		case KeyValType_Section:
+		{
+			cfg = cfg.GetSection("attributes");
+
+			PackVal attributeValue;
+
+			StringMapSnapshot snap = cfg.Snapshot();
+
+			int entries = snap.Length;
+
+			for(int i = 0; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i) + 1;
+
+				char[] key = new char[length];
+				snap.GetKey(i, key, length);
 				
-				cfg = cfg.GetSection("custom");
-				if(cfg)
+				cfg.GetArray(key, attributeValue, sizeof(attributeValue));
+
+				if(attributeValue.tag == KeyValType_Value)
 				{
-					StringMapSnapshot snap = cfg.Snapshot();
-					if(snap)
+					int attrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(key);
+
+					bool isHidden = (TF2ED_GetAttributeDefinitionString(attrib, "hidden", type, sizeof(type)) && StringToInt(type));
+					bool doesDescriptionExist = TF2ED_GetAttributeDefinitionString(attrib, "description_string", description, sizeof(description));
+
+					if(!isHidden && doesDescriptionExist)
 					{
-						int entries = snap.Length;
-						if(entries)
-						{
-							PackVal val;
-							for(int i; i < entries; i++)
-							{
-								int length = snap.KeyBufferSize(i)+1;
-								char[] key = new char[length];
-								snap.GetKey(i, key, length);
-								
-								cfg.GetArray(key, val, sizeof(val));
-								if(val.tag == KeyValType_Value && TranslationPhraseExists(key))
-								{
-									FormatValue(val.data, buffer1, sizeof(buffer1), "value_is_percentage");
-									FormatValue(val.data, buffer2, sizeof(buffer2), "value_is_inverted_percentage");
-									FormatValue(val.data, buffer3, sizeof(buffer3), "value_is_additive_percentage");
-									PrintToChat(client, "%t", key, buffer1, buffer2, buffer3, val.data);
-								}
-							}
-						}
-						
-						delete snap;
+						TF2ED_GetAttributeDefinitionString(attrib, "description_format", type, sizeof(type));
+						FormatValue(attributeValue.data, value, sizeof(value), type);
+						PrintSayText2(client, client, true, description, value);
 					}
 				}
 			}
+
+			delete snap;
 		}
+	}
+
+	cfg = cfg.GetSection("custom");
+
+	if(cfg)
+	{
+		StringMapSnapshot snap = cfg.Snapshot();
+			
+		int entries = snap.Length;
+
+		PackVal val;
+
+		for(int i; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i) + 1;
+
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+			
+			cfg.GetArray(key, val, sizeof(val));
+
+			if(val.tag == KeyValType_Value && TranslationPhraseExists(key))
+			{
+				FormatValue(val.data, value, sizeof(value), "value_is_percentage");
+				FormatValue(val.data, description, sizeof(description), "value_is_inverted_percentage");
+				FormatValue(val.data, type, sizeof(type), "value_is_additive_percentage");
+				PrintToChat(client, "%t", key, value, description, type, val.data);
+			}
+		}
+		
+		delete snap;
 	}
 }
 
@@ -441,118 +493,151 @@ public void Weapons_Spawn(int entity)
 
 public void Weapons_SpawnFrame(int ref)
 {
-	if(WeaponCfg)
+	if(!WeaponCfg)
+		return;
+
+	int entity = EntRefToEntIndex(ref);
+
+	if(entity == -1)
+		return;
+
+	if((HasEntProp(entity, Prop_Send, "m_bDisguiseWearable") && GetEntProp(entity, Prop_Send, "m_bDisguiseWearable")) ||
+		(HasEntProp(entity, Prop_Send, "m_bDisguiseWeapon") && GetEntProp(entity, Prop_Send, "m_bDisguiseWeapon")))
+		return;
+
+	int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	if(!IsClientValid(client) || Client(client).IsBoss || Client(client).Minion)
+		return;
+
+	ConfigMap cfg = FindWeaponSection(entity);
+	if(!cfg)
+		return;
+
+	bool found = false;
+	if(cfg.GetBool("strip", found, false))	// TODO: If this strips SOC attribs, use TF2Attrib_GetSOCAttribs to give em back
+		SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", found, 1);
+
+	int current = 0;
+
+	if(cfg.GetInt("clip", current))
 	{
-		int entity = EntRefToEntIndex(ref);
-		if(entity != -1 &&
-			(!HasEntProp(entity, Prop_Send, "m_bDisguiseWearable") || !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable")) &&
-			(!HasEntProp(entity, Prop_Send, "m_bDisguiseWeapon") || !GetEntProp(entity, Prop_Send, "m_bDisguiseWeapon")))
+		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+		SetEntProp(entity, Prop_Data, "m_iClip1", current);
+	}
+	
+	if(cfg.GetInt("ammo", current))
+	{
+		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+
+		int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+		if(type >= 0)
+			SetEntProp(client, Prop_Data, "m_iAmmo", current, _, type);
+	}
+	
+	switch(cfg.GetKeyValType("attributes"))
+	{
+		case KeyValType_Value:
 		{
-			int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
-			if(client > 0 && client <= MaxClients && !Client(client).IsBoss && !Client(client).Minion)
+			current = 0;
+			char value[16];
+
+			char attributes[512];
+			cfg.Get("attributes", attributes, sizeof(attributes));
+
+			do
 			{
-				ConfigMap cfg = FindWeaponSection(entity);
-				if(cfg)
+				int add = SplitString(attributes[current], ";", value, sizeof(value));
+				if(add == -1)
+					break;
+				
+				int attrib = StringToInt(value);
+				if(!attrib)
+					break;
+				
+				current += add;
+				add = SplitString(attributes[current], ";", value, sizeof(value));
+				found = add != -1;
+
+				if(found)
+					current += add;
+				else
+					strcopy(value, sizeof(value), attributes[current]);
+				
+				TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(value));
+			} while(found);
+		}
+		case KeyValType_Section:
+		{
+			cfg = cfg.GetSection("attributes");
+
+			StringMapSnapshot snap = cfg.Snapshot();
+			int entries = snap.Length;
+
+			PackVal attributeValue;
+
+			for(int i = 0; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i) + 1;
+				char[] key = new char[length];
+
+				snap.GetKey(i, key, length);
+				
+				cfg.GetArray(key, attributeValue, sizeof(attributeValue));
+
+				if(attributeValue.tag == KeyValType_Value)
+					TF2Attrib_SetByName(entity, key, StringToFloat(attributeValue.data));
+			}
+
+			delete snap;
+		}
+	}
+	
+	cfg = cfg.GetSection("custom");
+
+	if(cfg)
+	{
+		StringMapSnapshot snap = cfg.Snapshot();
+
+		int entries = snap.Length;
+
+		PackVal attribute;
+
+		for(int i = 0; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i) + 1;
+
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+				
+			cfg.GetArray(key, attribute, sizeof(attribute));
+
+			if(attribute.tag == KeyValType_Value)
+			{
+				#if defined __tf_custom_attributes_included
+				if(TCALoaded)
 				{
-					bool found;
-					if(cfg.GetBool("strip", found, false))	// TODO: If this strips SOC attribs, use TF2Attrib_GetSOCAttribs to give em back
-						SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", found, 1);
-					
-					int current;
-					if(cfg.GetInt("clip", current))
+					TF2CustAttr_SetString(entity, key, attribute.data);
+				}
+				else
+				#endif
+				{
+					if(StrEqual(key, "damage vs bosses"))
 					{
-						SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
-						SetEntProp(entity, Prop_Data, "m_iClip1", current);
+						TF2Attrib_SetByDefIndex(entity, 476, StringToFloat(attribute.data));
 					}
-					
-					if(cfg.GetInt("ammo", current))
+					else if(StrEqual(key, "mod crit type on bosses"))
 					{
-						SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
-						int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-						if(type >= 0)
-							SetEntProp(client, Prop_Data, "m_iAmmo", current, _, type);
-					}
-					
-					char attributes[512];
-					if(cfg.Get("attributes", attributes, sizeof(attributes)))
-					{
-						current = 0;
-						char buffer[16];
-						do
-						{
-							int add = SplitString(attributes[current], ";", buffer, sizeof(buffer));
-							if(add == -1)
-								break;
-							
-							int attrib = StringToInt(buffer);
-							if(!attrib)
-								break;
-							
-							current += add;
-							add = SplitString(attributes[current], ";", buffer, sizeof(buffer));
-							found = add != -1;
-							if(found)
-							{
-								current += add;
-							}
-							else
-							{
-								strcopy(buffer, sizeof(buffer), attributes[current]);
-							}
-							
-							TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffer));
-						} while(found);
-					}
-					
-					cfg = cfg.GetSection("custom");
-					if(cfg)
-					{
-						StringMapSnapshot snap = cfg.Snapshot();
-						if(snap)
-						{
-							int entries = snap.Length;
-							if(entries)
-							{
-								PackVal val;
-								for(int i; i < entries; i++)
-								{
-									int length = snap.KeyBufferSize(i)+1;
-									char[] key = new char[length];
-									snap.GetKey(i, key, length);
-										
-									cfg.GetArray(key, val, sizeof(val));
-									if(val.tag == KeyValType_Value)
-									{
-										#if defined __tf_custom_attributes_included
-										if(TCALoaded)
-										{
-											TF2CustAttr_SetString(entity, key, val.data);
-										}
-										else
-										#endif
-										{
-											if(StrEqual(key, "damage vs bosses"))
-											{
-												TF2Attrib_SetByDefIndex(entity, 476, StringToFloat(val.data));
-											}
-											else if(StrEqual(key, "mod crit type on bosses"))
-											{
-												TF2Attrib_SetByDefIndex(entity, 20, 1.0);
-												TF2Attrib_SetByDefIndex(entity, 408, 1.0);
-												if(StringToInt(val.data) == 1)
-													TF2Attrib_SetByDefIndex(entity, 868, 1.0);
-											}
-										}
-									}
-								}
-							}
-							
-							delete snap;
-						}
+						TF2Attrib_SetByDefIndex(entity, 20, 1.0);
+						TF2Attrib_SetByDefIndex(entity, 408, 1.0);
+
+						if(StringToInt(attribute.data) == 1)
+							TF2Attrib_SetByDefIndex(entity, 868, 1.0);
 					}
 				}
 			}
 		}
+		
+		delete snap;
 	}
 }
 

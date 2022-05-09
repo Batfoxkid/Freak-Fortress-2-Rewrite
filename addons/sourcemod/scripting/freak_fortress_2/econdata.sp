@@ -77,6 +77,7 @@ bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char
 		if(slot >= 0 && slot < sizeof(SlotNames))
 			return view_as<bool>(strcopy(name, maxlen, SlotNames[slot]));
 	}
+	
 	return false;
 }
 

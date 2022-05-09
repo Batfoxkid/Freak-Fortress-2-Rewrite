@@ -1006,6 +1006,19 @@ public int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl
 	return (elem1 > elem2) ? 1 : -1;
 }
 
+stock bool IsClientValid(int client)
+{
+    if(client <= 0 || client > MaxClients)
+        return false;
+
+    if(!IsClientInGame(client))
+        return false;
+
+    if(GetEntProp(client, Prop_Send, "m_bIsCoaching"))
+        return false;
+    
+    return true;
+}
 /*void DeleteCfg2(ConfigMap cfg)
 {
 	ConfigMap cfg2 = cfg;
