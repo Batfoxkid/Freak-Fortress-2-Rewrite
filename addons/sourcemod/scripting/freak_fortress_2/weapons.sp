@@ -514,8 +514,53 @@ public void Weapons_SpawnFrame(int ref)
 		return;
 
 	bool found = false;
-	if(cfg.GetBool("strip", found, false))	// TODO: If this strips SOC attribs, use TF2Attrib_GetSOCAttribs to give em back
-		SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", found, 1);
+	if(cfg.GetBool("strip", found, false) && found)
+	{
+		TF2Attrib_RemoveAll(entity);
+
+		char valueType[2];
+		char valueFormat[64];
+
+		int currentAttrib;
+
+		ArrayList staticAttribs = TF2Econ_GetItemStaticAttributes(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"));
+
+		for(int i = 0; i < staticAttribs.Length; i++)
+		{
+			currentAttrib = staticAttribs.Get(i, .block = 0);
+
+			// Probably overkill
+			if(currentAttrib == 796 || currentAttrib == 724 || currentAttrib == 817 || currentAttrib == 834 
+				|| currentAttrib == 745 || currentAttrib == 731 || currentAttrib == 746)
+				continue;
+
+			// "stored_as_integer" is absent from the attribute schema if its type is "string".
+			// TF2ED_GetAttributeDefinitionString returns false if it can't find the given string.
+			if(!TF2ED_GetAttributeDefinitionString(currentAttrib, "stored_as_integer", valueType, sizeof(valueType)))
+				continue;
+
+			TF2ED_GetAttributeDefinitionString(currentAttrib, "description_format", valueFormat, sizeof(valueFormat));
+
+			// Since we already know what we're working with and what we're looking for, we can manually handpick
+			// the most significative chars to check if they match. Eons faster than doing StrEqual or StrContains.
+
+			if(valueFormat[9] == 'a' && valueFormat[10] == 'd') // value_is_additive & value_is_additive_percentage
+			{
+				TF2Attrib_SetByDefIndex(entity, currentAttrib, 0.0);
+			}
+			else if((valueFormat[9] == 'i' && valueFormat[18] == 'p')
+				|| (valueFormat[9] == 'p' && valueFormat[10] == 'e')) // value_is_percentage & value_is_inverted_percentage
+			{
+				TF2Attrib_SetByDefIndex(entity, currentAttrib, 1.0);
+			}
+			else if(valueFormat[9] == 'o' && valueFormat[10] == 'r') // value_is_or
+			{
+				TF2Attrib_SetByDefIndex(entity, currentAttrib, 0.0);
+			}
+		}
+
+		delete staticAttribs;
+	}
 
 	int current = 0;
 
