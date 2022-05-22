@@ -62,6 +62,7 @@ static float GlowFor[MAXTF2PLAYERS];
 static float OverlayFor[MAXTF2PLAYERS];
 static float RefreshAt[MAXTF2PLAYERS];
 static int Damage[MAXTF2PLAYERS][6];
+static int TotalDamage[MAXTF2PLAYERS];
 static int Assist[MAXTF2PLAYERS];
 static int Index[MAXTF2PLAYERS];
 
@@ -226,7 +227,11 @@ methodmap Client
 	{
 		public get()
 		{
-			return GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 14);	// m_iDamageDone
+			return TotalDamage[view_as<int>(this)];
+		}
+		public set(int amount)
+		{
+			TotalDamage[view_as<int>(this)] = amount;
 		}
 	}
 	
@@ -649,6 +654,7 @@ methodmap Client
 	{
 		this.Damage = 0;
 		this.Assist = 0;
+		this.TotalDamage = 0;
 		this.SetDamage(TFWeaponSlot_Primary, 0);
 		this.SetDamage(TFWeaponSlot_Secondary, 0);
 		this.SetDamage(TFWeaponSlot_Melee, 0);

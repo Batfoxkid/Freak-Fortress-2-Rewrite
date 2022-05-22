@@ -269,15 +269,15 @@ public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
 		int client = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
 		for(int target = 1; target <= MaxClients; target++)
 		{
-			if(client != target && IsClientInGame(client))
+			if(client != target && IsClientInGame(target))
 			{
-				if(WasFakeClient[client])
+				if(WasFakeClient[target])
 				{
-					SetEntityFlags(client, GetEntityFlags(client) | FL_FAKECLIENT);
+					SetEntityFlags(target, GetEntityFlags(target) | FL_FAKECLIENT);
 				}
 				else
 				{
-					SetEntityFlags(client, GetEntityFlags(client) & ~FL_FAKECLIENT);
+					SetEntityFlags(target, GetEntityFlags(target) & ~FL_FAKECLIENT);
 				}
 			}
 		}

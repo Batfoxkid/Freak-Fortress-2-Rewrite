@@ -385,7 +385,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	{
 		JarateDamage[victim] -= fdamage;
 		if(JarateApplyer[victim])
-			Client(JarateApplyer[victim]).Assist += fdamage * 0.35;
+			Client(JarateApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
 		
 		if(JarateDamage[victim] <= 0.0)
 			TF2_RemoveCondition(victim, TFCond_Jarated);
@@ -394,7 +394,7 @@ void Attributes_OnHitBoss(int client, int victim, int inflictor, float fdamage, 
 	{
 		MarkDamage[victim] -= fdamage;
 		if(MarkApplyer[victim])
-			Client(MarkApplyer[victim]).Assist += fdamage * 0.35;
+			Client(MarkApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
 		
 		if(MarkDamage[victim] <= 0.0)
 			TF2_RemoveCondition(victim, TFCond_MarkedForDeath);

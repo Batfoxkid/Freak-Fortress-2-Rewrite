@@ -106,7 +106,7 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 					{
 						if(IsClientInGame(client))
 						{
-							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, client, SNDCHAN_AUTO, _, _, 2.0))
+							if(!IsPlayerAlive(client) || !Client(client).IsBoss || !Bosses_PlaySoundToClient(client, client, "sound_lastman", _, _, _, _, _, 2.0))
 							{
 								if((redBoss && (!bluBoss && GetClientTeam(client) == 3)) || (redBoss == client && !bluBoss))
 								{
@@ -232,124 +232,130 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 {
 	bool changed;
 	int victim = GetClientOfUserId(event.GetInt("userid"));
-	if(Client(victim).IsBoss)
+	if(victim > 0 && victim <= MaxClients)
 	{
+		int attacker = GetClientOfUserId(event.GetInt("attacker"));
 		int damage = event.GetInt("damageamount");
 		
-		float multi = 100.0;
-		int weapon = event.GetInt("weaponid");
-		if(weapon != -1)
-			multi *= Weapons_PlayerHurt(weapon);
+		if(attacker > 0 && attacker <= MaxClients)
+			Client(attacker).TotalDamage += damage;
 		
-		float rage = Client(victim).GetCharge(0) + (damage * multi / Client(victim).RageDamage);
-		float maxrage = Client(victim).RageMax;
-		if(rage > maxrage)
-			rage = maxrage;
-		
-		Client(victim).SetCharge(0, rage);
-		
-		if(event.GetBool("minicrit") && event.GetBool("allseecrit"))
+		if(Client(victim).IsBoss)
 		{
-			event.SetBool("allseecrit", false);
-			changed = true;
-		}
-		
-		int attacker = GetClientOfUserId(event.GetInt("attacker"));
-		int team = GetClientTeam(victim);
-		int health = GetClientHealth(victim);
-		if(health < 1)
-		{
-			int maxhealth = Client(victim).MaxHealth;
-			int maxlives = Client(victim).MaxLives;
-			int lives = Client(victim).Lives;
-			while(lives > 1)
+			float multi = 100.0;
+			int weapon = event.GetInt("weaponid");
+			if(weapon != -1)
+				multi *= Weapons_PlayerHurt(weapon);
+			
+			float rage = Client(victim).GetCharge(0) + (damage * multi / Client(victim).RageDamage);
+			float maxrage = Client(victim).RageMax;
+			if(rage > maxrage)
+				rage = maxrage;
+			
+			Client(victim).SetCharge(0, rage);
+			
+			if(event.GetBool("minicrit") && event.GetBool("allseecrit"))
 			{
-				switch(ForwardOld_OnLoseLife(victim, lives, maxlives))
+				event.SetBool("allseecrit", false);
+				changed = true;
+			}
+			
+			int team = GetClientTeam(victim);
+			int health = GetClientHealth(victim);
+			if(health < 1)
+			{
+				int maxhealth = Client(victim).MaxHealth;
+				int maxlives = Client(victim).MaxLives;
+				int lives = Client(victim).Lives;
+				while(lives > 1)
 				{
-					case Plugin_Changed:
+					switch(ForwardOld_OnLoseLife(victim, lives, maxlives))
 					{
-						if(lives > maxlives)
-							maxlives = lives;
-					}
-					case Plugin_Handled, Plugin_Stop:
-					{
-						return Plugin_Handled;
-					}
-				}
-				
-				Bosses_UseSlot(victim, -1, -1);
-				
-				lives--;
-				if(Client(attacker).IsBoss)	// In Boss vs Boss, don't penerate lives
-				{
-					event.SetInt("damageamount", event.GetInt("damageamount")+health);
-					changed = true;
-					
-					health = maxhealth;
-				}
-				else
-				{
-					health += maxhealth;
-				}
-				
-				if(health > 0)
-				{
-					SetEntityHealth(victim, health);
-					
-					char buffer[64];
-					
-					int bosses, mercs;
-					int[] boss = new int[MaxClients];
-					int[] merc = new int[MaxClients];
-					
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(IsClientInGame(i))
+						case Plugin_Changed:
 						{
-							if(Client(i).IsBoss)
-							{
-								boss[bosses++] = i;
-							}
-							else
-							{
-								merc[mercs++] = i;
-								
-								Bosses_GetBossNameCfg(Client(victim).Cfg, buffer, sizeof(buffer), GetClientLanguage(victim));
-								if(lives == 1)
-								{
-									ShowGameText(i, "ico_notify_flag_moving_alt", team, "%t", "Lost Life", buffer);
-								}
-								else
-								{
-									ShowGameText(i, "ico_notify_flag_moving_alt", team, "%t", "Lost Lives", buffer, lives);
-								}
-							}	
+							if(lives > maxlives)
+								maxlives = lives;
+						}
+						case Plugin_Handled, Plugin_Stop:
+						{
+							return Plugin_Handled;
 						}
 					}
 					
-					IntToString(lives, buffer, sizeof(buffer));
-					if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+					Bosses_UseSlot(victim, -1, -1);
+					
+					lives--;
+					if(Client(attacker).IsBoss)	// In Boss vs Boss, don't penerate lives
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						event.SetInt("damageamount", event.GetInt("damageamount")+health);
+						changed = true;
+						
+						health = maxhealth;
 					}
-					else if(lives == 1 && Bosses_PlaySound(victim, merc, mercs, "sound_last_life", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+					else
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						health += maxhealth;
 					}
-					else if(Bosses_PlaySound(victim, merc, mercs, "sound_nextlife", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+					
+					if(health > 0)
 					{
-						Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						SetEntityHealth(victim, health);
+						
+						char buffer[64];
+						
+						int bosses, mercs;
+						int[] boss = new int[MaxClients];
+						int[] merc = new int[MaxClients];
+						
+						for(int i = 1; i <= MaxClients; i++)
+						{
+							if(IsClientInGame(i))
+							{
+								if(Client(i).IsBoss)
+								{
+									boss[bosses++] = i;
+								}
+								else
+								{
+									merc[mercs++] = i;
+									
+									Bosses_GetBossNameCfg(Client(victim).Cfg, buffer, sizeof(buffer), GetClientLanguage(victim));
+									if(lives == 1)
+									{
+										ShowGameText(i, "ico_notify_flag_moving_alt", team, "%t", "Lost Life", buffer);
+									}
+									else
+									{
+										ShowGameText(i, "ico_notify_flag_moving_alt", team, "%t", "Lost Lives", buffer, lives);
+									}
+								}	
+							}
+						}
+						
+						IntToString(lives, buffer, sizeof(buffer));
+						if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						{
+							Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						}
+						else if(lives == 1 && Bosses_PlaySound(victim, merc, mercs, "sound_last_life", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						{
+							Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						}
+						else if(Bosses_PlaySound(victim, merc, mercs, "sound_nextlife", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						{
+							Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						}
+						break;
 					}
-					break;
 				}
+				
+				Client(victim).Lives = lives;
+				Client(victim).MaxLives = maxlives;
 			}
 			
-			Client(victim).Lives = lives;
-			Client(victim).MaxLives = maxlives;
+			if(CvarRefreshDmg.BoolValue)
+				Gamemode_UpdateHUD(team);
 		}
-		
-		if(CvarRefreshDmg.BoolValue)
-			Gamemode_UpdateHUD(team);
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
