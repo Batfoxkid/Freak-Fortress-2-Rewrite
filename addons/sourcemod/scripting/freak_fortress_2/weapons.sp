@@ -6,6 +6,7 @@
 	bool Weapons_ConfigsExecuted(bool force = false)
 	void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 	void Weapons_ShowChanges(int client, int entity)
+	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 	float Weapons_PlayerHurt(int entity)
 	void Weapons_EntityCreated(int entity, const char[] classname)
@@ -29,6 +30,7 @@ static bool TCALoaded;
 #endif
 
 static ConfigMap WeaponCfg;
+static int HasCritGlow[MAXTF2PLAYERS];
 
 void Weapons_PluginLoad()
 {
@@ -408,6 +410,11 @@ static void FormatValue(const char[] value, char[] buffer, int length, const cha
 	}
 }
 
+void Weapons_PlayerDeath(int client)
+{
+	HasCritGlow[client] = 0;
+}
+
 stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 {
 	#if defined __tf_custom_attributes_included
@@ -464,6 +471,57 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 		}
 		
 		delete kv;
+	}
+	#endif
+}
+
+stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon)
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	{
+		float multi = TF2CustAttr_GetFloat(weapon, "backstab damage percent");
+		if(multi > 0.0)
+			damage = float(Client(victim).MaxHealth * Client(victim).MaxLives) * multi / 3.0;
+	}
+	#endif
+}
+
+stock void Weapons_OnWeaponSwitch(int client, int weapon)
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	{
+		switch(HasCritGlow[client])
+		{
+			case 1:
+			{
+				TF2_RemoveCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola);
+			}
+			case 2:
+			{
+				TF2_RemoveCondition(client, TFCond_CritOnDamage);
+			}
+		}
+		
+		int type = TF2CustAttr_GetInt(weapon, "mod crit type glow");
+		switch(type)
+		{
+			case 1:
+			{
+				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola);
+				HasCritGlow[client] = 1;
+			}
+			case 2:
+			{
+				TF2_AddCondition(client, TFCond_CritOnDamage);
+				HasCritGlow[client] = 2;
+			}
+			default:
+			{
+				HasCritGlow[client] = 0;
+			}
+		}
 	}
 	#endif
 }
@@ -569,16 +627,20 @@ public void Weapons_SpawnFrame(int ref)
 	if(cfg.GetInt("clip", current))
 	{
 		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
-		SetEntProp(entity, Prop_Data, "m_iClip1", current);
+		if(HasEntProp(entity, Prop_Data, "m_iClip1"))
+			SetEntProp(entity, Prop_Data, "m_iClip1", current);
 	}
 	
 	if(cfg.GetInt("ammo", current))
 	{
 		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
-
-		int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-		if(type >= 0)
-			SetEntProp(client, Prop_Data, "m_iAmmo", current, _, type);
+		
+		if(HasEntProp(entity, Prop_Send, "m_iPrimaryAmmoType"))
+		{
+			int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+			if(type >= 0)
+				SetEntProp(client, Prop_Data, "m_iAmmo", current, _, type);
+		}
 	}
 	
 	switch(cfg.GetKeyValType("attributes"))

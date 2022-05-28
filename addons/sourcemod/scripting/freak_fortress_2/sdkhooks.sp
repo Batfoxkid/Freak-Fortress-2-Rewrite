@@ -47,6 +47,7 @@ void SDKHook_HookClient(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
+	SDKHook(client, SDKHook_WeaponSwitchPost, SDKHook_SwitchPost);
 }
 
 void SDKHook_BossCreated(int client)
@@ -69,6 +70,11 @@ public void OnEntityCreated(int entity, const char[] classname)
 	else if(Enabled && StrEqual(classname, "team_round_timer"))
 	{
 		SDKHook(entity, SDKHook_Spawn, SDKHook_TimerSpawn);
+	}
+	else if(Enabled && StrEqual(classname, "obj_attachment_sapper"))
+	{
+		//SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
+		//SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
 	}
 	else
 	{
@@ -189,6 +195,8 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						}
 					}
+					
+					Weapons_OnBackstabBoss(victim, damage, weapon);
 					
 					Bosses_UseSlot(victim, 6, 6);
 					
@@ -422,6 +430,11 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 	}
 }
 
+public void SDKHook_SwitchPost(int client, int weapon)
+{
+	Weapons_OnWeaponSwitch(client, weapon);
+}
+
 public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
 	if(entity > 0 && entity <= MaxClients && (channel == SNDCHAN_VOICE || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
@@ -524,4 +537,14 @@ public Action SDKHook_TimerSpawn(int entity)
 {
 	DispatchKeyValue(entity, "auto_countdown", "0");
 	return Plugin_Continue;
+}
+
+public void SDKHook_SapperSpawn(int entity)
+{
+	GameRules_SetProp("m_bPlayingMannVsMachine", true);
+}
+
+public void SDKHook_SapperSpawnPost(int entity)
+{
+	GameRules_SetProp("m_bPlayingMannVsMachine", false);
 }
