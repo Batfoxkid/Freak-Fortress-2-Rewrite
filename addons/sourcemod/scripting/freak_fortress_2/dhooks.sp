@@ -145,7 +145,7 @@ void DHook_StripStaticAttributes(int entity)
 	Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
 		
 	HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributes);
-	HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributes_Post);
+	HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributesPost);
 }
 
 void DHook_PluginEnd()
@@ -483,7 +483,7 @@ public MRESReturn DHook_IterateAttributes(Address pThis, DHookParam hParams)
     return MRES_Ignored;
 }
 
-public MRESReturn DHook_IterateAttributes_Post(Address pThis, DHookParam hParams)
+public MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
 
