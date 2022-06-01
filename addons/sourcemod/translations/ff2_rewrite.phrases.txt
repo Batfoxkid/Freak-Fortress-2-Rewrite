@@ -479,6 +479,11 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"+{1}%% melee weapon damage vs bosses"
 	}
+	"mod crit type glow"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"100%% critical hit"
+	}
 	"mod crit type on bosses"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
@@ -503,6 +508,11 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Decerases rage gained by bosses by {2}%%"
+	}
+	"backstab damage percent"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Backstabs deal {1}%% of a boss's max health"
 	}
 	"nailgun custom slow"
 	{

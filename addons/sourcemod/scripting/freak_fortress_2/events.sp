@@ -377,7 +377,10 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			
 			bool deadRinger = view_as<bool>(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER);
 			if(!deadRinger)
+			{
 				Events_CheckAlivePlayers(victim);
+				Weapons_PlayerDeath(victim);
+			}
 			
 			if(Client(victim).IsBoss)
 			{

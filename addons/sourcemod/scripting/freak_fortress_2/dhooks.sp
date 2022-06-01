@@ -45,13 +45,14 @@ void DHook_Setup()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
-	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
-	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
+	//CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
+	//CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
+	CreateDetour(gamedata, "CTFWeaponBuilder::StartBuilding", DHook_StartBuildingPre, DHook_StartBuildingPost);
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
@@ -445,6 +446,24 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 		SetEntProp(param.Get(2), Prop_Send, "m_iClass", EffectClass);
 		EffectClass = -1;
 	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_StartBuildingPre(int entity)
+{
+	PrintToConsoleAll("DHook_StartBuildingPre");
+	//if(Enabled)
+	//	GameRules_SetProp("m_bPlayingMannVsMachine", true);
+
+	return MRES_Ignored;
+}
+
+public MRESReturn DHook_StartBuildingPost(int entity)
+{
+	PrintToConsoleAll("DHook_StartBuildingPost");
+	//if(Enabled)
+	//	GameRules_SetProp("m_bPlayingMannVsMachine", false);
 
 	return MRES_Ignored;
 }
