@@ -574,10 +574,7 @@ public void Weapons_SpawnFrame(int ref)
 	bool found = false;
 	if(cfg.GetBool("strip", found, false) && found)
 	{
-		Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
-		
-		HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, CEconItemView_IterateAttributes);
-		HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, CEconItemView_IterateAttributes_Post);
+		DHook_StripStaticAttributes(entity);
 	}
 
 	int current = 0;

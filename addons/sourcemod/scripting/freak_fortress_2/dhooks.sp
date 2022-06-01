@@ -19,13 +19,13 @@ static DynamicHook SetWinningTeam;
 static DynamicHook GetCaptureValue;
 static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
-DynamicHook HookItemIterateAttribute;
+static DynamicHook HookItemIterateAttribute;
 
 static Address CTFGameStats;
 static int DamageTypeOffset = -1;
 
 static int m_bOnlyIterateItemViewAttributes;
-int m_Item;
+static int m_Item;
 
 static int ChangeTeamHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
@@ -138,6 +138,14 @@ void DHook_EntityCreated(int entity, const char[] classname)
 		ApplyPostHit.HookEntity(Hook_Pre, entity, DHook_ApplyPostHitPre);
 		ApplyPostHit.HookEntity(Hook_Post, entity, DHook_ApplyPostHitPost);
 	}
+}
+
+void DHook_StripStaticAttributes(int entity)
+{
+	Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
+		
+	HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributes);
+	HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributes_Post);
 }
 
 void DHook_PluginEnd()
@@ -468,14 +476,14 @@ public MRESReturn DHook_StartBuildingPost(int entity)
 	return MRES_Ignored;
 }
 
-public MRESReturn CEconItemView_IterateAttributes(Address pThis, DHookParam hParams)
+public MRESReturn DHook_IterateAttributes(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
 
     return MRES_Ignored;
 }
 
-public MRESReturn CEconItemView_IterateAttributes_Post(Address pThis, DHookParam hParams)
+public MRESReturn DHook_IterateAttributes_Post(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
 
