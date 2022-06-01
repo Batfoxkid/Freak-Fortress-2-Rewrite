@@ -19,8 +19,13 @@ static DynamicHook SetWinningTeam;
 static DynamicHook GetCaptureValue;
 static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
+static DynamicHook HookItemIterateAttribute;
+
 static Address CTFGameStats;
 static int DamageTypeOffset = -1;
+
+static int m_bOnlyIterateItemViewAttributes;
+static int m_Item;
 
 static int ChangeTeamHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
@@ -56,6 +61,10 @@ void DHook_Setup()
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ApplyOnInjured = CreateHook(gamedata, "CTFWeaponBase::ApplyOnInjuredAttributes");
 	ApplyPostHit = CreateHook(gamedata, "CTFWeaponBase::ApplyPostHitEffects");
+	HookItemIterateAttribute = CreateHook(gamedata, "CEconItemView::IterateAttributes");
+
+	m_Item = FindSendPropInfo("CEconEntity", "m_Item");
+	FindSendPropInfo("CEconEntity", "m_bOnlyIterateItemViewAttributes", _, _, m_bOnlyIterateItemViewAttributes);
 	
 	delete gamedata;
 }
@@ -129,6 +138,14 @@ void DHook_EntityCreated(int entity, const char[] classname)
 		ApplyPostHit.HookEntity(Hook_Pre, entity, DHook_ApplyPostHitPre);
 		ApplyPostHit.HookEntity(Hook_Post, entity, DHook_ApplyPostHitPost);
 	}
+}
+
+void DHook_StripStaticAttributes(int entity)
+{
+	Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
+		
+	HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributes);
+	HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributesPost);
 }
 
 void DHook_PluginEnd()
@@ -458,3 +475,17 @@ public MRESReturn DHook_StartBuildingPost(int entity)
 
 	return MRES_Ignored;
 }
+
+public MRESReturn DHook_IterateAttributes(Address pThis, DHookParam hParams)
+{
+    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
+
+    return MRES_Ignored;
+}
+
+public MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
+{
+    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
+
+    return MRES_Ignored;
+} 
