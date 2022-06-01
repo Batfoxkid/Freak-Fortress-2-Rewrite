@@ -19,8 +19,13 @@ static DynamicHook SetWinningTeam;
 static DynamicHook GetCaptureValue;
 static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
+DynamicHook HookItemIterateAttribute;
+
 static Address CTFGameStats;
 static int DamageTypeOffset = -1;
+
+static int m_bOnlyIterateItemViewAttributes;
+int m_Item;
 
 static int ChangeTeamHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
@@ -55,6 +60,10 @@ void DHook_Setup()
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ApplyOnInjured = CreateHook(gamedata, "CTFWeaponBase::ApplyOnInjuredAttributes");
 	ApplyPostHit = CreateHook(gamedata, "CTFWeaponBase::ApplyPostHitEffects");
+	HookItemIterateAttribute = CreateHook(gamedata, "CEconItemView::IterateAttributes");
+
+	m_Item = FindSendPropInfo("CEconEntity", "m_Item");
+	FindSendPropInfo("CEconEntity", "m_bOnlyIterateItemViewAttributes", _, _, m_bOnlyIterateItemViewAttributes);
 	
 	delete gamedata;
 }
@@ -439,3 +448,17 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 
 	return MRES_Ignored;
 }
+
+public MRESReturn CEconItemView_IterateAttributes(Address pThis, DHookParam hParams)
+{
+    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
+
+    return MRES_Ignored;
+}
+
+public MRESReturn CEconItemView_IterateAttributes_Post(Address pThis, DHookParam hParams)
+{
+    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
+
+    return MRES_Ignored;
+} 
