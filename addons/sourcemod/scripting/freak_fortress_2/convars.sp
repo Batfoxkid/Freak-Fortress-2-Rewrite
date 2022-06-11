@@ -19,7 +19,7 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
+	ConVar version = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
 	CvarCharset = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
 	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
@@ -36,16 +36,17 @@ void ConVar_PluginStart()
 	CvarPrefBlacklist = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", FCVAR_NOTIFY, true, -1.0);
 	CvarCaptureTime = CreateConVar("ff2_game_capture_time", "n*15 + 60", "Amount of time until the control point unlocks, similar to tf_arena_override_cap_enable_time, can be a formula");
 	CvarCaptureAlive = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
-	CvarAggressiveSwap = CreateConVar("ff2_game_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
+	CvarAggressiveSwap = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
+	CvarAggressiveOverlay = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_solo_shame", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	
-	//bool add = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
+	bool add = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
 	AutoExecConfig(true, "FF2Rewrite");
 	
-	/*char buffer[64];
+	char buffer[512];
 	version.GetString(buffer, sizeof(buffer));
 	if(!StrEqual(buffer, "Rewrite " ... PLUGIN_VERSION))
 	{
@@ -61,14 +62,26 @@ void ConVar_PluginStart()
 	
 	if(add)
 	{
-		File file = OpenFile("cfg/sourcemod/FF2Rewrite.cfg", "a+");
-		if(file)
+		File old = OpenFile("cfg/sourcemod/FF2Rewrite.cfg", "r");
+		if(old)
 		{
-			file.Seek(0, SEEK_SET);
-			file.WriteLine("// !!! Any custom commands saved in this file will be lost upon a FF2 update !!!");
-			file.Close();
+			File cfg = OpenFile("cfg/sourcemod/tmp_FF2Rewrite.cfg", "w");
+			if(cfg)
+			{
+				cfg.WriteLine("// !!! Any custom commands saved in this file will be lost upon a FF2 update !!!");
+				
+				while(!old.EndOfFile())
+				{
+					old.ReadLine(buffer, sizeof(buffer));
+					cfg.WriteLine(buffer);
+				}
+				
+				cfg.Close();
+			}
+			
+			old.Close();
 		}
-	}*/
+	}
 	
 	CvarAllowSpectators = FindConVar("mp_allowspectators");
 	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");

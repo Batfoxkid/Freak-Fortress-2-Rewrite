@@ -435,12 +435,15 @@ void Gamemode_RoundEnd(int winteam)
 	int[] teams = new int[MaxClients];
 	int total;
 	
+	bool overlay = CvarAggressiveOverlay.BoolValue;
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
 			teams[total] = GetClientTeam(client);
 			clients[total++] = client;
+			if(overlay)
+				Client(client).OverlayFor = 1.0;
 		}
 	}
 	
@@ -976,7 +979,7 @@ void Gamemode_PlayerRunCmd(int client)
 		
 		int flags = GetCommandFlags("r_screenoverlay");
 		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-		ClientCommand(client, "r_screenoverlay \"\"");
+		ClientCommand(client, "r_screenoverlay off");
 		SetCommandFlags("r_screenoverlay", flags);
 	}
 }

@@ -132,6 +132,11 @@
 				"linux"		"60"
 				"windows"	"60"
 			}
+			"GetCurrentCommand"
+			{
+				"linux"		"3512"
+				"windows"	"3512"
+			}
 		}
 		"Functions"
 		{
