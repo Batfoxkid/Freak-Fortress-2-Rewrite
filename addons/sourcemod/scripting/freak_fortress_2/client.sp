@@ -41,6 +41,9 @@
 	float LastKillTime
 	float PassiveAt
 	bool Speaking
+	int RPSHit
+	int RPSDamage
+	float RageDebuff
 	float GetCharge(int slot)
 	void SetCharge(int slot, float value)
 	void ResetByDeath()
@@ -598,24 +601,6 @@ methodmap Client
 		}
 	}
 	
-	public float GetCharge(int slot)
-	{
-		char buffer[8];
-		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
-		
-		float value;
-		this.Cfg.GetFloat(buffer, value);
-		return value;
-	}
-	
-	public void SetCharge(int slot, float value)
-	{
-		char buffer[8];
-		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
-		
-		this.Cfg.SetFloat(buffer, value);
-	}
-	
 	property int RPSHit
 	{
 		public get()
@@ -642,6 +627,38 @@ methodmap Client
 		{
 			this.Cfg.SetInt("rpsdmg", value);
 		}
+	}
+	
+	property float RageDebuff
+	{
+		public get()
+		{
+			float value = 1.0;
+			this.Cfg.GetFloat("ragedebuff", value);
+			return value;
+		}
+		public set(float value)
+		{
+			this.Cfg.SetFloat("ragedebuff", value);
+		}
+	}
+	
+	public float GetCharge(int slot)
+	{
+		char buffer[8];
+		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
+		
+		float value;
+		this.Cfg.GetFloat(buffer, value);
+		return value;
+	}
+	
+	public void SetCharge(int slot, float value)
+	{
+		char buffer[8];
+		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
+		
+		this.Cfg.SetFloat(buffer, value);
 	}
 	
 	public void ResetByDeath()

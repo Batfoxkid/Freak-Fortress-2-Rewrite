@@ -514,6 +514,11 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Backstabs deal {1}%% of a boss's max health"
 	}
+	"mod airblast stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive airblasts on a boss increases airblast cooldown"
+	}
 	"nailgun custom slow"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
@@ -523,11 +528,6 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Healing is limited to {4} health when applied to a boss"
-	}
-	"airblast stale DISPLAY ONLY"
-	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Successive airblasts on a boss increases airblast cooldown"
 	}
 	"hit stale DISPLAY ONLY"
 	{

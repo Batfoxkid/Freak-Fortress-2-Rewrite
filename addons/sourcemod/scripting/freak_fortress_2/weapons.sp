@@ -8,7 +8,7 @@
 	void Weapons_ShowChanges(int client, int entity)
 	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
-	float Weapons_PlayerHurt(int entity)
+	void Weapons_OnAirblastBoss(int attacker)
 	void Weapons_EntityCreated(int entity, const char[] classname)
 */
 
@@ -37,6 +37,7 @@ void Weapons_PluginLoad()
 	#if defined __tf_custom_attributes_included
 	MarkNativeAsOptional("TF2CustAttr_GetAttributeKeyValues");
 	MarkNativeAsOptional("TF2CustAttr_GetFloat");
+	MarkNativeAsOptional("TF2CustAttr_GetInt");
 	MarkNativeAsOptional("TF2CustAttr_SetString");
 	#endif
 }
@@ -415,7 +416,7 @@ void Weapons_PlayerDeath(int client)
 	HasCritGlow[client] = 0;
 }
 
-stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
+stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType, int damagecustom)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
@@ -449,7 +450,31 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 			if(critType != 2)
 				critType = kv.GetNum("mod crit type on bosses", critType);
 			
+			value = kv.GetFloat("multi boss rage", 1.0);
+			if(value != 1.0)
+				Client(victim).RageDebuff *= value;
+			
 			char buffer[36];
+			if(damagecustom != TF_CUSTOM_BURNING && damagecustom != TF_CUSTOM_BURNING_FLARE && damagecustom != TF_CUSTOM_BURNING_ARROW)
+			{
+				kv.GetString("mod attribute hit stale", buffer, sizeof(buffer));
+				if(buffer[0])
+				{
+					char buffers[16][2];
+					ExplodeString(buffer, ";", buffers, sizeof(buffers), sizeof(buffers[]));
+					
+					int attrib = StringToInt(buffers[0]);
+					if(attrib)
+					{
+						SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+						
+						float initial = 1.0;
+						Attributes_GetByDefIndex(weapon, attrib, initial);
+						TF2Attrib_SetByDefIndex(weapon, attrib, initial + StringToFloat(buffers[1]));
+					}
+				}
+			}
+			
 			if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
 			{
 				int slot = TF2_GetClassnameSlot(buffer);
@@ -471,6 +496,28 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 		}
 		
 		delete kv;
+	}
+	#endif
+}
+
+stock void Weapons_OnAirblastBoss(int attacker)
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded)
+	{
+		int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+		if(weapon != -1)
+		{
+			float stale = TF2CustAttr_GetFloat(weapon, "mod airblast stale");
+			if(stale)
+			{
+				SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+				
+				float initial = 1.0;
+				Attributes_GetByDefIndex(weapon, 256, initial);
+				TF2Attrib_SetByDefIndex(weapon, 256, initial + stale);
+			}
+		}
 	}
 	#endif
 }
@@ -530,10 +577,10 @@ stock float Weapons_PlayerHurt(int entity)
 {
 	float value = 1.0;
 	
-	/*#if defined __tf_custom_attributes_included
+	#if defined __tf_custom_attributes_included
 	if(TCALoaded)
 		value = TF2CustAttr_GetFloat(entity, "multi boss rage", 1.0);
-	#endif**/
+	#endif
 	
 	return value;
 }
@@ -564,7 +611,7 @@ public void Weapons_SpawnFrame(int ref)
 		return;
 
 	int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
-	if(!IsClientValid(client) || Client(client).IsBoss || Client(client).Minion)
+	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).Minion)
 		return;
 
 	ConfigMap cfg = FindWeaponSection(entity);

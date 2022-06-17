@@ -125,7 +125,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			if(IsInvuln(victim))
 				return Plugin_Continue;
 			
-			Weapons_OnHitBossPre(attacker, victim, damage, weapon, view_as<int>(critType));
+			Weapons_OnHitBossPre(attacker, victim, damage, weapon, view_as<int>(critType), damagecustom);
 			
 			switch(damagecustom)
 			{
@@ -264,7 +264,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			}
 			else
 			{
-				Attributes_OnHitBossPre(attacker, victim, damage, damagetype, weapon);
+				Attributes_OnHitBossPre(attacker, victim, damagetype, weapon);
 			}
 			
 			if(critType == CritType_None && (damagetype & DMG_CRIT))

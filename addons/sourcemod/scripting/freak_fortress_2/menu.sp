@@ -247,7 +247,7 @@ static void QueueMenu(int client)
 	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
-	menu.AddItem("", buffer, Client(client).Queue > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("", buffer, (CvarPrefToggle.BoolValue && Client(client).Queue > 0) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	menu.Pagination = false;
 	menu.ExitButton = true;

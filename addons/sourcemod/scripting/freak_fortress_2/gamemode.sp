@@ -208,7 +208,6 @@ void Gamemode_RoundSetup()
 
 public void TF2_OnWaitingForPlayersStart()
 {
-	Debug("TF2_OnWaitingForPlayersStart");
 	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		Waiting = false;
@@ -219,7 +218,6 @@ public void TF2_OnWaitingForPlayersStart()
 
 public void TF2_OnWaitingForPlayersEnd()
 {
-	Debug("TF2_OnWaitingForPlayersEnd");
 	if(Enabled)
 		CvarMovementFreeze.BoolValue = true;
 }

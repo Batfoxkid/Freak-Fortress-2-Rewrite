@@ -479,7 +479,7 @@ static void BossMenu(int client)
 				FormatEx(data, sizeof(data), "%t", blacklist > 0 ? "Clear Blacklist" : "Clear Whitelist");
 				menu.InsertItem(0, "-1", data);
 			}
-			else
+			else if(CvarPrefToggle.BoolValue)
 			{
 				FormatEx(data, sizeof(data), "%t", "Disable Playing Boss");
 				menu.InsertItem(0, "-2", data);
@@ -523,7 +523,7 @@ static void BossMenu(int client)
 		}
 		
 		// Show if any boss pack doesn't have one disaabled
-		if(enables)
+		if(enables && CvarPrefToggle.BoolValue)
 		{
 			FormatEx(data, sizeof(data), "%t", "Disable Playing Boss All");
 			menu.AddItem("-2", data);

@@ -242,12 +242,11 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		if(Client(victim).IsBoss)
 		{
-			float multi = 100.0;
-			int weapon = event.GetInt("weaponid");
-			if(weapon != -1)
-				multi *= Weapons_PlayerHurt(weapon);
+			float debuff = Client(victim).RageDebuff;
+			if(debuff != 1.0)
+				Client(victim).RageDebuff = 1.0;
 			
-			float rage = Client(victim).GetCharge(0) + (damage * multi / Client(victim).RageDamage);
+			float rage = Client(victim).GetCharge(0) + (damage * 100.0 * debuff / Client(victim).RageDamage);
 			float maxrage = Client(victim).RageMax;
 			if(rage > maxrage)
 				rage = maxrage;
@@ -368,13 +367,6 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 		int victim = GetClientOfUserId(userid);
 		if(victim)
 		{
-			int bosses, mercs;
-			while(TF2_GetItem(victim, bosses, mercs))
-			{
-				if(!GetEntProp(bosses, Prop_Send, "m_iAccountID"))
-					TF2_RemoveItem(victim, bosses);
-			}
-			
 			bool deadRinger = view_as<bool>(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER);
 			if(!deadRinger)
 			{
@@ -383,11 +375,18 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				
 				Events_CheckAlivePlayers(victim);
 				Weapons_PlayerDeath(victim);
+				
+				int entity, i;
+				while(TF2_GetItem(victim, entity, i))
+				{
+					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+						TF2_RemoveItem(victim, entity);
+				}
 			}
 			
 			if(Client(victim).IsBoss)
 			{
-				bosses = mercs = 0;
+				int bosses, mercs;
 				int[] boss = new int[MaxClients];
 				int[] merc = new int[MaxClients];
 				
@@ -395,7 +394,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				{
 					if(IsClientInGame(i))
 					{
-						if(Client(i).IsBoss || deadRinger)
+						if(deadRinger || Client(i).IsBoss)
 						{
 							boss[bosses++] = i;
 						}

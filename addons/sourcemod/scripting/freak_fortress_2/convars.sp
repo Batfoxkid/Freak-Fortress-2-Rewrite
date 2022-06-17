@@ -34,6 +34,7 @@ void ConVar_PluginStart()
 	CvarBossHealing = CreateConVar("ff2_boss_healing", "0", "If v1 bosses can be healed by default, 1 = Self Healing Only, 2 = Other Healing Only, 3 = Both", _, true, 0.0, true, 3.0);
 	CvarBossKnockback = CreateConVar("ff2_boss_knockback", "0", "If v1 bosses can perform self-knockback by default, 2 will also allow self-damage", _, true, 0.0, true, 2.0);
 	CvarPrefBlacklist = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", FCVAR_NOTIFY, true, -1.0);
+	CvarPrefToggle = CreateConVar("ff2_pref_toggle", "1", "If players can opt out playing bosses and reset queue points", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	CvarCaptureTime = CreateConVar("ff2_game_capture_time", "n*15 + 60", "Amount of time until the control point unlocks, similar to tf_arena_override_cap_enable_time, can be a formula");
 	CvarCaptureAlive = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
 	CvarAggressiveSwap = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
@@ -77,6 +78,9 @@ void ConVar_PluginStart()
 				}
 				
 				cfg.Close();
+				
+				if(DeleteFile("cfg/sourcemod/FF2Rewrite.cfg"))
+					RenameFile("cfg/sourcemod/FF2Rewrite.cfg", "cfg/sourcemod/tmp_FF2Rewrite.cfg");
 			}
 			
 			old.Close();
