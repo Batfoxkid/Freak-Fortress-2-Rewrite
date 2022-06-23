@@ -15,6 +15,7 @@ There'll eventually be a wiki page where all of the new features / changes ( als
 - You can now use bosses outside the gamemode, this of course requires subplugin changes.
 - A new subplugin format that's available to use.
 - A new boss config format that also allows mix matching old and new styles.
+- A party system for companion bosses. You can now pick your companion rather than being forcefully matched with a random player.
 - A redesign of existing configs, weapons, and HUDs.
 - Runs faster and easily takes on multiple bosses at once.
 - A ton of Quality Of Life changes and additions.
@@ -23,7 +24,6 @@ There'll eventually be a wiki page where all of the new features / changes ( als
 
 - Test and Debug!
 - New mobility-abilities subplugin.
-- A party system for companion bosses.
 - Boss difficulty system.
 - New natives and forwards.
 
