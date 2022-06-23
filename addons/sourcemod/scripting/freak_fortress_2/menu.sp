@@ -174,22 +174,13 @@ public Action Menu_QueueMenuCmd(int client, int args)
 {
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
-		bool specTeam = CvarSpecTeam.BoolValue;
-		int amount;
 		int[] clients = new int[MaxClients];
-		for(int i = 1; i <= MaxClients; i++)
-		{
-			if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
-				clients[amount++] = i;
-		}
-		
+		int amount = Preference_GetBossQueue(clients, MaxClients, true);
 		if(amount)
 		{
-			SortCustom1D(clients, amount, GetBossQueueSort);
-			
 			for(int i; i < amount; i++)
 			{
-				ReplyToCommand(client, "%s%d: %N", clients[i]==client ? " " : "", Client(clients[i]).Queue, clients[i]);
+				ReplyToCommand(client, "%s%N - %d", clients[i]==client ? " " : "", clients[i], Preference_GetFullQueuePoints(clients[i]));
 			}
 		}
 		else
@@ -213,26 +204,17 @@ static void QueueMenu(int client)
 	
 	menu.SetTitle("%t", "Queue Menu");
 	
-	bool specTeam = CvarSpecTeam.BoolValue;
-	int amount;
 	int[] clients = new int[MaxClients];
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientInGame(i) && (GetClientTeam(i) > 1 || (specTeam && IsPlayerAlive(i))) && !Preference_DisabledBoss(i, Charset))
-			clients[amount++] = i;
-	}
-		
-	if(amount)
-		SortCustom1D(clients, amount, GetBossQueueSort);
+	int amount = Preference_GetBossQueue(clients, MaxClients, true);
 	
 	char buffer[64];
 	bool exitButton = Menu_BackButton(client);
 	for(int i; exitButton ? i < 7 : i < 8; i++)
 	{
-		if(clients[i])
+		if(i < amount)
 		{
-			FormatEx(buffer, sizeof(buffer), "%N - %d", clients[i], Client(clients[i]).Queue);
-			menu.AddItem("", buffer, clients[i]==client ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+			FormatEx(buffer, sizeof(buffer), "%N - %d", clients[i], Preference_GetFullQueuePoints(clients[i]));
+			menu.AddItem("", buffer, clients[i] == client ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		}
 		else
 		{
@@ -247,9 +229,9 @@ static void QueueMenu(int client)
 	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
-	menu.AddItem("", buffer, (CvarPrefToggle.BoolValue && Client(client).Queue > 0) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && CvarPrefToggle.BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
-	menu.Pagination = false;
+	menu.Pagination = 0;
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }

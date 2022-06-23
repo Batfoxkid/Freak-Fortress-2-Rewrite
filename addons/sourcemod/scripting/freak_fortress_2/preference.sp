@@ -7,6 +7,11 @@
 	int Preference_PickBoss(int client, int team = -1)
 	void Preference_BossMenu(int client)
 	void Preference_ClientDisconnect(int client)
+	int Preference_IsInParty(int client)
+	void Preference_FinishParty(int client)
+	int Preference_GetCompanion(int client, int special, int team, bool &disband)
+	int Preference_GetFullQueuePoints(int client)
+	int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
 */
 
 #pragma semicolon 1
@@ -15,6 +20,10 @@ static int BossOverride = -1;
 static int ViewingPack[MAXTF2PLAYERS];
 static int ViewingPage[MAXTF2PLAYERS];
 static int ViewingBoss[MAXTF2PLAYERS];
+static int PartyLeader[MAXTF2PLAYERS];
+static int PartyChoice[MAXTF2PLAYERS];
+static int PartyMainBoss[MAXTF2PLAYERS];
+static int PartyInvite[MAXTF2PLAYERS][MAXTF2PLAYERS];
 static ArrayList BossListing[MAXTF2PLAYERS];
 
 void Preference_PluginStart()
@@ -26,6 +35,14 @@ void Preference_PluginStart()
 	//RegFreakCmd("difficulty", Preference_BossMenuCmd, "Freak Fortress 2 Boss Difficulties");
 
 	RegAdminCmd("ff2_special", Preference_ForceBossCmd, ADMFLAG_CHEATS, "Force a specific boss to appear");
+	
+	for(int a; a < sizeof(PartyInvite); a++)
+	{
+		for(int b; b < sizeof(PartyInvite[]); b++)
+		{
+			PartyInvite[a][b] = -1;
+		}
+	}
 }
 
 void Preference_AddBoss(int client, const char[] name)
@@ -82,120 +99,123 @@ int Preference_PickBoss(int client, int team = -1)
 	int special = BossOverride;
 	if(special == -1)
 	{
-		ArrayList list = new ArrayList();
-		int length = Bosses_GetConfigLength();
-		for(int i; i < length; i++)
+		if(PartyLeader[client])
 		{
-			if(Bosses_CanAccessBoss(client, i, true, team))
-				list.Push(i);
-		}
-		
-		char buffer[64];
-		length = list.Length;
-		if(length)
-		{
-			int count = CvarPrefBlacklist.IntValue;
-			if(BossListing[client] && count != 0)
-			{
-				ArrayList list2 = count > 0 ? list.Clone() : new ArrayList();
-				
-				bool found;
-				int length2 = BossListing[client].Length;
-				for(int i; i < length2; i++)
-				{
-					special = BossListing[client].Get(i);
-					int index = count > 0 ? list2.FindValue(special) : list.FindValue(special);
-					if(index != -1)
-					{
-						if(count > 0)
-						{
-							list2.Erase(index);
-						}
-						else
-						{
-							list2.Push(special);
-						}
-						
-						found = true;
-					}
-				}
-				
-				if(found)
-				{
-					delete list;
-					list = list2;
-					length = list2.Length;
-				}
-				else
-				{
-					delete list2;
-				}
-			}
-			
-			if(length > 1 && Client(client).GetLastPlayed(buffer, sizeof(buffer)))
-			{
-				count = list.FindValue(Bosses_GetByName(buffer, true, _, _, "filename"));
-				if(count != -1)
-				{
-					list.Erase(count);
-					length--;
-				}
-			}
-			
-			count = 0;
-			int[] bosses = new int[MaxClients];
-			for(int i = 1; i <= MaxClients; i++)
-			{
-				if(i != client && Client(i).IsBoss)
-					bosses[count++] = i;
-			}
-			
-			if(length > count)
-			{
-				for(int i; i < count; i++)
-				{
-					if(Client(bosses[i]).Cfg.GetInt("special", special))
-					{
-						special = list.FindValue(special);
-						if(special != -1)
-						{
-							list.Erase(special);
-							length--;
-						}
-					}
-				}
-			}
-			
-			if(Client(client).Index < 0)
-			{
-				for(int i; ; i++)
-				{
-					if(FindClientOfBossIndex(i) == -1)
-					{
-						Client(client).Index = i;
-						break;
-					}
-				}
-			}
-			
-			special = list.Get((GetTime() + client) % length);
-			delete list;
-			
-			ForwardOld_OnSpecialSelected(Client(client).Index, special, false);
+			special = PartyMainBoss[PartyLeader[client]];
 		}
 		else
 		{
+			ArrayList list = new ArrayList();
+			int length = Bosses_GetConfigLength();
+			for(int i; i < length; i++)
+			{
+				if(Bosses_CanAccessBoss(client, i, true, team))
+					list.Push(i);
+			}
+			
+			char buffer[64];
+			length = list.Length;
+			if(length)
+			{
+				int count = CvarPrefBlacklist.IntValue;
+				if(BossListing[client] && count != 0)
+				{
+					ArrayList list2 = count > 0 ? list.Clone() : new ArrayList();
+					
+					bool found;
+					int length2 = BossListing[client].Length;
+					for(int i; i < length2; i++)
+					{
+						special = BossListing[client].Get(i);
+						int index = count > 0 ? list2.FindValue(special) : list.FindValue(special);
+						if(index != -1)
+						{
+							if(count > 0)
+							{
+								list2.Erase(index);
+							}
+							else
+							{
+								list2.Push(special);
+							}
+							
+							found = true;
+						}
+					}
+					
+					if(found)
+					{
+						delete list;
+						list = list2;
+						length = list2.Length;
+					}
+					else
+					{
+						delete list2;
+					}
+				}
+				
+				if(length > 1 && Client(client).GetLastPlayed(buffer, sizeof(buffer)))
+				{
+					count = list.FindValue(Bosses_GetByName(buffer, true, _, _, "filename"));
+					if(count != -1)
+					{
+						list.Erase(count);
+						length--;
+					}
+				}
+				
+				count = 0;
+				int[] bosses = new int[MaxClients];
+				for(int i = 1; i <= MaxClients; i++)
+				{
+					if(i != client && Client(i).IsBoss)
+						bosses[count++] = i;
+				}
+				
+				if(length > count)
+				{
+					for(int i; i < count; i++)
+					{
+						if(Client(bosses[i]).Cfg.GetInt("special", special))
+						{
+							special = list.FindValue(special);
+							if(special != -1)
+							{
+								list.Erase(special);
+								length--;
+							}
+						}
+					}
+				}
+				
+				if(Client(client).Index < 0)
+				{
+					for(int i; ; i++)
+					{
+						if(FindClientOfBossIndex(i) == -1)
+						{
+							Client(client).Index = i;
+							break;
+						}
+					}
+				}
+				
+				special = list.Get((GetTime() + client) % length);
+				ForwardOld_OnSpecialSelected(Client(client).Index, special, false);
+			}
+			else
+			{
+				Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+				LogError("[!!!] Could not find a valid boss in %s (#%d)", buffer, Charset);
+			}
+			
 			delete list;
-			Bosses_GetCharset(Charset, buffer, sizeof(buffer));
-			LogError("[!!!] Could not find a valid boss in %s (#%d)", buffer, Charset);
 			return special;
 		}
 	}
-	else
-	{
-		ForwardOld_OnSpecialSelected(Client(client).Index, special, true);
-	}
 	
+	ForwardOld_OnSpecialSelected(Client(client).Index, special, true);
 	return special;
 }
 
@@ -239,6 +259,9 @@ public Action Preference_BossMenuCmd(int client, int args)
 				if(GetClientMenu(client) != MenuSource_None)
 					CancelClientMenu(client);
 				
+				Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client));
+				ConfigMap cfg = Bosses_GetConfig(special);
+				
 				int index;
 				if(BossListing[client] && (index = BossListing[client].FindValue(special)) != -1)
 				{
@@ -246,23 +269,36 @@ public Action Preference_BossMenuCmd(int client, int args)
 					
 					if(blacklist > 0)
 					{
-						Bosses_GetConfig(special).GetInt("charset", index);
+						cfg.GetInt("charset", index);
 						index = GetBlacklistCount(client, index);
-						FReplyToCommand(client, "%t (%d / %d)", "Boss Whitelisted", index, blacklist);
+						FReplyToCommand(client, "%t (%d / %d)", "Boss Whitelisted", buffer, index, blacklist);
 					}
 					else
 					{
-						FReplyToCommand(client, "%t", "Boss Blacklisted");
+						FReplyToCommand(client, "%t", "Boss Blacklisted", buffer);
+					}
+				}
+				else if(cfg.GetInt("companion", index))
+				{
+					bool enabled;
+					if(blacklist > 0 || !cfg.GetBool("enabled", enabled) || !enabled)
+					{
+						FReplyToCommand(client, "%t", "Boss No View");
+					}
+					else
+					{
+						ViewingBoss[client] = special;
+						CreateParty(client);
 					}
 				}
 				else if(blacklist > 0)
 				{
-					Bosses_GetConfig(special).GetInt("charset", index);
+					cfg.GetInt("charset", index);
 					index = GetBlacklistCount(client, index);
 					if(index < blacklist)
 					{
 						BossListing[client].Push(special);
-						FReplyToCommand(client, "%t (%d / %d)", "Boss Blacklisted", index+1, blacklist);
+						FReplyToCommand(client, "%t (%d / %d)", "Boss Blacklisted", buffer, index+1, blacklist);
 					}
 					else
 					{
@@ -272,7 +308,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 				else
 				{
 					BossListing[client].Push(special);
-					ReplyToCommand(client, "%t", "Boss Whitelisted");
+					FReplyToCommand(client, "%t", "Boss Whitelisted", buffer);
 				}
 			}
 			else
@@ -323,7 +359,8 @@ public Action Preference_BossMenuCmd(int client, int args)
 		ViewingBoss[client] = -1;
 		
 		Menu_Command(client);
-		BossMenu(client);
+		if(!PartyMenu(client))
+			BossMenu(client);
 	}
 	return Plugin_Handled;
 }
@@ -334,7 +371,8 @@ void Preference_BossMenu(int client)
 	ViewingPage[client] = 0;
 	ViewingBoss[client] = -1;
 	
-	BossMenu(client);
+	if(!PartyMenu(client))
+		BossMenu(client);
 }
 
 static void BossMenu(int client)
@@ -397,6 +435,21 @@ static void BossMenu(int client)
 					}
 					
 					menu.AddItem("0", buffer);
+				}
+				else if(cfg.GetInt("companion", count))
+				{
+					if(blacklist > 0 || !cfg.GetBool("enabled", preview) || !preview)
+					{
+						menu.AddItem("0", " ", ITEMDRAW_NOTEXT);
+					}
+					else
+					{
+						if(!Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang, "group"))
+							Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
+						
+						FormatEx(buffer, sizeof(buffer), "%t", "Boss Party", data);
+						menu.AddItem("2", buffer);
+					}
 				}
 				else if(blacklist > 0)
 				{
@@ -591,13 +644,18 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 			{
 				switch(value)
 				{
-					case 1, 2:
+					case 2:
+					{
+						CreateParty(client);
+					}
+					case 1:
 					{
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
 						BossListing[client].Push(ViewingBoss[client]);
 						ViewingBoss[client] = -1;
+						BossMenu(client);
 					}
 					default:
 					{
@@ -609,10 +667,10 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						}
 						
 						ViewingBoss[client] = -1;
+						BossMenu(client);
 					}
 				}
 				
-				BossMenu(client);
 				ViewingPage[client] = 0;
 			}
 			else if(ViewingPack[client] >= 0)
@@ -712,6 +770,607 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 		}
 	}
 	return 0;
+}
+
+bool Preference_ClientDisconnect(int client)
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		PartyInvite[client][i] = -1;
+	}
+	
+	if(!PartyLeader[client])
+		return false;
+	
+	int newLeader;
+	char buffer[64];
+	for(int target = 1; target <= MaxClients; target++)
+	{
+		PartyInvite[target][client] = -1;
+		
+		if(target != client && PartyLeader[client] == PartyLeader[target])
+		{
+			if(PartyLeader[client] == client)
+			{
+				if(!newLeader)
+					newLeader = target;
+				
+				PartyLeader[target] = newLeader;
+			}
+			
+			if(newLeader)
+			{
+				Bosses_GetBossName(PartyChoice[client], buffer, sizeof(buffer), GetClientLanguage(target));
+				FPrintToChat(target, "%t", "Party Leader Left", client, buffer, newLeader);
+			}
+			else
+			{
+				Bosses_GetBossName(PartyChoice[client], buffer, sizeof(buffer), GetClientLanguage(target));
+				FPrintToChat(target, "%t", "Party Member Left", client, buffer);
+			}
+		}
+	}
+	
+	PartyLeader[client] = 0;
+	return true;
+}
+
+static void CreateParty(int client)
+{
+	if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == ViewingBoss[client])
+	{
+		PartyMenu(client);
+		return;
+	}
+	
+	Preference_ClientDisconnect(client);
+	
+	Menu menu = new Menu(Preference_CreatePartyH);
+	
+	SetGlobalTransTarget(client);
+	int lang = GetClientLanguage(client);
+	
+	int special = ViewingBoss[client];
+	
+	char data[12], buffer[64];
+	if(!Bosses_GetBossName(special, buffer, sizeof(buffer), lang, "group"))
+		Bosses_GetBossName(special, buffer, sizeof(buffer), lang);
+	
+	menu.SetTitle("%t", "Boss Party Menu", buffer);
+	
+	for(int i; i<MAXTF2PLAYERS; i++)	// In case someone made an infinite loop boss
+	{
+		ConfigMap cfg = Bosses_GetConfig(special);
+		Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+		
+		IntToString(special, data, sizeof(data));
+		menu.AddItem(data, buffer);
+		
+		if(!cfg.GetInt("companion", special))
+			break;
+	}
+	
+	menu.ExitBackButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Preference_CreatePartyH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				BossMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			PartyChoice[client] = StringToInt(buffer);
+			PartyLeader[client] = client;
+			
+			menu.GetItem(0, buffer, sizeof(buffer));
+			PartyMainBoss[client] = StringToInt(buffer);
+			
+			PartyMenu(client);
+		}
+	}
+	return 0;
+}
+
+static bool PartyMenu(int client)
+{
+	if(!PartyLeader[client])
+		return InviteMenu(client);
+	
+	Menu menu = new Menu(Preference_PartyMenuH);
+	
+	SetGlobalTransTarget(client);
+	int lang = GetClientLanguage(client);
+	
+	int special = PartyMainBoss[PartyLeader[client]];
+	
+	char data[16], buffer[128];
+	if(!Bosses_GetBossName(special, buffer, sizeof(buffer), lang, "group"))
+		Bosses_GetBossName(special, buffer, sizeof(buffer), lang);
+	
+	menu.SetTitle("%t", "Boss Party Menu", buffer);
+	
+	bool leader = PartyLeader[client] == client;
+	for(int i; i<MAXTF2PLAYERS; i++)	// In case someone made an infinite loop boss
+	{
+		ConfigMap cfg = Bosses_GetConfig(special);
+		Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+		
+		int target = FindPartyMember(PartyLeader[client], special);
+		if(target)
+		{
+			Format(buffer, sizeof(buffer), "%t", (leader && client != target) ? "Boss Party Kick" : "Boss Party Member", buffer, target);
+		}
+		else
+		{
+			if(leader)
+				target = FindPartyInvitee(PartyLeader[client], special);
+			
+			if(target)
+			{
+				Format(buffer, sizeof(buffer), "%t", "Boss Party Pending", buffer, target);
+			}
+			else
+			{
+				Format(buffer, sizeof(buffer), "%t", leader ? "Boss Party Invite" : "Boss Party Blank", buffer);
+			}
+		}
+		
+		IntToString(special, data, sizeof(data));
+		menu.AddItem(data, buffer, (leader && client == target) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+		if(!cfg.GetInt("companion", special))
+			break;
+	}
+	
+	FormatEx(buffer, sizeof(buffer), "%t", "Boss Party Leave");
+	menu.AddItem("-1", buffer);
+	
+	menu.ExitBackButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+	return true;
+}
+
+public int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				BossMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			int special = StringToInt(buffer);
+			
+			if(special == -1)
+			{
+				Preference_ClientDisconnect(client);
+				Bosses_GetBossName(PartyChoice[client], buffer, sizeof(buffer), GetClientLanguage(client));
+				FPrintToChat(client, "%t", "Party You Left", buffer);
+				BossMenu(client);
+			}
+			else if(PartyLeader[client] == client)
+			{
+				int target = FindPartyMember(PartyLeader[client], special);
+				if(target)
+				{
+					PartyLeader[target] = 0;
+					Bosses_GetBossName(PartyChoice[target], buffer, sizeof(buffer), GetClientLanguage(target));
+					FPrintToChat(target, "%t", "Party You Kicked", buffer);
+					
+					for(int other = 1; other <= MaxClients; other++)
+					{
+						if(target != other && PartyLeader[client] == PartyLeader[other])
+						{
+							Bosses_GetBossName(PartyChoice[target], buffer, sizeof(buffer), GetClientLanguage(other));
+							FPrintToChat(other, "%t", "Party Member Kicked", target, buffer);
+						}
+					}
+					
+					PartyMenu(client);
+				}
+				else
+				{
+					target = FindPartyInvitee(PartyLeader[client], special);
+					if(target)
+					{
+						PartyInvite[target][client] = -1;
+						PartyMenu(client);
+					}
+					else
+					{
+						SetGlobalTransTarget(client);
+						
+						PartyInvite[client][client] = special;
+						
+						Menu menu2 = new Menu(Preference_PartyInviteH);
+						
+						Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client));
+						menu2.SetTitle("%t\n ", "Boss Party Menu", buffer);
+						
+						char buffer2[16];
+						for(target = 1; target <= MaxClients; target++)
+						{
+							if(IsClientInGame(target) && CanInviteMember(client, target))
+							{
+								IntToString(GetClientUserId(target), buffer2, sizeof(buffer2));
+								GetClientName(target, buffer, sizeof(buffer));
+								menu2.AddItem(buffer2, buffer);
+							}
+						}
+						
+						if(!buffer2[0])
+							menu2.AddItem("-1", "N/A", ITEMDRAW_DISABLED);
+						
+						menu2.ExitBackButton = true;
+						menu2.Display(client, MENU_TIME_FOREVER);
+					}
+				}
+			}
+			else
+			{
+				SetGlobalTransTarget(client);
+				
+				Menu menu2 = new Menu(Preference_PartyInviteH);
+				if(Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client), "description"))
+				{
+					menu2.SetTitle("%t\n%s\n ", "Boss Party Menu", "", buffer);
+				}
+				else
+				{
+					menu2.SetTitle("%t\n%t\n ", "Boss Party Menu", "", "No Description");
+				}
+				
+				menu2.AddItem("-1", " ", ITEMDRAW_NOTEXT);
+				
+				menu2.ExitBackButton = true;
+				menu2.Display(client, MENU_TIME_FOREVER);
+			}
+		}
+	}
+	return 0;
+}
+
+public int Preference_PartyInviteH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				PartyMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			
+			int target = GetClientOfUserId(StringToInt(buffer));
+			if(target && CanInviteMember(client, target))
+			{
+				if(IsFakeClient(target))
+				{
+					PartyLeader[target] = client;
+					PartyChoice[target] = PartyInvite[client][client];
+					
+					for(int other = 1; other <= MaxClients; other++)
+					{
+						if(target != other && PartyLeader[other] == client)
+						{
+							Bosses_GetBossName(PartyChoice[target], buffer, sizeof(buffer), GetClientLanguage(other));
+							FPrintToChat(other, "%t", "Party Member Joined", target, buffer);
+						}
+					}
+				}
+				else
+				{
+					PartyInvite[target][client] = PartyInvite[client][client];
+					
+					Bosses_GetBossName(PartyInvite[client][client], buffer, sizeof(buffer), GetClientLanguage(target));
+					FPrintToChat(target, "%t", "Party Member Invited", client, buffer);
+				}
+			}
+			else
+			{
+				FPrintToChat(client, "%t", "Player no longer available");
+			}
+			
+			PartyMenu(client);
+		}
+	}
+	return 0;
+}
+
+static bool InviteMenu(int client)
+{
+	for(int target = 1; target <= MaxClients; target++)
+	{
+		if(client != target && PartyInvite[client][target] != -1)
+		{
+			Menu menu = new Menu(Preference_InviteMenuH);
+			
+			SetGlobalTransTarget(client);
+			int lang = GetClientLanguage(client);
+			
+			int special = PartyMainBoss[PartyLeader[client]];
+			
+			char buffer1[64], buffer2[128];
+			if(!Bosses_GetBossName(special, buffer1, sizeof(buffer1), lang, "group"))
+				Bosses_GetBossName(special, buffer1, sizeof(buffer1), lang);
+			
+			Bosses_GetBossName(PartyInvite[client][target], buffer2, sizeof(buffer2), lang);
+			
+			menu.SetTitle("%t%t", "Boss Party Menu", buffer1, "Boss Party Invited", target, buffer2);
+			
+			IntToString(GetClientUserId(target), buffer2, sizeof(buffer2));
+			FormatEx(buffer1, sizeof(buffer1), "%t", "Boss Party Accept");
+			menu.AddItem(buffer2, buffer1);
+			
+			FormatEx(buffer1, sizeof(buffer1), "%t", "Boss Party Decline");
+			menu.AddItem(buffer2, buffer1);
+			
+			FormatEx(buffer1, sizeof(buffer1), "%t", "Boss Party Block");
+			menu.AddItem(buffer2, buffer1, ITEMDRAW_DISABLED);
+			
+			menu.Display(client, MENU_TIME_FOREVER);
+			return true;
+		}
+	}
+	return false;
+}
+
+public int Preference_InviteMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_Exit)
+				BossMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			
+			int target = GetClientOfUserId(StringToInt(buffer));
+			if(target && PartyLeader[target] == target && PartyInvite[client][target] != -1)
+			{
+				if(choice)
+				{
+					Bosses_GetBossName(PartyInvite[client][target], buffer, sizeof(buffer), GetClientLanguage(target));
+					FPrintToChat(target, "%t", "Party Member Left", client, buffer);
+					
+					PartyInvite[client][target] = -1;
+				}
+				else
+				{
+					PartyLeader[client] = target;
+					PartyChoice[client] = PartyInvite[client][target];
+					PartyInvite[client][target] = -1;
+					
+					for(int other = 1; other <= MaxClients; other++)
+					{
+						if(PartyInvite[client][other] != -1)
+						{
+							Bosses_GetBossName(PartyInvite[client][other], buffer, sizeof(buffer), GetClientLanguage(other));
+							FPrintToChat(other, "%t", "Party Member Left", client, buffer);
+							
+							PartyInvite[client][other] = -1;
+						}
+						else if(client != other && PartyLeader[other] == target)
+						{
+							Bosses_GetBossName(PartyChoice[client], buffer, sizeof(buffer), GetClientLanguage(other));
+							FPrintToChat(other, "%t", "Party Member Joined", client, buffer);
+						}
+					}
+				}
+			}
+			else if(!choice)
+			{
+				FPrintToChat(client, "%t", "Player no longer available");
+			}
+			
+			if(!PartyMenu(client))
+				BossMenu(client);
+		}
+	}
+	return 0;
+}
+
+static int FindPartyMember(int leader, int special)
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(PartyLeader[client] == leader && PartyChoice[client] == special)
+			return client;
+	}
+	return 0;
+}
+
+static int FindPartyInvitee(int leader, int special)
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(leader != client && PartyInvite[client][leader] == special)
+			return client;
+	}
+	return 0;
+}
+
+static bool CanInviteMember(int client, int target)
+{
+	// If they are already in a party or has an invite
+	if(PartyLeader[target] || PartyInvite[target][client] != -1)
+		return false;
+	
+	// If they have the client muted
+	if(IsClientMuted(target, client))
+		return false;
+	
+	// If their spectating
+	if(GetClientTeam(target) <= TFTeam_Spectator && !IsPlayerAlive(target))
+		return false;
+	
+	return true;
+}
+
+int Preference_IsInParty(int client)
+{
+	return PartyLeader[client];
+}
+
+void Preference_FinishParty(int client)
+{
+	PartyLeader[client] = 0;
+	Client(client).Queue = 0;
+}
+
+int Preference_GetCompanion(int client, int special, int team, bool &disband)
+{
+	if(Enabled && PartyLeader[client])
+	{
+		int player = FindPartyMember(PartyLeader[client], special);
+		if(player && !Client(player).IsBoss)
+		{
+			disband = true;
+			return player;
+		}
+	}
+	
+	int count;
+	int[] players = new int[MaxClients];
+	for(int player = 1; player <= MaxClients; player++)
+	{
+		if(player != client && IsClientInGame(player) && !Client(player).IsBoss)
+		{
+			if(Enabled)
+			{
+				if(GetClientTeam(player) <= TFTeam_Spectator && !IsPlayerAlive(player))
+					continue;
+			}
+			else if(GetClientTeam(player) != team)
+			{
+				continue;
+			}
+			
+			players[count++] = player;
+		}
+	}
+	
+	if(!count)
+		return 0;
+	
+	return players[GetURandomInt() % count];
+}
+
+int Preference_GetFullQueuePoints(int client)
+{
+	int queue = Client(client).Queue;
+	
+	if(PartyLeader[client])
+	{
+		for(int target = 1; target <= MaxClients; target++)
+		{
+			if(client != target && PartyLeader[client] == PartyLeader[target])
+				queue += Client(target).Queue;
+		}
+		
+		int special = PartyMainBoss[PartyLeader[client]];
+		
+		int i = 1;
+		while(Bosses_GetConfig(special).GetInt("companion", special))
+		{
+			if(++i > MAXTF2PLAYERS)
+				break;
+		}
+		
+		queue /= i;
+	}
+	
+	return queue;
+}
+
+int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
+{
+	int size;
+	int[][] queue = new int[MaxClients][2];
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(!Client(client).IsBoss && IsClientInGame(client))
+		{
+			if(team == -1)
+			{
+				if(GetClientTeam(client) <= TFTeam_Spectator && !IsPlayerAlive(client))
+					continue;
+			}
+			else if(GetClientTeam(client) != team)
+			{
+				continue;
+			}
+			
+			if(PartyLeader[client])
+			{
+				if(!display && PartyMainBoss[PartyLeader[client]] != PartyChoice[client])
+					continue;
+			}
+			else if(Preference_DisabledBoss(client, Charset))
+			{
+				continue;
+			}
+			
+			queue[size][1] = Preference_GetFullQueuePoints(client);
+			queue[size++][0] = client;
+		}
+	}
+	
+	SortCustom2D(queue, size, Preference_BossQueueSort);
+	
+	if(size > maxsize)
+		size = maxsize;
+	
+	for(int i; i < size; i++)
+	{
+		players[i] = queue[i][0];
+	}
+	return size;
+}
+
+public int Preference_BossQueueSort(int[] elem1, int[] elem2, const int[][] array, Handle hndl)
+{
+	if(elem1[1] > elem2[1])
+		return -1;
+	
+	if(elem1[1] < elem2[1])
+		return 1;
+	
+	return (elem1[0] > elem2[0]) ? 1 : -1;
 }
 
 public Action Preference_ForceBossCmd(int client, int args)

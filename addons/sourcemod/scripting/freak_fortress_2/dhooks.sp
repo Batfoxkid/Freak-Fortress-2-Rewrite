@@ -460,7 +460,7 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 
 public MRESReturn DHook_StartBuildingPre(int entity)
 {
-	PrintToConsoleAll("DHook_StartBuildingPre");
+	//PrintToConsoleAll("DHook_StartBuildingPre");
 	//if(Enabled)
 	//	GameRules_SetProp("m_bPlayingMannVsMachine", true);
 
@@ -469,7 +469,7 @@ public MRESReturn DHook_StartBuildingPre(int entity)
 
 public MRESReturn DHook_StartBuildingPost(int entity)
 {
-	PrintToConsoleAll("DHook_StartBuildingPost");
+	//PrintToConsoleAll("DHook_StartBuildingPost");
 	//if(Enabled)
 	//	GameRules_SetProp("m_bPlayingMannVsMachine", false);
 

@@ -278,14 +278,31 @@
 		"#format"	"{1:s}"
 		"en"		"FF2 Boss Party\n {1}\n "
 	}
+	"Boss Party Invited"
+	{
+		"#format"	"{1:N},{2:s}"
+		"en"		"{1} invited you to join their party to play as {2}\n "
+	}
+	"Boss Party Accept"
+	{
+		"en"		"Accept"
+	}
+	"Boss Party Decline"
+	{
+		"en"		"Decline"
+	}
+	"Boss Party Block"
+	{
+		"en"		"Block (Use the TF2 mute menu)"
+	}
 	"Boss Party Leave"
 	{
-		"en"		" \nLeave Party"
+		"en"		"Leave Party"
 	}
 	"Boss Party Blank"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1}: -"
+		"en"		"{1}: ???"
 	}
 	"Boss Party Member"
 	{
@@ -295,12 +312,17 @@
 	"Boss Party Invite"
 	{
 		"#format"	"{1:s}"
-		"en"		"{1}: - (Invite)"
+		"en"		"{1}: ??? (Invite)"
 	}
 	"Boss Party Kick"
 	{
 		"#format"	"{1:s},{2:N}"
 		"en"		"{1}: {2} (Kick)"
+	}
+	"Boss Party Pending"
+	{
+		"#format"	"{1:s},{2:N}"
+		"en"		"{1}: {2} (Pending)"
 	}
 	"Party You Kicked"
 	{
@@ -311,6 +333,11 @@
 	{
 		"#format"	"{1:s}"
 		"en"		"You have left the party as {olive}{1}{default}."
+	}
+	"Party Member Invited"
+	{
+		"#format"	"{1:N},{2:s}"
+		"en"		"{olive}{1} {red}invited you to their party to play as {olive}{2}{red}. Use {olive}/ff2boss {red}to accept the invite."
 	}
 	"Party Member Joined"
 	{

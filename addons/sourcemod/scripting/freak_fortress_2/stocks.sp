@@ -968,37 +968,3 @@ stock any Clamp(any value, any min, any max)
 	
 	return value;
 }
-
-int GetBossQueue(int[] players, int maxsize, int team = -1)
-{
-	int size;
-	int[] queue = new int[MaxClients];
-	bool spec = CvarSpecTeam.BoolValue;
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(!Client(client).IsBoss && IsClientInGame(client) && !Preference_DisabledBoss(client, Charset) && ((team == -1 && (GetClientTeam(client) > TFTeam_Spectator || (spec && IsPlayerAlive(client)))) || (team != -1 && GetClientTeam(client) == team)))
-			queue[size++] = client;
-	}
-	
-	SortCustom1D(queue, size, GetBossQueueSort);
-	
-	if(size > maxsize)
-		size = maxsize;
-	
-	for(int i; i < size; i++)
-	{
-		players[i] = queue[i];
-	}
-	return size;
-}
-
-public int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
-{
-	if(Client(elem1).Queue > Client(elem2).Queue)
-		return -1;
-	
-	if(Client(elem1).Queue < Client(elem2).Queue)
-		return 1;
-	
-	return (elem1 > elem2) ? 1 : -1;
-}

@@ -198,7 +198,7 @@ public Action Configs_PackVote(Handle timer)
 			i++;
 		}
 		
-		menu.Pagination = false;
+		menu.Pagination = 0;
 		menu.ExitButton = false;
 		menu.NoVoteButton = true;
 		

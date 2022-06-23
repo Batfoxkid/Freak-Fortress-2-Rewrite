@@ -1446,7 +1446,7 @@ int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, 
 				static char buffer[64];
 				if(lang != -1)
 				{
-					Format(buffer, length, "%s_%s", string, language);
+					Format(buffer, sizeof(buffer), "%s_%s", string, language);
 					found = view_as<bool>(cfg.Get(buffer, buffer, sizeof(buffer)));
 				}
 				
@@ -1457,14 +1457,18 @@ int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, 
 					
 					if(!exact)
 					{
-						int size2 = strlen(buffer);
+						int bump = StrContains(buffer, name, false);
+						if(bump == -1)
+							bump = 0;
+						
+						int size2 = strlen(buffer) - bump;
 						if(size2 > size1)
 							size2 = size1;
 						
 						int amount;
 						for(int c; c < size2; c++)
 						{
-							if(CharToLower(name[c]) == CharToLower(buffer[c]))
+							if(CharToLower(name[c]) == CharToLower(buffer[c + bump]))
 								amount++;
 						}
 						
@@ -1553,12 +1557,12 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -
 	{
 		GetLanguageInfo(lang, buffer, length);
 		Format(buffer, length, "%s_%s", string, buffer);
-		if(!cfg.Get(buffer, buffer, length))
-			cfg.Get(string, buffer, length);
+		if(!cfg.Get(buffer, buffer, length) && !cfg.Get(string, buffer, length))
+			buffer[0] = 0;
 	}
-	else
+	else if(!cfg.Get(string, buffer, length))
 	{
-		cfg.Get(string, buffer, length);
+		buffer[0] = 0;
 	}
 	
 	ReplaceString(buffer, length, "\\n", "\n");
@@ -1573,7 +1577,7 @@ void Bosses_CreateFromSpecial(int client, int special, int team)
 	if(!cfg)
 		return;
 	
-	char buffer[128];
+	static char buffer[128];
 	cfg.Get("filename", buffer, sizeof(buffer));
 	Client(client).SetLastPlayed(buffer);
 	
@@ -1642,7 +1646,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 			Client(client).Cfg.SetInt("healing", CvarBossHealing.IntValue);
 	}
 	
-	char buffer[512];
+	static char buffer[512];
 	bool active = GetRoundStatus() == 1;
 	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
@@ -1659,17 +1663,17 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	
 	if(Client(client).Cfg.GetInt("companion", i))
 	{
-		int count;
-		int[] players = new int[MaxClients];
-		for(int player = 1; player <= MaxClients; player++)
+		bool disband;
+		int companion = Preference_GetCompanion(client, i, team, disband);
+		if(companion)
 		{
-			if(player != client && IsClientInGame(player) && (Enabled || GetClientTeam(player) == team) && !Client(player).IsBoss)
-				players[count++] = player;
-		}
-		
-		if(count)
-		{
-			Bosses_CreateFromSpecial(players[GetRandomInt(0, count - 1)], i, team);
+			Bosses_CreateFromSpecial(companion, i, team);
+			
+			if(disband)
+			{
+				Preference_FinishParty(client);
+				Preference_FinishParty(companion);
+			}
 		}
 		else
 		{

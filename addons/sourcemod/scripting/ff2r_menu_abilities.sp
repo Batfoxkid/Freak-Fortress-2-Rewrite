@@ -634,7 +634,9 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 	if(!var1)
 		menu.AddItem("", "", ITEMDRAW_SPACER);
 	
-	menu.Pagination = var1 > 10;
+	if(var1 < 11)
+		menu.Pagination = 0;
+	
 	menu.ExitButton = false;
 	menu.OptionFlags |= MENUFLAG_NO_SOUND;
 	ViewingMenu[target] = menu.Display(target, RoundToCeil(tickrate + 0.1));

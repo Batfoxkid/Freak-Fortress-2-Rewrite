@@ -104,10 +104,10 @@ void Gamemode_RoundSetup()
 						team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
 					}
 					
-					reds = GetBossQueue(red, MaxClients, TFTeam_Red);
+					reds = Preference_GetBossQueue(red, MaxClients, false, TFTeam_Red);
 					
 					int[] blu = new int[MaxClients];
-					int blus = GetBossQueue(blu, MaxClients, TFTeam_Blue);
+					int blus = Preference_GetBossQueue(blu, MaxClients, false, TFTeam_Blue);
 					
 					for(int i; i < bosses && i < blus; i++)
 					{
@@ -130,8 +130,8 @@ void Gamemode_RoundSetup()
 			}
 			else	// Standard FF2
 			{
-				int[] boss = new int[1];
-				if(GetBossQueue(boss, 1))
+				int boss[1];
+				if(Preference_GetBossQueue(boss, 1, false))
 				{
 					int team;
 					int special = Preference_PickBoss(boss[0]);
