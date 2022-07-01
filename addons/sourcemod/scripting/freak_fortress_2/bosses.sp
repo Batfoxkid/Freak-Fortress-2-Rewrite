@@ -2275,8 +2275,15 @@ void Bosses_UseSlot(int client, int low, int high)
 		if(slot < 1 || slot > 3)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
-			Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0);
-			Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+			
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && CvarSoundType.BoolValue)
+			{
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
+			}
+			else
+			{
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+			}
 		}
 	}
 	

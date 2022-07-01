@@ -164,28 +164,11 @@ public Action Events_BroadcastAudio(Event event, const char[] name, bool dontBro
 
 public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
-	if(event.GetInt("weaponid") || !Client(GetClientOfUserId(event.GetInt("ownerid"))).IsBoss)
-		return Plugin_Continue;
-
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(client)
+	if(!event.GetInt("weaponid") && Client(GetClientOfUserId(event.GetInt("ownerid"))).IsBoss)
 	{
-		int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-		if(weapon != -1)
-		{
-			// Airblast gets slower the more times it hits
-			Address address = TF2Attrib_GetByDefIndex(weapon, 256);
-			if(address == Address_Null)
-			{
-				TF2Attrib_SetByDefIndex(weapon, 256, 1.0);
-				SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
-			}
-			else
-			{
-				TF2Attrib_SetValue(address, TF2Attrib_GetValue(address) + 0.25);
-				TF2Attrib_SetByDefIndex(weapon, 403, view_as<float>(222153573));	// Update attribute
-			}
-		}
+		int client = GetClientOfUserId(event.GetInt("userid"));
+		if(client)
+			Weapons_OnAirblastBoss(client);
 	}
 	return Plugin_Continue;
 }
@@ -197,7 +180,8 @@ public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcas
 
 public Action Events_InventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("userid"));
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	if(client)
 	{
 		if(Client(client).IsBoss)
@@ -214,6 +198,8 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 			if(RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
 				Weapons_ChangeMenu(client, CvarPreroundTime.IntValue);
 		}
+		
+		Weapons_OnInventoryApplication(userid);
 	}
 	return Plugin_Continue;
 }
@@ -332,7 +318,22 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						}
 						
 						IntToString(lives, buffer, sizeof(buffer));
-						if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						if(CvarSoundType.BoolValue)
+						{
+							if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, _, _, _, _, 2.0))
+							{
+								Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, _, _, _, _, 2.0);
+							}
+							else if(lives == 1 && Bosses_PlaySound(victim, merc, mercs, "sound_last_life", _, _, _, _, _, 2.0))
+							{
+								Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, _, _, _, _, 2.0);
+							}
+							else if(Bosses_PlaySound(victim, merc, mercs, "sound_nextlife", _, _, _, _, _, 2.0))
+							{
+								Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, _, _, _, _, 2.0);
+							}
+						}
+						else if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
 							Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						}
@@ -382,6 +383,13 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
 						TF2_RemoveItem(victim, entity);
 				}
+				
+				i = 0;
+				while(TF2U_GetWearable(victim, entity, i))
+				{
+					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+						TF2_RemoveWearable(victim, entity);
+				}
 			}
 			
 			if(Client(victim).IsBoss)
@@ -405,8 +413,15 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					}
 				}
 				
-				if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
-					Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				if(CvarSoundType.BoolValue)
+				{
+					if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				}
+				else if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, _, _, _, _, 2.0))
+				{
+					Bosses_PlaySound(victim, boss, bosses, "sound_death", _, _, _, _, _, 2.0);
+				}
 				
 				if(!deadRinger)
 					Gamemode_UpdateHUD(GetClientTeam(victim));

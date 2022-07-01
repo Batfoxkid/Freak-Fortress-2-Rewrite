@@ -83,6 +83,11 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 }
 
+public void OnEntityDestroyed(int entity)
+{
+	DHook_EntityDestoryed();
+}
+
 public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(OTDLoaded)
@@ -181,18 +186,20 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						}
 					}
 					
-					bool silent = Attributes_OnBackstabBoss(attacker, victim, damage, weapon);
+					bool silent = Attributes_OnBackstabBoss(attacker, victim, damage, weapon, true);
 					if(!silent)
 					{
-						if(Client(attacker).IsBoss)
+						EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+						
+						if(CvarSoundType.BoolValue)
 						{
-							if(!Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
-								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, 2.0))
+								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, 2.0);
 						}
-						else if(!Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						else if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 						{
-							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
-							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+							Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						}
 					}
 					
@@ -249,7 +256,14 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					event.Cancel();
 					
-					Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+					if(CvarSoundType.BoolValue)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
+					}
+					else
+					{
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+					}
 					return Plugin_Changed;
 				}
 			}

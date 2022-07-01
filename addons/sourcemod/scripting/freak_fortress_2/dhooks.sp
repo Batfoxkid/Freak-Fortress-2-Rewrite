@@ -4,6 +4,8 @@
 	void DHook_HookClient(int client)
 	void DHook_HookBoss(int client)
 	void DHook_EntityCreated(int entity, const char[] classname)
+	void DHook_EntityDestoryed()
+	void DHook_HookStripWeapon()
 	void DHook_PluginEnd()
 	void DHook_UnhookClient(int client)
 	void DHook_UnhookBoss(int client)
@@ -11,6 +13,13 @@
 */
 
 #pragma semicolon 1
+
+enum struct RawHooks
+{
+	int Ref;
+	int Pre;
+	int Post;
+}
 
 static DynamicHook ChangeTeam;
 static DynamicHook ForceRespawn;
@@ -21,9 +30,9 @@ static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
 static DynamicHook HookItemIterateAttribute;
 
+static ArrayList RawEntityHooks;
 static Address CTFGameStats;
 static int DamageTypeOffset = -1;
-
 static int m_bOnlyIterateItemViewAttributes;
 static int m_Item;
 
@@ -67,6 +76,8 @@ void DHook_Setup()
 	FindSendPropInfo("CEconEntity", "m_bOnlyIterateItemViewAttributes", _, _, m_bOnlyIterateItemViewAttributes);
 	
 	delete gamedata;
+	
+	RawEntityHooks = new ArrayList(sizeof(RawHooks));
 }
 
 static DynamicHook CreateHook(GameData gamedata, const char[] name)
@@ -140,12 +151,49 @@ void DHook_EntityCreated(int entity, const char[] classname)
 	}
 }
 
-void DHook_StripStaticAttributes(int entity)
+void DHook_EntityDestoryed()
 {
-	Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
+	RequestFrame(DHook_EntityDestoryedFrame);
+}
+
+public void DHook_EntityDestoryedFrame()
+{
+	int length = RawEntityHooks.Length;
+	if(length)
+	{
+		RawHooks raw;
+		for(int i; i < length; i++)
+		{
+			RawEntityHooks.GetArray(i, raw);
+			if(!IsValidEntity(raw.Ref))
+			{
+				if(raw.Pre != INVALID_HOOK_ID)
+					DynamicHook.RemoveHook(raw.Pre);
+				
+				if(raw.Post != INVALID_HOOK_ID)
+					DynamicHook.RemoveHook(raw.Post);
+				
+				RawEntityHooks.Erase(i--);
+				length--;
+			}
+		}
+	}
+}
+
+void DHook_HookStripWeapon(int entity)
+{
+	if(m_Item > 0 && m_bOnlyIterateItemViewAttributes > 0)
+	{
+		Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
 		
-	HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributes);
-	HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributesPost);
+		RawHooks raw;
+		
+		raw.Ref = EntIndexToEntRef(entity);
+		raw.Pre = HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributesPre);
+		raw.Post = HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributesPost);
+		
+		RawEntityHooks.PushArray(raw);
+	}
 }
 
 void DHook_PluginEnd()
@@ -476,7 +524,7 @@ public MRESReturn DHook_StartBuildingPost(int entity)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_IterateAttributes(Address pThis, DHookParam hParams)
+public MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
 

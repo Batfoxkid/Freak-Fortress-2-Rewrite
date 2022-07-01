@@ -1,6 +1,6 @@
 /*
 	void Attributes_PluginStart()
-	bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon)
+	bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon, bool killfeed)
 	void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weapon)
 	void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
 	float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
@@ -60,7 +60,7 @@ public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 	return Plugin_Continue;
 }
 
-bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon)
+bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon, bool killfeed)
 {
 	if(Attributes_FindOnPlayer(attacker, 166))	// add cloak on hit
 	{
@@ -92,48 +92,51 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	if(value)
 		SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+RoundFloat(value));
 	
-	int assister = -1;
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
-			if(entity != -1 &&
-			   HasEntProp(entity, Prop_Send, "m_bHealing") &&
-			   GetEntProp(entity, Prop_Send, "m_bHealing") &&
-			   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
-			{
-				assister = i;
-				break;
-			}
-		}
-	}
-	
 	bool silent = view_as<bool>(Attributes_FindOnWeapon(attacker, weapon, 217));
 	
-	Event event = CreateEvent("player_death", true);
-	
-	event.SetInt("userid", GetClientUserId(victim));
-	event.SetInt("attacker", GetClientUserId(attacker));
-	event.SetInt("assister", assister == -1 ? assister : GetClientUserId(assister));
-	event.SetInt("weaponid", weapon);
-	event.SetString("weapon", "backstab");
-	event.SetString("weapon_logclassname", "ff2_notice");
-	event.SetInt("customkill", TF_CUSTOM_BACKSTAB);
-	event.SetInt("crit_type", 2);
-	
-	int stabs = ++Client(attacker).Stabs;
-	event.SetInt("kill_streak_total", stabs);
-	event.SetInt("kill_streak_wep", stabs);
-	
-	int team = GetClientTeam(attacker);
-	for(int i = 1; i <= MaxClients; i++)
+	if(killfeed)
 	{
-		if(i == attacker || i == assister || (!silent && i == victim) || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
-			event.FireToClient(i);
+		int assister = -1;
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i))
+			{
+				int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
+				if(entity != -1 &&
+				   HasEntProp(entity, Prop_Send, "m_bHealing") &&
+				   GetEntProp(entity, Prop_Send, "m_bHealing") &&
+				   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
+				{
+					assister = i;
+					break;
+				}
+			}
+		}
+		
+		Event event = CreateEvent("player_death", true);
+		
+		event.SetInt("userid", GetClientUserId(victim));
+		event.SetInt("attacker", GetClientUserId(attacker));
+		event.SetInt("assister", assister == -1 ? assister : GetClientUserId(assister));
+		event.SetInt("weaponid", weapon);
+		event.SetString("weapon", "backstab");
+		event.SetString("weapon_logclassname", "ff2_notice");
+		event.SetInt("customkill", TF_CUSTOM_BACKSTAB);
+		event.SetInt("crit_type", 2);
+		
+		int stabs = ++Client(attacker).Stabs;
+		event.SetInt("kill_streak_total", stabs);
+		event.SetInt("kill_streak_wep", stabs);
+		
+		int team = GetClientTeam(attacker);
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(i == attacker || i == assister || (!silent && i == victim) || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
+				event.FireToClient(i);
+		}
+		
+		event.Cancel();
 	}
-	
-	event.Cancel();
 	return silent;
 }
 
@@ -155,8 +158,16 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 				// Ullapool Caber gets a critical explosion
 				if(!GetEntProp(weapon, Prop_Send, "m_iDetonated"))
 				{
-					Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					damagetype |= DMG_CRIT;
+					
+					if(CvarSoundType.BoolValue)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
+					}
+					else
+					{
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+					}
 				}
 			}
 		}

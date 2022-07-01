@@ -9,6 +9,9 @@
 	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 	void Weapons_OnAirblastBoss(int attacker)
+	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon)
+	void Weapons_OnInventoryApplication(int userid)
+	void Weapons_OnWeaponSwitch(int client, int weapon)
 	void Weapons_EntityCreated(int entity, const char[] classname)
 */
 
@@ -243,7 +246,7 @@ void Weapons_ShowChanges(int client, int entity)
 	bool found;
 	char buffer2[64];
 	
-	if(cfg.GetBool("strip", found, false))
+	if(cfg.GetBool("strip", found, false) && found)
 	{
 		Format(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%%s3 (%t):", "Weapon Stripped");
 		CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
@@ -493,6 +496,37 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 					}
 				}
 			}
+			
+			if(TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping))
+			{
+				value = kv.GetFloat("mid-air damage vs bosses", 1.0);
+				if(value != 1.0)
+				{
+					damage *= value;
+					
+					if(Attributes_FindOnWeapon(attacker, weapon, 267))	// mod crit while airborne
+					{
+						if(!Attributes_OnBackstabBoss(attacker, victim, damage, weapon, false))
+						{
+							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+							
+							if(CvarSoundType.BoolValue)
+							{
+								Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, 2.0);
+							}
+							else
+							{
+								Bosses_PlaySoundToAll(victim, "sound_marketed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+							}
+						}
+						
+						Weapons_OnBackstabBoss(victim, damage, weapon);
+						
+						Bosses_UseSlot(victim, 7, 7);
+					}
+				}
+			}
 		}
 		
 		delete kv;
@@ -532,6 +566,18 @@ stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon)
 			damage = float(Client(victim).MaxHealth * Client(victim).MaxLives) * multi / 3.0;
 	}
 	#endif
+}
+
+void Weapons_OnInventoryApplication(int userid)
+{
+	RequestFrame(Weapons_OnInventoryApplicationFrame, userid);
+}
+
+public void Weapons_OnInventoryApplicationFrame(int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client)
+		Weapons_OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
 }
 
 stock void Weapons_OnWeaponSwitch(int client, int weapon)
@@ -600,32 +646,29 @@ public void Weapons_SpawnFrame(int ref)
 {
 	if(!WeaponCfg)
 		return;
-
+	
 	int entity = EntRefToEntIndex(ref);
-
-	if(entity == -1)
+	if(entity == INVALID_ENT_REFERENCE)
 		return;
-
+	
 	if((HasEntProp(entity, Prop_Send, "m_bDisguiseWearable") && GetEntProp(entity, Prop_Send, "m_bDisguiseWearable")) ||
 		(HasEntProp(entity, Prop_Send, "m_bDisguiseWeapon") && GetEntProp(entity, Prop_Send, "m_bDisguiseWeapon")))
 		return;
-
+	
 	int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).Minion)
 		return;
-
+	
 	ConfigMap cfg = FindWeaponSection(entity);
 	if(!cfg)
 		return;
-
-	bool found = false;
+	
+	bool found;
 	if(cfg.GetBool("strip", found, false) && found)
-	{
-		DHook_StripStaticAttributes(entity);
-	}
-
-	int current = 0;
-
+		DHook_HookStripWeapon(entity);
+	
+	int current;
+	
 	if(cfg.GetInt("clip", current))
 	{
 		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);

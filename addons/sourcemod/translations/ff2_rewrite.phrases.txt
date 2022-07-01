@@ -506,6 +506,11 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"+{1}%% melee weapon damage vs bosses"
 	}
+	"mid-air damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"+{1}%% damage vs bosses while blast jumping"
+	}
 	"mod crit type glow"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
@@ -539,7 +544,7 @@
 	"backstab damage percent"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Backstabs deal {1}%% of a boss's max health"
+		"en"		"Backstabs deal {2}%% of a boss's max health"
 	}
 	"mod airblast stale"
 	{
@@ -575,11 +580,6 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Successive hits on a boss decreases boost over time"
-	}
-	"garden damage DISPLAY ONLY"
-	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"+{1}%% damage vs bosses while rocket jumping"
 	}
 	"teleport no spawn DISPLAY ONLY"
 	{
