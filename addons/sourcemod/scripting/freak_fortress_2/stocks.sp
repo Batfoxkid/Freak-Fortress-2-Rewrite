@@ -805,6 +805,8 @@ stock void SetControlPoint(bool enable)
 {
 	if(enable)
 	{
+		Debug("Unlocked Control Point");
+		
 		int entity = FindEntityByClassname(-1, "tf_logic_arena");
 		if(entity != -1)
 			FireEntityOutput(entity, "OnCapEnabled", entity);
@@ -813,17 +815,19 @@ stock void SetControlPoint(bool enable)
 		while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 		{
 			AcceptEntityInput(entity, "ShowModel");
-			SetVariantBool(enable);
+			SetVariantInt(0);
 			AcceptEntityInput(entity, "SetLocked");
 		}
 	}
 	else
 	{
+		Debug("Locked Control Point");
+		
 		int entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 		{
 			AcceptEntityInput(entity, "HideModel");
-			SetVariantBool(!enable);
+			SetVariantInt(1);
 			AcceptEntityInput(entity, "SetLocked");
 		}
 	}
@@ -831,6 +835,8 @@ stock void SetControlPoint(bool enable)
 
 stock void SetArenaCapEnableTime(float time)
 {
+	Debug("Set unlock time to: %f", time);
+	
 	int entity = FindEntityByClassname(-1, "tf_logic_arena");
 	if(entity != -1)
 		DispatchKeyValueFloat(entity, "CapEnableDelay", time);

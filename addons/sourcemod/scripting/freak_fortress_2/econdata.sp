@@ -37,16 +37,16 @@ void TFED_PluginStart()
 stock void TFED_LibraryAdded(const char[] name)
 {
 	#if defined __tf_econ_data_included
-	if(!Loaded)
-		Loaded = StrEqual(name, TFED_LIBRARY);
+	if(!Loaded && StrEqual(name, TFED_LIBRARY))
+		Loaded = true;
 	#endif
 }
 
 stock void TFED_LibraryRemoved(const char[] name)
 {
 	#if defined __tf_econ_data_included
-	if(Loaded)
-		Loaded = !StrEqual(name, TFED_LIBRARY);
+	if(Loaded && StrEqual(name, TFED_LIBRARY))
+		Loaded = false;
 	#endif
 }
 

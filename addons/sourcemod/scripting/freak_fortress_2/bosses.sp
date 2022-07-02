@@ -1661,6 +1661,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	
 	Forward_OnBossCreated(client, Client(client).Cfg, !active);
 	
+	Goomba_BossCreated(Client(client).Cfg);
+	
 	if(Client(client).Cfg.GetInt("companion", i))
 	{
 		bool disband;

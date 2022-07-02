@@ -78,6 +78,8 @@ void Gamemode_RoundSetup()
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
+			Goomba_RoundSetup();
+			
 			float preround = CvarPreroundTime.FloatValue;
 			CreateTimer(preround / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -313,7 +315,7 @@ public Action Gamemode_SetControlPoint(Handle timer)
 	}
 	else if(time > -0.001)
 	{
-		SetArenaCapEnableTime(time);
+		SetArenaCapEnableTime(0.0);
 		SetControlPoint(false);
 	}
 	return Plugin_Continue;

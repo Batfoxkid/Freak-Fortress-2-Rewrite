@@ -33,14 +33,14 @@ void SDKHook_PluginStart()
 
 void SDKHook_LibraryAdded(const char[] name)
 {
-	if(!OTDLoaded)
-		OTDLoaded = StrEqual(name, OTD_LIBRARY);
+	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
+		OTDLoaded = true;
 }
 
 void SDKHook_LibraryRemoved(const char[] name)
 {
-	if(OTDLoaded)
-		OTDLoaded = !StrEqual(name, OTD_LIBRARY);
+	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
+		OTDLoaded = false;
 }
 
 void SDKHook_HookClient(int client)
@@ -145,30 +145,16 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					float gameTime = GetGameTime();
 					
-					float multi = 0.666667;
-					if(!Client(attacker).IsBoss)
-					{
-						// 75% with stock knife, 50% with Kunai
-						float lowest = float(SDKCall_GetMaxHealth(attacker) + 40) / 220.0;
-						
-						// 25 sec with stock knife, 37.5 sec with Kunai to restore full damage
-						multi = lowest*0.8 + ((gameTime - Client(attacker).LastStabTime) / 62.5);
-						multi = Clamp(multi, lowest, 1.0);
-					}
-					
-					damage = 750.0 * multi;	// 2250 max damage
+					damage = 750.0;	// 2250 max damage
 					damagetype |= DMG_PREVENT_PHYSICS_FORCE|DMG_CRIT;
 					critType = CritType_Crit;
-					
-					Client(attacker).LastStabTime = gameTime;
 					
 					if(!Client(attacker).IsBoss && weapon != -1)
 					{
 						SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+0.5);
 						
-						gameTime += 2.0;
-						SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", gameTime);
-						SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", gameTime);
+						SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", gameTime + 2.0);
+						SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", gameTime + 2.0);
 						
 						int viewmodel = GetEntPropEnt(attacker, Prop_Send, "m_hViewModel");
 						if(viewmodel != -1)
@@ -204,6 +190,22 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					}
 					
 					Weapons_OnBackstabBoss(victim, damage, weapon);
+					
+					float multi = 0.666667;
+					if(!Client(attacker).IsBoss)
+					{
+						// 75% with stock knife, 50% with Kunai
+						float lowest = float(SDKCall_GetMaxHealth(attacker) + 40) / 220.0;
+						
+						// 25 sec with stock knife, 37.5 sec with Kunai to restore full damage
+						multi = lowest*0.8 + ((gameTime - Client(victim).LastStabTime) / 62.5);
+						Debug("Pre-Damage: %f | Backstab: %f%%", damage, multi);
+						multi = Clamp(multi, lowest, 1.0);
+						damage *= multi;
+						Debug("Post-Damage: %f | Backstab: %f%%", damage, multi);
+					}
+					
+					Client(victim).LastStabTime = gameTime;
 					
 					Bosses_UseSlot(victim, 6, 6);
 					

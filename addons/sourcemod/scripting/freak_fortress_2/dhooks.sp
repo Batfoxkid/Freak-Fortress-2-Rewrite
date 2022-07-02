@@ -54,8 +54,8 @@ void DHook_Setup()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
-	//CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
-	//CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
+	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
+	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
@@ -508,18 +508,18 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 
 public MRESReturn DHook_StartBuildingPre(int entity)
 {
-	//PrintToConsoleAll("DHook_StartBuildingPre");
-	//if(Enabled)
-	//	GameRules_SetProp("m_bPlayingMannVsMachine", true);
+	Debug("DHook_StartBuildingPre");
+	if(Enabled)
+		GameRules_SetProp("m_bPlayingMannVsMachine", true);
 
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_StartBuildingPost(int entity)
 {
-	//PrintToConsoleAll("DHook_StartBuildingPost");
-	//if(Enabled)
-	//	GameRules_SetProp("m_bPlayingMannVsMachine", false);
+	Debug("DHook_StartBuildingPost");
+	if(Enabled)
+		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 
 	return MRES_Ignored;
 }

@@ -16,12 +16,11 @@
 #include <tf2attributes>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
-#tryinclude <goomba>
 
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 7/1/2022"
+#define PLUGIN_VERSION	"Beta 7/2/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -217,6 +216,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/forwards.sp"
 #include "freak_fortress_2/forwards_old.sp"
 #include "freak_fortress_2/gamemode.sp"
+#include "freak_fortress_2/goomba.sp"
 #include "freak_fortress_2/menu.sp"
 #include "freak_fortress_2/music.sp"
 #include "freak_fortress_2/natives.sp"
@@ -392,16 +392,4 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 	
 	result = false;
 	return Plugin_Changed;
-}
-
-public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
-{
-	if(damageMultiplier > 0.3 && victim > 0 && victim <= MaxClients && Client(victim).IsBoss)
-	{
-		damageMultiplier = 0.0;
-		damageBonus = 585.0;
-		JumpPower *= 1.5;
-		return Plugin_Changed;
-	}
-	return Plugin_Continue;
 }

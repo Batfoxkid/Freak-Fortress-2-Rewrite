@@ -38,15 +38,16 @@ void TF2U_PluginStart()
 stock void TF2U_LibraryAdded(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
-	if(!Loaded)
-		Loaded = StrEqual(name, TF2U_LIBRARY);
+	if(!Loaded && StrEqual(name, TF2U_LIBRARY))
+		Loaded = true;
+	#endif
 }
 
 stock void TF2U_LibraryRemoved(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
-	if(Loaded)
-		Loaded = !StrEqual(name, TF2U_LIBRARY);
+	if(Loaded && StrEqual(name, TF2U_LIBRARY))
+		Loaded = false;
 	#endif
 }
 

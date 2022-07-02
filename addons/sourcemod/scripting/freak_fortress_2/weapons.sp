@@ -65,26 +65,26 @@ void Weapons_PluginStart()
 stock void Weapons_LibraryAdded(const char[] name)
 {
 	#if defined __cwx_included
-	if(!CWXLoaded)
-		CWXLoaded = StrEqual(name, CWX_LIBRARY);
+	if(!CWXLoaded && StrEqual(name, CWX_LIBRARY))
+		CWXLoaded = true;
 	#endif
 	
 	#if defined __tf_custom_attributes_included
-	if(!TCALoaded)
-		TCALoaded = StrEqual(name, TCA_LIBRARY);
+	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
+		TCALoaded = false;
 	#endif
 }
 
 stock void Weapons_LibraryRemoved(const char[] name)
 {
 	#if defined __cwx_included
-	if(CWXLoaded)
-		CWXLoaded = !StrEqual(name, CWX_LIBRARY);
+	if(CWXLoaded && StrEqual(name, CWX_LIBRARY))
+		CWXLoaded = false;
 	#endif
 	
 	#if defined __tf_custom_attributes_included
-	if(TCALoaded)
-		TCALoaded = !StrEqual(name, TCA_LIBRARY);
+	if(TCALoaded && StrEqual(name, TCA_LIBRARY))
+		TCALoaded = false;
 	#endif
 }
 
