@@ -158,12 +158,18 @@ public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] n
 		}
 		else
 		{
-			CreateTimer(0.1, Configs_PackVote, _, TIMER_FLAG_NO_MAPCHANGE);
+			RequestFrame(Configs_PackVoteFrame);
 		}
 	}
 }
 
 public Action Configs_PackVote(Handle timer)
+{
+	Configs_PackVoteFrame();
+	return Plugin_Continue;
+}
+
+public void Configs_PackVoteFrame()
 {
 	if(IsVoteInProgress())
 	{
@@ -205,7 +211,6 @@ public Action Configs_PackVote(Handle timer)
 		ConVar cvar = FindConVar("sm_mapvote_voteduration");
 		menu.DisplayVoteToAll(cvar ? cvar.IntValue : 20);
 	}
-	return Plugin_Continue;
 }
 
 public int Configs_PackVoteH(Menu menu, MenuAction action, int param1, int param2)

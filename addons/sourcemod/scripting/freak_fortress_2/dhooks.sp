@@ -36,7 +36,8 @@ static int DamageTypeOffset = -1;
 static int m_bOnlyIterateItemViewAttributes;
 static int m_Item;
 
-static int ChangeTeamHook[MAXTF2PLAYERS];
+static int ChangeTeamPreHook[MAXTF2PLAYERS];
+static int ChangeTeamPostHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 static bool WasMiniBoss[MAXTF2PLAYERS];
@@ -127,13 +128,16 @@ void DHook_HookClient(int client)
 		ForceRespawnPreHook[client] = ForceRespawn.HookEntity(Hook_Pre, client, DHook_ForceRespawnPre);
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
+	
+	if(ChangeTeam && CvarDisguiseModels.BoolValue)
+		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
 void DHook_HookBoss(int client)
 {
 	DHook_UnhookBoss(client);
 	if(ChangeTeam && CvarAggressiveSwap.BoolValue)
-		ChangeTeamHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
+		ChangeTeamPreHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
 }
 
 void DHook_EntityCreated(int entity, const char[] classname)
@@ -207,16 +211,22 @@ void DHook_PluginEnd()
 
 void DHook_UnhookClient(int client)
 {
-	DynamicHook.RemoveHook(ForceRespawnPreHook[client]);
-	DynamicHook.RemoveHook(ForceRespawnPostHook[client]);
+	if(ForceRespawn)
+	{
+		DynamicHook.RemoveHook(ForceRespawnPreHook[client]);
+		DynamicHook.RemoveHook(ForceRespawnPostHook[client]);
+	}
+	
+	if(ChangeTeamPostHook[client])
+		DynamicHook.RemoveHook(ChangeTeamPostHook[client]);
 }
 
 void DHook_UnhookBoss(int client)
 {
-	if(ChangeTeamHook[client])
+	if(ChangeTeamPreHook[client])
 	{
-		DynamicHook.RemoveHook(ChangeTeamHook[client]);
-		ChangeTeamHook[client] = 0;
+		DynamicHook.RemoveHook(ChangeTeamPreHook[client]);
+		ChangeTeamPreHook[client] = 0;
 	}
 }
 
@@ -289,6 +299,19 @@ public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 public MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 {
 	return MRES_Supercede;
+}
+
+public MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
+{
+	if(param.Get(1) % 2)
+	{
+		TF2Attrib_RemoveByDefIndex(client, 406);
+	}
+	else
+	{
+		TF2Attrib_SetByDefIndex(client, 406, 4.0);
+	}
+	return MRES_Ignored;
 }
 
 public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
@@ -456,7 +479,6 @@ public MRESReturn DHook_SetWinningTeam(DHookParam param)
 
 public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 {
-	Debug("DHook_KnifeInjuredPre");
 	if(DamageTypeOffset != -1 && !param.IsNull(2) && Client(param.Get(2)).IsBoss)
 	{
 		Address address = view_as<Address>(param.Get(3) + DamageTypeOffset);
@@ -473,7 +495,6 @@ public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 
 public MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 {
-	Debug("DHook_KnifeInjuredPost");
 	if(KnifeWasChanged != -1)
 	{
 		StoreToAddress(view_as<Address>(param.Get(3) + DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
@@ -508,7 +529,6 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 
 public MRESReturn DHook_StartBuildingPre(int entity)
 {
-	Debug("DHook_StartBuildingPre");
 	if(Enabled)
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
 
@@ -517,7 +537,6 @@ public MRESReturn DHook_StartBuildingPre(int entity)
 
 public MRESReturn DHook_StartBuildingPost(int entity)
 {
-	Debug("DHook_StartBuildingPost");
 	if(Enabled)
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 

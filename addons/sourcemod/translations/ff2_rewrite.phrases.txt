@@ -418,6 +418,10 @@
 	{
 		"en"		"Disable Boss Music"
 	}
+	"Music Random"
+	{
+		"en"		"Randomize Boss Music"
+	}
 	"Music Skip"
 	{
 		"en"		"Play Next Song"
@@ -448,6 +452,14 @@
 	"Weapon Menu"
 	{
 		"en"		"FF2 Weapon Changes\n "
+	}
+	"Disable Weapon Changes"
+	{
+		"en"		"Disable Pop-Up Menu"
+	}
+	"Enable Weapon Changes"
+	{
+		"en"		"Enable Pop-Up Menu"
 	}
 	"Weapon Stripped"
 	{

@@ -14,6 +14,7 @@ void Native_PluginLoad()
 	CreateNative("FF2R_CreateBoss", Native_CreateBoss);
 	CreateNative("FF2R_GetClientMinion", Native_GetClientMinion);
 	CreateNative("FF2R_SetClientMinion", Native_SetClientMinion);
+	CreateNative("FF2R_GetClientScore", Native_GetClientScore);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -147,4 +148,16 @@ public any Native_SetClientMinion(Handle plugin, int params)
 	
 	Client(client).Minion = GetNativeCell(2);
 	return 0;
+}
+
+public any Native_GetClientScore(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	SetNativeCellRef(1, Client(client).TotalDamage);
+	SetNativeCellRef(2, Client(client).Healing);
+	SetNativeCellRef(3, Client(client).Assist);
+	return Client(client).TotalDamage + Client(client).Healing + Client(client).TotalAssist;
 }

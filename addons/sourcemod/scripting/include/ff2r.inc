@@ -70,6 +70,22 @@ native bool FF2R_GetClientMinion(int client);
 native void FF2R_SetClientMinion(int client, bool value);
 
 /**
+ * Gets the player's score in the current round
+ * 
+ * @note			Score is reset once a new round begins
+ * 
+ * @param client	Client index
+ * @param damage	Damage dealt by the player
+ * @param healing	Healing done by the player
+ * @param assist	Assisting done by the player
+ * 
+ * @error			Invalid client index
+ * 
+ * @return			Total score the player has
+ */
+native int FF2R_GetClientScore(int client, int &damage = 0, int &healing = 0, int &assist = 0);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted

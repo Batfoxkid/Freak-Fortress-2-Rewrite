@@ -34,18 +34,36 @@ void SDKHook_PluginStart()
 void SDKHook_LibraryAdded(const char[] name)
 {
 	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
 		OTDLoaded = true;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKUnhook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
+		}
+	}
 }
 
 void SDKHook_LibraryRemoved(const char[] name)
 {
 	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
 		OTDLoaded = false;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
+		}
+	}
 }
 
 void SDKHook_HookClient(int client)
 {
-	SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
+	if(!OTDLoaded)
+		SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
+	
 	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
 	SDKHook(client, SDKHook_WeaponSwitchPost, SDKHook_SwitchPost);
 }
@@ -90,9 +108,6 @@ public void OnEntityDestroyed(int entity)
 
 public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	if(OTDLoaded)
-		return Plugin_Continue;
-	
 	CritType crit = (damagetype & DMG_CRIT) ? CritType_Crit : CritType_None;
 	return TF2_OnTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, crit);
 }
@@ -189,22 +204,35 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						}
 					}
 					
-					Weapons_OnBackstabBoss(victim, damage, weapon);
+					float stale, time;
+					Weapons_OnBackstabBoss(victim, damage, weapon, time, stale);
 					
 					float multi = 0.666667;
 					if(!Client(attacker).IsBoss)
 					{
-						// 75% with stock knife, 50% with Kunai
-						float lowest = float(SDKCall_GetMaxHealth(attacker) + 40) / 220.0;
-						
-						// 25 sec with stock knife, 37.5 sec with Kunai to restore full damage
-						multi = lowest*0.8 + ((gameTime - Client(victim).LastStabTime) / 62.5);
-						Debug("Pre-Damage: %f | Backstab: %f%%", damage, multi);
-						multi = Clamp(multi, lowest, 1.0);
-						damage *= multi;
-						Debug("Post-Damage: %f | Backstab: %f%%", damage, multi);
+						if(stale)
+						{
+							if(Client(victim).LastStabTime + time > gameTime)
+							{
+								multi = stale;
+							}
+							else
+							{
+								multi = 1.0;
+							}
+						}
+						else
+						{
+							// 75% with stock knife, 50% with Kunai
+							float lowest = float(SDKCall_GetMaxHealth(attacker) + 40) / 220.0;
+							
+							// 25 sec with stock knife, 37.5 sec with Kunai to restore full damage
+							multi = lowest * 0.8 + ((gameTime - Client(victim).LastStabTime) / 62.5);
+							multi = Clamp(multi, lowest, 1.0);
+						}
 					}
 					
+					damage *= multi;
 					Client(victim).LastStabTime = gameTime;
 					
 					Bosses_UseSlot(victim, 6, 6);
@@ -414,33 +442,8 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 {
 	if(Client(victim).IsBoss)
 	{
-		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
-		{
-			if(!IsInvuln(victim))
-			{
-				if(damagecustom != TF_CUSTOM_TELEFRAG)
-				{
-					int team = GetClientTeam(attacker);
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i)==team)
-						{
-							int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
-							if(entity != -1 &&
-							   HasEntProp(entity, Prop_Send, "m_bHealing") &&
-							   GetEntProp(entity, Prop_Send, "m_bHealing") &&
-							   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
-							{
-								Client(i).Assist += RoundFloat(damage);
-							}
-						}
-					}
-				}
-				
-				if(!Client(attacker).IsBoss)
-					Attributes_OnHitBoss(attacker, victim, inflictor, damage, weapon, damagecustom);
-			}
-		}
+		if(victim != attacker && attacker > 0 && attacker <= MaxClients && !IsInvuln(victim) && !Client(attacker).IsBoss)
+			Attributes_OnHitBoss(attacker, victim, inflictor, damage, weapon, damagecustom);
 		
 		Bosses_SetSpeed(victim);
 	}

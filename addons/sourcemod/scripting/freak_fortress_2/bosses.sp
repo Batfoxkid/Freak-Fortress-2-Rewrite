@@ -9,8 +9,8 @@
 	int Bosses_GetConfigLength()
 	int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, int lang = -1, const char[] string = "name")
 	bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
-	int Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
-	int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
+	bool Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
+	bool Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
 	void Bosses_CreateFromSpecial(int client, int special, int team)
 	void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	void Bosses_SetHealth(int client, int players)
@@ -1542,16 +1542,16 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int tea
 	return !blocked;
 }
 
-int Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
+bool Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
-		return 0;
+		return false;
 	
 	return Bosses_GetBossNameCfg(cfg, buffer, length, lang, string);
 }
 
-int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
+bool Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
 {
 	if(lang != -1)
 	{
@@ -1568,7 +1568,7 @@ int Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -
 	ReplaceString(buffer, length, "\\n", "\n");
 	ReplaceString(buffer, length, "\\t", "\t");
 	ReplaceString(buffer, length, "\\r", "\r");
-	return strlen(buffer);
+	return view_as<bool>(buffer[0]);
 }
 
 void Bosses_CreateFromSpecial(int client, int special, int team)

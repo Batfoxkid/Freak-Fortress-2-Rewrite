@@ -729,12 +729,6 @@ public any NativeOld_StartMusic(Handle plugin, int params)
 
 public any NativeOld_StopMusic(Handle plugin, int params)
 {
-	{
-		char buffer[64];
-		GetPluginFilename(plugin, buffer, sizeof(buffer));
-		Debug("FF2_StopMusic", buffer);
-	}
-	
 	int client = GetNativeCell(1);
 	if(client < 1)
 	{

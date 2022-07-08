@@ -51,13 +51,29 @@ public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 				}
 				else if(StrEqual(classname, "tf_weapon_jar_milk"))
 				{
-					TF2_RemoveCondition(victim, TFCond_Milked);
-					TF2_AddCondition(victim, TFCond_Milked, 5.0, attacker);
+					DataPack pack = new DataPack();
+					RequestFrame(ReapplyMilk, pack);
+					pack.WriteCell(GetClientUserId(victim));
+					pack.WriteCell(GetClientUserId(attacker));
 				}
 			}
 		}
 	}
 	return Plugin_Continue;
+}
+
+public void ReapplyMilk(DataPack pack)
+{
+	pack.Reset();
+	
+	int victim = GetClientOfUserId(pack.ReadCell());
+	if(victim)
+	{
+		TF2_RemoveCondition(victim, TFCond_Milked);
+		TF2_AddCondition(victim, TFCond_Milked, 5.0, GetClientOfUserId(pack.ReadCell()));
+	}
+	
+	delete pack;
 }
 
 bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon, bool killfeed)
@@ -260,207 +276,210 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		}
 	}
 	
-	if(Attributes_FindOnWeapon(attacker, weapon, 30))	// fists have radial buff
+	if(damagecustom != TF_CUSTOM_BURNING && damagecustom != TF_CUSTOM_BLEEDING)
 	{
-		int entity;
-		float pos1[3], pos2[3];
-		GetClientAbsOrigin(attacker, pos1);
-		for(int target = 1; target <= MaxClients; target++)
+		if(Attributes_FindOnWeapon(attacker, weapon, 30))	// fists have radial buff
 		{
-			if(attacker!=target && IsClientInGame(target) && IsPlayerAlive(target))
+			int entity;
+			float pos1[3], pos2[3];
+			GetClientAbsOrigin(attacker, pos1);
+			for(int target = 1; target <= MaxClients; target++)
 			{
-				GetClientAbsOrigin(target, pos2);
-				if(GetVectorDistance(pos1, pos2, true) < 160000)
+				if(attacker!=target && IsClientInGame(target) && IsPlayerAlive(target))
 				{
-					int maxhealth = SDKCall_GetMaxHealth(attacker);
-					int health = GetClientHealth(attacker);
-					if(health < maxhealth)
+					GetClientAbsOrigin(target, pos2);
+					if(GetVectorDistance(pos1, pos2, true) < 160000)
 					{
-						if(health+50 > maxhealth)
+						int maxhealth = SDKCall_GetMaxHealth(attacker);
+						int health = GetClientHealth(attacker);
+						if(health < maxhealth)
 						{
-							SetEntityHealth(target, maxhealth);
-							ApplyAllyHealEvent(attacker, target, maxhealth - health);
-							ApplySelfHealEvent(target, maxhealth - health);
+							if(health+50 > maxhealth)
+							{
+								SetEntityHealth(target, maxhealth);
+								ApplyAllyHealEvent(attacker, target, maxhealth - health);
+								ApplySelfHealEvent(target, maxhealth - health);
+							}
+							else
+							{
+								SetEntityHealth(target, health + 50);
+								ApplyAllyHealEvent(attacker, target, 50);
+								ApplySelfHealEvent(target, 50);
+							}
 						}
-						else
+						
+						Client(attacker).Assist += 50;
+						
+						int i;
+						while(TF2_GetItem(target, entity, i))
 						{
-							SetEntityHealth(target, health + 50);
-							ApplyAllyHealEvent(attacker, target, 50);
-							ApplySelfHealEvent(target, 50);
-						}
-					}
-					
-					Client(attacker).Assist += 50;
-					
-					int i;
-					while(TF2_GetItem(target, entity, i))
-					{
-						Address attrib = TF2Attrib_GetByDefIndex(entity, 28);
-						if(attrib != Address_Null)
-						{
-							TF2Attrib_SetValue(attrib, TF2Attrib_GetValue(attrib)*1.1);
-							TF2Attrib_SetByDefIndex(entity, 403, view_as<float>(222153573));	// Update attribute
-						}
-						else
-						{
-							TF2Attrib_SetByDefIndex(entity, 28, 1.1);
-							SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+							Address attrib = TF2Attrib_GetByDefIndex(entity, 28);
+							if(attrib != Address_Null)
+							{
+								TF2Attrib_SetValue(attrib, TF2Attrib_GetValue(attrib)*1.1);
+								TF2Attrib_SetByDefIndex(entity, 403, view_as<float>(222153573));	// Update attribute
+							}
+							else
+							{
+								TF2Attrib_SetByDefIndex(entity, 28, 1.1);
+								SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+							}
 						}
 					}
 				}
 			}
 		}
-	}
-
-	value = Attributes_FindOnWeapon(attacker, weapon, 31);	// critboost on kill
-	if(value)
-		TF2_AddCondition(attacker, TFCond_CritOnKill, value);
 	
-	value = Attributes_FindOnWeapon(attacker, weapon, 158);	// add cloak on kill
-	if(value)
-	{
-		float cloak = GetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter") + value*100.0;
-		if(cloak > 100)
+		value = Attributes_FindOnWeapon(attacker, weapon, 31);	// critboost on kill
+		if(value)
+			TF2_AddCondition(attacker, TFCond_CritOnKill, value);
+		
+		value = Attributes_FindOnWeapon(attacker, weapon, 158);	// add cloak on kill
+		if(value)
 		{
-			cloak = 100.0;
-		}
-		else if(cloak < 0.0)
-		{
-			cloak = 0.0;
-		}
-		
-		SetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter", cloak);
-	}
-	
-	if(Attributes_FindOnWeapon(attacker, weapon, 175))	// jarate duration
-	{
-		if(JarateDamage[victim] < 0)
-			JarateDamage[victim] = 0.0;
-		
-		JarateApplyer[victim] = attacker;
-		JarateDamage[victim] += fdamage;
-	}
-	else if(Attributes_FindOnWeapon(attacker, weapon, 218))	// mark for death
-	{
-		MarkApplyer[victim] = attacker;
-		MarkDamage[victim] = 500.0;
-	}
-	else if(TF2_IsPlayerInCondition(victim, TFCond_Jarated))
-	{
-		JarateDamage[victim] -= fdamage;
-		if(JarateApplyer[victim])
-			Client(JarateApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
-		
-		if(JarateDamage[victim] <= 0.0)
-			TF2_RemoveCondition(victim, TFCond_Jarated);
-	}
-	else if(TF2_IsPlayerInCondition(victim, TFCond_MarkedForDeath))
-	{
-		MarkDamage[victim] -= fdamage;
-		if(MarkApplyer[victim])
-			Client(MarkApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
-		
-		if(MarkDamage[victim] <= 0.0)
-			TF2_RemoveCondition(victim, TFCond_MarkedForDeath);
-	}
-	
-	value = Attributes_FindOnWeapon(attacker, weapon, 180);	// heal on kill
-	if(value)
-	{
-		int maxhealth = SDKCall_GetMaxHealth(attacker);
-		int health = GetClientHealth(attacker);
-		if(health < maxhealth)
-		{
-			int healing = RoundFloat(value);
-			if(health + healing > maxhealth)
+			float cloak = GetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter") + value*100.0;
+			if(cloak > 100)
 			{
-				SetEntityHealth(attacker, maxhealth);
-				ApplySelfHealEvent(attacker, maxhealth - health);
+				cloak = 100.0;
 			}
-			else
+			else if(cloak < 0.0)
 			{
-				SetEntityHealth(attacker, health + healing);
-				ApplySelfHealEvent(attacker, healing);
+				cloak = 0.0;
 			}
-		}
-	}
-	
-	if(Attributes_FindOnWeapon(attacker, weapon, 219) && !StrContains(classname, "tf_weapon_sword"))	// Eyelander
-	{
-		SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-		TF2_AddCondition(attacker, TFCond_DemoBuff);
-		SDKCall_SetSpeed(attacker);
-		
-		int maxoverheal = TF2U_GetMaxOverheal(attacker);
-		int health = GetClientHealth(attacker);
-		if(health < maxoverheal)
-		{
-			if(health + 15 > maxoverheal)
-			{
-				SetEntityHealth(attacker, maxoverheal);
-				ApplySelfHealEvent(attacker, maxoverheal - health);
-			}
-			else
-			{
-				SetEntityHealth(attacker, health + 15);
-				ApplySelfHealEvent(attacker, 15);
-			}
-		}
-	}
-	
-	value = Attributes_FindOnWeapon(attacker, weapon, 220);
-	if(value)	// restore health on kill
-	{
-		int maxhealth = SDKCall_GetMaxHealth(attacker);
-		int health = GetClientHealth(attacker);
-		
-		int maxoverheal = TF2U_GetMaxOverheal(attacker);
-		if(health < maxoverheal)
-		{
-			int healing = RoundFloat(float(maxhealth) * value / 100.0);
 			
-			if(health + healing > maxoverheal)
+			SetEntPropFloat(attacker, Prop_Send, "m_flCloakMeter", cloak);
+		}
+		
+		if(Attributes_FindOnWeapon(attacker, weapon, 175))	// jarate duration
+		{
+			if(JarateDamage[victim] < 0)
+				JarateDamage[victim] = 0.0;
+			
+			JarateApplyer[victim] = attacker;
+			JarateDamage[victim] += fdamage;
+		}
+		else if(Attributes_FindOnWeapon(attacker, weapon, 218))	// mark for death
+		{
+			MarkApplyer[victim] = attacker;
+			MarkDamage[victim] = 500.0;
+		}
+		else if(TF2_IsPlayerInCondition(victim, TFCond_Jarated))
+		{
+			JarateDamage[victim] -= fdamage;
+			if(JarateApplyer[victim])
+				Client(JarateApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
+			
+			if(JarateDamage[victim] <= 0.0)
+				TF2_RemoveCondition(victim, TFCond_Jarated);
+		}
+		else if(TF2_IsPlayerInCondition(victim, TFCond_MarkedForDeath))
+		{
+			MarkDamage[victim] -= fdamage;
+			if(MarkApplyer[victim])
+				Client(MarkApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
+			
+			if(MarkDamage[victim] <= 0.0)
+				TF2_RemoveCondition(victim, TFCond_MarkedForDeath);
+		}
+		
+		value = Attributes_FindOnWeapon(attacker, weapon, 180);	// heal on kill
+		if(value)
+		{
+			int maxhealth = SDKCall_GetMaxHealth(attacker);
+			int health = GetClientHealth(attacker);
+			if(health < maxhealth)
 			{
-				SetEntityHealth(attacker, maxoverheal);
-				ApplySelfHealEvent(attacker, maxoverheal - health);
-			}
-			else
-			{
-				SetEntityHealth(attacker, health + healing);
-				ApplySelfHealEvent(attacker, healing);
+				int healing = RoundFloat(value);
+				if(health + healing > maxhealth)
+				{
+					SetEntityHealth(attacker, maxhealth);
+					ApplySelfHealEvent(attacker, maxhealth - health);
+				}
+				else
+				{
+					SetEntityHealth(attacker, health + healing);
+					ApplySelfHealEvent(attacker, healing);
+				}
 			}
 		}
+		
+		if(Attributes_FindOnWeapon(attacker, weapon, 219) && !StrContains(classname, "tf_weapon_sword"))	// Eyelander
+		{
+			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
+			TF2_AddCondition(attacker, TFCond_DemoBuff);
+			SDKCall_SetSpeed(attacker);
+			
+			int maxoverheal = TF2U_GetMaxOverheal(attacker);
+			int health = GetClientHealth(attacker);
+			if(health < maxoverheal)
+			{
+				if(health + 15 > maxoverheal)
+				{
+					SetEntityHealth(attacker, maxoverheal);
+					ApplySelfHealEvent(attacker, maxoverheal - health);
+				}
+				else
+				{
+					SetEntityHealth(attacker, health + 15);
+					ApplySelfHealEvent(attacker, 15);
+				}
+			}
+		}
+		
+		value = Attributes_FindOnWeapon(attacker, weapon, 220);
+		if(value)	// restore health on kill
+		{
+			int maxhealth = SDKCall_GetMaxHealth(attacker);
+			int health = GetClientHealth(attacker);
+			
+			int maxoverheal = TF2U_GetMaxOverheal(attacker);
+			if(health < maxoverheal)
+			{
+				int healing = RoundFloat(float(maxhealth) * value / 100.0);
+				
+				if(health + healing > maxoverheal)
+				{
+					SetEntityHealth(attacker, maxoverheal);
+					ApplySelfHealEvent(attacker, maxoverheal - health);
+				}
+				else
+				{
+					SetEntityHealth(attacker, health + healing);
+					ApplySelfHealEvent(attacker, healing);
+				}
+			}
+		}
+		
+		if(weapon != -1 && Attributes_FindOnWeapon(attacker, weapon, 226))	// honorbound
+		{
+			SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
+			SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy")+1);
+		}
+		
+		if(Attributes_FindOnWeapon(attacker, weapon, 409))	// kill forces attacker to laugh
+			TF2_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
+	
+		value = Attributes_FindOnWeapon(attacker, weapon, 613);	// minicritboost on kill
+		if(value)
+			TF2_AddCondition(attacker, TFCond_MiniCritOnKill, value);
+	
+		if(Attributes_FindOnWeapon(attacker, weapon, 644))	// clipsize increase on kill
+		{
+			int amount = DamageGoal(375, Client(attacker).GetDamage(slot), lastWeaponDamage);
+			if(amount)
+				SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+amount);
+		}
+		
+		value = Attributes_FindOnWeapon(attacker, weapon, 736);	// speed_boost_on_kill
+		if(value)
+			TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, value);
+		
+		if(Attributes_FindOnWeapon(attacker, weapon, 807))	// add_head_on_kill
+			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
+		
+		if(damagecustom == TF_CUSTOM_HEADSHOT && StrEqual(classname, "tf_weapon_sniperrifle_decap")) // Bazaar Bargain
+			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
 	}
-	
-	if(weapon != -1 && Attributes_FindOnWeapon(attacker, weapon, 226))	// honorbound
-	{
-		SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
-		SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy")+1);
-	}
-	
-	if(Attributes_FindOnWeapon(attacker, weapon, 409))	// kill forces attacker to laugh
-		TF2_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
-
-	value = Attributes_FindOnWeapon(attacker, weapon, 613);	// minicritboost on kill
-	if(value)
-		TF2_AddCondition(attacker, TFCond_MiniCritOnKill, value);
-
-	if(Attributes_FindOnWeapon(attacker, weapon, 644))	// clipsize increase on kill
-	{
-		int amount = DamageGoal(375, Client(attacker).GetDamage(slot), lastWeaponDamage);
-		if(amount)
-			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+amount);
-	}
-	
-	value = Attributes_FindOnWeapon(attacker, weapon, 736);	// speed_boost_on_kill
-	if(value)
-		TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, value);
-	
-	if(Attributes_FindOnWeapon(attacker, weapon, 807))	// add_head_on_kill
-		SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-	
-	if(damagecustom == TF_CUSTOM_HEADSHOT && StrEqual(classname, "tf_weapon_sniperrifle_decap")) // Bazaar Bargain
-		SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
 	
 	int amount = DamageGoal(450, Client(attacker).GetDamage(slot), lastWeaponDamage);
 	if(amount)

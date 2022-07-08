@@ -2,7 +2,6 @@
 	void Music_PluginStart()
 	void Music_ClearPlaylist()
 	void Music_AddSong(int special, const char[] section, const char[] key)
-	void Music_ClientDisconnect()
 	void Music_RoundStart()
 	void Music_RoundEnd(int[] clients, int amount, int winner)
 	void Music_PlayerRunCmd(int client)
@@ -26,7 +25,6 @@ static ArrayList Playlist;
 static char CurrentTheme[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
 static int CurrentVolume[MAXTF2PLAYERS];
 static int CurrentSource[MAXTF2PLAYERS];
-static bool CurrentSourceType[MAXTF2PLAYERS];
 static float NextThemeAt[MAXTF2PLAYERS];
 
 void Music_PluginStart()
@@ -52,11 +50,6 @@ void Music_AddSong(int special, const char[] section, const char[] key)
 	Playlist.PushArray(music);
 }
 
-void Music_ClientDisconnect(int client)
-{
-	CurrentSourceType[client] = false;
-}
-
 void Music_RoundStart()
 {
 	for(int i = 1; i <= MaxClients; i++)
@@ -77,7 +70,7 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 			int boss;
 			SoundEnum sound;
 			sound.Default();
-			if(CurrentSourceType[clients[i]])
+			if(Client(clients[i]).MusicShuffle)
 			{
 				ConfigMap cfg = Bosses_GetConfig(CurrentSource[clients[i]]);
 				if(cfg)
@@ -132,7 +125,7 @@ void Music_PlayNextSong(int client = 0)
 	{
 		NextThemeAt[client] = FAR_FUTURE;
 		
-		if(CurrentSourceType[client])
+		if(Client(client).MusicShuffle)
 		{
 			int length = Playlist.Length;
 			if(length > 0)
@@ -207,8 +200,6 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample = "
 		strcopy(sample2, sizeof(sample2), sample);
 		ForwardOld_OnMusic(sample2, time, songName, songArtist, clients[0]);
 		
-		Debug("Song Time: %f", time);
-		
 		if(time)
 		{
 			time += GetGameTime();
@@ -217,8 +208,6 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample = "
 		{
 			time = FAR_FUTURE;
 		}
-		
-		Debug("Next Time: %f", time);
 		
 		int count = RoundToCeil(volume);
 		float vol = volume / float(count);
@@ -309,7 +298,7 @@ public Action Music_Command(int client, int args)
 						sound.Default();
 						if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
 						{
-							CurrentSourceType[client] = true;
+							Client(client).MusicShuffle = true;
 							
 							bool toggle = Client(client).NoMusic;
 							Client(client).NoMusic = false;
@@ -337,7 +326,7 @@ public Action Music_Command(int client, int args)
 			}
 			else if(StrContains(buffer, "skip", false) != -1 || StrContains(buffer, "next", false) != -1)
 			{
-				CurrentSourceType[client] = false;
+				Client(client).MusicShuffle = false;
 				
 				bool toggle = Client(client).NoMusic;
 				Client(client).NoMusic = false;
@@ -346,7 +335,7 @@ public Action Music_Command(int client, int args)
 			}
 			else if(StrContains(buffer, "shuffle", false) != -1 || StrContains(buffer, "rand", false) != -1)
 			{
-				CurrentSourceType[client] = true;
+				Client(client).MusicShuffle = true;
 				
 				bool toggle = Client(client).NoMusic;
 				Client(client).NoMusic = false;
@@ -452,7 +441,7 @@ void Music_MainMenu(int client)
 	menu.SetTitle("%t", "Music Menu");
 	
 	char buffer[64];
-	FormatEx(buffer, sizeof(buffer), "%t", Client(client).NoMusic ? "Music Enable" : "Music Disable");
+	FormatEx(buffer, sizeof(buffer), "%t", !Client(client).NoMusic ? Client(client).MusicShuffle ? "Music Disable" : "Music Random" : "Music Enable");
 	menu.AddItem("", buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Music Skip");
@@ -493,33 +482,47 @@ public int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 						Client(client).NoMusic = false;
 						Music_PlayNextSong(client);
 					}
-					else
+					else if(Client(client).MusicShuffle)
 					{
+						Client(client).MusicShuffle = false;
 						Client(client).NoMusic = true;
 						Music_PlaySongToClient(client);
+					}
+					else
+					{
+						Client(client).MusicShuffle = true;
+						Music_PlayNextSong(client);
 					}
 					
 					Music_MainMenu(client);
 				}
 				case 1:
 				{
-					CurrentSourceType[client] = false;
-					
 					bool toggle = Client(client).NoMusic;
+					bool shuffle = Client(client).MusicShuffle;
+					
 					Client(client).NoMusic = false;
+					Client(client).MusicShuffle = false;
+					
 					Music_PlayNextSong(client);
+					
 					Client(client).NoMusic = toggle;
+					Client(client).MusicShuffle = shuffle;
 					
 					Music_MainMenu(client);
 				}
 				case 2:
 				{
-					CurrentSourceType[client] = true;
-					
 					bool toggle = Client(client).NoMusic;
+					bool shuffle = Client(client).MusicShuffle;
+					
 					Client(client).NoMusic = false;
+					Client(client).MusicShuffle = true;
+					
 					Music_PlayNextSong(client);
+					
 					Client(client).NoMusic = toggle;
+					Client(client).MusicShuffle = shuffle;
 					
 					Music_MainMenu(client);
 				}
@@ -628,8 +631,6 @@ public int Music_PlaylistMenuH(Menu menu, MenuAction action, int client, int cho
 					sound.Default();
 					if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
 					{
-						CurrentSourceType[client] = true;
-						
 						bool toggle = Client(client).NoMusic;
 						Client(client).NoMusic = false;
 						Music_PlaySongToClient(client, sound.Sound, music.Special, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);

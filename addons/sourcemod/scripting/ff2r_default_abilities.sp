@@ -275,12 +275,17 @@
 #pragma newdecls required
 
 #include "freak_fortress_2/formula_parser.sp"
-#include "freak_fortress_2/tf2utils.sp"
 
-#define PLUGIN_VERSION	"Beta 5/7/2022"
+#define PLUGIN_VERSION	"Beta 7/5/2022"
 
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
+
+#define TF2U_LIBRARY	"nosoop_tf2utils"
+
+#if defined __nosoop_tf2_utils_included
+bool TF2ULoaded;
+#endif
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
@@ -315,11 +320,16 @@ public Plugin myinfo =
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
+#if defined __nosoop_tf2_utils_included
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	TF2U_PluginLoad();
+	MarkNativeAsOptional("TF2Util_GetPlayerWearableCount");
+	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
+	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
+	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
 	return APLRes_Success;
 }
+#endif
 
 public void OnPluginStart()
 {
@@ -347,7 +357,9 @@ public void OnPluginStart()
 	
 	LoadTranslations("ff2_rewrite.phrases");
 	
-	TF2U_PluginStart();
+	#if defined __nosoop_tf2_utils_included
+	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
+	#endif
 	
 	CvarCheats = FindConVar("sv_cheats");
 	CvarFriendlyFire = FindConVar("mp_friendlyfire");
@@ -406,12 +418,18 @@ public void OnMapEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	TF2U_LibraryAdded(name);
+	#if defined __nosoop_tf2_utils_included
+	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
+		TF2ULoaded = true;
+	#endif
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
-	TF2U_LibraryRemoved(name);
+	#if defined __nosoop_tf2_utils_included
+	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
+		TF2ULoaded = false;
+	#endif
 }
 
 public void OnClientPutInServer(int client)
@@ -1495,7 +1513,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	{
 		if(wearable)
 		{
-			TF2U_EquipPlayerWearable(client, entity);
+			EquipPlayerWearable(client, entity);
 		}
 		else
 		{
@@ -2235,7 +2253,7 @@ float Attributes_FindOnPlayer(int client, int index, bool multi = false, float d
 	int i;
 	int entity;
 	float value;
-	while(TF2U_GetWearable(client, entity, i))
+	while(TF2_GetWearable(client, entity, i))
 	{
 		if(Attributes_GetByDefIndex(entity, index, value))
 		{
@@ -2290,7 +2308,7 @@ float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = fa
 	int i;
 	int wear;
 	float value;
-	while(TF2U_GetWearable(client, wear, i))
+	while(TF2_GetWearable(client, wear, i))
 	{
 		if(Attributes_GetByDefIndex(wear, index, value))
 		{
@@ -2370,6 +2388,66 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 	}
 	
 	return false;
+}
+
+bool TF2_GetWearable(int client, int &entity, int &index)
+{
+	/*#if defined __nosoop_tf2_utils_included
+	if(Loaded)
+	{
+		int length = TF2Util_GetPlayerWearableCount(client);
+		while(index < length)
+		{
+			entity = TF2Util_GetPlayerWearable(client, index++);
+			if(entity != -1)
+				return true;
+		}
+	}
+	else
+	#endif*/
+	{
+		if(index >= -1 && index <= MaxClients)
+			index = MaxClients + 1;
+		
+		if(index > -2)
+		{
+			while((index = FindEntityByClassname(index, "tf_wear*")) != -1)
+			{
+				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client)
+				{
+					entity = index;
+					return true;
+				}
+			}
+			
+			index = -(MaxClients + 1);
+		}
+		
+		entity = -index;
+		while((entity = FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
+		{
+			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
+			{
+				index = -entity;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void EquipPlayerWearable(int client, int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(TF2ULoaded)
+	{
+		TF2Util_EquipPlayerWearable(client, entity);
+	}
+	else
+	#endif
+	{
+		SDKCall_EquipWearable(client, entity);
+	}
 }
 
 bool TF2_GetItem(int client, int &weapon, int &pos)

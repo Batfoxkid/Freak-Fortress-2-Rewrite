@@ -9,6 +9,8 @@
 	void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 	void Gamemode_SetClientGlow(int client, float duration)void Gamemode_SetClientGlow(int client, float duration)
 	void Gamemode_PlayerRunCmd(int client)
+	void Gamemode_ConditionAdded(int client, TFCond cond)
+	void Gamemode_ConditionRemoved(int client, TFCond cond)
 */
 
 #pragma semicolon 1
@@ -45,8 +47,6 @@ void Gamemode_MapStart()
 
 void Gamemode_RoundSetup()
 {
-	Debug("Gamemode_RoundSetup %d", Waiting ? 1 : 0);
-	
 	HealingFor = 0.0;
 	RoundStatus = 0;
 	WinnerOverride = -1;
@@ -74,7 +74,6 @@ void Gamemode_RoundSetup()
 			CvarTournament.BoolValue = true;
 			CvarMovementFreeze.BoolValue = false;
 			ServerCommand("mp_waitingforplayers_restart 1");
-			Debug("mp_waitingforplayers_restart 1");
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
@@ -357,7 +356,7 @@ void Gamemode_RoundStart()
 		}
 	}
 	
-	char buffer[64];
+	char buffer[512];
 	bool specTeam = CvarSpecTeam.BoolValue;
 	for(int i; i < bosses; i++)
 	{
@@ -392,6 +391,9 @@ void Gamemode_RoundStart()
 			}
 		}
 		
+		if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
+			ServerCommand(buffer);
+		
 		Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
 	}
 	
@@ -400,7 +402,6 @@ void Gamemode_RoundStart()
 
 void Gamemode_CheckPointUnlock(int alive, bool notice)
 {
-	Debug("Gamemode_CheckPointUnlock | %d <= %d", alive, PointUnlock);
 	if(PointUnlock > 0 && alive <= PointUnlock)
 	{
 		if(notice && !GetControlPoint())
@@ -665,6 +666,10 @@ void Gamemode_RoundEnd(int winteam)
 			}
 		}
 	}
+}
+
+public Action Gamemode_ShowScoreScreen(Handle timer)
+{
 }
 
 void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
@@ -982,4 +987,48 @@ void Gamemode_PlayerRunCmd(int client)
 		ClientCommand(client, "r_screenoverlay off");
 		SetCommandFlags("r_screenoverlay", flags);
 	}
+}
+
+void Gamemode_ConditionAdded(int client, TFCond cond)
+{
+	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
+}
+
+void Gamemode_ConditionRemoved(int client, TFCond cond)
+{
+	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+	{
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+	}
+}
+
+public Action Gamemode_DisguiseTimer(Handle timer, int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
+	{
+		int target = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
+		if(target > 0 && target <= MaxClients && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+		{
+			bool team = view_as<bool>(GetClientTeam(client) % 2);
+			
+			static char model[PLATFORM_MAX_PATH];
+			GetEntPropString(team ? client : target, Prop_Data, "m_ModelName", model, sizeof(model));
+			if(model[0])
+				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 0);
+			
+			GetEntPropString(team ? target : client, Prop_Data, "m_ModelName", model, sizeof(model));
+			if(model[0])
+				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 3);
+		}
+		else
+		{
+			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+		}
+		return Plugin_Continue;
+	}
+	return Plugin_Stop;
 }

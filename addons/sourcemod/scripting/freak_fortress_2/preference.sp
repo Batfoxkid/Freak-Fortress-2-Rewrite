@@ -1,5 +1,6 @@
 /*
 	void Preference_PluginStart()
+	void Preference_MapEnd()
 	void Preference_AddBoss(int client, const char[] name)
 	bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 	void Preference_ClearBosses(int client)
@@ -45,6 +46,11 @@ void Preference_PluginStart()
 	}
 }
 
+void Preference_MapEnd()
+{
+	BossOverride = -1;
+}
+
 void Preference_AddBoss(int client, const char[] name)
 {
 	if(!BossListing[client])
@@ -70,7 +76,7 @@ bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 	int special = BossListing[client].Get(index);
 	if(special < 0)
 	{
-		FormatEx(buffer, length, "#%d", -1-special);
+		Format(buffer, length, "#%d", -1-special);
 	}
 	else
 	{

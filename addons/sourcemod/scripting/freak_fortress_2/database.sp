@@ -8,11 +8,11 @@
 #pragma semicolon 1
 
 #define DATABASE			"ff2"
-#define DATATABLE_GENERAL	"ff2_data_v1"
+#define DATATABLE_GENERAL	"ff2_data_v2"
 #define DATATABLE_LISTING	"ff2_listing_v1"
 
 static Database DataBase;
-static bool Cached[MAXTF2PLAYERS];
+static int Cached[MAXTF2PLAYERS];
 static float StartTime[MAXTF2PLAYERS];
 
 void Database_Setup()
@@ -33,8 +33,9 @@ void Database_Setup()
 	tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_GENERAL ... " ("
 	... "steamid INTEGER PRIMARY KEY, "
 	... "queue INTEGER NOT NULL DEFAULT 0, "
-	... "toggle_music INTEGER NOT NULL DEFAULT 1, "
+	... "music_type INTEGER NOT NULL DEFAULT 1, "
 	... "toggle_voice INTEGER NOT NULL DEFAULT 1, "
+	... "weapon_changes INTEGER NOT NULL DEFAULT 1, "
 	... "last_played TEXT NOT NULL DEFAULT '');");
 	
 	tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_LISTING ... " ("
@@ -150,14 +151,19 @@ void Database_ClientAuthorized(int client)
 			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_LISTING ... " WHERE steamid = %d;", id);
 			tr.AddQuery(buffer);
 			
-			DataBase.Execute(tr, Database_ClientSetup, Database_ClientRetry, GetClientUserId(client));
+			DataPack pack = new DataPack();
+			pack.WriteCell(GetClientUserId(client));
+			pack.WriteCell(id);
+			
+			DataBase.Execute(tr, Database_ClientSetup, Database_FailHandle, pack);
 		}
 	}
 }
 
-public void Database_ClientSetup(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
+public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBResultSet[] results, any[] queryData)
 {
-	int client = GetClientOfUserId(data);
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
 	if(client)
 	{
 		char buffer[256];
@@ -165,10 +171,14 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 		if(results[0].FetchRow())
 		{
 			Client(client).Queue = results[0].FetchInt(1);
-			Client(client).NoMusic = !results[0].FetchInt(2);
 			Client(client).NoVoice = !results[0].FetchInt(3);
-			results[0].FetchString(4, buffer, sizeof(buffer));
+			Client(client).NoChanges = !results[0].FetchInt(4);
+			results[0].FetchString(5, buffer, sizeof(buffer));
 			Client(client).SetLastPlayed(buffer);
+			
+			int value = results[0].FetchInt(2);
+			Client(client).MusicShuffle = value > 1;
+			Client(client).NoMusic = value < 1;
 		}
 		else if(!results[0].MoreRows)
 		{
@@ -198,7 +208,7 @@ public void Database_ClientSetup(Database db, any data, int numQueries, DBResult
 			FPrintToChat(client, "%t", "Preference Updated");
 		}
 		
-		Cached[client] = true;
+		Cached[client] = pack.ReadCell();
 	}
 }
 
@@ -214,6 +224,13 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 	if(DataBase && !IsFakeClient(client) && Cached[client])
 	{
 		int id = GetSteamAccountID(client);
+		if(Cached[client] != id)
+		{
+			// TODO: Remove this
+			LogError("%N has different id from what was loaded (%d vs %d)", id, Cached[client]);
+			return;
+		}
+		
 		if(id)
 		{
 			Transaction tr = new Transaction();
@@ -223,13 +240,15 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 			
 			DataBase.Format(buffer, sizeof(buffer), "UPDATE " ... DATATABLE_GENERAL ... " SET "
 			... "queue = %d, "
-			... "toggle_music = %d, "
+			... "music_type = %d, "
 			... "toggle_voice = %d, "
+			... "weapon_changes = %d, "
 			... "last_played = '%s' "
 			... "WHERE steamid = %d;",
 			Client(client).Queue,
-			!Client(client).NoMusic,
+			!Client(client).NoMusic ? Client(client).MusicShuffle ? 2 : 1 : 0,
 			!Client(client).NoVoice,
+			!Client(client).NoChanges,
 			buffer,
 			id);
 			
@@ -252,7 +271,7 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 		}
 	}
 	
-	Cached[client] = false;
+	Cached[client] = 0;
 	Preference_ClearBosses(client);
 }
 

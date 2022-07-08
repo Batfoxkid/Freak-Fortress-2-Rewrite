@@ -195,7 +195,7 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 			AcceptEntityInput(client, "SetCustomModel");
 			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
 			
-			if(RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
+			if(!Client(client).NoChanges && RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
 				Weapons_ChangeMenu(client, CvarPreroundTime.IntValue);
 		}
 		
@@ -223,8 +223,26 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		int attacker = GetClientOfUserId(event.GetInt("attacker"));
 		int damage = event.GetInt("damageamount");
 		
-		if(attacker > 0 && attacker <= MaxClients)
+		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
+		{
 			Client(attacker).TotalDamage += damage;
+			
+			int team = GetClientTeam(attacker);
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)
+				{
+					int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
+					if(entity != -1 &&
+					   HasEntProp(entity, Prop_Send, "m_bHealing") &&
+					   GetEntProp(entity, Prop_Send, "m_bHealing") &&
+					   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
+					{
+						Client(i).Assist += GetEntProp(entity, Prop_Send, "m_bChargeRelease") ? damage : damage / 2;
+					}
+				}
+			}
+		}
 		
 		if(Client(victim).IsBoss)
 		{
@@ -320,17 +338,10 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						IntToString(lives, buffer, sizeof(buffer));
 						if(CvarSoundType.BoolValue)
 						{
-							if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, _, _, _, _, 2.0))
+							if(!Bosses_PlaySoundToAll(victim, "sound_lifeloss", buffer, _, _, _, _, 2.0))
 							{
-								Bosses_PlaySound(victim, boss, bosses, "sound_lifeloss", buffer, _, _, _, _, 2.0);
-							}
-							else if(lives == 1 && Bosses_PlaySound(victim, merc, mercs, "sound_last_life", _, _, _, _, _, 2.0))
-							{
-								Bosses_PlaySound(victim, boss, bosses, "sound_last_life", _, _, _, _, _, 2.0);
-							}
-							else if(Bosses_PlaySound(victim, merc, mercs, "sound_nextlife", _, _, _, _, _, 2.0))
-							{
-								Bosses_PlaySound(victim, boss, bosses, "sound_nextlife", _, _, _, _, _, 2.0);
+								if(lives != 1 || !Bosses_PlaySoundToAll(victim, "sound_last_life", _, _, _, _, _, 2.0))
+									Bosses_PlaySoundToAll(victim, "sound_nextlife", _, _, _, _, _, 2.0);
 							}
 						}
 						else if(Bosses_PlaySound(victim, merc, mercs, "sound_lifeloss", buffer, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))

@@ -20,7 +20,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 7/2/2022"
+#define PLUGIN_VERSION	"Beta 7/7/2022"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -184,6 +184,7 @@ ConVar CvarCaptureAlive;
 ConVar CvarAggressiveSwap;
 ConVar CvarAggressiveOverlay;
 ConVar CvarSoundType;
+ConVar CvarDisguiseModels;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;
@@ -329,6 +330,7 @@ public void OnConfigsExecuted()
 public void OnMapEnd()
 {
 	Bosses_MapEnd();
+	Preference_MapEnd();
 }
 
 public void OnPluginEnd()
@@ -372,7 +374,7 @@ public void OnClientDisconnect(int client)
 	Bosses_ClientDisconnect(client);
 	Database_ClientDisconnect(client);
 	Events_CheckAlivePlayers(client);
-	Music_ClientDisconnect(client);
+	Preference_ClientDisconnect(client);
 	
 	Client(client).ResetByAll();
 }
@@ -392,4 +394,14 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 	
 	result = false;
 	return Plugin_Changed;
+}
+
+public void TF2_OnConditionAdded(int client, TFCond cond)
+{
+	Gamemode_ConditionAdded(client, cond);
+}
+
+public void TF2_OnConditionRemoved(int client, TFCond cond)
+{
+	Gamemode_ConditionRemoved(client, cond);
 }

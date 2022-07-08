@@ -3,7 +3,9 @@
 	ConfigMap Cfg
 	int Queue
 	bool NoMusic
+	bool MusicShuffle
 	bool NoVoice
+	bool NoChanges
 	bool NoHud
 	int GetLastPlayed(char[] buffer, int length)
 	void SetLastPlayed(const char[] buffer)
@@ -56,7 +58,9 @@
 static ConfigMap BossMap[MAXTF2PLAYERS] = {null, ...};
 static int Queue[MAXTF2PLAYERS];
 static bool NoMusic[MAXTF2PLAYERS];
+static bool MusicShuffle[MAXTF2PLAYERS];
 static bool NoVoice[MAXTF2PLAYERS];
+static bool NoChanges[MAXTF2PLAYERS];
 static bool NoHud[MAXTF2PLAYERS];
 static char LastPlayed[MAXTF2PLAYERS][64];
 static bool Minion[MAXTF2PLAYERS];
@@ -120,6 +124,18 @@ methodmap Client
 		}
 	}
 	
+	property bool MusicShuffle
+	{
+		public get()
+		{
+			return MusicShuffle[view_as<int>(this)];
+		}
+		public set(bool value)
+		{
+			MusicShuffle[view_as<int>(this)] = value;
+		}
+	}
+	
 	property bool NoVoice
 	{
 		public get()
@@ -129,6 +145,18 @@ methodmap Client
 		public set(bool value)
 		{
 			NoVoice[view_as<int>(this)] = value;
+		}
+	}
+	
+	property bool NoChanges
+	{
+		public get()
+		{
+			return NoChanges[view_as<int>(this)];
+		}
+		public set(bool value)
+		{
+			NoChanges[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -685,6 +713,7 @@ methodmap Client
 	{
 		this.Queue = 0;
 		this.NoMusic = false;
+		this.MusicShuffle = false;
 		this.NoVoice = false;
 		this.NoHud = false;
 		this.SetLastPlayed("");

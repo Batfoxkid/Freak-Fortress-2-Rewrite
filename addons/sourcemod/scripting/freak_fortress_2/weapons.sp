@@ -9,7 +9,7 @@
 	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
 	void Weapons_OnAirblastBoss(int attacker)
-	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon)
+	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
 	void Weapons_OnInventoryApplication(int userid)
 	void Weapons_OnWeaponSwitch(int client, int weapon)
 	void Weapons_EntityCreated(int entity, const char[] classname)
@@ -71,7 +71,7 @@ stock void Weapons_LibraryAdded(const char[] name)
 	
 	#if defined __tf_custom_attributes_included
 	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
-		TCALoaded = false;
+		TCALoaded = true;
 	#endif
 }
 
@@ -167,7 +167,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 		static const char SlotNames[][] = { "Primary", "Secondary", "Melee", "PDA", "Utility", "Building", "Action" };
 		
 		char buffer1[12], buffer2[32];
-		for(int i; i < 6; i++)
+		for(int i; i < sizeof(SlotNames); i++)
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", SlotNames[i]);
 			
@@ -183,15 +183,21 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 			}
 		}
 		
-		if(time == MENU_TIME_FOREVER)
+		if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
 		{
-			menu.ExitBackButton = Menu_BackButton(client);
+			FormatEx(buffer2, sizeof(buffer2), "%t", "Back");
+			menu.AddItem(buffer1, buffer2, ITEMDRAW_DEFAULT);
 		}
 		else
 		{
-			Menu_Command(client);
+			menu.AddItem(buffer1, buffer1, ITEMDRAW_SPACER);
 		}
 		
+		FormatEx(buffer2, sizeof(buffer2), "%t", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
+		menu.AddItem(buffer1, buffer2);
+		
+		menu.Pagination = 0;
+		menu.ExitButton = true;
 		menu.Display(client, time);
 	}
 }
@@ -211,13 +217,28 @@ public int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 		}
 		case MenuAction_Select:
 		{
-			char buffer[12];
-			menu.GetItem(choice, buffer, sizeof(buffer));
-			int entity = EntRefToEntIndex(StringToInt(buffer));
-			if(entity != -1)
-				Weapons_ShowChanges(client, entity);
-			
-			Weapons_ChangeMenu(client);
+			switch(choice)
+			{
+				case 7:
+				{
+					Menu_MainMenu(client);
+				}
+				case 8:
+				{
+					Client(client).NoChanges = !Client(client).NoChanges;
+					Weapons_ChangeMenu(client);
+				}
+				default:
+				{
+					char buffer[12];
+					menu.GetItem(choice, buffer, sizeof(buffer));
+					int entity = EntRefToEntIndex(StringToInt(buffer));
+					if(entity != INVALID_ENT_REFERENCE)
+						Weapons_ShowChanges(client, entity);
+					
+					Weapons_ChangeMenu(client);
+				}
+			}
 		}
 	}
 	return 0;
@@ -556,14 +577,17 @@ stock void Weapons_OnAirblastBoss(int attacker)
 	#endif
 }
 
-stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon)
+stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
-		float multi = TF2CustAttr_GetFloat(weapon, "backstab damage percent");
+		multi = TF2CustAttr_GetFloat(weapon, "backstab damage percent");
 		if(multi > 0.0)
 			damage = float(Client(victim).MaxHealth * Client(victim).MaxLives) * multi / 3.0;
+		
+		time = TF2CustAttr_GetFloat(weapon, "backstab stale restore");
+		multi = TF2CustAttr_GetFloat(weapon, "backstab stale multi");
 	}
 	#endif
 }

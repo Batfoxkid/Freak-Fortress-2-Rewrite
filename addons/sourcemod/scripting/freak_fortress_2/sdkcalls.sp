@@ -91,12 +91,10 @@ void SDKCall_EquipWearable(int client, int entity)
 	if(SDKEquipWearable)
 	{
 		SDKCall(SDKEquipWearable, client, entity);
-		Debug("Attached Wearable");
 	}
 	else
 	{
 		RemoveEntity(entity);
-		Debug("Removed Wearable");
 	}
 }
 
@@ -169,5 +167,17 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 		SetEntProp(client, Prop_Send, "m_lifeState", 2);
 		ChangeClientTeam(client, newTeam);
 		SetEntProp(client, Prop_Send, "m_lifeState", state);
+	}
+	
+	if(CvarDisguiseModels.BoolValue)
+	{
+		if(newTeam % 2)
+		{
+			TF2Attrib_RemoveByDefIndex(client, 406);
+		}
+		else
+		{
+			TF2Attrib_SetByDefIndex(client, 406, 4.0);
+		}
 	}
 }
