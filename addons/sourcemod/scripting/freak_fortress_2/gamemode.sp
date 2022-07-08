@@ -668,10 +668,6 @@ void Gamemode_RoundEnd(int winteam)
 	}
 }
 
-public Action Gamemode_ShowScoreScreen(Handle timer)
-{
-}
-
 void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 {
 	if(!Enabled || RoundStatus == 1)

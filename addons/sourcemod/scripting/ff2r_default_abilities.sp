@@ -503,7 +503,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					float distance = GetVectorDistance(pos, vec, true);
 					float speed = GetFormula(ability, "speed", alive, 2012.0);
 					float maximum = GetFormula(ability, "distance", alive, 1500.0);
-					maximum *= maximum;
+					maximum = maximum * maximum;
 					
 					if(distance > maximum)
 						ConstrainDistance(pos, vec, distance, maximum);
@@ -1070,7 +1070,7 @@ public Action Hook_SetTransmit(int client, int target)
 	return Plugin_Continue;
 }
 
-public Action Hook_ProjectileSpawned(int entity)
+public void Hook_ProjectileSpawned(int entity)
 {
 	int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 	if(client > 0 && client <= MaxClients)
@@ -1114,7 +1114,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		
 		float duration = GetFormula(cfg, "duration", alive, 5.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
-		distance *= distance;
+		distance = distance * distance;
 		
 		int flags = cfg.GetInt("flags", TF_STUNFLAGS_LOSERSTATE);
 		float slowdown = GetFormula(cfg, "slowdown", alive, 0.34);
@@ -1229,7 +1229,7 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 		
 		float duration = GetFormula(cfg, "duration", alive, 7.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
-		distance *= distance;
+		distance = distance * distance;
 		
 		float health = GetFormula(cfg, "health", alive, 0.6);
 		float ammo = GetFormula(cfg, "ammo", alive, 0.5);
@@ -1825,6 +1825,7 @@ public Action Timer_RestoreTime(Handle timer, int userid)
 				CvarCheats.ReplicateToClient(target, "0");
 		}
 	}
+	return Plugin_Continue;
 }
 
 void TimescaleSound(int client, float current, float newvalue)
