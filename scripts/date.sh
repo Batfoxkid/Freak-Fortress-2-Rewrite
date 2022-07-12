@@ -1,5 +1,5 @@
 SEC=$(date "+%s")
-MIN=$(expr $((SEC)) / 60)
+export DATA_VERSION=$(expr $((SEC)) / 60)
 echo "DATA_VERSION<<EOF" >> $GITHUB_ENV
-echo $MIN >> $GITHUB_ENV
+echo $DATA_VERSION >> $GITHUB_ENV
 echo 'EOF' >> $GITHUB_ENV

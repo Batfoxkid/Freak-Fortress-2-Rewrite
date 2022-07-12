@@ -15,6 +15,9 @@ jobs:
       - name: Environments
         run: |
           echo "SM_VERSION=1.11" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
+          git rev-list --count HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
       
       - name: Install
         run: |
@@ -22,7 +25,7 @@ jobs:
       
       - name: Set Version
         run: |
-          bash scripts/date.sh
+          bash scripts/version.sh
       
       - name: Compile
         run: |
@@ -38,5 +41,5 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
         with:
-          name: FF2R-${{env.DATE_VERSION}}
+          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./build/package

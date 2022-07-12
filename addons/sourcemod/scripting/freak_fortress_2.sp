@@ -20,7 +20,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"Beta 7/7/2022"
+#define PLUGIN_VERSION			"1.0"
+#define PLUGIN_VERSION_REVISION	"custom"
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"

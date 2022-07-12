@@ -5,6 +5,8 @@
 #endif
 #define _ff2r_included
 
+#define SNDVOL_BOSS	2.0
+
 /**
  * Activates a range of abilities within slots
  * 
@@ -42,7 +44,7 @@ native void FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
  * 
  * @return				True if the sound was found, false otherwise
  */
-native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0);
+native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_BOSS, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0);
 
 /**
  * Gets if a player is considered a minion which ignores weapon changes and players alive count
@@ -141,7 +143,7 @@ forward void FF2R_OnBossRemoved(int client);
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
+stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_BOSS, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
 {
 	int clients[1];
 	clients[0] = client;
@@ -175,7 +177,7 @@ stock bool FF2R_EmitBossSoundToClient(int client, const char[] key, int boss, co
  * 
  * @return				True if the sound was found, false otherwise
  */
-stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = 2.0, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
+stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_BOSS, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = false, float soundtime = 0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -264,7 +266,9 @@ methodmap AbilityData < ConfigData
 		{
 			char buffer[PLATFORM_MAX_PATH];
 			GetPluginFilename(INVALID_HANDLE, buffer, sizeof(buffer));
-			SplitString(buffer, ".smx", buffer, sizeof(buffer));
+			int pos = FindCharInString(buffer, '.', true);
+			if(pos != -1)
+				buffer[pos] = '\0';
 			
 			int highest = -1;
 			for(int i = strlen(buffer)-1; i > 0; i--)

@@ -402,7 +402,9 @@ public any NativeOld_HasAbility(Handle plugin, int params)
 			GetNativeString(2, buffer1, sizeof(buffer1));
 			if(buffer1[0])
 			{
-				SplitString(buffer1, ".smx", buffer1, sizeof(buffer1));
+				int pos = FindCharInString(buffer1, '.', true);
+				if(pos != -1)
+					buffer1[pos] = '\0';
 				
 				char buffer2[64];
 				cfg.Get("plugin_name", buffer2, sizeof(buffer2));
@@ -1063,8 +1065,11 @@ public any NativeOld_FF2Data(Handle plugin, int params)
 	GetNativeString(3, AbilityCache[boss], sizeof(AbilityCache[]));
 	GetNativeString(2, PluginCache[boss], sizeof(PluginCache[]));
 	if(PluginCache[boss][0])
-		SplitString(PluginCache[boss], ".smx", PluginCache[boss], sizeof(PluginCache[]));
-	
+	{
+		int pos = FindCharInString(PluginCache[boss], '.', true);
+		if(pos != -1)
+			PluginCache[boss][pos] = '\0';
+	}
 	return boss;
 }
 

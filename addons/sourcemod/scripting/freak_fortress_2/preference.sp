@@ -516,10 +516,21 @@ static void BossMenu(int client)
 					if(access || preview)
 					{
 						Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
-						if(blacklist != 0 && BossListing[client] && BossListing[client].FindValue(i) != -1)
+						if(blacklist != 0)
 						{
-							found = true;
-							Format(buffer, sizeof(buffer), "%s %s", buffer, access ? blacklist > 0 ? "❎" : "☑" : "🔒");
+							if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == i)
+							{
+								Format(buffer, sizeof(buffer), "[&] %s", buffer);
+							}
+							else if(BossListing[client] && BossListing[client].FindValue(i) != -1)
+							{
+								found = true;
+								Format(buffer, sizeof(buffer), "[X] %s", buffer);
+							}
+							else if(access)
+							{
+								Format(buffer, sizeof(buffer), "[ ] %s", buffer);
+							}
 						}
 						
 						IntToString(i, data, sizeof(data));

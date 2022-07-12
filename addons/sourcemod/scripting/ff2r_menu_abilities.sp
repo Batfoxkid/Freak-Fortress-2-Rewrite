@@ -76,7 +76,7 @@
 
 #include "freak_fortress_2/formula_parser.sp"
 
-#define PLUGIN_VERSION	"Beta 3/14/2022"
+#define PLUGIN_VERSION	"Custom"
 
 #define ABILITY_NAME	"special_menu_manager"
 
@@ -105,8 +105,8 @@ bool SpecTeam;
 public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Menu Abilities",
-	description	=	"I'm coming for you!",
 	author		=	"Batfoxkid",
+	description	=	"I'm coming for you!",
 	version		=	PLUGIN_VERSION,
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }

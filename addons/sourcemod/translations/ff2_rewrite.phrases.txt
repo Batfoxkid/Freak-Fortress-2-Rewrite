@@ -98,6 +98,94 @@
 	{
 		"en"		" | Call for Medic"
 	}
+	"Boss Mobility Time"
+	{
+		"#format"	"{1:.1f}"
+		"en"		"Mobility is not ready. {1}s"
+	}
+	"Boss Mobility Charge"
+	{
+		"#format"	"{1:d}"
+		"en"		"Mobility is not ready. {1}%%"
+	}
+	"Boss Jump Time"
+	{
+		"#format"	"{1:.1f}"
+		"en"		"Super Jump is not ready. {1}s"
+	}
+	"Boss Jump Charge"
+	{
+		"#format"	"{1:d}"
+		"en"		"Super Jump is not ready. {1}%%"
+	}
+	"Boss Jump Ready"
+	{
+		"#format"	"{1:d}"
+		"en"		"Super Jump is ready. {1}%%"
+	}
+	"Boss Jump Look"
+	{
+		"en"		" | Look Upwards & Release"
+	}
+	"Boss Tele Time"
+	{
+		"#format"	"{1:.1f}"
+		"en"		"Teleport is not ready. {1}s"
+	}
+	"Boss Tele Charge"
+	{
+		"#format"	"{1:d}"
+		"en"		"Teleport is not ready. {1}%%"
+	}
+	"Boss Tele Ready"
+	{
+		"#format"	"{1:d}"
+		"en"		"Teleport is ready. {1}%%"
+	}
+	"Boss Tele Look"
+	{
+		"en"		" | Look at Target & Release"
+	}
+	"Boss Mobility 0"
+	{
+		"en"		" | Hold Primary Attack"
+	}
+	"Boss Mobility 1"
+	{
+		"en"		" | Hold Jump"
+	}
+	"Boss Mobility 2"
+	{
+		"en"		" | Hold Duck"
+	}
+	"Boss Mobility 3"
+	{
+		"en"		" | Move Forward"
+	}
+	"Boss Mobility 4"
+	{
+		"en"		" | Move Back"
+	}
+	"Boss Mobility 9"
+	{
+		"en"		" | Move Left"
+	}
+	"Boss Mobility 10"
+	{
+		"en"		" | Move Right"
+	}
+	"Boss Mobility 11"
+	{
+		"en"		" | Hold Secondary Attack"
+	}
+	"Boss Mobility 13"
+	{
+		"en"		" | Hold Reload"
+	}
+	"Boss Mobility 25"
+	{
+		"en"		" | Hold Special Attack"
+	}
 	
 	"Preference Updated"
 	{

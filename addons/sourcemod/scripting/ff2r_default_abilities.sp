@@ -213,6 +213,16 @@
 	}
 	
 	
+	"special_anchor"
+	{
+		"basic"			"0.5"	// Crouch time before gaining knockback resistance
+		"full"			"3.5"	// Crouch time before gaining stun & airblast resistance
+		"speed"			"175.0"	// Movement speed while crouching (Capped at 173 HU/s by default TF2)
+		
+		"plugin_name"	"ff2r_default_abilities"
+	}
+	
+	
 	"special_cbs_multimelee"
 	{
 		// Weapon indexes
@@ -244,13 +254,34 @@
 	
 	"special_dropprop"
 	{
-		"model"			"models/freak_fortress_2/demopan/giant_shako.mdl"	// Model
+		"model"				"models/freak_fortress_2/demopan/giant_shako.mdl"	// Model
 		"remove ragdolls"	"true"												// Remove ragdoll
-		"duration"		"120.0"												// Prop lifetime
+		"duration"			"120.0"												// Prop lifetime
 		
 		"plugin_name"		"ff2r_default_abilities"
 	}
 	
+	
+	"special_mobility"
+	{
+		"slot"			"1"						// Charge slot (Only used for sound_ability)
+		"options"		"1"						// Mobility flags (1=Super Jump, 2=Teleport)
+		"button"		"11"					// Button type (11=M2, 13=Reload, 25=M3)
+		"charge"		"1.5"					// Time to fully charge
+		"cooldown"		"5.0"					// Cooldown after use
+		"delay"			"15.0"					// Delay before first use
+		"upward"		"750 + (n * 3.25)"		// Super Jump upward velocity set (n=0.0 ~ 100.0)
+		"forward"		"1.0 + (n * 0.000275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
+		"emergency"		"2000.0"				// Super Jump upward velocity added when touching a hazard
+		"stun"			"2.0"					// Teleport stun duration
+		
+		"plugin_name"	"ff2r_default_abilities"
+	}
+	
+	"sound_ability"
+	{
+		"vo/null.mp3"	"1"
+	}
 	
 	"special_noanims"
 	{
@@ -259,13 +290,29 @@
 		
 		"plugin_name"				"ff2r_default_abilities"
 	}
+	
+	
+	"special_weighdown"
+	{
+		"slot"			"2"			// Charge slot (Only used for sound_ability)
+		"delay"			"3.0"		// Airtime before being able to use
+		"gravity"		"6.0"		// Weighdown gravity
+		"velocity"		"1000.0"	// Downward velocity
+		
+		"plugin_name"	"ff2r_default_abilities"
+	}
+	
+	"sound_ability"
+	{
+		"vo/null.mp3"	"2"
+	}
 */
 
 #include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
-#include <cfgmap>
 #include <morecolors>
+#include <cfgmap>
 #include <ff2r>
 #include <tf2items>
 #include <tf2attributes>
@@ -276,7 +323,7 @@
 
 #include "freak_fortress_2/formula_parser.sp"
 
-#define PLUGIN_VERSION	"Beta 7/5/2022"
+#define PLUGIN_VERSION	"Custom"
 
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
@@ -289,23 +336,43 @@ bool TF2ULoaded;
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
+Handle SDKStartLagCompensation;
+Handle SDKFinishLagCompensation;
+Address SDKGetCurrentCommand;
+Handle SyncHud;
 int PlayersAlive[4];
 bool SpecTeam;
 
 ArrayList BossTimers[MAXTF2PLAYERS];
+
 bool SoloVictim[MAXTF2PLAYERS];
+
 float SpecialUber[MAXTF2PLAYERS];
+
 Handle OverlayTimer[MAXTF2PLAYERS];
 bool OverlayMuffled[MAXTF2PLAYERS];
+
 int CloneOwner[MAXTF2PLAYERS];
 int CloneLastTeam[MAXTF2PLAYERS];
 bool CloneIdle[MAXTF2PLAYERS];
+
 Handle TimescaleTimer;
 float MatrixFor[MAXTF2PLAYERS];
 float MatrixDelay[MAXTF2PLAYERS];
 char MatrixName[MAXTF2PLAYERS][64];
+
 MoveType LastMoveType[MAXTF2PLAYERS];
+
 bool SpecialCharge[MAXTF2PLAYERS];
+
+bool MobilityEnabled[MAXTF2PLAYERS];
+
+float WeighdownAirTimeAt[MAXTF2PLAYERS];
+float WeighdownLastGravity[MAXTF2PLAYERS] = {-69.42, ...};
+float WeighdownCurrentGravity[MAXTF2PLAYERS];
+
+float AnchorStartTime[MAXTF2PLAYERS];
+float AnchorLastAttrib[MAXTF2PLAYERS] = {-69.42, ...};
 
 ConVar CvarCheats;
 ConVar CvarFriendlyFire;
@@ -314,22 +381,24 @@ ConVar CvarTimeScale;
 public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Default Abilities",
-	description	=	"Run cowards!",
 	author		=	"Batfoxkid",
+	description	=	"Run cowards!",
 	version		=	PLUGIN_VERSION,
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
-#if defined __nosoop_tf2_utils_included
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	#if defined __nosoop_tf2_utils_included
 	MarkNativeAsOptional("TF2Util_GetPlayerWearableCount");
 	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
 	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
 	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
+	#endif
+	
+	MarkNativeAsOptional("SetEntityCollisionGroup");
 	return APLRes_Success;
 }
-#endif
 
 public void OnPluginStart()
 {
@@ -355,11 +424,36 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	gamedata = new GameData("ff2");
+	
+	SDKGetCurrentCommand = view_as<Address>(gamedata.GetOffset("GetCurrentCommand"));
+	if(SDKGetCurrentCommand == view_as<Address>(-1))
+		LogError("[Gamedata] Could not find GetCurrentCommand");
+	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::StartLagCompensation");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Pointer);
+	SDKStartLagCompensation = EndPrepSDKCall();
+	if(!SDKStartLagCompensation)
+		LogError("[Gamedata] Could not find CLagCompensationManager::StartLagCompensation");
+	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::FinishLagCompensation");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	SDKFinishLagCompensation = EndPrepSDKCall();
+	if(!SDKFinishLagCompensation)
+		LogError("[Gamedata] Could not find CLagCompensationManager::FinishLagCompensation");
+	
+	delete gamedata;
+	
 	LoadTranslations("ff2_rewrite.phrases");
 	
 	#if defined __nosoop_tf2_utils_included
 	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
 	#endif
+	
+	SyncHud = CreateHudSynchronizer();
 	
 	CvarCheats = FindConVar("sv_cheats");
 	CvarFriendlyFire = FindConVar("mp_friendlyfire");
@@ -445,6 +539,8 @@ public void OnClientDisconnect(int client)
 	OverlayMuffled[client] = false;
 	CloneOwner[client] = 0;
 	CloneIdle[client] = false;
+	WeighdownLastGravity[client] = -69.42;
+	AnchorLastAttrib[client] = -69.42;
 	
 	delete OverlayTimer[client];
 }
@@ -492,9 +588,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
 					
+					StartLagCompensation(client);
+					
 					float pos[3], vec[3];
-					GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
-					pos[2] += 65;
+					GetClientEyePosition(client, pos);
 					
 					Handle trace = TR_TraceRayFilterEx(pos, angles, MASK_PLAYERSOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
 					TR_GetEndPosition(vec, trace);
@@ -513,6 +610,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					ScaleVector(vec, speed);
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
 					
+					bool finished;
 					if(distance < maximum)
 					{
 						int target = TR_GetEntityIndex(trace);
@@ -524,7 +622,19 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								bool friendly = (team1 == team2);
 								if(friendly || !IsInvuln(target))
 								{
+									if(friendly)	// Lag compenstated location only if they damaged attack
+									{
+										finished = true;
+										FinishLagCompensation(client);
+									}
+									
 									GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
+									
+									if(!finished)
+									{
+										finished = true;
+										FinishLagCompensation(client);
+									}
 									
 									if(!friendly)
 									{
@@ -541,6 +651,9 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					}
 					
 					delete trace;
+					
+					if(!finished)
+						FinishLagCompensation(client);
 				}
 				else
 				{
@@ -562,7 +675,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
-public void OnPlayerRunCmdPost(int client, int buttons)
+public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3])
 {
 	if(CloneIdle[client] && buttons)
 	{
@@ -571,6 +684,365 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 			TF2_RemoveCondition(client, TFCond_DisguisedAsDispenser);
 			TF2_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
 			TF2_RemoveCondition(client, TFCond_MegaHeal);
+		}
+	}
+	
+	if(AnchorStartTime[client])
+	{
+		int flags = GetEntityFlags(client);
+		if((flags & FL_ONGROUND) && (flags & FL_DUCKING))
+		{
+			float gameTime = GetGameTime();
+			if(AnchorStartTime[client] == 1.0)
+				AnchorStartTime[client] = gameTime;
+			
+			BossData boss = FF2R_GetBossData(client);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_anchor")))
+			{
+				if(AnchorStartTime[client] > (gameTime + ability.GetFloat("full", 3.5)))
+				{
+					TF2_AddCondition(client, TFCond_MegaHeal, 0.5, client);
+					TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.5, client);
+					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0));
+				}
+				else if(AnchorStartTime[client] > (gameTime + ability.GetFloat("basic", 0.5)))
+				{
+					Address address = TF2Attrib_GetByDefIndex(client, 252);
+					AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);
+					
+					TF2Attrib_SetByDefIndex(client, 252, 0.0);
+					TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.5, client);
+					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0));
+				}
+			}
+			else
+			{
+				AnchorStartTime[client] = 0.0;
+			}
+		}
+		else
+		{
+			AnchorStartTime[client] = 1.0;
+		}
+	}
+	
+	if(AnchorLastAttrib[client] != -69.42 && AnchorStartTime[client] <= 1.0)
+	{
+		Address address = TF2Attrib_GetByDefIndex(client, 252);
+		if(address == Address_Null || TF2Attrib_GetValue(address) == 0.0)
+		{
+			if(AnchorLastAttrib[client] != 1.0)
+			{
+				TF2Attrib_SetByDefIndex(client, 252, AnchorLastAttrib[client]);
+			}
+			else if(address != Address_Null)
+			{
+				TF2Attrib_RemoveByDefIndex(client, 252);
+			}
+		}
+		
+		AnchorLastAttrib[client] = -69.42;
+	}
+	
+	if(MobilityEnabled[client])
+	{
+		BossData boss = FF2R_GetBossData(client);
+		AbilityData ability;
+		if(boss && (ability = boss.GetAbility("special_mobility")))
+		{
+			float gameTime = GetGameTime();
+			bool emergency = ability.GetFloat("emergencyfor") > gameTime;
+			bool cooldown = ability.GetBool("incooldown", true);
+			float timeIn = ability.GetFloat("delay");
+			bool hud;
+			
+			if(cooldown)
+			{
+				if(timeIn < gameTime)
+				{
+					cooldown = false;
+					timeIn = 0.0;
+					
+					ability.SetBool("incooldown", cooldown);
+					ability.SetFloat("delay", timeIn);
+					
+					hud = true;
+				}
+			}
+			else
+			{
+				int button = ability.GetInt("button", 11);
+				if(buttons & (1 << button))
+				{
+					if(!timeIn)
+					{
+						timeIn = gameTime;
+						ability.SetFloat("delay", timeIn);
+						
+						hud = true;
+					}
+				}
+				else if(timeIn && (emergency || !TF2_IsPlayerInCondition(client, TFCond_Dazed)) && GetEntityMoveType(client) != MOVETYPE_NONE)
+				{
+					hud = true;
+					
+					button = ability.GetInt("options", 1);
+					bool jump = view_as<bool>(button & 1);
+					bool tele = view_as<bool>(button & 2);
+					
+					float charge = ability.GetFloat("charge", 1.5);
+					if(charge < 0.001)
+						charge = 0.001;
+					
+					charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
+					if(charge >= 100.0 && tele)
+					{
+						StartLagCompensation(client);
+						
+						float pos1[3];
+						GetClientEyePosition(client, pos1);
+						
+						Handle trace = TR_TraceRayFilterEx(pos1, angles, MASK_PLAYERSOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
+						TR_GetEndPosition(pos1, trace);
+							
+						int target = -1;
+						float distance;
+						float pos2[3];
+						float scale = GetEntPropFloat(client, Prop_Send, "m_flModelScale");
+						
+						for(int i = 1; i <= MaxClients; i++)
+						{
+							if(i == client || !IsClientInGame(i) || !IsPlayerAlive(i))
+								continue;
+							
+							if(!SpecTeam && GetClientTeam(i) <= view_as<int>(TFTeam_Spectator))
+								continue;
+							
+							if(scale < GetEntPropFloat(i, Prop_Send, "m_flModelScale"))
+								continue;
+							
+							GetEntPropVector(i, Prop_Send, "m_vecOrigin", pos2);
+							float dist = GetVectorDistance(pos1, pos2, true);
+							if(target == -1 || dist < distance)
+							{
+								distance = dist;
+								target = i;
+							}
+						}
+						
+						FinishLagCompensation(client);
+						
+						if(target != -1)
+						{
+							float stun = ability.GetFloat("stun", 2.0);
+							
+							TF2_StunPlayer(client, stun, 1.0, TF_STUNFLAGS_LOSERSTATE);
+							
+							DataPack pack;
+							CreateDataTimer(stun, Timer_RestoreCollision, pack, TIMER_FLAG_NO_MAPCHANGE);
+							pack.WriteCell(GetClientUserId(client));
+							pack.WriteCell(GetEntProp(client, Prop_Send, "m_CollisionGroup"));
+							
+							SetEntityCollisionGroup(client, 2);
+							
+							GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos1);
+							
+							SetEntProp(client, Prop_Send, "m_bDucked", true);
+							SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
+							TeleportEntity(client, pos1, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+							
+							char buffer[8];
+							if(ability.GetString("slot", buffer, sizeof(buffer)))
+								FF2R_EmitBossSoundToAll("sound_ability", client, buffer, client, _, SNDLEVEL_TRAFFIC);
+							
+							cooldown = true;
+							ability.SetBool("incooldown", cooldown);
+							
+							timeIn = gameTime + ability.GetFloat("cooldown", 5.0);
+							ability.SetFloat("delay", timeIn);
+						}
+						else
+						{
+							timeIn = 0.0;
+							ability.SetFloat("delay", 0.0);
+						}
+					}
+					else if(jump && angles[0] < -20.0)
+					{
+						float velocity[3];
+						GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
+						
+						SetEntProp(client, Prop_Send, "m_bJumping", true);
+						TF2_AddCondition(client, TFCond_BlastJumping, _, client);
+						
+						int power = RoundToFloor(charge);
+						static char buffer[512];
+						
+						ability.GetString("forward", buffer, sizeof(buffer), "750 + (n * 3.25)");
+						float velo = ParseFormula(buffer, power);
+						velocity[0] *= velo;
+						velocity[1] *= velo;
+						
+						ability.GetString("upward", buffer, sizeof(buffer), "1.0 + (n * 0.000275)");
+						velocity[2] = ParseFormula(buffer, power);
+						
+						TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+						
+						if(ability.GetString("slot", buffer, sizeof(buffer)))
+							FF2R_EmitBossSoundToAll("sound_ability", client, buffer, client, _, SNDLEVEL_TRAFFIC);
+						
+						cooldown = true;
+						ability.SetBool("incooldown", cooldown);
+						
+						timeIn = gameTime + ability.GetFloat("cooldown", 5.0);
+						ability.SetFloat("delay", timeIn);
+					}
+					else
+					{
+						timeIn = 0.0;
+						ability.SetFloat("delay", 0.0);
+					}
+				}
+			}
+			
+			if(hud || ability.GetFloat("hudin") < gameTime)
+			{
+				ability.SetFloat("hudin", gameTime + 0.09);
+				
+				int button = ability.GetInt("options", 1);
+				bool jump = view_as<bool>(button & 1);
+				bool tele = view_as<bool>(button & 2);
+				
+				if(jump || tele)
+				{
+					SetGlobalTransTarget(client);
+					if(!emergency && cooldown)
+					{
+						SetHudTextParams(-1.0, 0.88, 0.1, 255, 64, 64, 255);
+						if(jump && tele)
+						{
+							ShowSyncHudText(client, SyncHud, "%t", "Boss Mobility Time", timeIn - gameTime + 0.09);
+						}
+						else if(tele)
+						{
+							ShowSyncHudText(client, SyncHud, "%t", "Boss Tele Time", timeIn - gameTime + 0.09);
+						}
+						else
+						{
+							ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Time", timeIn - gameTime + 0.09);
+						}
+					}
+					else
+					{
+						button = ability.GetInt("button", 11);
+						SetHudTextParams(-1.0, 0.88, 0.1, 255, 255, 255, 255);
+						
+						if(timeIn)
+						{
+							float charge = ability.GetFloat("charge", 1.5);
+							if(charge < 0.001)
+								charge = 0.001;
+							
+							charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
+							if(charge >= 100.0)
+							{
+								if(tele)
+								{
+									ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Ready", 100, "Boss Tele Look");
+								}
+								else
+								{
+									ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Ready", 100, "Boss Jump Look");
+								}
+							}
+							else if(jump)
+							{
+								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Jump Ready", RoundToCeil(charge), "Boss Jump Look");
+							}
+							else if(button >= 0)
+							{
+								char help[32];
+								FormatEx(help, sizeof(help), "Boss Mobility %d", button);
+								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Charge", RoundToCeil(charge), help);
+							}
+						}
+						else if(button >= 0)
+						{
+							char help[32];
+							FormatEx(help, sizeof(help), "Boss Mobility %d", button);
+							
+							if(jump && tele)
+							{
+								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Mobility Charge", 0, help);
+							}
+							else if(tele)
+							{
+								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Charge", 0, help);
+							}
+							else
+							{
+								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Jump Charge", 0, help);
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			MobilityEnabled[client] = false;
+		}
+	}
+	
+	if(WeighdownLastGravity[client] != -69.42)
+	{
+		int flags = GetEntityFlags(client);
+		if((flags & FL_ONGROUND) || (flags & (FL_SWIM|FL_INWATER)))
+		{
+			if(GetEntityGravity(client) != WeighdownCurrentGravity[client])
+				SetEntityGravity(client, WeighdownLastGravity[client]);
+			
+			WeighdownLastGravity[client] = -69.42;
+		}
+	}
+	else if(WeighdownAirTimeAt[client])
+	{
+		if(GetEntityFlags(client) & FL_ONGROUND)
+		{
+			BossData boss = FF2R_GetBossData(client);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_mobility")))
+			{
+				WeighdownAirTimeAt[client] = GetGameTime() + ability.GetFloat("airtime", 3.0);
+			}
+			else
+			{
+				WeighdownAirTimeAt[client] = 0.0;
+			}
+		}
+		
+		if(WeighdownAirTimeAt[client] && (buttons & IN_DUCK) && angles[0] > 60.0 && WeighdownAirTimeAt[client] < GetGameTime() && !TF2_IsPlayerInCondition(client, TFCond_Dazed) && GetEntityMoveType(client) != MOVETYPE_NONE)
+		{
+			BossData boss = FF2R_GetBossData(client);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_mobility")))
+			{
+				WeighdownAirTimeAt[client] = FAR_FUTURE;
+				WeighdownLastGravity[client] = GetEntityGravity(client);
+				WeighdownCurrentGravity[client] = ability.GetFloat("gravity", 6.0);
+				
+				SetEntityGravity(client, WeighdownCurrentGravity[client]);
+				
+				float velocity[3];
+				GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
+				velocity[2] = -ability.GetFloat("velocity", 1000.0);
+				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+			}
+			else
+			{
+				WeighdownAirTimeAt[client] = 0.0;
+			}
 		}
 	}
 }
@@ -594,7 +1066,7 @@ public void TF2_OnConditionAdded(int client, TFCond cond)
 				if(ability.IsMyPlugin())
 				{
 					char slot[8];
-					boss.GetString("slot", slot, sizeof(slot), "0");
+					ability.GetString("slot", slot, sizeof(slot), "0");
 					float charge = GetBossCharge(boss, slot);
 					
 					int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
@@ -644,16 +1116,56 @@ public void TF2_OnConditionRemoved(int client, TFCond cond)
 	}
 }
 
+public void OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
+{
+	if(attacker > MaxClients || (!attacker && (inflictor || !(damagetype & DMG_FALL))))
+	{
+		if(MobilityEnabled[victim])
+		{
+			BossData boss = FF2R_GetBossData(victim);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_mobility")))
+			{
+				ability.SetBool("incooldown", true);
+				ability.SetFloat("delay", 0.0);
+				ability.SetFloat("emergencyfor", GetGameTime() + 1.5);
+				return;
+			}
+			
+			MobilityEnabled[victim] = false;
+		}
+		
+		SDKUnhook(victim, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+	}
+}
+
 public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 {
 	if(!BossTimers[client])
 		BossTimers[client] = new ArrayList();
 	
-	AbilityData ability = cfg.GetAbility("special_democharge");
+	AbilityData ability = cfg.GetAbility("special_anchor");
 	if(ability.IsMyPlugin())
-	{
+		AnchorStartTime[client] = FAR_FUTURE;
+	
+	ability = cfg.GetAbility("special_democharge");
+	if(ability.IsMyPlugin())
 		SpecialCharge[client] = true;
+	
+	if(!MobilityEnabled[client])
+	{
+		ability = cfg.GetAbility("special_mobility");
+		if(ability.IsMyPlugin())
+		{
+			MobilityEnabled[client] = true;
+			ability.SetFloat("delay", GetGameTime() + ability.GetFloat("delay", 15.0));
+			SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+		}
 	}
+	
+	ability = cfg.GetAbility("special_weighdown");
+	if(ability.IsMyPlugin())
+		WeighdownAirTimeAt[client] = FAR_FUTURE;
 }
 
 public void FF2R_OnBossRemoved(int client)
@@ -661,6 +1173,8 @@ public void FF2R_OnBossRemoved(int client)
 	SpecialUber[client] = 0.0;
 	MatrixFor[client] = 0.0;
 	SpecialCharge[client] = false;
+	WeighdownAirTimeAt[client] = 0.0;
+	AnchorStartTime[client] = 0.0;
 	
 	int length = BossTimers[client].Length;
 	for(int i; i<length; i++)
@@ -676,6 +1190,12 @@ public void FF2R_OnBossRemoved(int client)
 	{
 		if(CloneOwner[target] == client)
 			ForcePlayerSuicide(target);
+	}
+	
+	if(MobilityEnabled[client])
+	{
+		MobilityEnabled[client] = false;
+		SDKUnhook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 	}
 }
 
@@ -1128,6 +1648,8 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		char particle[48];
 		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
 		
+		StartLagCompensation(client);
+		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
 		
@@ -1162,6 +1684,8 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 			
 			victim[victims++] = target;
 		}
+		
+		FinishLagCompensation(client);
 		
 		if(victims == 0)
 		{
@@ -2076,6 +2600,16 @@ public Action Timer_RemoveRagdoll(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
+public Action Timer_RestoreCollision(Handle timer, DataPack pack)
+{
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client && GetEntProp(client, Prop_Send, "m_CollisionGroup") != 2)
+		SetEntityCollisionGroup(client, pack.ReadCell());
+	
+	return Plugin_Continue;
+}
+
 int GetTotalPlayersAlive(int team = -1)
 {
 	int amount;
@@ -2196,6 +2730,19 @@ void SDKCall_EquipWearable(int client, int entity)
 	{
 		RemoveEntity(entity);
 	}
+}
+
+void StartLagCompensation(int client)
+{
+	// https://github.com/artvin01/TF2-Zombie-Riot/blob/main/addons/sourcemod/scripting/zombie_riot/sdkcalls.sp#L373
+	if(SDKStartLagCompensation)
+		SDKCall(SDKStartLagCompensation, client, GetEntityAddress(client) + SDKGetCurrentCommand);
+}
+
+void FinishLagCompensation(int client)
+{
+	if(SDKFinishLagCompensation)
+		SDKCall(SDKFinishLagCompensation, client);
 }
 
 bool IsInvuln(int client)

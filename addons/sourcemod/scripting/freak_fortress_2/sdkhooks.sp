@@ -334,10 +334,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				// Cap of 1500 damage every 2.5 seconds, or 300 every 1/2 second
 				float cap = 1500.0 - pressure;
 				if(damage > cap)
-				{
 					damage = cap;
-					action = Plugin_Changed;
-				}
 			}
 			
 			Client(victim).LastTriggerTime = gameTime;
