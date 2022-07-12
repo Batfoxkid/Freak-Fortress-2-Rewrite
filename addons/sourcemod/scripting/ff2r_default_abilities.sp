@@ -704,7 +704,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				{
 					TF2_AddCondition(client, TFCond_MegaHeal, 0.5, client);
 					TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.5, client);
-					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0));
+					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 				}
 				else if(AnchorStartTime[client] > (gameTime + ability.GetFloat("basic", 0.5)))
 				{
@@ -713,7 +713,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					
 					TF2Attrib_SetByDefIndex(client, 252, 0.0);
 					TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.5, client);
-					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0));
+					SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 				}
 			}
 			else

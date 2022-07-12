@@ -317,7 +317,6 @@
 					"info"
 					{
 						"type"	"objectptr"
-						"flags"	"byref"
 					}
 					"bEmpty"
 					{
