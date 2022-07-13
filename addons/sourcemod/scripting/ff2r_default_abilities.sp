@@ -1000,7 +1000,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		int flags = GetEntityFlags(client);
 		if((flags & FL_ONGROUND) || (flags & (FL_SWIM|FL_INWATER)))
 		{
-			if(GetEntityGravity(client) != WeighdownCurrentGravity[client])
+			if(GetEntityGravity(client) == WeighdownCurrentGravity[client])
 				SetEntityGravity(client, WeighdownLastGravity[client]);
 			
 			WeighdownLastGravity[client] = -69.42;
