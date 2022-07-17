@@ -19,6 +19,7 @@ void Events_PluginStart()
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
+	HookEvent("object_destroyed", Events_ObjectDestroyed, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
@@ -169,6 +170,36 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 		int client = GetClientOfUserId(event.GetInt("userid"));
 		if(client)
 			Weapons_OnAirblastBoss(client);
+	}
+	return Plugin_Continue;
+}
+
+public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
+{
+	TFObjectType type = view_as<TFObjectType>(event.GetInt("objecttype"));
+	if(type == TFObject_Teleporter)
+	{
+		if(GetEntProp(event.GetInt("index"), Prop_Send, "m_iObjectMode") == view_as<int>(TFObjectMode_Exit))
+		{
+			int client = GetClientOfUserId(event.GetInt("userid"));
+			if(client)
+			{
+				//TODO: Check for m_bIsTeleportingUsingEurekaEffect instead
+				if(TF2_IsPlayerInCondition(client, TFCond_Taunting))
+					TF2_RemoveCondition(client, TFCond_Taunting);
+			}
+		}
+	}
+	
+	int client = GetClientOfUserId(event.GetInt("attacker"));
+	if(Client(client).IsBoss)
+	{
+		static const char classnames[][] = {"dispenser", "teleporter", "sentry", "sapper", "custom"};
+		if(view_as<int>(type) >= sizeof(classnames))
+			type = view_as<TFObjectType>(sizeof(classnames) - 1);
+		
+		if(!Bosses_PlaySoundToAll(client, "sound_kill", classnames[type], client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+			Bosses_PlaySoundToAll(client, "sound_kill_buildable", _, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 	}
 	return Plugin_Continue;
 }
@@ -482,15 +513,17 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									if(view_as<int>(class) >= sizeof(classnames))
 										class = TFClass_Unknown;
 									
-									char buffer[20];
-									FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);
-									played = Bosses_PlaySoundToAll(attacker, buffer, _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+									played = Bosses_PlaySoundToAll(attacker, "sound_kill", classnames[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 									if(!played)
-										played = Bosses_PlaySoundToAll(attacker, "sound_kill", classnames[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+									{
+										char buffer[20];
+										FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);
+										played = Bosses_PlaySoundToAll(attacker, buffer, _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+									}
 								}
 								
-								if(!played && !Bosses_PlaySoundToAll(attacker, "sound_hit", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
-									Bosses_PlaySoundToAll(attacker, "sound_kill", "0", attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+								if(!played && !Bosses_PlaySoundToAll(attacker, "sound_kill", "0", attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+									Bosses_PlaySoundToAll(attacker, "sound_hit", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 							}
 						}
 					}

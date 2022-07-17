@@ -304,10 +304,22 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 {
 	if(Enabled && RoundStatus == 1 && IsPlayerAlive(client))
 	{
-		char buffer[4];
-		GetCmdArg(1, buffer, sizeof(buffer));
-		if(StringToInt(buffer) != 1)
-			return Plugin_Handled;
+		int entity = MaxClients + 1;
+		while((entity = FindEntityByClassname(entity, "obj_teleporter")) != -1)
+		{
+			if(GetEntPropEnt(entity, Prop_Send, "m_hBuilder") == client && GetEntProp(entity, Prop_Send, "m_iObjectMode") == view_as<int>(TFObjectMode_Exit))
+			{
+				if(!GetEntProp(entity, Prop_Send, "m_bBuilding"))
+				{
+					char buffer[4];
+					GetCmdArg(1, buffer, sizeof(buffer));
+					if(StringToInt(buffer) == 1)
+						return Plugin_Continue;
+				}
+				break;
+			}
+		}
+		return Plugin_Handled;
 	}
 	return Plugin_Continue;
 }
