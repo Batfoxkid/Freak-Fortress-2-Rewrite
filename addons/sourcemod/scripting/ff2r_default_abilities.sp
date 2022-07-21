@@ -336,9 +336,9 @@ bool TF2ULoaded;
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
-Handle SDKStartLagCompensation;
-Handle SDKFinishLagCompensation;
-Address SDKGetCurrentCommand;
+//Handle SDKStartLagCompensation;
+//Handle SDKFinishLagCompensation;
+//Address SDKGetCurrentCommand;
 Handle SyncHud;
 int PlayersAlive[4];
 bool SpecTeam;
@@ -424,7 +424,7 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	gamedata = new GameData("ff2");
+	/*gamedata = new GameData("ff2");
 	
 	SDKGetCurrentCommand = view_as<Address>(gamedata.GetOffset("GetCurrentCommand"));
 	if(SDKGetCurrentCommand == view_as<Address>(-1))
@@ -445,7 +445,7 @@ public void OnPluginStart()
 	if(!SDKFinishLagCompensation)
 		LogError("[Gamedata] Could not find CLagCompensationManager::FinishLagCompensation");
 	
-	delete gamedata;
+	delete gamedata;*/
 	
 	LoadTranslations("ff2_rewrite.phrases");
 	
@@ -588,7 +588,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
 					
-					StartLagCompensation(client);
+					//StartLagCompensation(client);
 					
 					float pos[3], vec[3];
 					GetClientEyePosition(client, pos);
@@ -610,7 +610,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					ScaleVector(vec, speed);
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
 					
-					bool finished;
+					//bool finished;
 					if(distance < maximum)
 					{
 						int target = TR_GetEntityIndex(trace);
@@ -622,19 +622,19 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								bool friendly = (team1 == team2);
 								if(friendly || !IsInvuln(target))
 								{
-									if(friendly)	// Lag compenstated location only if they damaged attack
+									/*if(friendly)	// Lag compenstated location only if they damaged attack
 									{
 										finished = true;
 										FinishLagCompensation(client);
-									}
+									}*/
 									
 									GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
 									
-									if(!finished)
+									/*if(!finished)
 									{
 										finished = true;
 										FinishLagCompensation(client);
-									}
+									}*/
 									
 									if(!friendly)
 									{
@@ -652,8 +652,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					delete trace;
 					
-					if(!finished)
-						FinishLagCompensation(client);
+					//if(!finished)
+					//	FinishLagCompensation(client);
 				}
 				else
 				{
@@ -798,7 +798,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
 					if(charge >= 100.0 && tele)
 					{
-						StartLagCompensation(client);
+						//StartLagCompensation(client);
 						
 						float pos1[3];
 						GetClientEyePosition(client, pos1);
@@ -831,7 +831,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							}
 						}
 						
-						FinishLagCompensation(client);
+						//FinishLagCompensation(client);
 						
 						if(target != -1)
 						{
@@ -1648,7 +1648,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		char particle[48];
 		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
 		
-		StartLagCompensation(client);
+		//StartLagCompensation(client);
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
@@ -1685,7 +1685,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 			victim[victims++] = target;
 		}
 		
-		FinishLagCompensation(client);
+		//FinishLagCompensation(client);
 		
 		if(victims == 0)
 		{
@@ -2732,7 +2732,7 @@ void SDKCall_EquipWearable(int client, int entity)
 	}
 }
 
-void StartLagCompensation(int client)
+/*void StartLagCompensation(int client)
 {
 	// https://github.com/artvin01/TF2-Zombie-Riot/blob/main/addons/sourcemod/scripting/zombie_riot/sdkcalls.sp#L373
 	if(SDKStartLagCompensation)
@@ -2743,7 +2743,7 @@ void FinishLagCompensation(int client)
 {
 	if(SDKFinishLagCompensation)
 		SDKCall(SDKFinishLagCompensation, client);
-}
+}*/
 
 bool IsInvuln(int client)
 {
