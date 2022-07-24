@@ -379,7 +379,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						}
 						case KeyValType_Value:
 						{
-							if(length > val.size+3)	// "saxton_hale"	""
+							if(length > val.size)	// "saxton_hale"	""
 							{
 								if(!StrEqual(bossname, "hidden"))
 								{
@@ -396,17 +396,14 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							}
 							else	// "1"	"saxton_hale"
 							{
-								if(!StrEqual(bossname, "chances"))
+								length = ReplaceString(val.data, sizeof(val.data), "*", "");
+								if(length)
 								{
-									length = ReplaceString(val.data, sizeof(val.data), "*", "");
-									if(length)
-									{
-										LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, precache);
-									}
-									else
-									{
-										LoadCharacter(val.data, pack, mapname, precache);
-									}
+									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, precache);
+								}
+								else
+								{
+									LoadCharacter(val.data, pack, mapname, precache);
 								}
 							}
 						}
