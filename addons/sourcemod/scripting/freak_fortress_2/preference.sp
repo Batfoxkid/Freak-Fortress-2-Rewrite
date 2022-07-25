@@ -25,6 +25,7 @@ static int PartyLeader[MAXTF2PLAYERS];
 static int PartyChoice[MAXTF2PLAYERS];
 static int PartyMainBoss[MAXTF2PLAYERS];
 static int PartyInvite[MAXTF2PLAYERS][MAXTF2PLAYERS];
+static bool UpdateDataBase[MAXTF2PLAYERS];
 static ArrayList BossListing[MAXTF2PLAYERS];
 
 void Preference_PluginStart()
@@ -68,6 +69,11 @@ void Preference_AddBoss(int client, const char[] name)
 	}
 }
 
+bool Preference_ShouldUpdate(int client)
+{
+	return UpdateDataBase[client];
+}
+
 bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 {
 	if(!BossListing[client] || index >= BossListing[client].Length)
@@ -88,6 +94,7 @@ bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 void Preference_ClearBosses(int client)
 {
 	delete BossListing[client];
+	UpdateDataBase[client] = false;
 }
 
 bool Preference_DisabledBoss(int client, int charset)
@@ -271,6 +278,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 				int index;
 				if(BossListing[client] && (index = BossListing[client].FindValue(special)) != -1)
 				{
+					UpdateDataBase[client] = true;
 					BossListing[client].Erase(index);
 					
 					if(blacklist > 0)
@@ -303,6 +311,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 					index = GetBlacklistCount(client, index);
 					if(index < blacklist)
 					{
+						UpdateDataBase[client] = true;
 						BossListing[client].Push(special);
 						FReplyToCommand(client, "%t (%d / %d)", "Boss Blacklisted", buffer, index+1, blacklist);
 					}
@@ -313,6 +322,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 				}
 				else
 				{
+					UpdateDataBase[client] = true;
 					BossListing[client].Push(special);
 					FReplyToCommand(client, "%t", "Boss Whitelisted", buffer);
 				}
@@ -667,6 +677,8 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 					}
 					case 1:
 					{
+						UpdateDataBase[client] = true;
+						
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
@@ -680,7 +692,10 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						{
 							value = BossListing[client].FindValue(ViewingBoss[client]);
 							if(value != -1)
+							{
+								UpdateDataBase[client] = true;
 								BossListing[client].Erase(value);
+							}
 						}
 						
 						ViewingBoss[client] = -1;
@@ -700,11 +715,16 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						{
 							value = BossListing[client].FindValue(-1-ViewingPack[client]);
 							if(value != -1)
+							{
+								UpdateDataBase[client] = true;
 								BossListing[client].Erase(value);
+							}
 						}
 					}
 					case -2:
 					{
+						UpdateDataBase[client] = true;
+						
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
@@ -720,6 +740,7 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 								ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
 								if(cfg && cfg.GetInt("charset", value) && value == ViewingPack[client])
 								{
+									UpdateDataBase[client] = true;
 									BossListing[client].Erase(i);
 									i--;
 									length--;
@@ -750,6 +771,7 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 							{
 								if(BossListing[client].Get(i) < 0)
 								{
+									UpdateDataBase[client] = true;
 									BossListing[client].Erase(i);
 									i--;
 									length--;
@@ -766,13 +788,20 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						for(int i = -1; i > length; i--)
 						{
 							if(BossListing[client].FindValue(i) == -1)
+							{
+								UpdateDataBase[client] = true;
 								BossListing[client].Push(i);
+							}
 						}
 					}
 					case -1:
 					{
-						delete BossListing[client];
-						BossListing[client] = null;
+						if(BossListing[client])
+						{
+							UpdateDataBase[client] = true;
+							delete BossListing[client];
+							BossListing[client] = null;
+						}
 					}
 					default:
 					{

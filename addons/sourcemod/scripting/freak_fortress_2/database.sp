@@ -256,18 +256,21 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 			
 			DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			
-			tr = new Transaction();
-			
-			FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_LISTING ... " WHERE steamid = %d;", id);
-			tr.AddQuery(buffer);
-			
-			for(int i; Preference_GetBoss(client, i, buffer, sizeof(buffer)); i++)
+			if(Preference_ShouldUpdate(client))
 			{
-				DataBase.Format(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_LISTING ... " (steamid, boss) VALUES ('%d', '%s')", id, buffer);
+				tr = new Transaction();
+				
+				FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_LISTING ... " WHERE steamid = %d;", id);
 				tr.AddQuery(buffer);
+				
+				for(int i; Preference_GetBoss(client, i, buffer, sizeof(buffer)); i++)
+				{
+					DataBase.Format(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_LISTING ... " (steamid, boss) VALUES ('%d', '%s')", id, buffer);
+					tr.AddQuery(buffer);
+				}
+				
+				DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			}
-			
-			DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 		}
 	}
 	
