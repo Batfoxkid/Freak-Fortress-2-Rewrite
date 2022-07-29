@@ -313,7 +313,7 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 				{
 					char buffer[4];
 					GetCmdArg(1, buffer, sizeof(buffer));
-					if(StringToInt(buffer) == 1)
+					if(StringToInt(buffer) == 0)
 						return Plugin_Continue;
 				}
 				break;
