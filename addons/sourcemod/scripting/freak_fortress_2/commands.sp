@@ -306,7 +306,8 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 	{
 		char buffer[4];
 		GetCmdArg(1, buffer, sizeof(buffer));
-		if (StringToInt(buffer) == 0)
+		int teletype = StringToInt(buffer);
+		if (teletype == 0)
 			return Plugin_Handled;
 
 		int entity = MaxClients + 1;
@@ -316,7 +317,7 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 			{
 				if(!GetEntProp(entity, Prop_Send, "m_bBuilding"))
 				{
-					if(StringToInt(buffer) == 1)
+					if(teletype == 1)
 						return Plugin_Continue;
 				}
 				break;
