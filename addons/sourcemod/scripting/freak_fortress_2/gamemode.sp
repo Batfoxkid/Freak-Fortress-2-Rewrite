@@ -958,8 +958,14 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 3)
 				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
 			
-			if(PlayersAlive[team] < 2)
+			if(PlayersAlive[team] < 2) 
+			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
+				if (CvarPlayerGlow.BoolValue)
+				{
+					Gamemode_SetClientGlow(client, 5.0);
+				}
+			}
 		}
 		
 		if(Client(client).Glowing)
