@@ -259,6 +259,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 							if(assister != attacker && assister > 0 && assister <= MaxClients && GetClientTeam(assister) == GetClientTeam(attacker))
 							{
 								Client(assister).Assist += 6000;
+								Client(assister).RefreshAt = 0.0;
 							}
 							else
 							{

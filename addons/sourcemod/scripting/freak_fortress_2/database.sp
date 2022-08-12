@@ -8,7 +8,7 @@
 #pragma semicolon 1
 
 #define DATABASE			"ff2"
-#define DATATABLE_GENERAL	"ff2_data_v2"
+#define DATATABLE_GENERAL	"ff2_data_v3"
 #define DATATABLE_LISTING	"ff2_listing_v1"
 
 static Database DataBase;
@@ -36,6 +36,7 @@ void Database_Setup()
 	... "music_type INTEGER NOT NULL DEFAULT 1, "
 	... "toggle_voice INTEGER NOT NULL DEFAULT 1, "
 	... "weapon_changes INTEGER NOT NULL DEFAULT 1, "
+	... "damage_hud INTEGER NOT NULL DEFAULT 1, "
 	... "last_played TEXT NOT NULL DEFAULT '');");
 	
 	tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_LISTING ... " ("
@@ -173,7 +174,8 @@ public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBR
 			Client(client).Queue = results[0].FetchInt(1);
 			Client(client).NoVoice = !results[0].FetchInt(3);
 			Client(client).NoChanges = !results[0].FetchInt(4);
-			results[0].FetchString(5, buffer, sizeof(buffer));
+			Client(client).NoDmgHud = !results[0].FetchInt(5);
+			results[0].FetchString(6, buffer, sizeof(buffer));
 			Client(client).SetLastPlayed(buffer);
 			
 			int value = results[0].FetchInt(2);
@@ -243,12 +245,14 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 			... "music_type = %d, "
 			... "toggle_voice = %d, "
 			... "weapon_changes = %d, "
+			... "damage_hud = %d, "
 			... "last_played = '%s' "
 			... "WHERE steamid = %d;",
 			Client(client).Queue,
 			!Client(client).NoMusic ? Client(client).MusicShuffle ? 2 : 1 : 0,
 			!Client(client).NoVoice,
 			!Client(client).NoChanges,
+			!Client(client).NoDmgHud,
 			buffer,
 			id);
 			

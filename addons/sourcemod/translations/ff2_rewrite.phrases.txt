@@ -186,6 +186,16 @@
 	{
 		"en"		" | Hold Special Attack"
 	}
+	"Current Stats Hud"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"		"Damage: {1} | Healing: {2} | Assisting: {3}"
+	}
+	"Viewing Stats Hud"
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d}"
+		"en"		"{1} - Damage: {2} | Healing: {3} | Assisting: {4}"
+	}
 	
 	"Preference Updated"
 	{
@@ -221,6 +231,10 @@
 	{
 		"en"		"View Weapon Changes (/ff2weapons)"
 	}
+	"Command Hud"
+	{
+		"en"		"Toggle Round Stats HUD (/ff2hud)"
+	}
 	
 	"Boss Voices Disabled"
 	{
@@ -245,10 +259,15 @@
 		"en"		"Reset your Queue Points?\n "
 	}
 	
-	"Add Points Command"
+	"Damage Hud Disabled"
 	{
-		"en"		"FF2 Queue Points\n "
+		"en"		"Round stats HUD is now disabled."
 	}
+	"Damage Hud Enabled"
+	{
+		"en"		"Round stats HUD is now enabled."
+	}
+	
 	"Add Points To"
 	{
 		"#format"	"{1:d},{2:t}"

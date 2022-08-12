@@ -19,15 +19,18 @@ static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
 static int PointUnlock;
+static Handle SelfSyncHud;
+static Handle TeamSyncHud[TFTeam_MAX];
 static Handle HudTimer[TFTeam_MAX];
-static Handle SyncHud[TFTeam_MAX];
 static bool HasBoss[TFTeam_MAX];
 
 void Gamemode_PluginStart()
 {
+	SelfSyncHud = CreateHudSynchronizer();
+	
 	for(int i; i < TFTeam_MAX; i++)
 	{
-		SyncHud[i] = CreateHudSynchronizer();
+		TeamSyncHud[i] = CreateHudSynchronizer();
 	}
 }
 
@@ -60,7 +63,7 @@ void Gamemode_RoundSetup()
 			
 			for(int i; i < TFTeam_MAX; i++)
 			{
-				ClearSyncHud(client, SyncHud[i]);
+				ClearSyncHud(client, TeamSyncHud[i]);
 			}
 		}
 	}
@@ -553,17 +556,17 @@ void Gamemode_RoundEnd(int winteam)
 					if(teamName[i])	// Team with a Name
 					{
 						Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", "_s", buffer, totalHealth[i], totalMax[i]);
+						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Health Left Hud", "_s", buffer, totalHealth[i], totalMax[i]);
 					}
 					else if(bosses[i] == 1)	// Solo Boss
 					{
 						Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
+						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
 					}
 					else	// Team without a Name
 					{
 						FormatEx(buffer, sizeof(buffer), "Team %d", i);
-						ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
+						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
 					}
 				}
 			}
@@ -577,7 +580,7 @@ void Gamemode_RoundEnd(int winteam)
 				{
 					SetGlobalTransTarget(clients[a]);
 					FormatEx(buffer, sizeof(buffer), "Team %d", i);
-					ShowSyncHudText(clients[a], SyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
+					ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
 				}
 			}
 		}
@@ -585,7 +588,7 @@ void Gamemode_RoundEnd(int winteam)
 		{
 			for(int a; a < total; a++)
 			{
-				ClearSyncHud(clients[a], SyncHud[i]);
+				ClearSyncHud(clients[a], TeamSyncHud[i]);
 			}
 		}
 		
@@ -755,15 +758,15 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 						
 						if(bosses > 1)
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d", combined);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d", combined);
 						}
 						else if(lives > 1)
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d (x%d)", health, lives);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d (x%d)", health, lives);
 						}
 						else
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d", health);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d", health);
 						}
 					}
 				}
@@ -785,15 +788,15 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 						
 						if(bosses > 1)
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d / %d", combined, maxcombined);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d / %d", combined, maxcombined);
 						}
 						else if(lives > 1)
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d / %d (x%d)", health, maxhealth, lives);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d / %d (x%d)", health, maxhealth, lives);
 						}
 						else
 						{
-							ShowSyncHudText(clients[i], SyncHud[team], "%d / %d", health, maxhealth);
+							ShowSyncHudText(clients[i], TeamSyncHud[team], "%d / %d", health, maxhealth);
 						}
 					}
 				}
@@ -945,7 +948,7 @@ void Gamemode_SetClientGlow(int client, float duration)
 		Client(client).GlowFor = time;
 }
 
-void Gamemode_PlayerRunCmd(int client)
+void Gamemode_PlayerRunCmd(int client, int buttons)
 {
 	if(IsPlayerAlive(client))
 	{
@@ -974,7 +977,56 @@ void Gamemode_PlayerRunCmd(int client)
 		}
 	}
 	
-	if(Client(client).OverlayFor && Client(client).OverlayFor < GetEngineTime())
+	float time = GetEngineTime();
+	if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).NoHud && !Client(client).NoDmgHud && !(buttons & IN_SCORE))
+	{
+		if(Client(client).RefreshAt < time)
+		{
+			Client(client).RefreshAt = time + 0.2;
+			
+			SetGlobalTransTarget(client);
+			
+			int target = client;
+			if(IsPlayerAlive(client))
+			{
+				int aim = GetClientAimTarget(client, true);
+				if(aim != -1)
+				{
+					int team = GetClientTeam(client);
+					bool show = team == GetClientTeam(aim);
+					if(!show && TF2_IsPlayerInCondition(aim, TFCond_Disguised) && GetEntProp(aim, Prop_Send, "m_nDisguiseTeam") == team)
+					{
+						show = true;
+						
+						int disguise = GetEntProp(aim, Prop_Send, "m_iDisguiseTargetIndex");
+						if(disguise > 0 && disguise <= MaxClients && IsClientInGame(disguise))
+							aim = disguise;
+					}
+					
+					if(show)
+						target = aim;
+				}
+			}
+			else if(IsClientObserver(client))
+			{
+				int aim = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
+				if(aim != client && aim > 0 && aim <= MaxClients && IsClientInGame(aim) && GetClientTeam(client) == GetClientTeam(aim))
+					target = aim;
+			}
+			
+			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+			if(target == client)
+			{
+				ShowSyncHudText(client, SelfSyncHud, "%t", "Current Stats Hud", Client(client).TotalDamage, Client(client).Healing, Client(client).TotalAssist);
+			}
+			else
+			{
+				ShowSyncHudText(client, SelfSyncHud, "%t", "Viewing Stats Hud", target, Client(target).TotalDamage, Client(target).Healing, Client(target).TotalAssist);
+			}
+		}
+	}
+	
+	if(Client(client).OverlayFor && Client(client).OverlayFor < time)
 	{
 		Client(client).OverlayFor = 0.0;
 		

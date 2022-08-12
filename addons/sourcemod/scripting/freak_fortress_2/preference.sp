@@ -2,6 +2,7 @@
 	void Preference_PluginStart()
 	void Preference_MapEnd()
 	void Preference_AddBoss(int client, const char[] name)
+	bool Preference_ShouldUpdate(int client)
 	bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 	void Preference_ClearBosses(int client)
 	bool Preference_DisabledBoss(int client, int charset)
@@ -93,8 +94,13 @@ bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 
 void Preference_ClearBosses(int client)
 {
-	delete BossListing[client];
 	UpdateDataBase[client] = false;
+	
+	if(BossListing[client])
+	{
+		delete BossListing[client];
+		BossListing[client] = null;
+	}
 }
 
 bool Preference_DisabledBoss(int client, int charset)

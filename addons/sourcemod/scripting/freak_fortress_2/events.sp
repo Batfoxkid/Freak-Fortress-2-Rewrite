@@ -20,7 +20,7 @@ void Events_PluginStart()
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("object_destroyed", Events_ObjectDestroyed, EventHookMode_Post);
-	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_PostNoCopy);
+	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_Post);
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
@@ -206,6 +206,13 @@ public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 
 public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client && CvarDisguiseModels.BoolValue)
+	{
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+	}
+	
 	Events_CheckAlivePlayers();
 }
 
@@ -242,6 +249,10 @@ public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadca
 		int client = GetClientOfUserId(event.GetInt("patient"));
 		if(Client(client).IsBoss)
 			Gamemode_UpdateHUD(GetClientTeam(client), true);
+		
+		client = GetClientOfUserId(event.GetInt("healer"));
+		if(client)
+			Client(client).RefreshAt = 0.0;
 	}
 }
 
@@ -256,6 +267,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
 		{
+			Client(attacker).RefreshAt = 0.0;
 			Client(attacker).TotalDamage += damage;
 			
 			int team = GetClientTeam(attacker);
@@ -270,6 +282,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
 					{
 						Client(i).Assist += GetEntProp(entity, Prop_Send, "m_bChargeRelease") ? damage : damage / 2;
+						Client(i).RefreshAt = 0.0;
 					}
 				}
 			}

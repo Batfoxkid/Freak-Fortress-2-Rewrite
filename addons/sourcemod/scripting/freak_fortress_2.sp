@@ -383,7 +383,7 @@ public void OnClientDisconnect(int client)
 public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	Bosses_PlayerRunCmd(client, buttons);
-	Gamemode_PlayerRunCmd(client);
+	Gamemode_PlayerRunCmd(client, buttons);
 	Music_PlayerRunCmd(client);
 	return Plugin_Continue;
 }

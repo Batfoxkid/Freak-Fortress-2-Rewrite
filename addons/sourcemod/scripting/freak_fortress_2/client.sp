@@ -6,6 +6,7 @@
 	bool MusicShuffle
 	bool NoVoice
 	bool NoChanges
+	bool NoDmgHud
 	bool NoHud
 	int GetLastPlayed(char[] buffer, int length)
 	void SetLastPlayed(const char[] buffer)
@@ -61,6 +62,7 @@ static bool NoMusic[MAXTF2PLAYERS];
 static bool MusicShuffle[MAXTF2PLAYERS];
 static bool NoVoice[MAXTF2PLAYERS];
 static bool NoChanges[MAXTF2PLAYERS];
+static bool NoDmgHud[MAXTF2PLAYERS];
 static bool NoHud[MAXTF2PLAYERS];
 static char LastPlayed[MAXTF2PLAYERS][64];
 static bool Minion[MAXTF2PLAYERS];
@@ -157,6 +159,18 @@ methodmap Client
 		public set(bool value)
 		{
 			NoChanges[view_as<int>(this)] = value;
+		}
+	}
+	
+	property bool NoDmgHud
+	{
+		public get()
+		{
+			return NoDmgHud[view_as<int>(this)];
+		}
+		public set(bool value)
+		{
+			NoDmgHud[view_as<int>(this)] = value;
 		}
 	}
 	
@@ -715,6 +729,7 @@ methodmap Client
 		this.NoMusic = false;
 		this.MusicShuffle = false;
 		this.NoVoice = false;
+		this.NoDmgHud = false;
 		this.NoHud = false;
 		this.SetLastPlayed("");
 		this.OverlayFor = 0.0;

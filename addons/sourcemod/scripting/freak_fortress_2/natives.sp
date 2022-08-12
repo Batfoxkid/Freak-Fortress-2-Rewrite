@@ -156,8 +156,8 @@ public any Native_GetClientScore(Handle plugin, int params)
 	if(client < 0 || client >= MAXTF2PLAYERS)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
 	
-	SetNativeCellRef(1, Client(client).TotalDamage);
-	SetNativeCellRef(2, Client(client).Healing);
-	SetNativeCellRef(3, Client(client).Assist);
+	SetNativeCellRef(2, Client(client).TotalDamage);
+	SetNativeCellRef(3, Client(client).Healing);
+	SetNativeCellRef(4, Client(client).Assist);
 	return Client(client).TotalDamage + Client(client).Healing + Client(client).TotalAssist;
 }

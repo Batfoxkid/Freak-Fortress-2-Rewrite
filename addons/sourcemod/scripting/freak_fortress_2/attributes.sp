@@ -309,6 +309,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 						}
 						
 						Client(attacker).Assist += 50;
+						Client(attacker).RefreshAt = 0.0;
 						
 						int i;
 						while(TF2_GetItem(target, entity, i))
@@ -367,7 +368,10 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		{
 			JarateDamage[victim] -= fdamage;
 			if(JarateApplyer[victim])
+			{
 				Client(JarateApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
+				Client(JarateApplyer[victim]).RefreshAt = 0.0;
+			}
 			
 			if(JarateDamage[victim] <= 0.0)
 				TF2_RemoveCondition(victim, TFCond_Jarated);
@@ -376,7 +380,10 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		{
 			MarkDamage[victim] -= fdamage;
 			if(MarkApplyer[victim])
+			{
 				Client(MarkApplyer[victim]).Assist += RoundFloat(fdamage * 0.35);
+				Client(MarkApplyer[victim]).RefreshAt = 0.0;
+			}
 			
 			if(MarkDamage[victim] <= 0.0)
 				TF2_RemoveCondition(victim, TFCond_MarkedForDeath);

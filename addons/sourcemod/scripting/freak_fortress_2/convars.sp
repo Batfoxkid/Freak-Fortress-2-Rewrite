@@ -19,7 +19,7 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	ConVar version = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
+	ConVar version = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
 	CvarCharset = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
 	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
@@ -51,7 +51,7 @@ void ConVar_PluginStart()
 	
 	char buffer[512];
 	version.GetString(buffer, sizeof(buffer));
-	if(!StrEqual(buffer, "Rewrite " ... PLUGIN_VERSION))
+	if(!StrEqual(buffer, "Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION))
 	{
 		if(buffer[0] && DeleteFile("cfg/sourcemod/FF2Rewrite.cfg"))
 		{
@@ -60,7 +60,7 @@ void ConVar_PluginStart()
 			add = true;
 		}
 		
-		version.SetString("Rewrite " ... PLUGIN_VERSION);
+		version.SetString("Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION);
 	}
 	
 	if(add)
