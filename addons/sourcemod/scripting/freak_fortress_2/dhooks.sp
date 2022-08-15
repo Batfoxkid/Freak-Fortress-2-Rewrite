@@ -321,7 +321,7 @@ public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 
 public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 {
-	if(Enabled)
+	if(Enabled && CvarBossSapper.BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
 		
@@ -351,7 +351,7 @@ public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 
 public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
 {
-	if(Enabled)
+	if(Enabled && CvarBossSapper.BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 		
