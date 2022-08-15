@@ -182,6 +182,7 @@ ConVar CvarPrefBlacklist;
 ConVar CvarPrefToggle;
 ConVar CvarCaptureTime;
 ConVar CvarCaptureAlive;
+ConVar CvarEnableCapture;
 ConVar CvarAggressiveSwap;
 ConVar CvarAggressiveOverlay;
 ConVar CvarSoundType;

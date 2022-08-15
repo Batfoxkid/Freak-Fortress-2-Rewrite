@@ -41,6 +41,7 @@ void ConVar_PluginStart()
 	CvarAggressiveOverlay = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
 	CvarSoundType = CreateConVar("ff2_boss_globalsounds", "0", "If default sounds are globally heard", _, true, 0.0, true, 1.0);
 	CvarDisguiseModels = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.\nChanges won't apply right away, recommended only to change with a map restart.", _, true, 0.0, true, 1.0);
+	CvarEnableCapture = CreateConVar("ff2_game_enable_capture", "1", "Enables the control point to be captured by players", _, true, 0.0, true, 1.0);
 	CvarPlayerGlow = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
 	CvarBossSapper = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
 	

@@ -272,6 +272,13 @@ public Action Gamemode_IntroTimer(Handle timer)
 
 public Action Gamemode_SetControlPoint(Handle timer)
 {
+	if (!CvarEnableCapture.BoolValue)
+	{
+		SetArenaCapEnableTime(0.0);
+		SetControlPoint(false);
+		return Plugin_Handled;
+	}
+	
 	Events_CheckAlivePlayers();
 	
 	PointUnlock = 0;
@@ -958,7 +965,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 3)
 				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
 			
-			if(PlayersAlive[team] < 2) 
+			if(PlayersAlive[team] < 2)
 			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
 				if (CvarPlayerGlow.BoolValue)
