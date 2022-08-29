@@ -1,0 +1,26 @@
+# Environments
+echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
+echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
+git rev-list --count HEAD >> $GITHUB_ENV
+echo 'EOF' >> $GITHUB_ENV
+
+# Set Version
+export PLUGIN_VERSION=$(sed -En '/#define PLUGIN_VERSION\W/p' addons/sourcemod/scripting/freak_fortress_2.sp)
+echo "PLUGIN_VERSION<<EOF" >> $GITHUB_ENV
+echo $PLUGIN_VERSION | grep -o '[0-9]*\.[0-9]*' >> $GITHUB_ENV
+echo 'EOF' >> $GITHUB_ENV
+
+sed -i -e 's/#define PLUGIN_VERSION_REVISION.*".*"/#define PLUGIN_VERSION_REVISION "'$PLUGIN_VERSION_REVISION'"/g' addons/sourcemod/scripting/freak_fortress_2.sp
+for file in addons/sourcemod/scripting/ff2r_*.sp
+do
+  sed -i -e 's/#define PLUGIN_VERSION.*".*"/#define PLUGIN_VERSION "'$PLUGIN_VERSION'.'$PLUGIN_VERSION_REVISION'"/g' $file
+done
+
+# Copy Custom Includes
+cp -r addons/sourcemod/scripting/include include
+
+# Install Required Includes
+wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scripting/include/morecolors.inc" -O include/morecolors.inc
+wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc" -O include/dhooks.inc
+wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc" -O include/tf2items.inc
+wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/tf2attributes.inc" -O include/tf2attributes.inc

@@ -2,44 +2,85 @@ name: Package
 
 on:
   push:
-    branches: main
+    branches: test-actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout
+      - name: Install Checkout
         uses: actions/checkout@v1
       
-      - name: Environments
-        run: |
-          echo "SM_VERSION=1.11" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
-          git rev-list --count HEAD >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
+      - name: Install Setup SP
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: '1.11.x'
       
-      - name: Install
-        run: |
-          bash scripts/install.sh
+      - name: Install Action ZIP
+        uses: montudor/action-zip@v1
       
-      - name: Set Version
+      - name: Install Misc
         run: |
-          bash scripts/version.sh
+          bash scripts/setup.sh
+          bash scripts/optional.sh
+          mkdir -p assets
+          mkdir -p plugin
       
-      - name: Compile
+      - name: Full Compile
         run: |
-          cd build/addons/sourcemod/scripting
-          ./spcomp freak_fortress_2.sp -o ../plugins/freak_fortress_2.smx
-          ./spcomp ff2r_default_abilities.sp -o ../plugins/ff2r_default_abilities.smx
-          ./spcomp ff2r_menu_abilities.sp -o ../plugins/ff2r_menu_abilities.smx
+          for file in *.sp
+          do
+            echo -e "\nCompiling $file..."
+            spcomp -E -O2 -v2 -i "include" -o "../plugin/plugins/$file" $file
+          done
+          working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package
         run: |
-          bash scripts/package.sh
+          cp -r addons/sourcemod/translations plugin
+          cp -r addons/sourcemod/gamedata plugin
+          cp -r addons/sourcemod/data plugin
+          cp -r addons/sourcemod/configs plugin
+          cp -r models assets
+          cp -r materials assets
+          cp -r sound assets
       
-      - name: Upload Artifacts
+      - name: Upload Plugin
         uses: actions/upload-artifact@master
         with:
           name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./build/package
+          path: ./plugin
+      
+      - name: Upload Assets
+        uses: actions/upload-artifact@master
+        with:
+          name: Assets-${{env.PLUGIN_VERSION}}
+          path: ./assets
+      
+#      - name: Release
+#        uses: softprops/action-gh-release@master
+#        with:
+#          files: package.zip
+#      
+#      - name: Create Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: build-${{env.PLUGIN_VERSION_REVISION}}
+#          release_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+#          draft: false
+#          prerelease: false
+#      
+#      - name: Upload Release Asset
+#        id: upload-release-asset
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./build/package.zip
+#          asset_name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+#          asset_content_type: application/zip
