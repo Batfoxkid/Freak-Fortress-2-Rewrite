@@ -24,20 +24,21 @@ jobs:
         run: |
           bash scripts/setup.sh
           bash scripts/optional.sh
-          mkdir -p assets
-          mkdir -p plugin
       
       - name: Full Compile
         run: |
-          for file in /*
+          for file in $(find -type f -name "*.sp")
           do
             echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" -o "../plugin/plugins/$file" $file
+            spcomp -E -O2 -v2 -i "include" $file
           done
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package
         run: |
+          mkdir -p assets
+          mkdir -p plugin
+          cp -r addons/sourcemod/scripting/compiled plugin/plugins
           cp -r addons/sourcemod/translations plugin
           cp -r addons/sourcemod/gamedata plugin
           cp -r addons/sourcemod/data plugin
