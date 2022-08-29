@@ -34,7 +34,7 @@ jobs:
             echo -e "\nCompiling $file..."
             spcomp -E -O2 -v2 -i "include" -o "../plugin/plugins/$file" $file
           done
-          working-directory: ${{ env.SCRIPTS_PATH }}
+        working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package
         run: |
