@@ -1,7 +1,9 @@
 # Environments
+echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
 echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
 git rev-list --count HEAD >> $GITHUB_ENV
 echo 'EOF' >> $GITHUB_ENV
+cd $SCRIPTS_PATH
 
 # Set Version
 export PLUGIN_VERSION=$(sed -En '/#define PLUGIN_VERSION\W/p' freak_fortress_2.sp)
@@ -20,3 +22,4 @@ wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scr
 wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc"
 wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc"
 wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/tf2attributes.inc"
+ls

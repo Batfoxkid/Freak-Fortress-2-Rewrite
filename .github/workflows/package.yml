@@ -17,17 +17,13 @@ jobs:
         with:
           version: '1.11.x'
       
-      - name: Set Script Path
-        run: echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
-      
       - name: Install Action ZIP
         uses: montudor/action-zip@v1
       
       - name: Install Misc
         run: |
-          bash ../scripts/setup.sh
-          bash ../scripts/optional.sh
-        working-directory: ${{ env.SCRIPTS_PATH }}
+          bash scripts/setup.sh
+          bash scripts/optional.sh
       
       - name: Help
         run: |
