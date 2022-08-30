@@ -25,12 +25,15 @@ jobs:
           bash scripts/setup.sh
           bash scripts/optional.sh
       
-      - name: Full Compile
+      - name: Help
         run: |
           for file in $(find -type f -name "*.inc")
           do
             echo -e "\nInclude: $file"
           done
+      
+      - name: Full Compile
+        run: |
           spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
           for file in $(find -type f -name "ff2r_*.sp")
           do
