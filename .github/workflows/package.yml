@@ -26,25 +26,22 @@ jobs:
           bash scripts/optional.sh
         working-directory: ./
       
-      - name: Help
-        run: |
-          for file in $(find -type f -name "*.inc")
-          do
-            echo -e "\nInclude: $file"
-          done
-      
       - name: Full Compile
         run: |
-          spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o "compiled/$file" freak_fortress_2.sp
           for file in $(find -type f -name "ff2r_*.sp")
           do
             echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" $file
+            spcomp -E -O2 -v2 -i "include" -o "compiled/$file" $file
           done
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package
         run: |
+          for file in $(find -type f -name "*.smx")
+          do
+            echo -e "\nPlugin at: $file..."
+          done
           mkdir -p assets
           mkdir -p plugin
           cp -r addons/sourcemod/scripting/compiled plugin/plugins

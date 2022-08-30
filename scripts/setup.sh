@@ -4,7 +4,6 @@ echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
 git rev-list --count HEAD >> $GITHUB_ENV
 echo 'EOF' >> $GITHUB_ENV
 cd addons/sourcemod/scripting
-pwd
 
 # Set Version
 export PLUGIN_VERSION=$(sed -En '/#define PLUGIN_VERSION\W/p' freak_fortress_2.sp)
@@ -20,7 +19,6 @@ done
 
 # Install Required Includes
 cd include
-pwd
 wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scripting/include/morecolors.inc"
 wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc"
 wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc"
