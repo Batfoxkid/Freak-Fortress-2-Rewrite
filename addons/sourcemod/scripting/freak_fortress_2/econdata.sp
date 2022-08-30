@@ -65,7 +65,7 @@ stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] bu
 	return false;
 }
 
-bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
+stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
 {
 	#if defined __tf_econ_data_included
 	if(Loaded && TF2Econ_GetLocalizedItemName(itemdef, name, maxlen))
