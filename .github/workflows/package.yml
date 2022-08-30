@@ -17,9 +17,6 @@ jobs:
         with:
           version: '1.11.x'
       
-      - name: Install Action ZIP
-        uses: montudor/action-zip@v1
-      
       - name: Install Misc
         run: |
           bash scripts/setup.sh
@@ -37,7 +34,7 @@ jobs:
           done
         working-directory: ${{ env.SCRIPTS_PATH }}
       
-      - name: Package
+      - name: Package Sorting
         run: |
           for file in $(find -type f -name "*.smx")
           do
@@ -54,17 +51,25 @@ jobs:
           cp -r materials assets
           cp -r sound assets
       
-      - name: Upload Plugin
-        uses: actions/upload-artifact@master
+      - name: Package Plugin
+        uses: montudor/action-zip@v1
         with:
-          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./plugin
+          args: zip -qq -r FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip plugin
+      
+      - name: Package Assets
+        uses: montudor/action-zip@v1
+        with:
+          args: zip -qq -r Assets-${{env.PLUGIN_VERSION}}.zip assets
+      
+      - name: Upload Plugin
+        uses: actions/upload-artifact@v2
+        with:
+          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
       
       - name: Upload Assets
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v2
         with:
-          name: Assets-${{env.PLUGIN_VERSION}}
-          path: ./assets
+          name: Assets-${{env.PLUGIN_VERSION}}.zip
       
 #      - name: Release
 #        uses: softprops/action-gh-release@master
