@@ -66,8 +66,8 @@ jobs:
         uses: softprops/action-gh-release@master
         with:
           files: |
-          FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-          Assets-${{env.PLUGIN_VERSION}}.zip
+            FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Assets-${{env.PLUGIN_VERSION}}.zip
   
   nonrelease:
     runs-on: ubuntu-latest
