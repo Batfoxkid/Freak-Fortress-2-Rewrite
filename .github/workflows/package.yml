@@ -16,6 +16,8 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: '1.11.x'
+      
+      - name: Set Script Path
         run: echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
       
       - name: Install Action ZIP
