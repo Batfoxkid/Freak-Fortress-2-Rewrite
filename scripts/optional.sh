@@ -1,5 +1,4 @@
 # Optional Includes
-cd $SCRIPTS_PATH
 wget "https://raw.githubusercontent.com/nosoop/SM-TFCustAttr/master/scripting/include/tf_custom_attributes.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFEconData/master/scripting/include/tf_econ_data.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFCustomWeaponsX/master/scripting/include/cwx.inc"
