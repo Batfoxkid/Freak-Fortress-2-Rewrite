@@ -27,7 +27,8 @@ jobs:
       
       - name: Full Compile
         run: |
-          for file in $(find -type f -name "*.sp")
+          spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
+          for file in $(find -type f -name "ff2r_*.sp")
           do
             echo -e "\nCompiling $file..."
             spcomp -E -O2 -v2 -i "include" $file
