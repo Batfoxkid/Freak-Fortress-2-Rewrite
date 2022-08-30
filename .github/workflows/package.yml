@@ -65,7 +65,8 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@master
         with:
-          tag_name: v${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           files: |
             FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Assets-${{env.PLUGIN_VERSION}}.zip
