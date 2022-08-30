@@ -28,11 +28,12 @@ jobs:
       
       - name: Full Compile
         run: |
-          spcomp -E -O2 -v2 -i "include" -o "compiled/freak_fortress_2" freak_fortress_2.sp
+          mkdir -p plugins
+          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
           for file in $(find -type f -name "ff2r_*.sp")
           do
             echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" -o "compiled/$file" $file
+            spcomp -E -O2 -v2 -i "include" -o "plugins/$file" $file
           done
         working-directory: ${{ env.SCRIPTS_PATH }}
       
@@ -44,7 +45,7 @@ jobs:
           done
           mkdir -p assets
           mkdir -p plugin
-          cp -r addons/sourcemod/scripting/compiled plugin/plugins
+          cp -r addons/sourcemod/scripting/plugins plugin
           cp -r addons/sourcemod/translations plugin
           cp -r addons/sourcemod/gamedata plugin
           cp -r addons/sourcemod/data plugin
