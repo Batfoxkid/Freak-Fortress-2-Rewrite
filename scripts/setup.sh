@@ -3,7 +3,7 @@ echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
 echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
 git rev-list --count HEAD >> $GITHUB_ENV
 echo 'EOF' >> $GITHUB_ENV
-cd $SCRIPTS_PATH
+cd addons/sourcemod/scripting
 pwd
 
 # Set Version
