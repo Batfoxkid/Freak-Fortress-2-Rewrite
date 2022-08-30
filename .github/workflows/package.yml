@@ -1,5 +1,8 @@
 name: Package
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: test-actions
@@ -64,8 +67,6 @@ jobs:
       
       - name: Release
         uses: softprops/action-gh-release@master
-        permissions:
-          contents: write
         with:
           tag_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           files: |
