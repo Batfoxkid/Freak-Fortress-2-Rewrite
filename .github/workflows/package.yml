@@ -24,6 +24,7 @@ jobs:
         run: |
           bash scripts/setup.sh
           bash scripts/optional.sh
+        working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Help
         run: |
