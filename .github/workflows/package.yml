@@ -16,6 +16,7 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: '1.11.x'
+        run: echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
       
       - name: Install Action ZIP
         uses: montudor/action-zip@v1
