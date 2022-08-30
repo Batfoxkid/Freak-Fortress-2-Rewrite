@@ -325,6 +325,7 @@ void Weapons_ShowChanges(int client, int entity)
 		}
 		case KeyValType_Section:
 		{
+			//TODO: Check if econ data was compiled, if not give an error log
 			cfg = cfg.GetSection("attributes");
 
 			PackVal attributeValue;
@@ -344,16 +345,22 @@ void Weapons_ShowChanges(int client, int entity)
 
 				if(attributeValue.tag == KeyValType_Value)
 				{
-					int attrib = TF2Econ_TranslateAttributeNameToDefinitionIndex(key);
-
-					bool isHidden = (TF2ED_GetAttributeDefinitionString(attrib, "hidden", type, sizeof(type)) && StringToInt(type));
-					bool doesDescriptionExist = TF2ED_GetAttributeDefinitionString(attrib, "description_string", description, sizeof(description));
-
-					if(!isHidden && doesDescriptionExist)
+					int attrib = TF2ED_TranslateAttributeNameToDefinitionIndex(key);
+					if(attrib != -1)
 					{
-						TF2ED_GetAttributeDefinitionString(attrib, "description_format", type, sizeof(type));
-						FormatValue(attributeValue.data, value, sizeof(value), type);
-						PrintSayText2(client, client, true, description, value);
+						bool isHidden = (TF2ED_GetAttributeDefinitionString(attrib, "hidden", type, sizeof(type)) && StringToInt(type));
+						bool doesDescriptionExist = TF2ED_GetAttributeDefinitionString(attrib, "description_string", description, sizeof(description));
+
+						if(!isHidden && doesDescriptionExist)
+						{
+							TF2ED_GetAttributeDefinitionString(attrib, "description_format", type, sizeof(type));
+							FormatValue(attributeValue.data, value, sizeof(value), type);
+							PrintSayText2(client, client, true, description, value);
+						}
+					}
+					else
+					{
+						LogError("Unknown attribute %s", key);
 					}
 				}
 			}
