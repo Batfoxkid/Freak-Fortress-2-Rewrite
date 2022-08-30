@@ -16,11 +16,9 @@ do
   sed -i -e 's/#define PLUGIN_VERSION.*".*"/#define PLUGIN_VERSION "'$PLUGIN_VERSION'.'$PLUGIN_VERSION_REVISION'"/g' $file
 done
 
-# Copy Custom Includes
-cp -r addons/sourcemod/scripting/include include
-
 # Install Required Includes
-wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scripting/include/morecolors.inc" -O include/morecolors.inc
-wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc" -O include/dhooks.inc
-wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc" -O include/tf2items.inc
-wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/tf2attributes.inc" -O include/tf2attributes.inc
+cd $SCRIPTS_PATH
+wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scripting/include/morecolors.inc"
+wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc"
+wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc"
+wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/tf2attributes.inc"
