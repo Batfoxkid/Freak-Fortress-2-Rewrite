@@ -5,8 +5,9 @@ on:
     branches: test-actions
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '*')"
     
     steps:
       - name: Install Checkout
@@ -61,39 +62,68 @@ jobs:
         with:
           args: zip -qq -r Assets-${{env.PLUGIN_VERSION}}.zip assets
       
-      - name: Upload Plugin
-        uses: actions/upload-artifact@v2
+      - name: Release
+        uses: softprops/action-gh-release@master
         with:
-          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+          files: |
+          FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+          Assets-${{env.PLUGIN_VERSION}}.zip
+  
+  nonrelease:
+    runs-on: ubuntu-latest
+    if: "contains(github.event.head_commit.message, '*')"
+    
+    steps:
+      - name: Install Checkout
+        uses: actions/checkout@v1
+      
+      - name: Install Setup SP
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: '1.11.x'
+      
+      - name: Install Misc
+        run: |
+          bash scripts/setup.sh
+          bash scripts/optional.sh
+        working-directory: ./
+      
+      - name: Full Compile
+        run: |
+          mkdir -p plugins
+          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
+          for file in $(find -type f -name "ff2r_*.sp")
+          do
+            echo -e "\nCompiling $file..."
+            spcomp -E -O2 -v2 -i "include" -o "plugins/$file" $file
+          done
+        working-directory: ${{ env.SCRIPTS_PATH }}
+      
+      - name: Package Sorting
+        run: |
+          for file in $(find -type f -name "*.smx")
+          do
+            echo -e "\nPlugin at: $file..."
+          done
+          mkdir -p assets
+          mkdir -p plugin
+          cp -r addons/sourcemod/scripting/plugins plugin
+          cp -r addons/sourcemod/translations plugin
+          cp -r addons/sourcemod/gamedata plugin
+          cp -r addons/sourcemod/data plugin
+          cp -r addons/sourcemod/configs plugin
+          cp -r models assets
+          cp -r materials assets
+          cp -r sound assets
+      
+      - name: Upload Plugin
+        uses: actions/upload-artifact@master
+        with:
+          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./plugin
       
       - name: Upload Assets
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@master
         with:
-          name: Assets-${{env.PLUGIN_VERSION}}.zip
-      
-#      - name: Release
-#        uses: softprops/action-gh-release@master
-#        with:
-#          files: package.zip
-#      
-#      - name: Create Release
-#        id: create_release
-#        uses: actions/create-release@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          tag_name: build-${{env.PLUGIN_VERSION_REVISION}}
-#          release_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-#          draft: false
-#          prerelease: false
-#      
-#      - name: Upload Release Asset
-#        id: upload-release-asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./build/package.zip
-#          asset_name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-#          asset_content_type: application/zip
+          name: Assets-${{env.PLUGIN_VERSION}}
+          path: ./assets
