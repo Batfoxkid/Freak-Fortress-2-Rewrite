@@ -9,8 +9,8 @@ Contains plugin and boss assets separately.
 
 Required:
 
-- SourceMod 1.11+
-- [Tf2Attributes 1.7.0+](https://github.com/nosoop/tf2attributes)
+- [SourceMod 1.11+](https://www.sourcemod.net/downloads.php)
+- [TF2Attributes 1.7.0+](https://github.com/nosoop/tf2attributes)
 - [TF2Items](https://github.com/asherkin/TF2Items)
 
 
@@ -24,6 +24,7 @@ Supported:
 
 - [TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
+- [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
 
 ## Breaking Changes
 
