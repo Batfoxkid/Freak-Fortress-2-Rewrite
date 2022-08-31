@@ -14,6 +14,7 @@
 	int Preference_GetCompanion(int client, int special, int team, bool &disband)
 	int Preference_GetFullQueuePoints(int client)
 	int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
+	int Preference_DifficultyMenu(int client, int item = 0)
 */
 
 #pragma semicolon 1
@@ -26,6 +27,7 @@ static int PartyLeader[MAXTF2PLAYERS];
 static int PartyChoice[MAXTF2PLAYERS];
 static int PartyMainBoss[MAXTF2PLAYERS];
 static int PartyInvite[MAXTF2PLAYERS][MAXTF2PLAYERS];
+static bool DiffToggled[MAXTF2PLAYERS];
 static bool UpdateDataBase[MAXTF2PLAYERS];
 static ArrayList BossListing[MAXTF2PLAYERS];
 
@@ -35,7 +37,7 @@ void Preference_PluginStart()
 	RegFreakCmd("party", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
-	//RegFreakCmd("difficulty", Preference_BossMenuCmd, "Freak Fortress 2 Boss Difficulties");
+	RegFreakCmd("difficulty", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Difficulties");
 
 	RegAdminCmd("ff2_special", Preference_ForceBossCmd, ADMFLAG_CHEATS, "Force a specific boss to appear");
 	
@@ -67,6 +69,23 @@ void Preference_AddBoss(int client, const char[] name)
 		int special = Bosses_GetByName(name, true, false, _, "filename");
 		if(special != -1 && Bosses_CanAccessBoss(client, special, false, _, false))
 			BossListing[client].Push(special);
+	}
+}
+
+void Preference_AddDifficulty(int client, const char[] name)
+{
+	if(!DiffListing[client])
+		DiffListing[client] = new ArrayList();
+	
+	if(name[0] == '#')
+	{
+		DiffListing[client].Push(-1-StringToInt(name[1]));
+	}
+	else
+	{
+		int special = Bosses_GetByName(name, true, false, _, "filename");
+		if(special != -1 && Bosses_CanAccessBoss(client, special, false, _, false))
+			DiffListing[client].Push(special);
 	}
 }
 
@@ -1568,4 +1587,44 @@ public void Preference_DisplayBosses(DataPack pack)
 	}
 	
 	delete pack;
+}
+
+public Action Preference_DifficultyMenuCmd(int client, int args)
+{
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+	}
+	else if(args)
+	{
+	}
+	else
+	{
+		Menu_Command(client);
+		Preference_DifficultyMenu(client);
+	}
+	return Plugin_Handled;
+}
+
+void Preference_DifficultyMenu(int client, int item = 1)
+{
+	if(item > 0)
+	{
+		Menu menu 
+	}
+	else
+	{
+		Menu menu = new Menu(Preference_DifficultyMenuH);
+		
+		menu.SetTitle("%t", "Difficulty Menu");
+		
+		if(Cvar[PrefSpecial].FloatValue > 0.0)
+		{
+			menu.AddItem("");
+		}
+		else
+		{
+		}
+		
+		
+	}
 }
