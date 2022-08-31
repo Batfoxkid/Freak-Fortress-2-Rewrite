@@ -7,22 +7,45 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sm-version: [ '1.11.x', '1.12.x']
     
     steps:
-      - name: Checkout
+      - name: Install Checkout
         uses: actions/checkout@v1
       
-      - name: Environments
-        run: |
-          echo "SM_VERSION=1.11" >> $GITHUB_ENV
+      - name: Install Setup SP ${{ matrix.sm-version }}
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.sm-version }}
       
-      - name: Install
+      - name: Install Misc
         run: |
-          bash scripts/install.sh
+          bash scripts/setup.sh
+        working-directory: ./
       
-      - name: Compile
+      - name: Minimum Compile ${{ matrix.sm-version }}
         run: |
-          cd build/addons/sourcemod/scripting
-          ./spcomp -E freak_fortress_2.sp -o ../plugins/freak_fortress_2.smx
-          ./spcomp -E ff2r_default_abilities.sp -o ../plugins/ff2r_default_abilities.smx
-          ./spcomp -E ff2r_menu_abilities.sp -o ../plugins/ff2r_menu_abilities.smx
+          spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
+          for file in $(find -type f -name "ff2r_*.sp")
+          do
+            echo -e "\nCompiling $file..."
+            spcomp -E -O2 -v2 -i "include" $file
+          done
+        working-directory: ${{ env.SCRIPTS_PATH }}
+      
+      - name: Install Optional Includes
+        run: |
+          bash scripts/optional.sh
+        working-directory: ./
+      
+      - name: Full Compile ${{ matrix.sm-version }}
+        run: |
+          spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
+          for file in $(find -type f -name "ff2r_*.sp")
+          do
+            echo -e "\nCompiling $file..."
+            spcomp -E -O2 -v2 -i "include" $file
+          done
+        working-directory: ${{ env.SCRIPTS_PATH }}

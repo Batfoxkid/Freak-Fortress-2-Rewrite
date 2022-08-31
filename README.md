@@ -4,7 +4,8 @@
 
 ## Installation:
 
-For the most up-to-date versions, see [build artifacts](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/actions?query=workflow%3APackage+branch%3Amain).
+**[Lastest Release](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases/latest)** or [Other Releases](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases)  
+Contains plugin and boss assets separately.
 
 Required:
 
