@@ -747,7 +747,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(action != Plugin_Handled)
 	{
 		int special = BossList.Length;
-		bool clean = !CvarDebug.BoolValue;
+		bool clean = !Cvar[Debugging].BoolValue;
 		
 		snap = cfg.Snapshot();
 		if(snap)
@@ -1619,8 +1619,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
 	
 	int i = 1;
-	bool value = CvarSpecTeam.BoolValue;
-	for(int t = CvarSpecTeam.BoolValue ? 0 : 2; t < 4; t++)
+	bool value = Cvar[SpecTeam].BoolValue;
+	for(int t = Cvar[SpecTeam].BoolValue ? 0 : 2; t < 4; t++)
 	{
 		if(team != t)
 			i += PlayersAlive[t];
@@ -1631,16 +1631,16 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 	if(!Client(client).Cfg.GetInt("fversion", i) || i != 2)
 	{
 		if(!Client(client).Cfg.GetBool("triple", value, false))
-			Client(client).Cfg.SetInt("triple", CvarBossTriple.IntValue);
+			Client(client).Cfg.SetInt("triple", Cvar[BossTriple].IntValue);
 		
 		if(!Client(client).Cfg.GetBool("crits", value, false))
-			Client(client).Cfg.SetInt("crits", CvarBossCrits.IntValue);
+			Client(client).Cfg.SetInt("crits", Cvar[BossCrits].IntValue);
 		
 		if(!Client(client).Cfg.GetInt("knockback", i))
-			Client(client).Cfg.SetInt("knockback", CvarBossKnockback.IntValue);
+			Client(client).Cfg.SetInt("knockback", Cvar[BossKnockback].IntValue);
 		
 		if(!Client(client).Cfg.GetInt("healing", i))
-			Client(client).Cfg.SetInt("healing", CvarBossHealing.IntValue);
+			Client(client).Cfg.SetInt("healing", Cvar[BossHealing].IntValue);
 	}
 	
 	static char buffer[512];
@@ -2275,7 +2275,7 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && CvarSoundType.BoolValue)
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && Cvar[SoundType].BoolValue)
 			{
 				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
 			}

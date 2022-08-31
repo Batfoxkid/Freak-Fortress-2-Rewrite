@@ -234,7 +234,7 @@ public int Configs_PackVoteH(Menu menu, MenuAction action, int param1, int param
 			char buffer1[12], buffer2[64];
 			menu.GetItem(param1, buffer1, sizeof(buffer1), _, buffer2, sizeof(buffer2));
 			
-			CvarCharset.SetString(buffer1);
+			Cvar[NextCharset].SetString(buffer1);
 			FPrintToChatAll("%t", "Next Pack Voted", buffer2);
 		}
 	}

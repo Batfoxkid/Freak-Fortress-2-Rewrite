@@ -20,8 +20,9 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.0"
+#define PLUGIN_VERSION			"1.1"
 #define PLUGIN_VERSION_REVISION	"custom"
+#define PLUGIN_VERSION_FULL	"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -166,34 +167,47 @@ public const int TeamColors[][] =
 	{100, 100, 255, 255}
 };
 
-ConVar CvarCharset;
-ConVar CvarDebug;
-ConVar CvarSpecTeam;
-ConVar CvarBossVsBoss;
-ConVar CvarBossSewer;
-ConVar CvarHealthBar;
-ConVar CvarRefreshDmg;
-ConVar CvarRefreshTime;
-ConVar CvarBossTriple;
-ConVar CvarBossCrits;
-ConVar CvarBossHealing;
-ConVar CvarBossKnockback;
-ConVar CvarPrefBlacklist;
-ConVar CvarPrefToggle;
-ConVar CvarCaptureTime;
-ConVar CvarCaptureAlive;
-ConVar CvarAggressiveSwap;
-ConVar CvarAggressiveOverlay;
-ConVar CvarSoundType;
-ConVar CvarDisguiseModels;
-ConVar CvarPlayerGlow;
-ConVar CvarBossSapper;
+enum
+{
+	Version,
+	NextCharset,
+	Debugging,
+	
+	AggressiveOverlay,
+	AggressiveSwap,
+	
+	SoundType,
+	BossTriple,
+	BossCrits,
+	BossHealing,
+	BossKnockback,
+	BossSapper,
+	
+	BossVsBoss,
+	SpecTeam,
+	CaptureTime,
+	CaptureAlive,
+	HealthBar,
+	RefreshDmg,
+	RefreshTime,
+	DisguiseModels,
+	PlayerGlow,
+	BossSewer,
+	
+	PrefBlacklist,
+	PrefToggle,
+	PrefSpecial,
+	
+	AllowSpectators,
+	MovementFreeze,
+	PreroundTime,
+	//BonusRoundTime,
+	Tournament,
+	
+	Cvar_MAX
+}
 
-ConVar CvarAllowSpectators;
-ConVar CvarMovementFreeze;
-ConVar CvarPreroundTime;
-//ConVar CvarBonusRoundTime;
-ConVar CvarTournament;
+ConVar Cvar[Cvar_MAX];
 
 int PlayersAlive[TFTeam_MAX];
 int MaxPlayersAlive[TFTeam_MAX];
@@ -315,7 +329,7 @@ public void OnConfigsExecuted()
 	GetCurrentMap(mapname, sizeof(mapname));
 	if(Configs_CheckMap(mapname))
 	{
-		Charset = CvarCharset.IntValue;
+		Charset = Cvar[NextCharset].IntValue;
 	}
 	else
 	{
@@ -323,10 +337,7 @@ public void OnConfigsExecuted()
 	}
 	
 	Bosses_BuildPacks(Charset, mapname);
-	
-	if(Enabled)
-		ConVar_Enable();
-	
+	ConVar_ConfigsExecuted();
 	Weapons_ConfigsExecuted();
 }
 

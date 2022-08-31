@@ -136,7 +136,7 @@ int Preference_PickBoss(int client, int team = -1)
 			length = list.Length;
 			if(length)
 			{
-				int count = CvarPrefBlacklist.IntValue;
+				int count = Cvar[PrefBlacklist].IntValue;
 				if(BossListing[client] && count != 0)
 				{
 					ArrayList list2 = count > 0 ? list.Clone() : new ArrayList();
@@ -256,7 +256,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 {
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
-		int blacklist = CvarPrefBlacklist.IntValue;
+		int blacklist = Cvar[PrefBlacklist].IntValue;
 		if(args && blacklist != 0)
 		{
 			char buffer[64];
@@ -399,7 +399,7 @@ void Preference_BossMenu(int client)
 
 static void BossMenu(int client)
 {
-	int blacklist = CvarPrefBlacklist.IntValue;
+	int blacklist = Cvar[PrefBlacklist].IntValue;
 	Menu menu = new Menu(Preference_BossMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -565,7 +565,7 @@ static void BossMenu(int client)
 				FormatEx(data, sizeof(data), "%t", blacklist > 0 ? "Clear Blacklist" : "Clear Whitelist");
 				menu.InsertItem(0, "-1", data);
 			}
-			else if(CvarPrefToggle.BoolValue)
+			else if(Cvar[PrefToggle].BoolValue)
 			{
 				FormatEx(data, sizeof(data), "%t", "Disable Playing Boss");
 				menu.InsertItem(0, "-2", data);
@@ -609,7 +609,7 @@ static void BossMenu(int client)
 		}
 		
 		// Show if any boss pack doesn't have one disaabled
-		if(enables && CvarPrefToggle.BoolValue)
+		if(enables && Cvar[PrefToggle].BoolValue)
 		{
 			FormatEx(data, sizeof(data), "%t", "Disable Playing Boss All");
 			menu.AddItem("-2", data);

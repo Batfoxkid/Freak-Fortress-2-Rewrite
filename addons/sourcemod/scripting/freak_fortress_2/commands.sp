@@ -124,7 +124,7 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 {
 	if(Enabled)
 	{
-		if((Client(client).IsBoss || Client(client).Minion) && (RoundStatus == 0 || (RoundStatus == 1 && !CvarBossSewer.BoolValue)))
+		if((Client(client).IsBoss || Client(client).Minion) && (RoundStatus == 0 || (RoundStatus == 1 && !Cvar[BossSewer].BoolValue)))
 			return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -220,11 +220,11 @@ static Action SwapTeam(int client, int wantTeam)
 	if(Enabled)
 	{
 		// No suicides
-		if(RoundStatus != 2 && !CvarBossSewer.BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).Minion))
+		if(RoundStatus != 2 && !Cvar[BossSewer].BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).Minion))
 			return Plugin_Handled;
 		
 		// Prevent going to spectate with cvar disabled
-		if(newTeam <= TFTeam_Spectator && !CvarAllowSpectators.BoolValue)
+		if(newTeam <= TFTeam_Spectator && !Cvar[AllowSpectators].BoolValue)
 			return Plugin_Handled;
 		
 		int currentTeam = GetClientTeam(client);
@@ -239,7 +239,7 @@ static Action SwapTeam(int client, int wantTeam)
 			if(newTeam > TFTeam_Spectator)
 				return Plugin_Handled;
 		}
-		else if(!CvarBossVsBoss.BoolValue)
+		else if(!Cvar[BossVsBoss].BoolValue)
 		{
 			// Prevent swapping to a different team unless in spec or going to spec
 			if(currentTeam > TFTeam_Spectator && newTeam > TFTeam_Spectator)
@@ -252,7 +252,7 @@ static Action SwapTeam(int client, int wantTeam)
 	}
 	else if(Client(client).IsBoss)
 	{
-		if(newTeam <= TFTeam_Spectator && !CvarAllowSpectators.BoolValue)
+		if(newTeam <= TFTeam_Spectator && !Cvar[AllowSpectators].BoolValue)
 			return Plugin_Handled;
 	}
 	

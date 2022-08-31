@@ -42,7 +42,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 	{
 		PrintToServer("Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
 		
-		if(CvarDebug.BoolValue)
+		if(Cvar[Debugging].BoolValue)
 			PrintToServer("Debug Mode Enabled");
 		
 		PrintToServer("Status: %s", Charset<0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
@@ -239,7 +239,7 @@ static void QueueMenu(int client)
 	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
-	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && CvarPrefToggle.BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && Cvar[PrefToggle].BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	menu.Pagination = 0;
 	menu.ExitButton = true;
@@ -370,10 +370,11 @@ static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 		
 		menu.AddItem(userid, "1000");
 		menu.AddItem(userid, "100");
+		menu.AddItem(userid, "50");
 		menu.AddItem(userid, "10");
 		menu.AddItem(userid, "-10");
-		menu.AddItem(userid, "-100");
-		menu.AddItem(userid, "-1000");
+		menu.AddItem(userid, "-50");
+		menu.AddItem(userid, "-500");
 		
 		menu.ExitBackButton = true;
 		menu.Display(client, MENU_TIME_FOREVER);
@@ -434,22 +435,25 @@ public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int c
 				switch(choice)
 				{
 					case 0:
-						points = -1000;
+						points = 1000;
 					
 					case 1:
-						points = -100;
+						points = 100;
 					
 					case 2:
-						points = -10;
+						points = 50;
 					
 					case 3:
 						points = 10;
 					
 					case 4:
-						points = 100;
+						points = -10;
 					
 					case 5:
-						points = 1000;
+						points = -50;
+					
+					case 6:
+						points = -100;
 				}
 				
 				GetClientName(target[0], buffer, sizeof(buffer));

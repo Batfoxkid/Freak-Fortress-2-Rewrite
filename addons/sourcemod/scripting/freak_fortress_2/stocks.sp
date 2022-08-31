@@ -135,7 +135,7 @@ void GetClassWeaponClassname(TFClassType class, char[] name, int length)
 int TotalPlayersAlive()
 {
 	int amount = PlayersAlive[TFTeam_Red] + PlayersAlive[TFTeam_Blue];
-	if(CvarSpecTeam.BoolValue)
+	if(Cvar[SpecTeam].BoolValue)
 		amount += PlayersAlive[TFTeam_Unassigned] + PlayersAlive[TFTeam_Spectator];
 	
 	return amount;
@@ -939,7 +939,7 @@ stock void PrintSayText2(int client, int author, bool chat = true, const char[] 
 
 stock void Debug(const char[] buffer, any ...)
 {
-	if(CvarDebug.BoolValue)
+	if(Cvar[Debugging].BoolValue)
 	{
 		char message[192];
 		VFormat(message, sizeof(message), buffer, 2);

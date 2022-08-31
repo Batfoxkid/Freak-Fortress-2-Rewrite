@@ -929,7 +929,7 @@ public any NativeOld_LogError(Handle plugin, int params)
 
 public any NativeOld_Debug(Handle plugin, int params)
 {
-	return CvarDebug.BoolValue;
+	return Cvar[Debugging].BoolValue;
 }
 
 public any NativeOld_SetCheats(Handle plugin, int params)

@@ -1,5 +1,6 @@
 /*
 	void ConVar_PluginStart()
+	void ConVar_ConfigsExecuted()
 	void ConVar_Enable()
 	void ConVar_Disable()
 */
@@ -19,87 +20,44 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	ConVar version = CreateConVar("ff2_version", "Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION, "Freak Fortress 2 Version", FCVAR_NOTIFY);
-	CvarCharset = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
-	CvarDebug = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
+	Cvar[Version] = CreateConVar("ff2_version", PLUGIN_VERSION_FULL, "Freak Fortress 2 Version", FCVAR_NOTIFY);
+	Cvar[NextCharset] = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
+	Cvar[Debugging] = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
-	CvarSpecTeam = CreateConVar("ff2_game_spec", "1", "If to handle spectator teams as real fighting teams", _, true, 0.0, true, 1.0);
-	CvarBossVsBoss = CreateConVar("ff2_game_bvb", "0", "How many bosses per a team, 0 to disable", FCVAR_NOTIFY, true, 0.0, true, float(MaxClients/2));
-	CvarBossSewer = CreateConVar("ff2_game_suicide", "1", "If bosses can use kill binds during the round", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	CvarHealthBar = CreateConVar("ff2_game_healthbar", "3", "If a health bar and/or text will be shown, 1 = Health Bar, 2 = Health Display, 3 = Both", FCVAR_NOTIFY, true, 0.0, true, 3.0);
-	CvarRefreshDmg = CreateConVar("ff2_game_healthbar_refreshdmg", "1", "Refresh health display when damage or healing is done", _, true, 0.0, true, 1.0);
-	CvarRefreshTime = CreateConVar("ff2_game_healthbar_refreshtime", "2.8", "Refresh rate of the health display", _, true, 0.0);
-	CvarBossTriple = CreateConVar("ff2_boss_triple", "1", "If v1 bosses will deal extra damage versus players by default", _, true, 0.0, true, 1.0);
-	CvarBossCrits = CreateConVar("ff2_boss_crits", "0", "If v1 bosses can perform random crits by default", _, true, 0.0, true, 1.0);
-	CvarBossHealing = CreateConVar("ff2_boss_healing", "0", "If v1 bosses can be healed by default, 1 = Self Healing Only, 2 = Other Healing Only, 3 = Both", _, true, 0.0, true, 3.0);
-	CvarBossKnockback = CreateConVar("ff2_boss_knockback", "0", "If v1 bosses can perform self-knockback by default, 2 will also allow self-damage", _, true, 0.0, true, 2.0);
-	CvarPrefBlacklist = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", FCVAR_NOTIFY, true, -1.0);
-	CvarPrefToggle = CreateConVar("ff2_pref_toggle", "1", "If players can opt out playing bosses and reset queue points", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	CvarCaptureTime = CreateConVar("ff2_game_capture_time", "n*15 + 60", "Amount of time until the control point unlocks, similar to tf_arena_override_cap_enable_time, can be a formula");
-	CvarCaptureAlive = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
-	CvarAggressiveSwap = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
-	CvarAggressiveOverlay = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
-	CvarSoundType = CreateConVar("ff2_boss_globalsounds", "0", "If default sounds are globally heard", _, true, 0.0, true, 1.0);
-	CvarDisguiseModels = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.\nChanges won't apply right away, recommended only to change with a map restart.", _, true, 0.0, true, 1.0);
-	CvarPlayerGlow = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
-	CvarBossSapper = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
+	Cvar[SpecTeam] = CreateConVar("ff2_game_spec", "1", "If to handle spectator teams as real fighting teams", _, true, 0.0, true, 1.0);
+	Cvar[BossVsBoss] = CreateConVar("ff2_game_bvb", "0", "How many bosses per a team, 0 to disable", FCVAR_NOTIFY, true, 0.0, true, float(MaxClients/2));
+	Cvar[BossSewer] = CreateConVar("ff2_game_suicide", "1", "If bosses can use kill binds during the round", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	Cvar[HealthBar] = CreateConVar("ff2_game_healthbar", "3", "If a health bar and/or text will be shown, 1 = Health Bar, 2 = Health Display, 3 = Both", FCVAR_NOTIFY, true, 0.0, true, 3.0);
+	Cvar[RefreshDmg] = CreateConVar("ff2_game_healthbar_refreshdmg", "1", "Refresh health display when damage or healing is done", _, true, 0.0, true, 1.0);
+	Cvar[RefreshTime] = CreateConVar("ff2_game_healthbar_refreshtime", "2.8", "Refresh rate of the health display", _, true, 0.0);
+	Cvar[BossTriple] = CreateConVar("ff2_boss_triple", "1", "If v1 bosses will deal extra damage versus players by default", _, true, 0.0, true, 1.0);
+	Cvar[BossCrits] = CreateConVar("ff2_boss_crits", "0", "If v1 bosses can perform random crits by default", _, true, 0.0, true, 1.0);
+	Cvar[BossHealing] = CreateConVar("ff2_boss_healing", "0", "If v1 bosses can be healed by default, 1 = Self Healing Only, 2 = Other Healing Only, 3 = Both", _, true, 0.0, true, 3.0);
+	Cvar[BossKnockback] = CreateConVar("ff2_boss_knockback", "0", "If v1 bosses can perform self-knockback by default, 2 will also allow self-damage", _, true, 0.0, true, 2.0);
+	Cvar[PrefBlacklist] = CreateConVar("ff2_pref_blacklist", "-1", "If boss selection whitelist is a blacklist instead with the limit being the value of this cvar", FCVAR_NOTIFY, true, -1.0);
+	Cvar[PrefToggle] = CreateConVar("ff2_pref_toggle", "1", "If players can opt out playing bosses and reset queue points", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	Cvar[CaptureTime] = CreateConVar("ff2_game_capture_time", "n*15 + 60", "Amount of time until the control point unlocks, similar to tf_arena_override_cap_enable_time, can be a formula");
+	Cvar[CaptureAlive] = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
+	Cvar[AggressiveSwap] = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
+	Cvar[AggressiveOverlay] = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
+	Cvar[SoundType] = CreateConVar("ff2_boss_globalsounds", "0", "If default sounds are globally heard", _, true, 0.0, true, 1.0);
+	Cvar[DisguiseModels] = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.\nCan't modifiy cvar value while players are active.", _, true, 0.0, true, 1.0);
+	Cvar[PlayerGlow] = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
+	Cvar[BossSapper] = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
+	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_solo_shame", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	
-	bool add = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
-	AutoExecConfig(true, "FF2Rewrite");
+	AutoExecConfig(false, "FF2Rewrite");
 	
-	char buffer[512];
-	version.GetString(buffer, sizeof(buffer));
-	if(!StrEqual(buffer, "Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION))
-	{
-		if(buffer[0] && DeleteFile("cfg/sourcemod/FF2Rewrite.cfg"))
-		{
-			LogError("FF2Rewrite.cfg was outdated, config has been updated");
-			AutoExecConfig(true, "FF2Rewrite");
-			add = true;
-		}
-		
-		version.SetString("Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION);
-	}
-	
-	if(add)
-	{
-		File old = OpenFile("cfg/sourcemod/FF2Rewrite.cfg", "r");
-		if(old)
-		{
-			File cfg = OpenFile("cfg/sourcemod/tmp_FF2Rewrite.cfg", "w");
-			if(cfg)
-			{
-				cfg.WriteLine("// !!! Any custom commands saved in this file will be lost upon a FF2 update !!!");
-				
-				while(!old.EndOfFile())
-				{
-					old.ReadLine(buffer, sizeof(buffer));
-					cfg.WriteLine(buffer);
-				}
-				
-				cfg.Close();
-				
-				if(DeleteFile("cfg/sourcemod/FF2Rewrite.cfg"))
-					RenameFile("cfg/sourcemod/FF2Rewrite.cfg", "cfg/sourcemod/tmp_FF2Rewrite.cfg");
-			}
-			
-			old.Close();
-		}
-	}
-	
-	CvarAllowSpectators = FindConVar("mp_allowspectators");
-	CvarMovementFreeze = FindConVar("tf_player_movement_restart_freeze");
-	CvarPreroundTime = FindConVar("tf_arena_preround_time");
-	//CvarBonusRoundTime = FindConVar("mp_bonusroundtime");
-	CvarTournament = FindConVar("mp_tournament");
-	CvarTournament.Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
-	
-	if(CvarList != INVALID_HANDLE)
-		delete CvarList;
+	Cvar[AllowSpectators] = FindConVar("mp_allowspectators");
+	Cvar[MovementFreeze] = FindConVar("tf_player_movement_restart_freeze");
+	Cvar[PreroundTime] = FindConVar("tf_arena_preround_time");
+	//Cvar[BonusRoundTime] = FindConVar("mp_bonusroundtime");
+	Cvar[Tournament] = FindConVar("mp_tournament");
+	Cvar[Tournament].Flags &= ~(FCVAR_NOTIFY|FCVAR_REPLICATED);
 	
 	CvarList = new ArrayList(sizeof(CvarInfo));
 	
@@ -109,6 +67,78 @@ void ConVar_PluginStart()
 	ConVar_Add("mp_humans_must_join_team", "any");
 	ConVar_Add("mp_teams_unbalance_limit", "0");
 	ConVar_Add("mp_waitingforplayers_time", "90.0", false);
+}
+
+void ConVar_ConfigsExecuted()
+{
+	bool generate = !FileExists("cfg/sourcemod/FF2Rewrite.cfg");
+	
+	if(!generate)
+	{
+		char buffer[512];
+		Cvar[Version].GetString(buffer, sizeof(buffer));
+		if(!StrEqual(buffer, PLUGIN_VERSION_FULL))
+		{
+			if(buffer[0])
+				generate = true;
+			
+			Cvar[Version].SetString(PLUGIN_VERSION_FULL);
+		}
+	}
+	
+	if(generate)
+		GenerateConfig();
+	
+	if(Enabled)
+		ConVar_Enable();
+}
+
+static void GenerateConfig()
+{
+	File file = OpenFile("cfg/sourcemod/FF2Rewrite.cfg", "wt");
+	if(file)
+	{
+		file.WriteLine("// Settings present are for Freak Fortress 2: %s", PLUGIN_VERSION_FULL);
+		file.WriteLine("// Updating the plugin version will generate new ConVars and any non-FF2 commands will be lost");
+		file.WriteLine("");
+		
+		char buffer1[512], buffer2[256];
+		for(int i; i < AllowSpectators; i++)
+		{
+			if(Cvar[i].Flags & FCVAR_DONTRECORD)
+				continue;
+			
+			Cvar[i].GetDescription(buffer1, sizeof(buffer1));
+			
+			int current, split;
+			do
+			{
+				current += split;
+				split = SplitString(buffer1[current], "\n", buffer2, sizeof(buffer2));
+				file.WriteLine("// %s", buffer2);
+			}
+			while(split != -1);
+			
+			file.WriteLine("// -");
+			
+			Cvar[i].GetDefault(buffer2, sizeof(buffer2));
+			file.WriteLine("// Default: \"%s\"", buffer2);
+			
+			float value;
+			if(Cvar[i].GetBounds(ConVarBound_Lower, value))
+				file.WriteLine("// Minimum: \"%.2f\"", value);
+			
+			if(Cvar[i].GetBounds(ConVarBound_Upper, value))
+				file.WriteLine("// Maximum: \"%.2f\"", value);
+			
+			Cvar[i].GetName(buffer2, sizeof(buffer2));
+			Cvar[i].GetString(buffer1, sizeof(buffer1));
+			file.WriteLine("%s \"%s\"", buffer2, buffer1);
+			file.WriteLine("");
+		}
+		
+		delete file;
+	}
 }
 
 static void ConVar_Add(const char[] name, const char[] value, bool enforce = true)
@@ -126,6 +156,18 @@ static void ConVar_Add(const char[] name, const char[] value, bool enforce = tru
 	}
 
 	CvarList.PushArray(info);
+}
+
+public void ConVar_OnlyChangeOnEmpty(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			cvar.SetString(oldValue);
+			break;
+		}
+	}
 }
 
 stock void ConVar_Remove(const char[] name)

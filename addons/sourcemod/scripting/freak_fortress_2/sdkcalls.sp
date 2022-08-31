@@ -169,7 +169,7 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 		SetEntProp(client, Prop_Send, "m_lifeState", state);
 	}
 	
-	if(CvarDisguiseModels.BoolValue)
+	if(Cvar[DisguiseModels].BoolValue)
 	{
 		if(newTeam % 2)
 		{

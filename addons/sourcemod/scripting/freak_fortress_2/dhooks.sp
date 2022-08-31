@@ -129,14 +129,14 @@ void DHook_HookClient(int client)
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
 	
-	if(ChangeTeam && CvarDisguiseModels.BoolValue)
+	if(ChangeTeam && Cvar[DisguiseModels].BoolValue)
 		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
 void DHook_HookBoss(int client)
 {
 	DHook_UnhookBoss(client);
-	if(ChangeTeam && CvarAggressiveSwap.BoolValue)
+	if(ChangeTeam && Cvar[AggressiveSwap].BoolValue)
 		ChangeTeamPreHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
 }
 
@@ -321,7 +321,7 @@ public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 
 public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 {
-	if(Enabled && CvarBossSapper.BoolValue)
+	if(Enabled && Cvar[BossSapper].BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
 		
@@ -351,7 +351,7 @@ public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 
 public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
 {
-	if(Enabled && CvarBossSapper.BoolValue)
+	if(Enabled && Cvar[BossSapper].BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 		
@@ -443,7 +443,7 @@ public MRESReturn DHook_RoundRespawn()
 
 public MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
-	if(Enabled && RoundStatus == 1 && CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
+	if(Enabled && RoundStatus == 1 && Cvar[SpecTeam].BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
 	{
 		Events_CheckAlivePlayers();
 		

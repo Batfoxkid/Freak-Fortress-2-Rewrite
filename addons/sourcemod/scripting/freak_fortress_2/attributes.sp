@@ -176,7 +176,7 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 				{
 					damagetype |= DMG_CRIT;
 					
-					if(CvarSoundType.BoolValue)
+					if(Cvar[SoundType].BoolValue)
 					{
 						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
 					}

@@ -325,7 +325,6 @@ void Weapons_ShowChanges(int client, int entity)
 		}
 		case KeyValType_Section:
 		{
-			//TODO: Check if econ data was compiled, if not give an error log
 			cfg = cfg.GetSection("attributes");
 
 			PackVal attributeValue;
@@ -357,10 +356,6 @@ void Weapons_ShowChanges(int client, int entity)
 							FormatValue(attributeValue.data, value, sizeof(value), type);
 							PrintSayText2(client, client, true, description, value);
 						}
-					}
-					else
-					{
-						LogError("Unknown attribute %s", key);
 					}
 				}
 			}
@@ -539,7 +534,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 							
-							if(CvarSoundType.BoolValue)
+							if(Cvar[SoundType].BoolValue)
 							{
 								Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, 2.0);
 							}

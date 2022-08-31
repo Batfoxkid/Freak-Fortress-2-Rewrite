@@ -193,7 +193,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						
-						if(CvarSoundType.BoolValue)
+						if(Cvar[SoundType].BoolValue)
 						{
 							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, 2.0))
 								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, 2.0);
@@ -287,7 +287,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					event.Cancel();
 					
-					if(CvarSoundType.BoolValue)
+					if(Cvar[SoundType].BoolValue)
 					{
 						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
 					}

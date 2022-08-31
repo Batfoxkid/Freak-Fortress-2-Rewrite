@@ -74,19 +74,19 @@ void Gamemode_RoundSetup()
 	{
 		if(Waiting)
 		{
-			CvarTournament.BoolValue = true;
-			CvarMovementFreeze.BoolValue = false;
+			Cvar[Tournament].BoolValue = true;
+			Cvar[MovementFreeze].BoolValue = false;
 			ServerCommand("mp_waitingforplayers_restart 1");
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
 			Goomba_RoundSetup();
 			
-			float preround = CvarPreroundTime.FloatValue;
+			float preround = Cvar[PreroundTime].FloatValue;
 			CreateTimer(preround / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
 			
-			int bosses = CvarBossVsBoss.IntValue;
+			int bosses = Cvar[BossVsBoss].IntValue;
 			if(bosses > 0)	// Boss vs Boss
 			{
 				int reds;
@@ -215,7 +215,7 @@ public void TF2_OnWaitingForPlayersStart()
 	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		Waiting = false;
-		CvarTournament.BoolValue = false;
+		Cvar[Tournament].BoolValue = false;
 		CreateTimer(4.0, Gamemode_TimerRespawn, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	}
 }
@@ -223,7 +223,7 @@ public void TF2_OnWaitingForPlayersStart()
 public void TF2_OnWaitingForPlayersEnd()
 {
 	if(Enabled)
-		CvarMovementFreeze.BoolValue = true;
+		Cvar[MovementFreeze].BoolValue = true;
 }
 
 public Action Gamemode_TimerRespawn(Handle timer)
@@ -304,10 +304,10 @@ public Action Gamemode_SetControlPoint(Handle timer)
 	if(!found)
 	{
 		char buffer[256];
-		CvarCaptureTime.GetString(buffer, sizeof(buffer));
+		Cvar[CaptureTime].GetString(buffer, sizeof(buffer));
 		time = ParseFormula(buffer, players);
 		
-		CvarCaptureAlive.GetString(buffer, sizeof(buffer));
+		Cvar[CaptureAlive].GetString(buffer, sizeof(buffer));
 		PointUnlock = RoundToCeil(ParseFormula(buffer, players));
 	}
 	
@@ -360,7 +360,7 @@ void Gamemode_RoundStart()
 	}
 	
 	char buffer[512];
-	bool specTeam = CvarSpecTeam.BoolValue;
+	bool specTeam = Cvar[SpecTeam].BoolValue;
 	for(int i; i < bosses; i++)
 	{
 		int team = GetClientTeam(boss[i]);
@@ -439,7 +439,7 @@ void Gamemode_RoundEnd(int winteam)
 	int[] teams = new int[MaxClients];
 	int total;
 	
-	bool overlay = CvarAggressiveOverlay.BoolValue;
+	bool overlay = Cvar[AggressiveOverlay].BoolValue;
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
@@ -541,7 +541,7 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	bool spec = CvarSpecTeam.BoolValue;
+	bool spec = Cvar[SpecTeam].BoolValue;
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		if(HasBoss[i] && bosses[i])
@@ -675,7 +675,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 {
 	if(!Enabled || RoundStatus == 1)
 	{
-		int setting = CvarHealthBar.IntValue;
+		int setting = Cvar[HealthBar].IntValue;
 		if(setting)
 		{
 			int lastCount, count;
@@ -802,7 +802,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				}
 			}
 			
-			float refresh = CvarRefreshTime.FloatValue;
+			float refresh = Cvar[RefreshTime].FloatValue;
 			if(setting == 1 || nobar)
 			{
 			}
@@ -961,7 +961,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 2) 
 			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
-				if (CvarPlayerGlow.BoolValue)
+				if (Cvar[PlayerGlow].BoolValue)
 				{
 					Gamemode_SetClientGlow(client, 5.0);
 				}
@@ -1045,13 +1045,13 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 
 void Gamemode_ConditionAdded(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
 		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
 }
 
 void Gamemode_ConditionRemoved(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
 	{
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
