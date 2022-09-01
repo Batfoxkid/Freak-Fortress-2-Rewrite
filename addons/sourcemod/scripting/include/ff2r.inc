@@ -88,6 +88,13 @@ native void FF2R_SetClientMinion(int client, bool value);
 native int FF2R_GetClientScore(int client, int &damage = 0, int &healing = 0, int &assist = 0);
 
 /**
+ * Gets the plugin's handle, useful in cases where ConfigMap cloning is needed
+ * 
+ * @return	FF2's plugin handle
+ */
+native Handle FF2R_GetPluginHandle();
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted
@@ -411,6 +418,16 @@ forward Action FF2R_OnBossPrecache(BossData cfg, bool &enabled);
  * @noreturn
  */
 forward void FF2R_OnBossPrecached(BossData cfg, bool enabled, int index);
+
+/**
+ * Called when a modifier is applied to a boss, only called if the modifier has no plugin name or named for your plugin
+ * 
+ * @param client	Client index
+ * @param cfg		Modifier ConfigMap
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnBossModifier(int client, ConfigData cfg);
 
 #else
 

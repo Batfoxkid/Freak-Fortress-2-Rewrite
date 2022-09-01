@@ -306,6 +306,21 @@
 	{
 		"vo/null.mp3"	"2"
 	}
+	
+	
+	"ff2r_default_abilities"
+	{
+		"health"	"1.0"
+		"nolives"	"0"
+		"nopassive"	"0"
+		
+		"multiply"
+		{
+		}
+		"override"
+		{
+		}
+	}
 */
 
 #include <sourcemod>
@@ -373,6 +388,8 @@ float WeighdownCurrentGravity[MAXTF2PLAYERS];
 
 float AnchorStartTime[MAXTF2PLAYERS];
 float AnchorLastAttrib[MAXTF2PLAYERS] = {-69.42, ...};
+
+bool NoAbilities[MAXTF2PLAYERS];
 
 ConVar CvarCheats;
 ConVar CvarFriendlyFire;
@@ -1183,6 +1200,7 @@ public void FF2R_OnBossRemoved(int client)
 	SpecialCharge[client] = false;
 	WeighdownAirTimeAt[client] = 0.0;
 	AnchorStartTime[client] = 0.0;
+	NoAbilities[client] = false;
 	
 	int length = BossTimers[client].Length;
 	for(int i; i<length; i++)
@@ -1205,6 +1223,12 @@ public void FF2R_OnBossRemoved(int client)
 		MobilityEnabled[client] = false;
 		SDKUnhook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 	}
+}
+
+public Action FF2R_OnAbilityPre(int client, const char[] ability, AbilityData cfg, bool &result)
+{
+	if(NoAbilities[client])
+		return Plugin_Stop;
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
@@ -1391,6 +1415,133 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	}
 	
 	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
+}
+
+public void FF2R_OnBossModifier(int client, ConfigData cfg)
+{
+	BossData boss = FF2R_GetBossData(client);
+	
+	if(cfg.GetBool("nolives"))
+	{
+		int lives = boss.GetInt("lives");
+		if(lives > 1)
+		{
+			boss.SetInt("lives", 1);
+			boss.SetInt("livesleft", 1);
+			
+			int health = boss.GetInt("maxhealth");
+			if(health)
+			{
+				boss.SetInt("maxhealth", health * lives);
+			}
+			else
+			{
+				float hp = float(GetClientMaxHealth(client) * (lives - 1));
+				
+				Address attrib = TF2Attrib_GetByDefIndex(client, 26);
+				if(attrib != Address_Null)
+					hp += TF2Attrib_GetValue(attrib);
+				
+				TF2Attrib_SetByDefIndex(client, 26, hp);
+			}
+			
+			SetEntityHealth(client, GetClientHealth(client) * lives);
+		}
+	}
+	
+	float multi = cfg.GetFloat("health");
+	if(multi > 0.0 && multi != 1.0)
+	{
+		int health = boss.GetInt("maxhealth");
+		if(health)
+		{
+			boss.SetInt("maxhealth", RoundToZero(float(health) * multi));
+		}
+		else
+			float hp = float(GetClientMaxHealth(client)) * (multi - 1.0);
+			
+			Address attrib = TF2Attrib_GetByDefIndex(client, 26);
+			if(attrib != Address_Null)
+				hp += TF2Attrib_GetValue(attrib);
+			
+			TF2Attrib_SetByDefIndex(client, 26, hp);
+		}
+		
+		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));
+	}
+	
+	if(cfg.GetBool("nopassive"))
+	{
+		NoAbilities[client] = true;
+		AnchorStartTime[client] = 0.0;
+		MobilityEnabled[client] = 0;
+		SpecialCharge[client] = false;
+		
+		if(boss.GetAbility("spawn_many_objects_on_kill").IsMyPlugin())
+			boss.Remove("spawn_many_objects_on_kill");
+	}
+	
+	ConfigData cfgsub = cfg.GetSection("multiply");
+	if(cfgsub)
+		ModifiyBoss(boss, cfgsub, true);
+	
+	cfgsub = cfg.GetSection("override");
+	if(cfgsub)
+		ModifiyBoss(boss, cfgsub, false);
+}
+
+static void ModifiyBoss(ConfigData boss, ConfigData cfg, bool type)
+{
+	StringMapSnapshot snap = cfg.Snapshot();
+	
+	int entries = snap.Length;
+	if(entries)
+	{
+		PackVal val;
+		for(int i; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i)+1;
+			char[] ability = new char[length];
+			snap.GetKey(i, ability, length);
+			cfg.GetArray(ability, val, sizeof(val));
+			switch(val.tag)
+			{
+				case KeyValType_Section:
+				{
+					if(val.cfg)
+					{
+						ConfigData sub = boss.GetSection(ability);
+						if(sub)
+						{
+							ModifiyBoss(sub, val.cfg, type);
+						}
+						else
+						{
+							boss.Remove(ability);
+							
+							val.cfg = val.cfg.Clone(FF2R_GetPluginHandle());
+							boss.SetArray(ability, val, sizeof(val));
+						}
+					}
+				}
+				case KeyValType_Value:
+				{
+					if(type)
+					{
+						float value = boss.GetFloat(ability, -69.42);
+						if(value != -69.42)
+							boss.SetFloat(ability, value * StringToFloat(val.data));
+					}
+					else
+					{
+						boss.SetString(ability, val.data);
+					}
+				}
+			}
+		}
+	}
+	
+	delete snap;
 }
 
 public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)

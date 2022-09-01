@@ -15,6 +15,7 @@ void Native_PluginLoad()
 	CreateNative("FF2R_GetClientMinion", Native_GetClientMinion);
 	CreateNative("FF2R_SetClientMinion", Native_SetClientMinion);
 	CreateNative("FF2R_GetClientScore", Native_GetClientScore);
+	CreateNative("FF2R_GetPluginHandle", Native_GetPluginHandle);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -160,4 +161,9 @@ public any Native_GetClientScore(Handle plugin, int params)
 	SetNativeCellRef(3, Client(client).Healing);
 	SetNativeCellRef(4, Client(client).Assist);
 	return Client(client).TotalDamage + Client(client).Healing + Client(client).TotalAssist;
+}
+
+public any Native_GetPluginHandle(Handle plugin, int params)
+{
+	return ThisPlugin;
 }

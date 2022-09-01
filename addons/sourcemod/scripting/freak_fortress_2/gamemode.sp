@@ -377,6 +377,7 @@ void Gamemode_RoundStart()
 				ServerCommand(buffer);
 			
 			Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
+			Preference_ApplyDifficulty(boss[i], boss[i], false);
 		}
 		
 		int maxhealth = Bosses_SetHealth(boss[i], amount);

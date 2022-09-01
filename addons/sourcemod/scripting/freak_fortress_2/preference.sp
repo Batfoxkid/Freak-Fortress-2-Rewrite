@@ -36,6 +36,7 @@ static int PartyChoice[MAXTF2PLAYERS];
 static int PartyMainBoss[MAXTF2PLAYERS];
 static int PartyInvite[MAXTF2PLAYERS][MAXTF2PLAYERS];
 static bool UpdateDataBase[MAXTF2PLAYERS];
+static char DiffOverride[MAXTF2PLAYERS][64];
 static ArrayList BossListing[MAXTF2PLAYERS];
 static ArrayList DiffListing[MAXTF2PLAYERS];
 
@@ -1627,8 +1628,12 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 {
 	if(Preference_HasDifficulties())
 	{
-		char choosen[128];
-		if(Cvar[PrefSpecial].BoolValue && Cvar[PrefSpecial].FloatValue >= GetURandomFloat())
+		char choosen[64];
+		if(!delay && DiffOverride[client][0])
+		{
+			strcopy(choosen, sizeof(choosen), DiffOverride[client]);
+		}
+		else if(Cvar[PrefSpecial].BoolValue && Cvar[PrefSpecial].FloatValue >= GetURandomFloat())
 		{
 			if(!DiffListing[leader])
 			{
@@ -1648,132 +1653,124 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 		
 		if(choosen[0])
 		{
-			ConfigMap cfg = Difficulties.GetSection(choosen);
-			if(cfg)
+			if(delay)
 			{
-				char buffer1[128];
-				StringMapSnapshot snap = Difficulties.Snapshot();
-				
-				PackVal val;
-				int entries = snap.Length;
-				for(int i; i < entries; i++)
+				strcopy(DiffOverride[client], sizeof(DiffOverride[]), choosen);
+			}
+			else
+			{
+				ConfigMap cfg = Difficulties.GetSection(choosen);
+				if(cfg)
 				{
-					int length = snap.KeyBufferSize(i)+5;
-					char[] section = new char[length];
-					snap.GetKey(i, section, length);
-					if(cfg.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
+					char buffer1[128];
+					StringMapSnapshot snap = Difficulties.Snapshot();
+					
+					PackVal val;
+					int entries = snap.Length;
+					for(int i; i < entries; i++)
 					{
-						Format(section, length, "%s.smx", section);
-						
-						length = -2;
-						
-						Handle iterator = GetPluginIterator();
-						
-						while(MorePlugins(iterator))
+						int length = snap.KeyBufferSize(i)+5;
+						char[] section = new char[length];
+						snap.GetKey(i, section, length);
+						if(cfg.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
 						{
-							Handle plugin = ReadPlugin(iterator);
-							GetPluginFilename(plugin, buffer1, sizeof(buffer1));
-							if(StrContains(buffer1, section, false) != -1)
+							Format(section, length, "%s.smx", section);
+							
+							length = -2;
+							
+							Handle iterator = GetPluginIterator();
+							
+							while(MorePlugins(iterator))
 							{
-								Function func = GetFunctionByName(plugin, "FF2R_OnBossModifier");
-								if(func != INVALID_FUNCTION)
+								Handle plugin = ReadPlugin(iterator);
+								GetPluginFilename(plugin, buffer1, sizeof(buffer1));
+								if(StrContains(buffer1, section, false) != -1)
 								{
-									Call_StartFunction(plugin, func);
-									Call_PushCell(client);
-									Call_PushCell(val.cfg);
-									length = Call_Finish();
+									Function func = GetFunctionByName(plugin, "FF2R_OnBossModifier");
+									if(func != INVALID_FUNCTION)
+									{
+										Call_StartFunction(plugin, func);
+										Call_PushCell(client);
+										Call_PushCell(val.cfg);
+										length = Call_Finish();
+									}
+									else
+									{
+										length = -1;
+									}
+									break;
 								}
-								else
-								{
-									length = -1;
-								}
-								break;
+							}
+							
+							delete iterator;
+							
+							switch(length)
+							{
+								case -2:
+									LogError("[Modifier] Plugin '%s' is missing for '%s'", section, choosen);
+								
+								case -1:
+									LogError("[Modifier] Plugin '%s' is does not have modifiers for '%s'", section, choosen);
 							}
 						}
-						
-						delete iterator;
-						
-						switch(length)
+					}
+					
+					delete snap;
+					
+					// Set "name_X" and "group_X" for any present on the boss
+					snap = Client(client).Cfg.Snapshot();
+					
+					char buffer2[64], buffer3[64], buffer4[64];
+					entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						snap.GetKey(i, buffer3, sizeof(buffer3));
+						if((!StrContains(buffer3, "name_") || !StrContains(buffer3, "group_")) && Client(client).Cfg.Get(buffer3, buffer2, sizeof(buffer2)))
 						{
-							case -2:
-								LogError("[Modifier] Plugin '%s' is missing for '%s'", section, choosen);
+							strcopy(buffer4, sizeof(buffer4), buffer3);
+							ReplaceStringEx(buffer4, sizeof(buffer4), "group_", "name_");
+							if(!cfg.Get(buffer4, buffer1, sizeof(buffer1)))
+							{
+								if(!cfg.Get("name", buffer1, sizeof(buffer1)))
+									strcopy(buffer1, sizeof(buffer1), choosen);
+							}
 							
-							case -1:
-								LogError("[Modifier] Plugin '%s' is does not have modifiers for '%s'", section, choosen);
-						}
-					}
-				}
-				
-				delete snap;
-				
-				// Set "name_X" and "group_X" for any present on the boss
-				snap = Client(client).Cfg.Snapshot();
-				
-				char buffer2[64], buffer3[64], buffer4[64];
-				entries = snap.Length;
-				for(int i; i < entries; i++)
-				{
-					snap.GetKey(i, buffer3, sizeof(buffer3));
-					if((!StrContains(buffer3, "name_") || !StrContains(buffer3, "group_")) && Client(client).Cfg.Get(buffer3, buffer2, sizeof(buffer2)))
-					{
-						strcopy(buffer4, sizeof(buffer4), buffer3);
-						ReplaceStringEx(buffer4, sizeof(buffer4), "group_", "name_");
-						if(!cfg.Get(buffer4, buffer1, sizeof(buffer1)))
-						{
-							if(!cfg.Get("name", buffer1, sizeof(buffer1)))
-								strcopy(buffer1, sizeof(buffer1), choosen);
-						}
-						
-						Format(buffer2, sizeof(buffer2), "%s [%s]", buffer2, buffer1);
-						Client(client).Cfg.Set(buffer3, buffer2);
-					}
-				}
-				
-				delete snap;
-				
-				snap = cfg.Snapshot();
-				
-				entries = snap.Length;
-				for(int i; i < entries; i++)
-				{
-					snap.GetKey(i, buffer3, sizeof(buffer3));
-					if(!StrContains(buffer3, "name_") && cfg.Get(buffer3, buffer2, sizeof(buffer2)))
-					{
-						// Set "name_X" for any present on the diff but not on the boss
-						if(!Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)))
-						{
-							Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
-							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
-							Client(client).Cfg.Set(buffer3, buffer2);
-						}
-						
-						// Set "group_X" for any present on the diff but not on the boss but has a group
-						if(ReplaceStringEx(buffer3, sizeof(buffer3), "name_", "group_") != -1 && !Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)) && Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
-						{
-							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer2, buffer1);
 							Client(client).Cfg.Set(buffer3, buffer2);
 						}
 					}
-				}
-				
-				delete snap;
-				
-				// Set "name"
-				Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
-				if(cfg.Get("name", buffer2, sizeof(buffer2)))
-				{
-					Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
-				}
-				else
-				{
-					Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, choosen);
-				}
-				
-				Client(client).Cfg.Set("name", buffer2);
-				
-				// Set "group"
-				if(Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
-				{
+					
+					delete snap;
+					
+					snap = cfg.Snapshot();
+					
+					entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						snap.GetKey(i, buffer3, sizeof(buffer3));
+						if(!StrContains(buffer3, "name_") && cfg.Get(buffer3, buffer2, sizeof(buffer2)))
+						{
+							// Set "name_X" for any present on the diff but not on the boss
+							if(!Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)))
+							{
+								Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
+								Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+								Client(client).Cfg.Set(buffer3, buffer2);
+							}
+							
+							// Set "group_X" for any present on the diff but not on the boss but has a group
+							if(ReplaceStringEx(buffer3, sizeof(buffer3), "name_", "group_") != -1 && !Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)) && Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
+							{
+								Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+								Client(client).Cfg.Set(buffer3, buffer2);
+							}
+						}
+					}
+					
+					delete snap;
+					
+					// Set "name"
+					Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
 					if(cfg.Get("name", buffer2, sizeof(buffer2)))
 					{
 						Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
@@ -1783,7 +1780,22 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 						Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, choosen);
 					}
 					
-					Client(client).Cfg.Set("group", buffer2);
+					Client(client).Cfg.Set("name", buffer2);
+					
+					// Set "group"
+					if(Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
+					{
+						if(cfg.Get("name", buffer2, sizeof(buffer2)))
+						{
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+						}
+						else
+						{
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, choosen);
+						}
+						
+						Client(client).Cfg.Set("group", buffer2);
+					}
 				}
 			}
 		}
