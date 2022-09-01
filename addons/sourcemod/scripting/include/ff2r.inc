@@ -1,9 +1,9 @@
-#include <sdktools_sound>
-
 #if defined _ff2r_included
 	#endinput
 #endif
 #define _ff2r_included
+
+#include <sdktools_sound>
 
 #define SNDVOL_BOSS	2.0
 

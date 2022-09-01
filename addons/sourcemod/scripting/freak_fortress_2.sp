@@ -22,7 +22,7 @@
 
 #define PLUGIN_VERSION			"1.1"
 #define PLUGIN_VERSION_REVISION	"custom"
-#define PLUGIN_VERSION_FULL	"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
+#define PLUGIN_VERSION_FULL		"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -31,7 +31,7 @@
 #define MINOR_REVISION	11
 #define STABLE_REVISION	0
 
-#define GITHUB_URL	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+#define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
 #define FAR_FUTURE		100000000.0
 #define MAXENTITIES		2048
@@ -119,13 +119,13 @@ enum SectionType
 {
 	Section_Unknown = 0,
 	Section_Ability,	// ability | Ability Name
-	Section_Map,	// map_
-	Section_Weapon,	// weapon | wearable | tf_ | saxxy
-	Section_Sound,	// sound_ | catch_
+	Section_Map,		// map_
+	Section_Weapon,		// weapon | wearable | tf_ | saxxy
+	Section_Sound,		// sound_ | catch_
 	Section_ModCache,	// mod_precache
 	Section_Precache,	// precache
 	Section_Download,	// download
-	Section_Model,	// mod_download
+	Section_Model,		// mod_download
 	Section_Material	// mat_download
 };
 
@@ -279,6 +279,9 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
 	
+	if(!TranslationPhraseExists("Difficulty Menu"))
+		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
+	
 	PlayerHud = CreateHudSynchronizer();
 	
 	Attributes_PluginStart();
@@ -338,6 +341,7 @@ public void OnConfigsExecuted()
 	
 	Bosses_BuildPacks(Charset, mapname);
 	ConVar_ConfigsExecuted();
+	Preference_ConfigsExecuted();
 	Weapons_ConfigsExecuted();
 }
 

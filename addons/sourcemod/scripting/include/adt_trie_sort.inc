@@ -26,33 +26,31 @@ SortedSnapshot CreateSortedSnapshot(Handle map, SortOrder order = Sort_Ascending
 {
 	ArrayList list;
 	StringMapSnapshot snap = view_as<StringMapSnapshot>(CreateTrieSnapshot(map));
-	if(snap)
+	
+	list = new ArrayList(ByteCountToCells(ADTTRIESORTSIZE));
+	
+	int entires = snap.Length;
+	for(int i; i < entires; i++)
 	{
-		list = new ArrayList(ByteCountToCells(ADTTRIESORTSIZE));
+		int length = snap.KeyBufferSize(i) + 1;
+		if(length > ADTTRIESORTSIZE)
+			length = ADTTRIESORTSIZE;
 		
-		int entires = snap.Length;
-		for(int i; i < entires; i++)
-		{
-			int length = snap.KeyBufferSize(i) + 1;
-			if(length > ADTTRIESORTSIZE)
-				length = ADTTRIESORTSIZE;
-			
-			char[] buffer = new char[length];
-			snap.GetKey(i, buffer, length);
-			
-			list.PushString(buffer);
-		}
+		char[] buffer = new char[length];
+		snap.GetKey(i, buffer, length);
 		
-		delete snap;
-		
-		if(order == Sort_Random)
-		{
-			list.Sort(order, Sort_String);
-		}
-		else
-		{
-			list.SortCustom(_SortedSnapshotSorting, order == Sort_Ascending ? map : INVALID_HANDLE);
-		}
+		list.PushString(buffer);
+	}
+	
+	delete snap;
+	
+	if(order == Sort_Random)
+	{
+		list.Sort(order, Sort_String);
+	}
+	else
+	{
+		list.SortCustom(_SortedSnapshotSorting, order == Sort_Ascending ? map : INVALID_HANDLE);
 	}
 	return view_as<SortedSnapshot>(list);
 }

@@ -34,9 +34,7 @@ void Music_PluginStart()
 
 void Music_ClearPlaylist()
 {
-	if(Playlist)
-		delete Playlist;
-	
+	delete Playlist;
 	Playlist = new ArrayList(sizeof(MusicEnum));
 }
 

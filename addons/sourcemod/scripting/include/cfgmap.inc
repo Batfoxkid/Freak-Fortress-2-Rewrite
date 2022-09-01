@@ -40,15 +40,6 @@ enum KeyValType {
 	KeyValType_Value,    /// char[*]
 };
 
-#if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR<11
-enum struct PackVal {
-	char       data[512];
-	ConfigMap  cfg;
-	int        size;
-	KeyValType tag;
-}
-#endif
-
 enum { SEC_SCOPE_SIZE=512 };
 enum struct KeyValState {
 	SMCParser  parser;
@@ -74,7 +65,6 @@ enum struct KeyValState {
 }
 
 static KeyValState g_kvstate;
-
 
 methodmap ConfigMap < StringMap {
 	public ConfigMap(const char[] filename) {
@@ -652,14 +642,12 @@ methodmap ConfigMap < StringMap {
 	}
 };
 
-#if SOURCEMOD_V_MAJOR!=1 || SOURCEMOD_V_MINOR>10
 enum struct PackVal {
 	char       data[512];
 	ConfigMap  cfg;
 	int        size;
 	KeyValType tag;
 }
-#endif
 
 public SMCResult ConfigMap_OnNewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
@@ -787,9 +775,6 @@ stock void DeleteCfg(ConfigMap cfg, bool clear_only=false) {
 	}
 	
 	StringMapSnapshot snap = cfg.Snapshot();
-	if( snap==null ) {
-		return;
-	}
 	int entries = snap.Length;
 	for( int i; i<entries; i++ ) {
 		int strsize = snap.KeyBufferSize(i) + 1;
@@ -816,9 +801,6 @@ stock void PrintCfg(ConfigMap cfg) {
 	}
 	
 	StringMapSnapshot snap = cfg.Snapshot();
-	if( snap==null ) {
-		return;
-	}
 	int entries = snap.Length;
 	for( int i; i<entries; i++ ) {
 		int strsize = snap.KeyBufferSize(i) + 1;
@@ -853,9 +835,6 @@ static stock void ReplaceEscapeSeq(char[] str, int size)
 static stock bool ConfigMapToFile(const ConfigMap cfg, const char[] sec_name, const File file, int deep = 0)
 {
 	StringMapSnapshot snap = cfg.Snapshot();
-	if( snap==null ) {
-		return false;
-	}
 	
 	char[] tab = new char[deep];
 	for( int i; i<deep; i++ ) {
@@ -895,9 +874,6 @@ static stock bool ConfigMapToFile(const ConfigMap cfg, const char[] sec_name, co
 static stock bool CloneConfigMap(const ConfigMap cfg, ConfigMap new_cfg, Handle new_owner_pl)
 {
 	StringMapSnapshot snap = cfg.Snapshot();
-	if( !snap ) {
-		return false;
-	}
 	int size = snap.Length;
 	for( int i; i<size; i++ ) {
 		int strsize = snap.KeyBufferSize(i) + 1;

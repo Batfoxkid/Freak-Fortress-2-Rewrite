@@ -11,8 +11,8 @@
 	bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
 	bool Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
 	bool Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
-	void Bosses_CreateFromSpecial(int client, int special, int team)
-	void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
+	void Bosses_CreateFromSpecial(int client, int special, int team, int leader = 0)
+	void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0)
 	void Bosses_SetHealth(int client, int players)
 	void Bosses_Equip(int client)
 	void Bosses_UpdateHealth(int client)
@@ -272,9 +272,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	
 	BossList = new ArrayList();
 	
-	if(PackList)
-		delete PackList;
-	
+	delete PackList;
 	PackList = new ArrayList(64, 0);
 	// TODO: Hidden boss packs or boss pack settings
 	
@@ -321,9 +319,6 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						continue;
 					
 					StringMapSnapshot snapSub = cfgSub.Snapshot();
-					if(!snapSub)
-						continue;
-					
 					if(snapSub.Length)
 						pack++;
 					
@@ -348,9 +343,6 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				continue;
 			
 			SortedSnapshot snapSub = CreateSortedSnapshot(cfgSub);
-			if(!snapSub)
-				continue;
-			
 			int entriesSub = snapSub.Length;
 			if(entriesSub)
 			{
@@ -612,26 +604,23 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	// Delete the full ConfigMap but not our needed ConfigMap
 	PackVal val;
 	StringMapSnapshot snap = full.Snapshot();
-	if(snap)
+	
+	int entries = snap.Length;
+	for(int i; i < entries; i++)
 	{
-		int entries = snap.Length;
-		for(int i; i < entries; i++)
-		{
-			int length = snap.KeyBufferSize(i)+1;
-			char[] key = new char[length];
-			snap.GetKey(i, key, length);
-			full.GetArray(key, val, sizeof(val));
-			
-			if(val.tag == KeyValType_Section)
-			{
-				if(val.cfg != cfg)
-					DeleteCfg(val.cfg);
-			}
-		}
+		int length = snap.KeyBufferSize(i)+1;
+		char[] key = new char[length];
+		snap.GetKey(i, key, length);
+		full.GetArray(key, val, sizeof(val));
 		
-		delete snap;
+		if(val.tag == KeyValType_Section)
+		{
+			if(val.cfg != cfg)
+				DeleteCfg(val.cfg);
+		}
 	}
 	
+	delete snap;
 	delete full;
 	
 	if(action != Plugin_Handled)
@@ -642,34 +631,33 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			if(cfgsub)
 			{
 				snap = cfgsub.Snapshot();
-				if(snap)
+				
+				entries = snap.Length;
+				if(entries)
 				{
-					int entries = snap.Length;
-					if(entries)
+					int size;
+					for(int i; i < entries; i++)
 					{
-						int size;
-						for(int i; i < entries; i++)
+						int length = snap.KeyBufferSize(i)+1;
+						if(size > length)
+							continue;
+						
+						char[] mapname = new char[length];
+						snap.GetKey(i, mapname, length);
+						cfgsub.GetArray(mapname, val, sizeof(val));
+						if(val.tag != KeyValType_Value)
+							continue;
+						
+						int amount = ReplaceString(mapname, length, "*", "");
+						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 						{
-							int length = snap.KeyBufferSize(i)+1;
-							if(size > length)
-								continue;
-							
-							char[] mapname = new char[length];
-							snap.GetKey(i, mapname, length);
-							cfgsub.GetArray(mapname, val, sizeof(val));
-							if(val.tag != KeyValType_Value)
-								continue;
-							
-							int amount = ReplaceString(mapname, length, "*", "");
-							if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
-							{
-								precache = view_as<bool>(StringToInt(val.data));
-								size = length;
-							}
+							precache = view_as<bool>(StringToInt(val.data));
+							size = length;
 						}
 					}
-					delete snap;
 				}
+				
+				delete snap;
 			}
 			else
 			{
@@ -678,12 +666,43 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 				if(cfgsub)
 				{
 					snap = cfgsub.Snapshot();
-					if(snap)
+					
+					entries = snap.Length;
+					if(entries)
 					{
-						int entries = snap.Length;
+						bool found;
+						for(int i; i < entries; i++)
+						{
+							int length = snap.KeyBufferSize(i)+1;
+							char[] key = new char[length];
+							snap.GetKey(i, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							if(val.tag != KeyValType_Value)
+								continue;
+							
+							if(!StrContains(map, val.data, false))
+							{
+								found = true;
+								break;
+							}
+						}
+						
+						if(!found)
+							precache = false;
+					}
+					
+					delete snap;
+				}
+				else
+				{
+					cfgsub = cfg.GetSection("map_exclude");
+					if(cfgsub)
+					{
+						snap = cfgsub.Snapshot();
+						
+						entries = snap.Length;
 						if(entries)
 						{
-							bool found;
 							for(int i; i < entries; i++)
 							{
 								int length = snap.KeyBufferSize(i)+1;
@@ -695,46 +714,13 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								
 								if(!StrContains(map, val.data, false))
 								{
-									found = true;
+									precache = false;
 									break;
 								}
 							}
-							
-							if(!found)
-								precache = false;
 						}
+						
 						delete snap;
-					}
-				}
-				else
-				{
-					cfgsub = cfg.GetSection("map_exclude");
-					if(cfgsub)
-					{
-						snap = cfgsub.Snapshot();
-						if(snap)
-						{
-							int entries = snap.Length;
-							if(entries)
-							{
-								for(int i; i < entries; i++)
-								{
-									int length = snap.KeyBufferSize(i)+1;
-									char[] key = new char[length];
-									snap.GetKey(i, key, length);
-									cfgsub.GetArray(key, val, sizeof(val));
-									if(val.tag != KeyValType_Value)
-										continue;
-									
-									if(!StrContains(map, val.data, false))
-									{
-										precache = false;
-										break;
-									}
-								}
-							}
-							delete snap;
-						}
 					}
 				}
 			}
@@ -750,307 +736,317 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 		bool clean = !Cvar[Debugging].BoolValue;
 		
 		snap = cfg.Snapshot();
-		if(snap)
+		
+		entries = snap.Length;
+		if(entries)
 		{
-			int entries = snap.Length;
-			if(entries)
+			char buffer2[PLATFORM_MAX_PATH];
+			for(int i; i < entries; i++)
 			{
-				char buffer2[PLATFORM_MAX_PATH];
-				for(int i; i < entries; i++)
+				int length = snap.KeyBufferSize(i)+1;
+				char[] section = new char[length];
+				snap.GetKey(i, section, length);
+				cfg.GetArray(section, val, sizeof(val));
+				if(val.tag != KeyValType_Section)
+					continue;
+				
+				ConfigMap cfgsub = val.cfg;
+				if(!cfgsub)
+					continue;
+				
+				if(!precache)
 				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] section = new char[length];
-					snap.GetKey(i, section, length);
-					cfg.GetArray(section, val, sizeof(val));
-					if(val.tag != KeyValType_Section)
-						continue;
-					
-					ConfigMap cfgsub = val.cfg;
-					if(!cfgsub)
-						continue;
-					
-					if(!precache)
+					if(clean)
 					{
-						if(clean)
-						{
-							DeleteCfg(cfgsub);
-							cfg.Remove(section);
-						}
-						continue;
+						DeleteCfg(cfgsub);
+						cfg.Remove(section);
 					}
-					
-					StringMapSnapshot snapsub = cfgsub.Snapshot();
-					if(!snapsub)
-						continue;
-					
-					static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
-					static const char MatExts[][] = {"vtf", "vmt"};
-					
-					int entriessub = snapsub.Length;
-					switch(GetSectionType(section))
+					continue;
+				}
+				
+				static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
+				static const char MatExts[][] = {"vtf", "vmt"};
+				
+				StringMapSnapshot snapsub = cfgsub.Snapshot();
+				int entriessub = snapsub.Length;
+				
+				switch(GetSectionType(section))
+				{
+					case Section_Ability:
 					{
-						case Section_Ability:
+						if(!StrContains(section, "ability") && cfgsub.Get("name", buffer, sizeof(buffer)))
 						{
-							if(!StrContains(section, "ability") && cfgsub.Get("name", buffer, sizeof(buffer)))
+							cfgsub.DeleteSection("name");
+							cfg.Remove(section);
+							cfg.SetArray(buffer, val, sizeof(val));
+						}
+					}
+					case Section_Weapon:
+					{
+						if(cfgsub.Get("worldmodel", buffer, sizeof(buffer)) && buffer[0])
+						{
+							if(FileExists(buffer, true))
 							{
-								cfgsub.DeleteSection("name");
-								cfg.Remove(section);
-								cfg.SetArray(buffer, val, sizeof(val));
+								cfgsub.SetInt("worldmodel", PrecacheModel(buffer));
+							}
+							else
+							{
+								cfgsub.DeleteSection("worldmodel");
+								LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 							}
 						}
-						case Section_Weapon:
+						
+						/*if(!StrContains(section, "weapon") || !StrContains(section, "wearable"))
 						{
-							if(cfgsub.Get("worldmodel", buffer, sizeof(buffer)) && buffer[0])
-							{
-								if(FileExists(buffer, true))
-								{
-									cfgsub.SetInt("worldmodel", PrecacheModel(buffer));
-								}
-								else
-								{
-									cfgsub.DeleteSection("worldmodel");
-									LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-								}
-							}
+							cfgsub.DeleteSection("name");
+							cfg.Remove(section);
+							if(!cfgsub.Get("name", buffer, sizeof(buffer)))
+								strcopy(buffer, sizeof(buffer), "tf_wearable");
 							
-							/*if(!StrContains(section, "weapon") || !StrContains(section, "wearable"))
-							{
-								cfgsub.DeleteSection("name");
-								cfg.Remove(section);
-								if(!cfgsub.Get("name", buffer, sizeof(buffer)))
-									strcopy(buffer, sizeof(buffer), "tf_wearable");
-								
-								cfg.SetArray(buffer, val, sizeof(val));
-							}*/
-						}
-						case Section_Sound:
+							cfg.SetArray(buffer, val, sizeof(val));
+						}*/
+					}
+					case Section_Sound:
+					{
+						bool bgm = StrEqual(section, "sound_bgm");
+						for(int a; a < entriessub; a++)
 						{
-							bool bgm = StrEqual(section, "sound_bgm");
-							for(int a; a < entriessub; a++)
+							int length2 = snapsub.KeyBufferSize(a)+2;
+							char[] key = new char[length2];
+							snapsub.GetKey(a, key, length2);
+							cfgsub.GetArray(key, val, sizeof(val));
+							switch(val.tag)
 							{
-								int length2 = snapsub.KeyBufferSize(a)+2;
-								char[] key = new char[length2];
-								snapsub.GetKey(a, key, length2);
-								cfgsub.GetArray(key, val, sizeof(val));
-								switch(val.tag)
+								case KeyValType_Section:
 								{
-									case KeyValType_Section:
+									bool music = bgm;
+									if(!music)
 									{
-										bool music = bgm;
-										if(!music)
+										ConfigMap cfgsound = val.cfg;
+										if(cfgsound)
+											music = view_as<bool>(cfgsound.GetInt("time", length2));
+									}
+									
+									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+									{
+										if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
 										{
-											ConfigMap cfgsound = val.cfg;
-											if(cfgsound)
-												music = view_as<bool>(cfgsound.GetInt("time", length2));
+											cfgsub.Remove(key);
+											Format(key, length2, "#%s", key);
+											cfgsub.SetArray(key, val, sizeof(val));
 										}
 										
-										if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+										PrecacheSound(key);
+									}
+									else
+									{
+										PrecacheScriptSound(key);
+									}
+									
+									if(music)
+										Music_AddSong(special, section, key);
+								}
+								case KeyValType_Value:
+								{
+									if(IsNotExtraArg(key))
+									{
+										strcopy(buffer, sizeof(buffer), val.data);
+										
+										bool music = bgm;
+										if(length2 > val.size)	// "example.mp3"	""
 										{
-											if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
+											if(!music)
 											{
-												cfgsub.Remove(key);
-												Format(key, length2, "#%s", key);
-												cfgsub.SetArray(key, val, sizeof(val));
+												Format(buffer, sizeof(buffer), "%smusic", buffer);
+												music = view_as<bool>(cfgsub.GetInt(section, length2));
 											}
 											
-											PrecacheSound(key);
+											if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
+											{
+												if(music && StrContains(key, "#") != 0)
+												{
+													cfgsub.Remove(key);
+													Format(key, length2, "#%s", key);
+													cfgsub.SetArray(key, val, sizeof(val));
+												}
+												
+												PrecacheSound(key);
+											}
+											else
+											{
+												PrecacheScriptSound(key);
+											}
 										}
-										else
+										else	// "1"	"example.mp3"
 										{
-											PrecacheScriptSound(key);
+											if(!music)
+											{
+												Format(buffer2, sizeof(buffer2), "%smusic", key);
+												music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
+											}
+											
+											if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
+											{
+												if(music && StrContains(buffer, "#") != 0)
+												{
+													Format(buffer, sizeof(buffer), "#%s", buffer);
+													cfgsub.Set(key, buffer);
+												}
+												
+												PrecacheSound(buffer);
+											}
+											else
+											{
+												PrecacheScriptSound(buffer);
+											}
+											
+											Format(buffer2, sizeof(buffer2), "slot%s", key);
+											if(!cfgsub.GetInt(buffer2, length))
+												cfgsub.SetInt(buffer2, 0);
 										}
 										
 										if(music)
 											Music_AddSong(special, section, key);
 									}
-									case KeyValType_Value:
-									{
-										if(IsNotExtraArg(key))
-										{
-											strcopy(buffer, sizeof(buffer), val.data);
-											
-											bool music = bgm;
-											if(length2 > val.size)	// "example.mp3"	""
-											{
-												if(!music)
-												{
-													Format(buffer, sizeof(buffer), "%smusic", buffer);
-													music = view_as<bool>(cfgsub.GetInt(section, length2));
-												}
-												
-												if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
-												{
-													if(music && StrContains(key, "#") != 0)
-													{
-														cfgsub.Remove(key);
-														Format(key, length2, "#%s", key);
-														cfgsub.SetArray(key, val, sizeof(val));
-													}
-													
-													PrecacheSound(key);
-												}
-												else
-												{
-													PrecacheScriptSound(key);
-												}
-											}
-											else	// "1"	"example.mp3"
-											{
-												if(!music)
-												{
-													Format(buffer2, sizeof(buffer2), "%smusic", key);
-													music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
-												}
-												
-												if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
-												{
-													if(music && StrContains(buffer, "#") != 0)
-													{
-														Format(buffer, sizeof(buffer), "#%s", buffer);
-														cfgsub.Set(key, buffer);
-													}
-													
-													PrecacheSound(buffer);
-												}
-												else
-												{
-													PrecacheScriptSound(buffer);
-												}
-												
-												Format(buffer2, sizeof(buffer2), "slot%s", key);
-												if(!cfgsub.GetInt(buffer2, length))
-													cfgsub.SetInt(buffer2, 0);
-											}
-											
-											if(music)
-												Music_AddSong(special, section, key);
-										}
-									}
 								}
 							}
 						}
-						case Section_Precache:
+					}
+					case Section_Precache:
+					{
+						for(int a; a < entriessub; a++)
 						{
-							for(int a; a < entriessub; a++)
+							length = snapsub.KeyBufferSize(a)+1;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
 							{
-								length = snapsub.KeyBufferSize(a)+1;
-								char[] key = new char[length];
-								snapsub.GetKey(a, key, length);
-								cfgsub.GetArray(key, val, sizeof(val));
-								
-								if(!key[0] || !IsNotExtraArg(key))
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
 								{
-									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-									continue;
-								}
-								
-								switch(val.tag)
-								{
-									case KeyValType_Section:
+									if(!FileExists(key, true))
 									{
-										if(!FileExists(key, true))
-										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-										}
-										else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
-										{
-											PrecacheSound(key);
-										}
-										else
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+									}
+									else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+									{
+										PrecacheSound(key);
+									}
+									else
+									{
+										PrecacheModel(key);
+									}
+								}
+								case KeyValType_Value:
+								{
+									if(length > val.size)	// "models/example.mdl"	"mdl"
+									{
+										if(val.data[0] == 'm')	// mdl, model, mat, material
 										{
 											PrecacheModel(key);
 										}
-									}
-									case KeyValType_Value:
-									{
-										if(length > val.size)	// "models/example.mdl"	"mdl"
+										else if(val.data[0] == 'g' || val.data[2] == 'r')	// gs, gamesound, script
 										{
-											if(val.data[0] == 'm')	// mdl, model, mat, material
+											PrecacheScriptSound(key);
+										}
+										else if(val.data[0] == 's')
+										{
+											if(val.data[1] == 'e')	// sentence
 											{
-												PrecacheModel(key);
+												PrecacheSentenceFile(key);
 											}
-											else if(val.data[0] == 'g' || val.data[2] == 'r')	// gs, gamesound, script
+											else	// snd, sound
 											{
-												PrecacheScriptSound(key);
-											}
-											else if(val.data[0] == 's')
-											{
-												if(val.data[1] == 'e')	// sentence
-												{
-													PrecacheSentenceFile(key);
-												}
-												else	// snd, sound
-												{
-													PrecacheSound(key);
-												}
-											}
-											else if(val.data[0] == 'd')	// decal
-											{
-												PrecacheDecal(key);
-											}
-											else if(val.data[0])	// generic
-											{
-												PrecacheGeneric(key);
+												PrecacheSound(key);
 											}
 										}
-										else			// "mdl"	"models/example.mdl"
+										else if(val.data[0] == 'd')	// decal
 										{
-											if(key[0] == 'm')	// mdl, model, mat, material
+											PrecacheDecal(key);
+										}
+										else if(val.data[0])	// generic
+										{
+											PrecacheGeneric(key);
+										}
+									}
+									else			// "mdl"	"models/example.mdl"
+									{
+										if(key[0] == 'm')	// mdl, model, mat, material
+										{
+											PrecacheModel(val.data);
+										}
+										else if(key[0] == 'g' || key[2] == 'r')	// gs, gamesound, script
+										{
+											PrecacheScriptSound(val.data);
+										}
+										else if(key[0] == 's')
+										{
+											if(key[1] == 'e')	// sentence
 											{
-												PrecacheModel(val.data);
+												PrecacheSentenceFile(val.data);
 											}
-											else if(key[0] == 'g' || key[2] == 'r')	// gs, gamesound, script
+											else	// snd, sound
 											{
-												PrecacheScriptSound(val.data);
+												PrecacheSound(val.data);
 											}
-											else if(key[0] == 's')
-											{
-												if(key[1] == 'e')	// sentence
-												{
-													PrecacheSentenceFile(val.data);
-												}
-												else	// snd, sound
-												{
-													PrecacheSound(val.data);
-												}
-											}
-											else if(key[0] == 'd')	// decal
-											{
-												PrecacheDecal(val.data);
-											}
-											else if(key[0])	// generic
-											{
-												PrecacheGeneric(val.data);
-											}
+										}
+										else if(key[0] == 'd')	// decal
+										{
+											PrecacheDecal(val.data);
+										}
+										else if(key[0])	// generic
+										{
+											PrecacheGeneric(val.data);
 										}
 									}
 								}
-							}
-							
-							if(clean)
-							{
-								DeleteCfg(cfgsub);
-								cfg.Remove(section);
 							}
 						}
-						case Section_ModCache:
+						
+						if(clean)
 						{
-							for(int a; a < entriessub; a++)
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
+					}
+					case Section_ModCache:
+					{
+						for(int a; a < entriessub; a++)
+						{
+							length = snapsub.KeyBufferSize(a)+1;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
 							{
-								length = snapsub.KeyBufferSize(a)+1;
-								char[] key = new char[length];
-								snapsub.GetKey(a, key, length);
-								cfgsub.GetArray(key, val, sizeof(val));
-								
-								if(!key[0] || !IsNotExtraArg(key))
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
 								{
-									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-									continue;
+									if(FileExists(key, true))
+									{
+										PrecacheModel(key);
+									}
+									else
+									{
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+									}
 								}
-								
-								switch(val.tag)
+								case KeyValType_Value:
 								{
-									case KeyValType_Section:
+									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
 										if(FileExists(key, true))
 										{
@@ -1061,175 +1057,76 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 										}
 									}
-									case KeyValType_Value:
+									else if(val.data[0])	// "1"	"models/example.mdl"
 									{
-										if(length > val.size)	// "models/example.mdl"	"mdl"
+										if(FileExists(val.data, true))
 										{
-											if(FileExists(key, true))
-											{
-												PrecacheModel(key);
-											}
-											else
-											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-											}
-										}
-										else if(val.data[0])	// "1"	"models/example.mdl"
-										{
-											if(FileExists(val.data, true))
-											{
-												PrecacheModel(val.data);
-											}
-											else
-											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
-											}
-										}
-									}
-								}
-							}
-							
-							if(clean)
-							{
-								DeleteCfg(cfgsub);
-								cfg.Remove(section);
-							}
-						}
-						case Section_Download:
-						{
-							for(int a; a < entriessub; a++)
-							{
-								length = snapsub.KeyBufferSize(a)+1;
-								char[] key = new char[length];
-								snapsub.GetKey(a, key, length);
-								cfgsub.GetArray(key, val, sizeof(val));
-								
-								if(!key[0] || !IsNotExtraArg(key))
-								{
-									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-									continue;
-								}
-								
-								switch(val.tag)
-								{
-									case KeyValType_Section:
-									{
-										if(FileExists(key, true))
-										{
-											AddToStringTable(DownloadTable, key);
+											PrecacheModel(val.data);
 										}
 										else
 										{
-											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-										}
-									}
-									case KeyValType_Value:
-									{
-										if(length > val.size)	// "models/example"	"mdl"
-										{
-											if(val.data[1] == 'a')	// mat, material
-											{
-												for(int b; b < sizeof(MatExts); b++)
-												{
-													FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-													if(FileExists(buffer, true))
-													{
-														AddToStringTable(DownloadTable, buffer);
-													}
-													else
-													{
-														LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-													}
-												}
-												continue;
-											}
-											else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
-											{
-												for(int b; b < sizeof(MdlExts); b++)
-												{
-													FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-													if(FileExists(buffer, true))
-													{
-														if(b)
-															AddToStringTable(DownloadTable, buffer);
-													}
-													else if(b != sizeof(MdlExts)-1)
-													{
-														LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-														break;
-													}
-												}
-											}
-											else
-											{
-												if(FileExists(key, true))
-												{
-													AddToStringTable(DownloadTable, key);
-												}
-												else
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
-												}
-											}
-										}
-										else			// "1"	"sound/example.mp3"
-										{
-											if(FileExists(val.data, true))
-											{
-												AddToStringTable(DownloadTable, val.data);
-											}
-											else
-											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
-											}
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
 										}
 									}
 								}
-							}
-							
-							if(clean)
-							{
-								DeleteCfg(cfgsub);
-								cfg.Remove(section);
 							}
 						}
-						case Section_Model:
+						
+						if(clean)
 						{
-							for(int a; a < entriessub; a++)
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
+					}
+					case Section_Download:
+					{
+						for(int a; a < entriessub; a++)
+						{
+							length = snapsub.KeyBufferSize(a)+1;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
 							{
-								length = snapsub.KeyBufferSize(a)+10;
-								char[] key = new char[length];
-								snapsub.GetKey(a, key, length);
-								cfgsub.GetArray(key, val, sizeof(val));
-								
-								if(!key[0] || !IsNotExtraArg(key))
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
 								{
-									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-									continue;
-								}
-								
-								switch(val.tag)
-								{
-									case KeyValType_Section:
+									if(FileExists(key, true))
 									{
-										for(int b; b < sizeof(MdlExts); b++)
+										AddToStringTable(DownloadTable, key);
+									}
+									else
+									{
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+									}
+								}
+								case KeyValType_Value:
+								{
+									if(length > val.size)	// "models/example"	"mdl"
+									{
+										if(val.data[1] == 'a')	// mat, material
 										{
-											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-											if(FileExists(buffer, true))
+											for(int b; b < sizeof(MatExts); b++)
 											{
-												if(b)
+												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
+												if(FileExists(buffer, true))
+												{
 													AddToStringTable(DownloadTable, buffer);
+												}
+												else
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												}
 											}
-											else if(b != sizeof(MdlExts)-1)
-											{
-												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-												break;
-											}
+											continue;
 										}
-									}
-									case KeyValType_Value:
-									{
-										if(length > val.size)	// "models/example"	"mdl"
+										else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
 										{
 											for(int b; b < sizeof(MdlExts); b++)
 											{
@@ -1246,51 +1143,154 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												}
 											}
 										}
-										else			// "1"	"models/example"
+										else
 										{
-											for(int b; b < sizeof(MdlExts); b++)
+											if(FileExists(key, true))
 											{
-												FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
-												if(FileExists(buffer, true))
-												{
-													if(b)
-														AddToStringTable(DownloadTable, buffer);
-												}
-												else if(b != sizeof(MdlExts)-1)
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-													break;
-												}
+												AddToStringTable(DownloadTable, key);
+											}
+											else
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+											}
+										}
+									}
+									else			// "1"	"sound/example.mp3"
+									{
+										if(FileExists(val.data, true))
+										{
+											AddToStringTable(DownloadTable, val.data);
+										}
+										else
+										{
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
+										}
+									}
+								}
+							}
+						}
+						
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
+					}
+					case Section_Model:
+					{
+						for(int a; a < entriessub; a++)
+						{
+							length = snapsub.KeyBufferSize(a)+10;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
+								{
+									for(int b; b < sizeof(MdlExts); b++)
+									{
+										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
+										if(FileExists(buffer, true))
+										{
+											if(b)
+												AddToStringTable(DownloadTable, buffer);
+										}
+										else if(b != sizeof(MdlExts)-1)
+										{
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+											break;
+										}
+									}
+								}
+								case KeyValType_Value:
+								{
+									if(length > val.size)	// "models/example"	"mdl"
+									{
+										for(int b; b < sizeof(MdlExts); b++)
+										{
+											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
+											if(FileExists(buffer, true))
+											{
+												if(b)
+													AddToStringTable(DownloadTable, buffer);
+											}
+											else if(b != sizeof(MdlExts)-1)
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												break;
+											}
+										}
+									}
+									else			// "1"	"models/example"
+									{
+										for(int b; b < sizeof(MdlExts); b++)
+										{
+											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
+											if(FileExists(buffer, true))
+											{
+												if(b)
+													AddToStringTable(DownloadTable, buffer);
+											}
+											else if(b != sizeof(MdlExts)-1)
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												break;
 											}
 										}
 									}
 								}
 							}
-							
-							if(clean)
-							{
-								DeleteCfg(cfgsub);
-								cfg.Remove(section);
-							}
 						}
-						case Section_Material:
+						
+						if(clean)
 						{
-							for(int a; a < entriessub; a++)
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
+					}
+					case Section_Material:
+					{
+						for(int a; a < entriessub; a++)
+						{
+							length = snapsub.KeyBufferSize(a)+5;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
 							{
-								length = snapsub.KeyBufferSize(a)+5;
-								char[] key = new char[length];
-								snapsub.GetKey(a, key, length);
-								cfgsub.GetArray(key, val, sizeof(val));
-								
-								if(!key[0] || !IsNotExtraArg(key))
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
 								{
-									LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
-									continue;
+									for(int b; b < sizeof(MatExts); b++)
+									{
+										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
+										if(FileExists(buffer, true))
+										{
+											AddToStringTable(DownloadTable, buffer);
+										}
+										else
+										{
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+										}
+									}
 								}
-								
-								switch(val.tag)
+								case KeyValType_Value:
 								{
-									case KeyValType_Section:
+									if(length > val.size)	// "materials/example"	"mat"
 									{
 										for(int b; b < sizeof(MatExts); b++)
 										{
@@ -1305,56 +1305,38 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											}
 										}
 									}
-									case KeyValType_Value:
+									else			// "1"	"materials/example"
 									{
-										if(length > val.size)	// "materials/example"	"mat"
+										for(int b; b < sizeof(MatExts); b++)
 										{
-											for(int b; b < sizeof(MatExts); b++)
+											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
+											if(FileExists(buffer, true))
 											{
-												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-												if(FileExists(buffer, true))
-												{
-													AddToStringTable(DownloadTable, buffer);
-												}
-												else
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-												}
+												AddToStringTable(DownloadTable, buffer);
 											}
-										}
-										else			// "1"	"materials/example"
-										{
-											for(int b; b < sizeof(MatExts); b++)
+											else
 											{
-												FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
-												if(FileExists(buffer, true))
-												{
-													AddToStringTable(DownloadTable, buffer);
-												}
-												else
-												{
-													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
-												}
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											}
 										}
 									}
 								}
 							}
-							
-							if(clean)
-							{
-								DeleteCfg(cfgsub);
-								cfg.Remove(section);
-							}
+						}
+						
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
 						}
 					}
-					
-					delete snapsub;
 				}
+				
+				delete snapsub;
 			}
-			
-			delete snap;
 		}
+		
+		delete snap;
 	}
 	
 	if(!cfg.GetVal("name", val))
@@ -1568,7 +1550,7 @@ bool Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = 
 	return view_as<bool>(buffer[0]);
 }
 
-void Bosses_CreateFromSpecial(int client, int special, int team)
+void Bosses_CreateFromSpecial(int client, int special, int team, int leader = 0)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1578,12 +1560,12 @@ void Bosses_CreateFromSpecial(int client, int special, int team)
 	cfg.Get("filename", buffer, sizeof(buffer));
 	Client(client).SetLastPlayed(buffer);
 	
-	Bosses_CreateFromConfig(client, cfg, team);
+	Bosses_CreateFromConfig(client, cfg, team, leader);
 	
 	Client(client).Cfg.SetInt("special", special);
 }
 
-void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
+void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0)
 {
 	if(Client(client).Index < 0)
 	{
@@ -1666,7 +1648,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 		int companion = Preference_GetCompanion(client, i, team, disband);
 		if(companion)
 		{
-			Bosses_CreateFromSpecial(companion, i, team);
+			Bosses_CreateFromSpecial(companion, i, team, client);
 			
 			if(disband)
 			{
@@ -1687,6 +1669,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team)
 			}
 		}
 	}
+	
+	Preference_ApplyDifficulty(client, leader ? leader : client, !active);
 }
 
 int Bosses_SetHealth(int client, int players)
@@ -1807,254 +1791,252 @@ static void EquipBoss(int client, bool weapons)
 	if(weapons)
 	{
 		StringMapSnapshot snap = Client(client).Cfg.Snapshot();
-		if(snap)
+		
+		int entries = snap.Length;
+		if(entries)
 		{
-			int entries = snap.Length;
-			if(entries)
+			value = false;
+			PackVal val;
+			for(i = 0; i < entries; i++)
 			{
-				value = false;
-				PackVal val;
-				for(i = 0; i < entries; i++)
+				static char classname[36];
+				snap.GetKey(i, classname, sizeof(classname));
+				Client(client).Cfg.GetArray(classname, val, sizeof(val));
+				if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
+					continue;
+				
+				ConfigMap cfg = val.cfg;
+				if(!cfg)
+					continue;
+				
+				if(StrContains(classname, "tf_") != 0 &&
+				  !StrEqual(classname, "saxxy"))
 				{
-					static char classname[36];
-					snap.GetKey(i, classname, sizeof(classname));
-					Client(client).Cfg.GetArray(classname, val, sizeof(val));
-					if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
-						continue;
-					
-					ConfigMap cfg = val.cfg;
-					if(!cfg)
-						continue;
-					
-					if(StrContains(classname, "tf_") != 0 &&
-					  !StrEqual(classname, "saxxy"))
+					if(!cfg.Get("name", classname, sizeof(classname)))
+						strcopy(classname, sizeof(classname), "tf_wearable");
+				}
+				
+				GetClassWeaponClassname(class, classname, sizeof(classname));
+				bool wearable = StrContains(classname, "tf_weap") != 0;
+				
+				cfg.GetInt("index", index);
+				
+				int level = -1;
+				cfg.GetInt("level", level);
+				
+				int quality = 5;
+				cfg.GetInt("quality", quality);
+				
+				bool preserve;
+				cfg.GetBool("preserve", preserve, false);
+				
+				bool override;
+				cfg.GetBool("override", override, false);
+				
+				int kills = -1;
+				if(!cfg.GetInt("rank", kills) && level == -1 && !override)
+					kills = GetURandomInt() % 21;
+				
+				if(kills >= 0)
+					kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
+				
+				if(level < 0 || level > 127)
+					level = 101;
+				
+				bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
+				
+				if(!wearable && !override)
+				{
+					if(value)
 					{
-						if(!cfg.Get("name", classname, sizeof(classname)))
-							strcopy(classname, sizeof(classname), "tf_wearable");
-					}
-					
-					GetClassWeaponClassname(class, classname, sizeof(classname));
-					bool wearable = StrContains(classname, "tf_weap") != 0;
-					
-					cfg.GetInt("index", index);
-					
-					int level = -1;
-					cfg.GetInt("level", level);
-					
-					int quality = 5;
-					cfg.GetInt("quality", quality);
-					
-					bool preserve;
-					cfg.GetBool("preserve", preserve, false);
-					
-					bool override;
-					cfg.GetBool("override", override, false);
-					
-					int kills = -1;
-					if(!cfg.GetInt("rank", kills) && level == -1 && !override)
-						kills = GetURandomInt() % 21;
-					
-					if(kills >= 0)
-						kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
-					
-					if(level < 0 || level > 127)
-						level = 101;
-					
-					bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
-					
-					if(!wearable && !override)
-					{
-						if(value)
+						if(found)
 						{
-							if(found)
-							{
-								Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
-							}
-							else
-							{
-								strcopy(buffer, sizeof(buffer), "2 ; 3.1");
-							}
-						}
-						else if(found)
-						{
-							Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
+							Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
 						}
 						else
 						{
-							strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
+							strcopy(buffer, sizeof(buffer), "2 ; 3.1");
 						}
 					}
-					else if(!found)
+					else if(found)
 					{
-						buffer[0] = 0;
+						Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
 					}
-					
-					static char buffers[40][16];
-					int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
-					
-					if(count % 2)
-						count--;
-					
-					int attribs;
-					int entity = -1;
-					if(wearable)
+					else
 					{
-						entity = CreateEntityByName(classname);
-						if(IsValidEntity(entity))
+						strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
+					}
+				}
+				else if(!found)
+				{
+					buffer[0] = 0;
+				}
+				
+				static char buffers[40][16];
+				int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
+				
+				if(count % 2)
+					count--;
+				
+				int attribs;
+				int entity = -1;
+				if(wearable)
+				{
+					entity = CreateEntityByName(classname);
+					if(IsValidEntity(entity))
+					{
+						SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
+						SetEntProp(entity, Prop_Send, "m_bInitialized", true);
+						SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
+						SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
+						
+						DispatchSpawn(entity);
+						
+						Debug("Created Wearable");
+					}
+					else
+					{
+						Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
+						LogError("[Boss] Invalid classname '%s' for '%s'", classname, buffer);
+					}
+				}
+				else
+				{
+					Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
+					TF2Items_SetClassname(item, classname);
+					TF2Items_SetItemIndex(item, index);
+					TF2Items_SetLevel(item, level);
+					TF2Items_SetQuality(item, quality);
+					TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
+					for(int a; attribs < count && a < 16; attribs += 2)
+					{
+						int attrib = StringToInt(buffers[attribs]);
+						if(attrib)
 						{
-							SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-							SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-							SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
-							SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
-							
-							DispatchSpawn(entity);
-							
-							Debug("Created Wearable");
+							TF2Items_SetAttribute(item, a++, attrib, StringToFloat(buffers[attribs+1]));
 						}
 						else
 						{
 							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Invalid classname '%s' for '%s'", classname, buffer);
+							LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
 						}
+					}
+					
+					entity = TF2Items_GiveNamedItem(client, item);
+					delete item;
+				}
+				
+				if(entity != -1)
+				{
+					if(wearable)
+					{
+						TF2U_EquipPlayerWearable(client, entity);
 					}
 					else
 					{
-						Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
-						TF2Items_SetClassname(item, classname);
-						TF2Items_SetItemIndex(item, index);
-						TF2Items_SetLevel(item, level);
-						TF2Items_SetQuality(item, quality);
-						TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
-						for(int a; attribs < count && a < 16; attribs += 2)
-						{
-							int attrib = StringToInt(buffers[attribs]);
-							if(attrib)
-							{
-								TF2Items_SetAttribute(item, a++, attrib, StringToFloat(buffers[attribs+1]));
-							}
-							else
-							{
-								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-								LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
-							}
-						}
-						
-						entity = TF2Items_GiveNamedItem(client, item);
-						delete item;
+						EquipPlayerWeapon(client, entity);
 					}
 					
-					if(entity != -1)
+					for(; attribs < count; attribs += 2)
 					{
+						int attrib = StringToInt(buffers[attribs]);
+						if(attrib)
+						{
+							TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
+						}
+						else
+						{
+							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
+							LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+						}
+					}
+					
+					if(kills >= 0)
+					{
+						TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
 						if(wearable)
+							TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
+					}
+					
+					if(!wearable)
+					{
+						if(cfg.GetInt("clip", level))
+							SetEntProp(entity, Prop_Data, "m_iClip1", level);
+						
+						if(cfg.GetInt("ammo", level))
 						{
-							TF2U_EquipPlayerWearable(client, entity);
-						}
-						else
-						{
-							EquipPlayerWeapon(client, entity);
+							int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+							if(type >= 0)
+								SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
 						}
 						
-						for(; attribs < count; attribs += 2)
+						if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
 						{
-							int attrib = StringToInt(buffers[attribs]);
-							if(attrib)
+							for(level = 0; level < 4; level++)
 							{
-								TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
-							}
-							else
-							{
-								Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-								LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
 							}
 						}
-						
-						if(kills >= 0)
+						else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
 						{
-							TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
-							if(wearable)
-								TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
-						}
-						
-						if(!wearable)
-						{
-							if(cfg.GetInt("clip", level))
-								SetEntProp(entity, Prop_Data, "m_iClip1", level);
+							SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
+							SetEntProp(entity, Prop_Data, "m_iSubType", 3);
 							
-							if(cfg.GetInt("ammo", level))
+							for(level = 0; level < 4; level++)
 							{
-								int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-								if(type >= 0)
-									SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
+								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
 							}
-							
-							if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
+						}
+					}
+					
+					override = wearable;
+					cfg.GetBool("show", override, false);
+					if(override)
+					{
+						if(cfg.GetInt("worldmodel", index) && index)
+						{
+							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
+							for(level = 0; level < 4; level++)
 							{
-								for(level = 0; level < 4; level++)
-								{
-									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
-								}
-							}
-							else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
-							{
-								SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
-								SetEntProp(entity, Prop_Data, "m_iSubType", 3);
-								
-								for(level = 0; level < 4; level++)
-								{
-									SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
-								}
+								SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
 							}
 						}
 						
-						override = wearable;
-						cfg.GetBool("show", override, false);
-						if(override)
-						{
-							if(cfg.GetInt("worldmodel", index) && index)
-							{
-								SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-								for(level = 0; level < 4; level++)
-								{
-									SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
-								}
-							}
-							
-							SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-						}
-						else
-						{
-							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
-							SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
-						}
-						
-						level = 255;
-						index = 255;
-						kills = 255;
-						count = 255;
-						
-						override = view_as<bool>(cfg.GetInt("alpha", level));
-						override = (cfg.GetInt("red", index) || override);
-						override = (cfg.GetInt("green", kills) || override);
-						override = (cfg.GetInt("blue", count) || override);
-						if(override)
-						{
-							SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-							SetEntityRenderColor(entity, index, kills, count, level);
-						}
-						
-						SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-						
-						if(!wearable && !value)
-						{
-							value = true;
-							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
-						}
+						SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+					}
+					else
+					{
+						SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+					}
+					
+					level = 255;
+					index = 255;
+					kills = 255;
+					count = 255;
+					
+					override = view_as<bool>(cfg.GetInt("alpha", level));
+					override = (cfg.GetInt("red", index) || override);
+					override = (cfg.GetInt("green", kills) || override);
+					override = (cfg.GetInt("blue", count) || override);
+					if(override)
+					{
+						SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
+						SetEntityRenderColor(entity, index, kills, count, level);
+					}
+					
+					SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
+					
+					if(!wearable && !value)
+					{
+						value = true;
+						SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
 					}
 				}
 			}
-			
-			delete snap;
 		}
+		
+		delete snap;
 	}
 	
 	Bosses_UpdateHealth(client);
@@ -2287,8 +2269,6 @@ void Bosses_UseSlot(int client, int low, int high)
 	}
 	
 	StringMapSnapshot snap = Client(client).Cfg.Snapshot();
-	if(!snap)
-		return;
 	
 	int entries = snap.Length;
 	if(entries)
@@ -2543,100 +2523,127 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 	if(cfg)
 	{
 		StringMapSnapshot snap = cfg.Snapshot();
-		if(snap)
+		PackVal val;
+		int sounds;
+		int entries = snap.Length;
+		int[] list = new int[entries];
+		char buffer[PLATFORM_MAX_PATH];
+		for(int i; i < entries; i++)
 		{
-			PackVal val;
-			int sounds;
-			int entries = snap.Length;
-			int[] list = new int[entries];
-			char buffer[PLATFORM_MAX_PATH];
-			for(int i; i < entries; i++)
+			int length = snap.KeyBufferSize(i)+1;
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+			cfg.GetArray(key, val, sizeof(val));
+			switch(val.tag)
 			{
-				int length = snap.KeyBufferSize(i)+1;
-				char[] key = new char[length];
-				snap.GetKey(i, key, length);
-				cfg.GetArray(key, val, sizeof(val));
+				case KeyValType_Section:
+				{
+					if(required[0])
+					{	
+						if(!val.cfg.Get("key", key, length) || StrContains(required, key, false) != 0)
+							continue;
+					}
+				}
+				case KeyValType_Value:
+				{
+					if(!IsNotExtraArg(key))
+					{
+						continue;
+					}
+					else if(length > val.size)	// "example.mp3"	""
+					{
+						if(required[0])
+						{
+							strcopy(buffer, sizeof(buffer), val.data);
+							
+							if(!buffer[0])
+								strcopy(buffer, sizeof(buffer), "0");
+							
+							if(StrContains(required, buffer, false) != 0)
+								continue;
+						}
+					}
+					else	// "1"	"example.mp3"
+					{
+						if(required[0])
+						{
+							FormatEx(buffer, sizeof(buffer), "slot%s", key);
+							if(!cfg.Get(buffer, buffer, sizeof(buffer)))
+							{
+								FormatEx(buffer, sizeof(buffer), "vo%s", key);
+								if(!cfg.Get(buffer, buffer, sizeof(buffer)))
+									buffer[0] = 0;
+							}
+							
+							if(!buffer[0])
+								strcopy(buffer, sizeof(buffer), "0");
+							
+							if(StrContains(required, buffer, false) != 0)
+								continue;
+						}
+					}
+				}
+				default:
+				{
+					continue;
+				}
+			}
+			
+			list[sounds++] = i;
+		}
+																																																	
+		if(sounds)
+		{
+			sounds = list[GetRandomInt(0, sounds - 1)];
+			int length = snap.KeyBufferSize(sounds)+1;
+			char[] key = new char[length];
+			snap.GetKey(sounds, key, length);
+			if(cfg.GetArray(key, val, sizeof(val)))
+			{
 				switch(val.tag)
 				{
 					case KeyValType_Section:
 					{
-						if(required[0])
-						{	
-							if(!val.cfg.Get("key", key, length) || StrContains(required, key, false) != 0)
-								continue;
+						ConfigMap cfgsub = val.cfg;
+						
+						if(cfgsub.GetInt("mode", sound.Entity))
+						{
+							if(sound.Entity > SOUND_FROM_WORLD)
+								sound.Entity = -sound.Entity;
+							
+							if(sound.Entity < SOUND_FROM_PLAYER)
+								sound.Entity = SOUND_FROM_PLAYER;
 						}
+						
+						if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+						{
+							if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+								size = strlen(sound.Sound);
+						}
+						else
+						{
+							size = strcopy(sound.Sound, sizeof(sound.Sound), key);
+						}
+						
+						cfgsub.GetInt("channel", sound.Channel);
+						cfgsub.GetInt("level", sound.Level);
+						cfgsub.GetInt("flags", sound.Flags);
+						cfgsub.GetFloat("volume", sound.Volume);
+						cfgsub.GetInt("pitch", sound.Pitch);
+						
+						if(cfgsub.GetFloat("time", sound.Time))
+						{
+							cfgsub.Get("name", sound.Name, sizeof(sound.Name));
+							cfgsub.Get("artist", sound.Artist, sizeof(sound.Artist));
+						}
+						
+						if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
+							cfgsub.GetFloat("duration", sound.Duration);
 					}
 					case KeyValType_Value:
 					{
-						if(!IsNotExtraArg(key))
+						if(length > val.size)	// "example.mp3"	""
 						{
-							continue;
-						}
-						else if(length > val.size)	// "example.mp3"	""
-						{
-							if(required[0])
-							{
-								strcopy(buffer, sizeof(buffer), val.data);
-								
-								if(!buffer[0])
-									strcopy(buffer, sizeof(buffer), "0");
-								
-								if(StrContains(required, buffer, false) != 0)
-									continue;
-							}
-						}
-						else	// "1"	"example.mp3"
-						{
-							if(required[0])
-							{
-								FormatEx(buffer, sizeof(buffer), "slot%s", key);
-								if(!cfg.Get(buffer, buffer, sizeof(buffer)))
-								{
-									FormatEx(buffer, sizeof(buffer), "vo%s", key);
-									if(!cfg.Get(buffer, buffer, sizeof(buffer)))
-										buffer[0] = 0;
-								}
-								
-								if(!buffer[0])
-									strcopy(buffer, sizeof(buffer), "0");
-								
-								if(StrContains(required, buffer, false) != 0)
-									continue;
-							}
-						}
-					}
-					default:
-					{
-						continue;
-					}
-				}
-				
-				list[sounds++] = i;
-			}
-
-			if(sounds)
-			{
-				sounds = list[GetRandomInt(0, sounds - 1)];
-				int length = snap.KeyBufferSize(sounds)+1;
-				char[] key = new char[length];
-				snap.GetKey(sounds, key, length);
-				if(cfg.GetArray(key, val, sizeof(val)))
-				{
-					switch(val.tag)
-					{
-						case KeyValType_Section:
-						{
-							ConfigMap cfgsub = val.cfg;
-							
-							if(cfgsub.GetInt("mode", sound.Entity))
-							{
-								if(sound.Entity > SOUND_FROM_WORLD)
-									sound.Entity = -sound.Entity;
-								
-								if(sound.Entity < SOUND_FROM_PLAYER)
-									sound.Entity = SOUND_FROM_PLAYER;
-							}
-							
 							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
 							{
 								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
@@ -2646,84 +2653,54 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							{
 								size = strcopy(sound.Sound, sizeof(sound.Sound), key);
 							}
-							
-							cfgsub.GetInt("channel", sound.Channel);
-							cfgsub.GetInt("level", sound.Level);
-							cfgsub.GetInt("flags", sound.Flags);
-							cfgsub.GetFloat("volume", sound.Volume);
-							cfgsub.GetInt("pitch", sound.Pitch);
-							
-							if(cfgsub.GetFloat("time", sound.Time))
-							{
-								cfgsub.Get("name", sound.Name, sizeof(sound.Name));
-								cfgsub.Get("artist", sound.Artist, sizeof(sound.Artist));
-							}
-							
-							if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
-								cfgsub.GetFloat("duration", sound.Duration);
 						}
-						case KeyValType_Value:
+						else	// "1"	"example.mp3"
 						{
-							if(length > val.size)	// "example.mp3"	""
+							ReplaceStringEx(key, length, "path", "");
+							
+							Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
+							if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
 							{
-								if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
-								{
-									if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
-										size = strlen(sound.Sound);
-								}
-								else
-								{
-									size = strcopy(sound.Sound, sizeof(sound.Sound), key);
-								}
+								Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
+								cfg.GetFloat(sound.Sound, sound.Duration);
 							}
-							else	// "1"	"example.mp3"
+							
+							Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
+							if(cfg.GetFloat(sound.Sound, sound.Time))
 							{
-								ReplaceStringEx(key, length, "path", "");
+								Format(sound.Sound, sizeof(sound.Sound), "name%s", key);
+								cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
 								
-								Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
-								if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
-								{
-									Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
-									cfg.GetFloat(sound.Sound, sound.Duration);
-								}
-								
-								Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
+								Format(sound.Sound, sizeof(sound.Sound), "artist%s", key);
+								cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
+							}
+							else
+							{
+								Format(sound.Sound, sizeof(sound.Sound), "%smusic", key);
 								if(cfg.GetFloat(sound.Sound, sound.Time))
 								{
-									Format(sound.Sound, sizeof(sound.Sound), "name%s", key);
+									Format(sound.Sound, sizeof(sound.Sound), "%sname", key);
 									cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
 									
-									Format(sound.Sound, sizeof(sound.Sound), "artist%s", key);
+									Format(sound.Sound, sizeof(sound.Sound), "%sartist", key);
 									cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
 								}
-								else
-								{
-									Format(sound.Sound, sizeof(sound.Sound), "%smusic", key);
-									if(cfg.GetFloat(sound.Sound, sound.Time))
-									{
-										Format(sound.Sound, sizeof(sound.Sound), "%sname", key);
-										cfg.Get(sound.Sound, sound.Name, sizeof(sound.Name));
-										
-										Format(sound.Sound, sizeof(sound.Sound), "%sartist", key);
-										cfg.Get(sound.Sound, sound.Artist, sizeof(sound.Artist));
-									}
-								}
-								
-								size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
-								
-								if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
-								{
-									if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
-										size = strlen(sound.Sound);
-								}
+							}
+							
+							size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
+							
+							if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+							{
+								if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
+									size = strlen(sound.Sound);
 							}
 						}
 					}
 				}
 			}
-			
-			delete snap;
 		}
+		
+		delete snap;
 	}
 	
 	if(!size)

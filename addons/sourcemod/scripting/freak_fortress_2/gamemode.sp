@@ -371,6 +371,14 @@ void Gamemode_RoundStart()
 				amount += PlayersAlive[a];
 		}
 		
+		if(enabled)
+		{
+			if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
+				ServerCommand(buffer);
+			
+			Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
+		}
+		
 		int maxhealth = Bosses_SetHealth(boss[i], amount);
 		if(enabled)
 		{
@@ -393,11 +401,6 @@ void Gamemode_RoundStart()
 				}
 			}
 		}
-		
-		if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
-			ServerCommand(buffer);
-		
-		Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
 	}
 	
 	Music_RoundStart();

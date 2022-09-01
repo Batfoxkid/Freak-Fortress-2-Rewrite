@@ -1436,22 +1436,20 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				{
 					int index = -1;
 					StringMapSnapshot snap = ability.Snapshot();
-					if(snap)
+					
+					int length = snap.Length;
+					if(length > 0)
 					{
-						int length = snap.Length;
-						if(length > 0)
-						{
-							int entry = GetURandomInt() % length;
-							
-							length = snap.KeyBufferSize(entry) + 1;
-							char[] buffer = new char[length];
-							snap.GetKey(entry, buffer, length);
-							
-							index = ability.GetInt(buffer, index);
-						}
+						int entry = GetURandomInt() % length;
 						
-						delete snap;
+						length = snap.KeyBufferSize(entry) + 1;
+						char[] buffer = new char[length];
+						snap.GetKey(entry, buffer, length);
+						
+						index = ability.GetInt(buffer, index);
 					}
+					
+					delete snap;
 					
 					int entity = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 					if(IsValidEntity(entity))
@@ -1460,27 +1458,25 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						if(GetEntityClassname(entity, classname, sizeof(classname)))
 						{
 							snap = boss.Snapshot();
-							if(snap)
+							
+							int entries = snap.Length;
+							for(int i; i < entries; i++)
 							{
-								int entries = snap.Length;
-								for(int i; i < entries; i++)
+								length = snap.KeyBufferSize(i) + 1;
+								char[] buffer = new char[length];
+								snap.GetKey(i, buffer, length);
+								if(StrEqual(buffer, classname))
 								{
-									int length = snap.KeyBufferSize(i) + 1;
-									char[] buffer = new char[length];
-									snap.GetKey(i, buffer, length);
-									if(StrEqual(buffer, classname))
-									{
-										ConfigData cfg = boss.GetSection(buffer);
-										if(index != -1)
-											cfg.SetInt("index", index);
-										
-										Rage_NewWeapon(attacker, cfg, buffer);
-										break;
-									}
+									ConfigData cfg = boss.GetSection(buffer);
+									if(index != -1)
+										cfg.SetInt("index", index);
+									
+									Rage_NewWeapon(attacker, cfg, buffer);
+									break;
 								}
-								
-								delete snap;
 							}
+							
+							delete snap;
 						}
 					}
 				}
@@ -2321,8 +2317,6 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 	MatrixDelay[client] = gameTime + (GetFormula(cfg, "initial", alive, 0.5) * timescale);
 	strcopy(MatrixName[client], sizeof(MatrixName[]), ability);
 	
-	delete TimescaleTimer;
-	
 	TimescaleSound(client, CvarTimeScale.FloatValue, timescale);
 	
 	CvarTimeScale.FloatValue = timescale;
@@ -2334,6 +2328,8 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 				CvarCheats.ReplicateToClient(target, "1");
 		}
 	}
+	
+	delete TimescaleTimer;
 	
 	TimescaleTimer = CreateTimer(duration, Timer_RestoreTime, GetClientUserId(client));
 }

@@ -839,52 +839,50 @@ static ConfigMap FindWeaponSection(int entity)
 	if(cfg)
 	{
 		StringMapSnapshot snap = cfg.Snapshot();
-		if(snap)
+		
+		int entries = snap.Length;
+		if(entries)
 		{
-			int entries = snap.Length;
-			if(entries)
+			int index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+			char buffer2[12];
+			for(int i; i < entries; i++)
 			{
-				int index = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-				char buffer2[12];
-				for(int i; i < entries; i++)
+				int length = snap.KeyBufferSize(i)+1;
+				char[] key = new char[length];
+				snap.GetKey(i, key, length);
+				
+				bool found;
+				int current;
+				do
 				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] key = new char[length];
-					snap.GetKey(i, key, length);
-					
-					bool found;
-					int current;
-					do
+					int add = SplitString(key[current], " ", buffer2, sizeof(buffer2));
+					found = add != -1;
+					if(found)
 					{
-						int add = SplitString(key[current], " ", buffer2, sizeof(buffer2));
-						found = add != -1;
-						if(found)
+						current += add;
+					}
+					else
+					{
+						strcopy(buffer2, sizeof(buffer2), key[current]);
+					}
+					
+					if(StringToInt(buffer2) == index)
+					{
+						PackVal val;
+						cfg.GetArray(key, val, sizeof(val));
+						if(val.tag == KeyValType_Section)
 						{
-							current += add;
-						}
-						else
-						{
-							strcopy(buffer2, sizeof(buffer2), key[current]);
+							delete snap;
+							return val.cfg;
 						}
 						
-						if(StringToInt(buffer2) == index)
-						{
-							PackVal val;
-							cfg.GetArray(key, val, sizeof(val));
-							if(val.tag == KeyValType_Section)
-							{
-								delete snap;
-								return val.cfg;
-							}
-							
-							break;
-						}
-					} while(found);
-				}
+						break;
+					}
+				} while(found);
 			}
-			
-			delete snap;
 		}
+		
+		delete snap;
 	}
 	
 	GetEntityClassname(entity, buffer1, sizeof(buffer1));

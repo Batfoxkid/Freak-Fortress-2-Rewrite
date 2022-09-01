@@ -235,6 +235,10 @@
 	{
 		"en"		"Toggle Round Stats HUD (/ff2hud)"
 	}
+	"Command Difficulty"
+	{
+		"en"		"Modifier Listing (/ff2modifier)"
+	}
 	
 	"Boss Voices Disabled"
 	{
@@ -540,6 +544,31 @@
 	"Music List"
 	{
 		"en"		"View Playlist"
+	}
+	
+	"Difficulty Menu"
+	{
+		"en"		"FF2 Boss Modifiers\n "
+	}
+	"Disable Special Rounds"
+	{
+		"en"		"Disable Random Modifiers"
+	}
+	"Enable Special Rounds"
+	{
+		"en"		"Enable Random Modifiers"
+	}
+	"Disabled Special Rounds"
+	{
+		"en"		"Random modifiers are now disabled."
+	}
+	"Enabled Special Rounds"
+	{
+		"en"		"Random modifiers are now enabled."
+	}
+	"Unknown Difficulty"
+	{
+		"en"		"This difficulty does not exist."
 	}
 	
 	"Boss Solo Rage"
