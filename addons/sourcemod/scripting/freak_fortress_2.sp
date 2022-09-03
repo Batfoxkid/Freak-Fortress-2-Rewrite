@@ -189,6 +189,7 @@ ConVar CvarSoundType;
 ConVar CvarDisguiseModels;
 ConVar CvarPlayerGlow;
 ConVar CvarBossSapper;
+ConVar CvarRageOnSap;
 
 ConVar CvarAllowSpectators;
 ConVar CvarMovementFreeze;

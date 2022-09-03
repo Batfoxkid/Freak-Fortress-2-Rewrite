@@ -265,6 +265,15 @@ public MRESReturn DHook_ApplyRoboSapperEffectsPost(int entity, DHookReturn ret, 
 	if(!WasMiniBoss[client] && Client(client).IsBoss)
 		SetEntProp(client, Prop_Send, "m_bIsMiniBoss", false);
 
+	float charge = Client(client).GetCharge(0);
+	if (charge + CvarRageOnSap.FloatValue > 100.0) {
+		Client(client).SetCharge(0, 100.0);
+	}
+	else
+	{
+		Client(client).SetCharge(0, charge + CvarRageOnSap.FloatValue);
+	}
+
 	return MRES_Ignored;
 }
 
