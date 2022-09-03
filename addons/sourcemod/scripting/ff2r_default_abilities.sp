@@ -703,13 +703,13 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				AbilityData ability;
 				if(boss && (ability = boss.GetAbility("special_anchor")))
 				{
-					if(AnchorStartTime[client] > (gameTime - ability.GetFloat("full", 3.5)))
+					if(AnchorStartTime[client] < (gameTime - ability.GetFloat("full", 3.5)))
 					{
 						TF2_AddCondition(client, TFCond_MegaHeal, 0.5, client);
 						TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.5, client);
 						SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 					}
-					else if(AnchorStartTime[client] > (gameTime - ability.GetFloat("basic", 0.5)))
+					else if(AnchorStartTime[client] < (gameTime - ability.GetFloat("basic", 0.5)))
 					{
 						Address address = TF2Attrib_GetByDefIndex(client, 252);
 						AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);

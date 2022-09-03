@@ -6,6 +6,7 @@
 	bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
 	bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
 	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
+	int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] name)
 */
 
 #tryinclude <tf_econ_data> 
@@ -24,6 +25,7 @@ void TFED_PluginLoad()
 	MarkNativeAsOptional("TF2Econ_GetItemDefinitionString");
 	MarkNativeAsOptional("TF2Econ_GetLocalizedItemName");
 	MarkNativeAsOptional("TF2Econ_GetAttributeDefinitionString");
+	MarkNativeAsOptional("TF2Econ_TranslateAttributeNameToDefinitionIndex");
 	#endif
 }
 
@@ -63,7 +65,7 @@ stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] bu
 	return false;
 }
 
-bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
+stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
 {
 	#if defined __tf_econ_data_included
 	if(Loaded && TF2Econ_GetLocalizedItemName(itemdef, name, maxlen))
@@ -90,4 +92,14 @@ stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, cha
 	
 	buffer[0] = 0;
 	return false;
+}
+
+stock int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] key)
+{
+	#if defined __tf_econ_data_included
+	if(Loaded)
+		return TF2Econ_TranslateAttributeNameToDefinitionIndex(key);
+	#endif
+	
+	return -1;
 }
