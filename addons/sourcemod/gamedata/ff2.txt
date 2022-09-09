@@ -194,6 +194,24 @@
 					}
 				}
 			}
+			"CLagCompensationManager::StartLagCompensation"
+			{
+				"signature"	"CLagCompensationManager::StartLagCompensation"
+				"callconv"	"thiscall"
+				"return"	"void"
+				"this"		"address"
+				"arguments"
+				{
+					"player"
+					{
+						"type"	"cbaseentity"
+					}
+					"cmd"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
 			"CObjectSapper::ApplyRoboSapperEffects"
 			{
 				"signature"	"CObjectSapper::ApplyRoboSapperEffects"

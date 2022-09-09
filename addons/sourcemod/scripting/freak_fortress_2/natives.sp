@@ -16,6 +16,10 @@ void Native_PluginLoad()
 	CreateNative("FF2R_SetClientMinion", Native_SetClientMinion);
 	CreateNative("FF2R_GetClientScore", Native_GetClientScore);
 	CreateNative("FF2R_GetPluginHandle", Native_GetPluginHandle);
+	CreateNative("FF2R_GetGamemodeType", Native_GetGamemodeType);
+	CreateNative("FF2R_StartLagCompensation", Native_StartLagCompensation);
+	CreateNative("FF2R_FinishLagCompensation", Native_FinishLagCompensation);
+	CreateNative("FF2R_UpdateBossAttributes", Native_UpdateBossAttributes);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -166,4 +170,41 @@ public any Native_GetClientScore(Handle plugin, int params)
 public any Native_GetPluginHandle(Handle plugin, int params)
 {
 	return ThisPlugin;
+}
+
+public any Native_GetGamemodeType(Handle plugin, int params)
+{
+	return Enabled ? 2 : (Charset != -1 ? 1 : 0);
+}
+
+public any Native_StartLagCompensation(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	SDKCall_StartLagCompensation(client);
+	return 0;
+}
+
+public any Native_FinishLagCompensation(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	SDKCall_FinishLagCompensation(client);
+	return 0;
+}
+
+public any Native_UpdateBossAttributes(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !Client(client).Cfg)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not a boss", client);
+	
+	Bosses_UpdateHealth(client);
+	Bosses_SetSpeed(client);
+	Gamemode_UpdateHUD(GetClientTeam(client));
+	return 0;
 }

@@ -91,8 +91,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 	else if(Enabled && StrEqual(classname, "obj_attachment_sapper"))
 	{
-		//SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
-		//SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
+		SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
+		SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
 	}
 	else
 	{

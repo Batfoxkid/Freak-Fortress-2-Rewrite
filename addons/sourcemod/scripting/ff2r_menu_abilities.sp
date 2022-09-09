@@ -1,6 +1,6 @@
 /*
-		"name"		"special_menu_manager"
-
+	"special_menu_manager"
+	{
 		"slot"		"0"			// Ability slot to count for refresh rage flag
 		"tickrate"	"0.1"		// Menu tick rate
 		"weapon"	"-1"		// Weapon slot (0-9) or weapon index (10+)
@@ -62,6 +62,14 @@
 		}
 		
 		"plugin_name"	"ff2r_menu_abilities"
+	}
+	
+	"ff2r_menu_abilities"
+	{
+		"manarate"	"1.0"
+		"nomana"	"0"
+		"nomenu"	"0"
+	}
 */
 
 #include <sourcemod>
@@ -90,7 +98,7 @@
 #define MAG_LASTLIFE	0x0010	// Require having no extra lives left
 #define MAG_GROUND		0x0020	// Require being on the ground
 #define MAG_PRIORITY	0x0040	// Priority in spell swap
- 
+
 #define RAN_ONKILL		0x0001	// Refresh on kill
 #define RAN_ONUSE		0x0002	// Refresh on usage
 #define RAN_ONRAGE		0x0004	// Refresh on rage
@@ -99,6 +107,7 @@ bool Enabled;
 Handle SDKGetMaxHealth;
 Handle MenuTimer[MAXTF2PLAYERS];
 bool ViewingMenu[MAXTF2PLAYERS];
+bool SetupMode[MAXTF2PLAYERS];
 int PlayersAlive[4];
 bool SpecTeam;
 
@@ -106,7 +115,7 @@ public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Menu Abilities",
 	author		=	"Batfoxkid",
-	description	=	"I'm coming for you!",
+	description	=	"Watch what happens when I cast a spell I don't know!",
 	version		=	PLUGIN_VERSION,
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
@@ -142,7 +151,7 @@ public void OnPluginStart()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
-	if(!setup)
+	if((!setup || FF2R_GetGamemodeType() != 2) && !MenuTimer[client])
 	{
 		AbilityData ability = boss.GetAbility(ABILITY_NAME);
 		if(ability.IsMyPlugin())
@@ -154,98 +163,112 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			if(MenuTimer[client])
 				KillTimer(MenuTimer[client]);
 			
+			bool wasInSetup = SetupMode[client];
+			
 			MenuTimer[client] = CreateTimer(tickrate, Timer_MenuTick, client, TIMER_REPEAT);
+			SetupMode[client] = setup;
 			Enabled = true;
 			
-			int players;
-			for(int i; i < 4; i++)
+			if(!SetupMode[client])
 			{
-				players += PlayersAlive[i];
-			}
-			
-			char buffer[16];
-			ConfigData manas = ability.GetSection("manas");
-			if(manas)
-			{
-				StringMapSnapshot snap = manas.Snapshot();
-				
-				int entries = snap.Length;
-				for(int i; i < entries; i++)
+				int players;
+				for(int i; i < 4; i++)
 				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] key = new char[length];
-					snap.GetKey(i, key, length);
-					
-					ConfigData mana = manas.GetSection(key);
-					if(mana)
-					{
-						float start = SetFloatFromFormula(mana, "start", players);
-						SetBossCharge(boss, key, start);
-						
-						FloatToString(start, buffer, sizeof(buffer));
-						SetFloatFromFormula(mana, "display", players, buffer);
-						SetFloatFromFormula(mana, "rolling", players);
-						SetFloatFromFormula(mana, "maximum", players);
-						SetFloatFromFormula(mana, "ontick", players);
-					}
+					players += PlayersAlive[i];
 				}
 				
-				delete snap;
-			}
-			
-			ConfigData cfg = ability.GetSection("spells");
-			if(cfg)
-			{
-				StringMapSnapshot snap = cfg.Snapshot();
-				
-				int entries = snap.Length;
-				for(int i; i < entries; i++)
+				char buffer[16];
+				ConfigData manas = ability.GetSection("manas");
+				if(manas)
 				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] key = new char[length];
-					snap.GetKey(i, key, length);
+					StringMapSnapshot snap = manas.Snapshot();
 					
-					ConfigData spell = cfg.GetSection(key);
-					if(spell)
+					int entries = snap.Length;
+					for(int i; i < entries; i++)
 					{
-						SetFloatFromFormula(spell, "delay", players);
-						SetFloatFromFormula(spell, "cooldown", players);
+						int length = snap.KeyBufferSize(i)+1;
+						char[] key = new char[length];
+						snap.GetKey(i, key, length);
 						
-						if(manas)
+						ConfigData mana = manas.GetSection(key);
+						if(mana)
 						{
-							ConfigData cost = spell.GetSection("cost");
-							if(cost)
+							float start = SetFloatFromFormula(mana, "start", players);
+							SetBossCharge(boss, key, start);
+							
+							FloatToString(start, buffer, sizeof(buffer));
+							SetFloatFromFormula(mana, "display", players, buffer);
+							SetFloatFromFormula(mana, "rolling", players);
+							SetFloatFromFormula(mana, "maximum", players);
+							SetFloatFromFormula(mana, "ontick", players);
+							SetFloatFromFormula(mana, "onkill", players);
+							SetFloatFromFormula(mana, "onbossdeath", players);
+							SetFloatFromFormula(mana, "onhurt", players);
+							SetFloatFromFormula(mana, "ondamage", players);
+							SetFloatFromFormula(mana, "onairblast", players);
+						}
+					}
+					
+					delete snap;
+				}
+				
+				ConfigData cfg = ability.GetSection("spells");
+				if(cfg)
+				{
+					StringMapSnapshot snap = cfg.Snapshot();
+					
+					int entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						int length = snap.KeyBufferSize(i)+1;
+						char[] key = new char[length];
+						snap.GetKey(i, key, length);
+						
+						ConfigData spell = cfg.GetSection(key);
+						if(spell)
+						{
+							SetFloatFromFormula(spell, "cooldown", players);
+							
+							float delay = SetFloatFromFormula(spell, "delay", players);
+							if(delay > 0.0)
+								spell.SetFloat("delay", delay + gameTime);
+							
+							if(manas)
 							{
-								SortedSnapshot snap2 = CreateSortedSnapshot(cost);
-								
-								int entries2 = snap2.Length;
-								for(int a; a < entries2; a++)
+								ConfigData cost = spell.GetSection("cost");
+								if(cost)
 								{
-									length = snap2.KeyBufferSize(a)+1;
-									char[] key2 = new char[length];
-									snap.GetKey(a, key2, length);
+									SortedSnapshot snap2 = CreateSortedSnapshot(cost);
 									
-									ConfigData mana = cost.GetSection(key2);
-									if(mana)
+									int entries2 = snap2.Length;
+									for(int a; a < entries2; a++)
 									{
-										SetFloatFromFormula(mana, "cost", players);
+										length = snap2.KeyBufferSize(a)+1;
+										char[] key2 = new char[length];
+										snap.GetKey(a, key2, length);
+										
+										ConfigData mana = cost.GetSection(key2);
+										if(mana)
+										{
+											SetFloatFromFormula(mana, "cost", players);
+										}
+										else
+										{
+											SetFloatFromFormula(cost, key2, players);
+										}
 									}
-									else
-									{
-										SetFloatFromFormula(cost, key2, players);
-									}
+									
+									delete snap2;
 								}
-								
-								delete snap2;
 							}
 						}
 					}
+					
+					delete snap;
 				}
-				
-				delete snap;
 			}
 			
-			if(ability.GetInt("limit") > 0)
+			if(!wasInSetup && ability.GetInt("limit") > 0)
 				RefreshSpells(client, boss, ability);
 		}
 	}
@@ -270,6 +293,8 @@ public void FF2R_OnBossRemoved(int client)
 	
 	if(ViewingMenu[client])
 		CancelClientMenu(client, false);
+	
+	SetupMode[client] = false;
 	
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -296,9 +321,89 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
+public void FF2R_OnBossModifier(int client, ConfigData cfg)
+{
+	BossData boss = FF2R_GetBossData(client);
+	
+	if(boss.GetBool("nomenu"))
+	{
+		AbilityData ability = boss.GetAbility(ABILITY_NAME);
+		if(ability.IsMyPlugin())
+			boss.Remove(ABILITY_NAME);
+	}
+	else if(boss.GetBool("nomana"))
+	{
+		AbilityData ability = boss.GetAbility(ABILITY_NAME);
+		if(ability.IsMyPlugin())
+		{
+			ConfigData manas = ability.GetSection("manas");
+			if(manas)
+			{
+				StringMapSnapshot snap = manas.Snapshot();
+				
+				int entries = snap.Length;
+				for(int i; i < entries; i++)
+				{
+					int length = snap.KeyBufferSize(i)+1;
+					char[] key = new char[length];
+					snap.GetKey(i, key, length);
+					
+					ConfigData mana = manas.GetSection(key);
+					if(mana)
+					{
+						SetBossCharge(boss, key, 0.0);
+						mana.SetFloat("maximum", 0.0);
+					}
+				}
+				
+				delete snap;
+			}
+		}
+	}
+	else
+	{
+		float multi = cfg.GetFloat("manarate", -1.0);
+		if(multi >= 0.0 && multi != 1.0)
+		{
+			AbilityData ability = boss.GetAbility(ABILITY_NAME);
+			if(ability.IsMyPlugin())
+			{
+				ConfigData manas = ability.GetSection("manas");
+				if(manas)
+				{
+					StringMapSnapshot snap = manas.Snapshot();
+					
+					int entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						int length = snap.KeyBufferSize(i)+1;
+						char[] key = new char[length];
+						snap.GetKey(i, key, length);
+						
+						ConfigData mana = manas.GetSection(key);
+						if(mana)
+						{
+							SetBossCharge(boss, key, GetBossCharge(boss, key) * multi);
+							
+							mana.SetFloat("ontick", mana.GetFloat("ontick") * multi);
+							mana.SetFloat("onkill", mana.GetFloat("onkill") * multi);
+							mana.SetFloat("onbossdeath", mana.GetFloat("onbossdeath") * multi);
+							mana.SetFloat("onhurt", mana.GetFloat("onhurt") * multi);
+							mana.SetFloat("ondamage", mana.GetFloat("ondamage") * multi);
+							mana.SetFloat("onairblast", mana.GetFloat("onairblast") * multi);
+						}
+					}
+					
+					delete snap;
+				}
+			}
+		}
+	}
+}
+
 public Action Timer_MenuTick(Handle timer, int client)
 {
-	if(IsClientInGame(client) && ShowMenuAll(client, true))
+	if(IsClientInGame(client) && ShowMenuAll(client, !SetupMode[client]))
 		return Plugin_Continue;
 	
 	// This shouldn't happen ever
@@ -350,7 +455,6 @@ public bool ShowMenuAll(int client, bool ticked)
 	}
 	
 	return false;
-	
 }
 
 public void ShowMenu(int target, int client, BossData boss, AbilityData ability, bool alive, bool ticked)
@@ -575,13 +679,27 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 					}
 				}
 				
-				float cooldown = spell.GetFloat("delay") - gameTime;
-				if(cooldown > 0.0)
+				if(SetupMode[client])
 				{
+					float cooldown = spell.GetFloat("delay");
+					if(cooldown < 0.0)
+						cooldown = 0.0;
+					
 					if(cooldown < 1000.0)
 						Format(buffer1, sizeof(buffer1), "%s [%.1f]", buffer1, cooldown);
 					
 					blocked = true;
+				}
+				else
+				{
+					float cooldown = spell.GetFloat("delay") - gameTime;
+					if(cooldown > 0.0)
+					{
+						if(cooldown < 1000.0)
+							Format(buffer1, sizeof(buffer1), "%s [%.1f]", buffer1, cooldown);
+						
+						blocked = true;
+					}
 				}
 				
 				if(!blocked)
@@ -669,7 +787,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 				if(ability)
 				{
 					int var1;
-					bool enabled = IsPlayerAlive(client);
+					bool enabled = (!SetupMode[client] && IsPlayerAlive(client));
 					if(enabled && ability.GetInt("weapon", var1) && var1 >= 0)
 					{
 						if(var1 > 9)
@@ -850,7 +968,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 		int slots = ability.GetInt("limit");	
 		float gameTime = GetGameTime();
 		
-		SortedSnapshot snap = cfg.Snapshot();
+		StringMapSnapshot snap = cfg.Snapshot();
 		
 		int rands;
 		int entries = snap.Length;
@@ -964,7 +1082,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			int attacker = GetClientOfUserId(event.GetInt("attacker"));
 			if(victim != attacker && attacker > 0 && attacker <= MaxClients)
 			{
-				if(MenuTimer[attacker])
+				if(MenuTimer[attacker] && !SetupMode[attacker])
 				{
 					BossData boss = FF2R_GetBossData(attacker);
 					if(boss)
@@ -1067,7 +1185,7 @@ public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast
 
 void AddManaEvent(int client, const char[] event, float multi = 1.0)
 {
-	if(MenuTimer[client])
+	if(MenuTimer[client] && !SetupMode[client])
 	{
 		BossData boss = FF2R_GetBossData(client);
 		if(boss)

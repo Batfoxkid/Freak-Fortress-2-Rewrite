@@ -208,7 +208,7 @@ public void Database_ClientSetup(Database db, int userid, int numQueries, DBResu
 		{
 			if(results[2].FetchRow())
 			{
-				results[2].FetchString(2, buffer, sizeof(buffer));
+				results[2].FetchString(1, buffer, sizeof(buffer));
 				Preference_AddDifficulty(client, buffer);
 			}
 		}

@@ -269,7 +269,7 @@
 		"button"		"11"					// Button type (11=M2, 13=Reload, 25=M3)
 		"charge"		"1.5"					// Time to fully charge
 		"cooldown"		"5.0"					// Cooldown after use
-		"delay"			"15.0"					// Delay before first use
+		"delay"			"5.0"					// Delay before first use
 		"upward"		"750 + (n * 3.25)"		// Super Jump upward velocity set (n=0.0 ~ 100.0)
 		"forward"		"1.0 + (n * 0.000275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
 		"emergency"		"2000.0"				// Super Jump upward velocity added when touching a hazard
@@ -351,9 +351,6 @@ bool TF2ULoaded;
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
-//Handle SDKStartLagCompensation;
-//Handle SDKFinishLagCompensation;
-//Address SDKGetCurrentCommand;
 Handle SyncHud;
 int PlayersAlive[4];
 bool SpecTeam;
@@ -399,7 +396,7 @@ public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Default Abilities",
 	author		=	"Batfoxkid",
-	description	=	"Run cowards!",
+	description	=	"Contains too much excitement!",
 	version		=	PLUGIN_VERSION,
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
@@ -440,29 +437,6 @@ public void OnPluginStart()
 		LogError("[Gamedata] Could not find GetMaxHealth");
 	
 	delete gamedata;
-	
-	/*gamedata = new GameData("ff2");
-	
-	SDKGetCurrentCommand = view_as<Address>(gamedata.GetOffset("GetCurrentCommand"));
-	if(SDKGetCurrentCommand == view_as<Address>(-1))
-		LogError("[Gamedata] Could not find GetCurrentCommand");
-	
-	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::StartLagCompensation");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Pointer);
-	SDKStartLagCompensation = EndPrepSDKCall();
-	if(!SDKStartLagCompensation)
-		LogError("[Gamedata] Could not find CLagCompensationManager::StartLagCompensation");
-	
-	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::FinishLagCompensation");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	SDKFinishLagCompensation = EndPrepSDKCall();
-	if(!SDKFinishLagCompensation)
-		LogError("[Gamedata] Could not find CLagCompensationManager::FinishLagCompensation");
-	
-	delete gamedata;*/
 	
 	LoadTranslations("ff2_rewrite.phrases");
 	
@@ -605,7 +579,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
 					
-					//StartLagCompensation(client);
+					FF2R_StartLagCompensation(client);
 					
 					float pos[3], vec[3];
 					GetClientEyePosition(client, pos);
@@ -627,7 +601,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					ScaleVector(vec, speed);
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
 					
-					//bool finished;
+					bool finished;
 					if(distance < maximum)
 					{
 						int target = TR_GetEntityIndex(trace);
@@ -639,19 +613,19 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 								bool friendly = (team1 == team2);
 								if(friendly || !IsInvuln(target))
 								{
-									/*if(friendly)	// Lag compenstated location only if they damaged attack
+									if(friendly)	// Lag compenstated location only if they damaged attack
 									{
 										finished = true;
-										FinishLagCompensation(client);
-									}*/
+										FF2R_FinishLagCompensation(client);
+									}
 									
 									GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
 									
-									/*if(!finished)
+									if(!finished)
 									{
 										finished = true;
-										FinishLagCompensation(client);
-									}*/
+										FF2R_FinishLagCompensation(client);
+									}
 									
 									if(!friendly)
 									{
@@ -669,8 +643,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					delete trace;
 					
-					//if(!finished)
-					//	FinishLagCompensation(client);
+					if(!finished)
+						FF2R_FinishLagCompensation(client);
 				}
 				else
 				{
@@ -819,7 +793,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
 					if(charge >= 100.0 && tele)
 					{
-						//StartLagCompensation(client);
+						FF2R_StartLagCompensation(client);
 						
 						float pos1[3];
 						GetClientEyePosition(client, pos1);
@@ -852,7 +826,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							}
 						}
 						
-						//FinishLagCompensation(client);
+						FF2R_FinishLagCompensation(client);
 						
 						if(target != -1)
 						{
@@ -927,7 +901,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				}
 			}
 			
-			if(hud || ability.GetFloat("hudin") < gameTime)
+			if(!(button & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime))
 			{
 				ability.SetFloat("hudin", gameTime + 0.09);
 				
@@ -1165,32 +1139,35 @@ public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 	if(!BossTimers[client])
 		BossTimers[client] = new ArrayList();
 	
-	AbilityData ability;
-	if(!AnchorStartTime[client])
+	if(!setup || FF2R_GetGamemodeType() != 2)
 	{
-		ability = cfg.GetAbility("special_anchor");
-		if(ability.IsMyPlugin())
-			AnchorStartTime[client] = 1.0;
-	}
-	
-	ability = cfg.GetAbility("special_democharge");
-	if(ability.IsMyPlugin())
-		SpecialCharge[client] = true;
-	
-	if(!MobilityEnabled[client])
-	{
-		ability = cfg.GetAbility("special_mobility");
-		if(ability.IsMyPlugin())
+		AbilityData ability;
+		if(!AnchorStartTime[client])
 		{
-			MobilityEnabled[client] = true;
-			ability.SetFloat("delay", GetGameTime() + ability.GetFloat("delay", 15.0));
-			SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+			ability = cfg.GetAbility("special_anchor");
+			if(ability.IsMyPlugin())
+				AnchorStartTime[client] = 1.0;
 		}
+		
+		ability = cfg.GetAbility("special_democharge");
+		if(ability.IsMyPlugin())
+			SpecialCharge[client] = true;
+		
+		if(!MobilityEnabled[client])
+		{
+			ability = cfg.GetAbility("special_mobility");
+			if(ability.IsMyPlugin())
+			{
+				MobilityEnabled[client] = true;
+				ability.SetFloat("delay", GetGameTime() + ability.GetFloat("delay", 5.0));
+				SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+			}
+		}
+		
+		ability = cfg.GetAbility("special_weighdown");
+		if(ability.IsMyPlugin())
+			WeighdownAirTimeAt[client] = FAR_FUTURE;
 	}
-	
-	ability = cfg.GetAbility("special_weighdown");
-	if(ability.IsMyPlugin())
-		WeighdownAirTimeAt[client] = FAR_FUTURE;
 }
 
 public void FF2R_OnBossRemoved(int client)
@@ -1227,8 +1204,7 @@ public void FF2R_OnBossRemoved(int client)
 
 public Action FF2R_OnAbilityPre(int client, const char[] ability, AbilityData cfg, bool &result)
 {
-	if(NoAbilities[client])
-		return Plugin_Stop;
+	return NoAbilities[client] ? Plugin_Stop : Plugin_Continue;
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
@@ -1420,6 +1396,7 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 public void FF2R_OnBossModifier(int client, ConfigData cfg)
 {
 	BossData boss = FF2R_GetBossData(client);
+	bool update;
 	
 	if(cfg.GetBool("nolives"))
 	{
@@ -1446,6 +1423,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			}
 			
 			SetEntityHealth(client, GetClientHealth(client) * lives);
+			update = true;
 		}
 	}
 	
@@ -1458,6 +1436,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			boss.SetInt("maxhealth", RoundToZero(float(health) * multi));
 		}
 		else
+		{
 			float hp = float(GetClientMaxHealth(client)) * (multi - 1.0);
 			
 			Address attrib = TF2Attrib_GetByDefIndex(client, 26);
@@ -1468,13 +1447,14 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 		}
 		
 		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));
+		update = true;
 	}
 	
 	if(cfg.GetBool("nopassive"))
 	{
 		NoAbilities[client] = true;
 		AnchorStartTime[client] = 0.0;
-		MobilityEnabled[client] = 0;
+		MobilityEnabled[client] = false;
 		SpecialCharge[client] = false;
 		
 		if(boss.GetAbility("spawn_many_objects_on_kill").IsMyPlugin())
@@ -1483,11 +1463,20 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 	
 	ConfigData cfgsub = cfg.GetSection("multiply");
 	if(cfgsub)
+	{
 		ModifiyBoss(boss, cfgsub, true);
+		update = true;
+	}
 	
 	cfgsub = cfg.GetSection("override");
 	if(cfgsub)
+	{
 		ModifiyBoss(boss, cfgsub, false);
+		update = true;
+	}
+	
+	if(update)
+		FF2R_UpdateBossAttributes(client);
 }
 
 static void ModifiyBoss(ConfigData boss, ConfigData cfg, bool type)
@@ -1513,7 +1502,7 @@ static void ModifiyBoss(ConfigData boss, ConfigData cfg, bool type)
 						ConfigData sub = boss.GetSection(ability);
 						if(sub)
 						{
-							ModifiyBoss(sub, val.cfg, type);
+							ModifiyBoss(sub, view_as<ConfigData>(val.cfg), type);
 						}
 						else
 						{
@@ -1803,7 +1792,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		char particle[48];
 		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
 		
-		//StartLagCompensation(client);
+		FF2R_StartLagCompensation(client);
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
@@ -1840,7 +1829,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 			victim[victims++] = target;
 		}
 		
-		//FinishLagCompensation(client);
+		FF2R_FinishLagCompensation(client);
 		
 		if(victims == 0)
 		{
@@ -2886,19 +2875,6 @@ void SDKCall_EquipWearable(int client, int entity)
 		RemoveEntity(entity);
 	}
 }
-
-/*void StartLagCompensation(int client)
-{
-	// https://github.com/artvin01/TF2-Zombie-Riot/blob/main/addons/sourcemod/scripting/zombie_riot/sdkcalls.sp#L373
-	if(SDKStartLagCompensation)
-		SDKCall(SDKStartLagCompensation, client, GetEntityAddress(client) + SDKGetCurrentCommand);
-}
-
-void FinishLagCompensation(int client)
-{
-	if(SDKFinishLagCompensation)
-		SDKCall(SDKFinishLagCompensation, client);
-}*/
 
 bool IsInvuln(int client)
 {

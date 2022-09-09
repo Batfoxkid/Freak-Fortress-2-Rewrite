@@ -1639,7 +1639,7 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 			{
 				StringMapSnapshot snap = Difficulties.Snapshot();
 				
-				snap.GetKey(snap.Length % (GetTime() + leader), choosen, sizeof(choosen));
+				snap.GetKey((GetTime() + leader) % snap.Length, choosen, sizeof(choosen));
 				
 				delete snap;
 			}
@@ -1648,7 +1648,7 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 		{
 			int lengt = DiffListing[leader].Length;
 			if(lengt)
-				DiffListing[leader].GetString(lengt % (GetTime() + leader), choosen, sizeof(choosen));
+				DiffListing[leader].GetString((GetTime() + leader) % lengt, choosen, sizeof(choosen));
 		}
 		
 		if(choosen[0])
@@ -1663,7 +1663,7 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 				if(cfg)
 				{
 					char buffer1[128];
-					StringMapSnapshot snap = Difficulties.Snapshot();
+					StringMapSnapshot snap = cfg.Snapshot();
 					
 					PackVal val;
 					int entries = snap.Length;

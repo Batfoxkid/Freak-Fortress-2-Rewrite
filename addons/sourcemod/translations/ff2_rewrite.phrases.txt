@@ -585,6 +585,23 @@
 		"en"		"{red}It's not very effective..."
 	}
 	
+	"Rage Needs Summon"
+	{
+		"en"		"Needs Summonable Player"
+	}
+	"Rage Needs Partner"
+	{
+		"en"		"Needs Ally Boss"
+	}
+	"Rage Needs One Life"
+	{
+		"en"		"Last Life"
+	}
+	"Rage Needs Ground"
+	{
+		"en"		"Ground"
+	}
+	
 	"Weapon Menu"
 	{
 		"en"		"FF2 Weapon Changes\n "

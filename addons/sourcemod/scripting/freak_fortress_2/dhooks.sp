@@ -10,6 +10,7 @@
 	void DHook_UnhookClient(int client)
 	void DHook_UnhookBoss(int client)
 	Address DHook_GetGameStats()
+	Address DHook_GetLagCompensationManager()
 */
 
 #pragma semicolon 1
@@ -32,6 +33,7 @@ static DynamicHook HookItemIterateAttribute;
 
 static ArrayList RawEntityHooks;
 static Address CTFGameStats;
+static Address CLagCompensationManager;
 static int DamageTypeOffset = -1;
 static int m_bOnlyIterateItemViewAttributes;
 static int m_Item;
@@ -56,6 +58,7 @@ void DHook_Setup()
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
 	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
+	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
 	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
@@ -233,6 +236,11 @@ void DHook_UnhookBoss(int client)
 Address DHook_GetGameStats()
 {
 	return CTFGameStats;
+}
+
+Address DHook_GetLagCompensationManager()
+{
+	return CLagCompensationManager;
 }
 
 public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
@@ -430,14 +438,18 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 public MRESReturn DHook_ResetRoundStats(Address address)
 {
 	CTFGameStats = address;
-
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
+	return MRES_Ignored;
+}
 
+public MRESReturn DHook_StartLagCompensation(Address address)
+{
+	CLagCompensationManager = address;
 	return MRES_Ignored;
 }
 
@@ -546,13 +558,11 @@ public MRESReturn DHook_StartBuildingPost(int entity)
 public MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
-
     return MRES_Ignored;
 }
 
 public MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
-
     return MRES_Ignored;
 } 

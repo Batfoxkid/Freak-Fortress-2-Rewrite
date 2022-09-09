@@ -95,6 +95,50 @@ native int FF2R_GetClientScore(int client, int &damage = 0, int &healing = 0, in
 native Handle FF2R_GetPluginHandle();
 
 /**
+ * Get's the current status of FF2
+ * 
+ * @return	0 if no bosses are loaded, 1 if bosses are loaded, 2 if arena-styled gamemode is enabled
+ */
+native int FF2R_GetGamemodeType();
+
+/**
+ * Calls CLagCompensationManager::StartLagCompensation
+ * 
+ * @note			Make sure to call FF2R_FinishLagCompensation afterwards
+ * 
+ * @param client	Client index
+ * 
+ * @error			Invalid client index or client is not in game
+ * 
+ * @noreturn
+ */
+native void FF2R_StartLagCompensation(int client);
+
+/**
+ * Calls CLagCompensationManager::FinishLagCompensation
+ * 
+ * @note			Make sure to call FF2R_StartLagCompensation first
+ * 
+ * @param client	Client index
+ * 
+ * @error			Invalid client index or client is not in game
+ * 
+ * @noreturn
+ */
+native void FF2R_FinishLagCompensation(int client);
+
+/**
+ * Updates max health, speed attributes, and the health bar
+ * 
+ * @param boss	Boss's client index
+ * 
+ * @error		Invalid client index or client is not a boss
+ * 
+ * @noreturn
+ */
+native void FF2R_UpdateBossAttributes(int boss);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted

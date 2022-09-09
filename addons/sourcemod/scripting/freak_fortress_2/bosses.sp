@@ -1670,7 +1670,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 		}
 	}
 	
-	Preference_ApplyDifficulty(client, leader ? leader : client, !active);
+	if(!Client(client).Minion && (!Client(client).Cfg.GetBool("nomods", value, false) || !value))
+		Preference_ApplyDifficulty(client, leader ? leader : client, !active);
 }
 
 int Bosses_SetHealth(int client, int players)

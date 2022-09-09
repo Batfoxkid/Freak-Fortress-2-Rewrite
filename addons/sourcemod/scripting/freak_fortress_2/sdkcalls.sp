@@ -12,6 +12,9 @@
 
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
+static Address SDKGetCurrentCommand;
+static Handle SDKStartLagCompensation;
+static Handle SDKFinishLagCompensation;
 static Handle SDKTeamAddPlayer;
 static Handle SDKTeamRemovePlayer;
 static Handle SDKIncrementStat;
@@ -45,6 +48,25 @@ void SDKCall_Setup()
 	
 	
 	gamedata = new GameData("ff2");
+	
+	SDKGetCurrentCommand = view_as<Address>(gamedata.GetOffset("GetCurrentCommand"));
+	if(SDKGetCurrentCommand == view_as<Address>(-1))
+		LogError("[Gamedata] Could not find GetCurrentCommand");
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::StartLagCompensation");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Pointer);
+	SDKStartLagCompensation = EndPrepSDKCall();
+	if(!SDKStartLagCompensation)
+		LogError("[Gamedata] Could not find CLagCompensationManager::StartLagCompensation");
+	
+	StartPrepSDKCall(SDKCall_Raw);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CLagCompensationManager::FinishLagCompensation");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	SDKFinishLagCompensation = EndPrepSDKCall();
+	if(!SDKFinishLagCompensation)
+		LogError("[Gamedata] Could not find CLagCompensationManager::FinishLagCompensation");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer");
@@ -86,6 +108,14 @@ void SDKCall_Setup()
 	delete gamedata;
 }
 
+bool SDKCall_CheckBlockBackstab(int client, int attacker)
+{
+	if(SDKCheckBlockBackstab)
+		return SDKCall(SDKCheckBlockBackstab, client, attacker);
+	
+	return false;
+}
+
 void SDKCall_EquipWearable(int client, int entity)
 {
 	if(SDKEquipWearable)
@@ -95,6 +125,18 @@ void SDKCall_EquipWearable(int client, int entity)
 	else
 	{
 		RemoveEntity(entity);
+	}
+}
+
+void SDKCall_FinishLagCompensation(int client)
+{
+	if(SDKStartLagCompensation && SDKFinishLagCompensation && SDKGetCurrentCommand != view_as<Address>(-1))
+	{
+		Address value = DHook_GetLagCompensationManager();
+		if(!value)
+			ThrowError("Trying to finish lag compensation before any existed");
+		
+		SDKCall(SDKFinishLagCompensation, value, client);
 	}
 }
 
@@ -114,14 +156,6 @@ void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
 	}
 }
 
-bool SDKCall_CheckBlockBackstab(int client, int attacker)
-{
-	if(SDKCheckBlockBackstab)
-		return SDKCall(SDKCheckBlockBackstab, client, attacker);
-	
-	return false;
-}
-
 void SDKCall_SetSpeed(int client)
 {
 	if(SDKSetSpeed)
@@ -131,6 +165,18 @@ void SDKCall_SetSpeed(int client)
 	else
 	{
 		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.001);
+	}
+}
+
+void SDKCall_StartLagCompensation(int client)
+{
+	if(SDKStartLagCompensation && SDKFinishLagCompensation && SDKGetCurrentCommand != view_as<Address>(-1))
+	{
+		Address value = DHook_GetLagCompensationManager();
+		if(!value)
+			ThrowError("Trying to start lag compensation before any existed");
+		
+		SDKCall(SDKStartLagCompensation, value, client, GetEntityAddress(client) + SDKGetCurrentCommand);
 	}
 }
 

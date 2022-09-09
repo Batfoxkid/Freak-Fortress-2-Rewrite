@@ -371,6 +371,8 @@ void Gamemode_RoundStart()
 				amount += PlayersAlive[a];
 		}
 		
+		Bosses_SetHealth(boss[i], amount);
+		
 		if(enabled)
 		{
 			if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
@@ -380,9 +382,9 @@ void Gamemode_RoundStart()
 			Preference_ApplyDifficulty(boss[i], boss[i], false);
 		}
 		
-		int maxhealth = Bosses_SetHealth(boss[i], amount);
 		if(enabled)
 		{
+			int maxhealth = Client(boss[i]).MaxHealth;
 			int maxlives = Client(boss[i]).MaxLives;
 			
 			for(int a; a < mercs; a++)
