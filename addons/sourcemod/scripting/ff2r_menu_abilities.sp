@@ -926,7 +926,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 												spell.SetFloat("delay", gameTime + spell.GetFloat("cooldown"));
 												
 												int slot = spell.GetInt("high", spell.GetInt("low"));
-												FF2R_DoBossSlot(client, slot, spell.GetInt("low", slot));
+												FF2R_DoBossSlot(client, spell.GetInt("low", slot), slot);
 												
 												if(ability.GetInt("refresh") & RAN_ONUSE)
 													RefreshSpells(client, boss, ability);

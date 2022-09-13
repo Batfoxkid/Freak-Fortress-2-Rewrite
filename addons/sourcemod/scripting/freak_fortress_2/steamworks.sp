@@ -52,7 +52,7 @@ stock void SteamWorks_SetGameTitle(const char[] pack = "")
 		if(pack[0])
 		{
 			char buffer[64];
-			FormatEx(buffer, sizeof(buffer), "Freak Fortress 2 (%s)", pack);
+			FormatEx(buffer, sizeof(buffer), "Freak Fortress 2: Rewrite (%s)", pack);
 			SteamWorks_SetGameDescription(buffer);
 		}
 		else

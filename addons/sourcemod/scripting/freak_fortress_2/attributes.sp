@@ -465,11 +465,11 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		
 		if(Attributes_FindOnWeapon(attacker, weapon, 409))	// kill forces attacker to laugh
 			TF2_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
-	
+		
 		value = Attributes_FindOnWeapon(attacker, weapon, 613);	// minicritboost on kill
 		if(value)
 			TF2_AddCondition(attacker, TFCond_MiniCritOnKill, value);
-	
+		
 		if(Attributes_FindOnWeapon(attacker, weapon, 644))	// clipsize increase on kill
 		{
 			int amount = DamageGoal(375, Client(attacker).GetDamage(slot), lastWeaponDamage);
@@ -732,7 +732,7 @@ public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
 			hype = 0.0;
 		
 		SetEntPropFloat(client, Prop_Send, "m_flHypeMeter", hype);
-		if(Enabled || RoundStatus == 1)
+		if(Enabled && RoundStatus == 1)
 			return Plugin_Continue;
 	}
 	return Plugin_Stop;

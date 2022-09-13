@@ -5,8 +5,8 @@
 
 #include <sourcemod>
 #include <sdkhooks>
-#include <adminmenu>
 #include <tf2_stocks>
+#include <adminmenu>
 #include <clientprefs>
 #include <adt_trie_sort>
 #include <cfgmap>
@@ -242,6 +242,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/preference.sp"
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
+#include "freak_fortress_2/steamworks.sp"
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/weapons.sp"
 
@@ -297,6 +298,7 @@ public void OnPluginStart()
 	Preference_PluginStart();
 	SDKCall_Setup();
 	SDKHook_PluginStart();
+	SteamWorks_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	Weapons_PluginStart();
@@ -357,6 +359,7 @@ public void OnPluginEnd()
 public void OnLibraryAdded(const char[] name)
 {
 	SDKHook_LibraryAdded(name);
+	SteamWorks_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
@@ -365,6 +368,7 @@ public void OnLibraryAdded(const char[] name)
 public void OnLibraryRemoved(const char[] name)
 {
 	SDKHook_LibraryRemoved(name);
+	SteamWorks_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);

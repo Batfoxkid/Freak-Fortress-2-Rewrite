@@ -378,14 +378,6 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				changed = true;
 			}
 			
-			/*if(TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffed) ||
-			   TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffNoCritBlock))
-			{
-				// 35% resist to 50% resist
-				damage /= 1.3;
-				changed = true;
-			}*/
-			
 			if(melee)
 			{
 				if(critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
@@ -416,15 +408,6 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						changed = true;
 					}
 				}
-			}
-			
-			if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
-			{
-				// 25% resist while disguised, a good middle ground
-				// which requires a Spy to be both disguised and cloaked
-				// to a tank a hit from a standard boss
-				damage *= 0.75;
-				changed = true;
 			}
 			
 			if(changed && critType == CritType_None && (damagetype & DMG_CRIT))

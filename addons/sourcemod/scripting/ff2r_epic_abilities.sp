@@ -15,6 +15,7 @@
 				"delay"		"10.0"	// Initial cooldown
 				"cooldown"	"30.0"	// Cooldown on use
 				"cost"		"100.0"	// RAGE cost to use
+				"consume"	"true"	// Consumes RAGE on use
 				"flags"		"0x0001"// Casting flags
 				// 0x0001: Magic (Sapper effect prevents casting)
 				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
@@ -123,7 +124,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			AbilityData ability = boss.GetAbility("special_ability_management");
 			if(ability.IsMyPlugin())
 			{
-				HasAbility[client] = 1;
+				HasAbility[client] = -1;
 				
 				int buttons;
 				if(boss.GetInt("slot") == 0)
@@ -176,8 +177,8 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 						
 						delete snap;
 						
-						if(HasAbility[client] == 1 && (entries > buttons || boss.GetBool("cycler")))
-							HasAbility[client] = 2;
+						if(HasAbility[client] == -1 && (entries > buttons || boss.GetBool("cycler")))
+							HasAbility[client] = 1;
 						
 						return;
 					}
@@ -197,7 +198,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 
 public void FF2R_OnBossRemoved(int client)
 {
-	HasAbility[client] = false;
+	HasAbility[client] = 0;
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
@@ -237,32 +238,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		ConfigData cfg;
 		if(boss && (ability = boss.GetAbility("special_ability_management")) && (cfg = ability.GetSection("spells")))
 		{
-			int team = GetClientTeam(client);
-			int dead, allies;
-			for(int i = 1; i <= MaxClients; i++)
-			{
-				if(i != client && IsClientInGame(i))
-				{
-					if(FF2R_GetBossData(i))
-					{
-						if(GetClientTeam(i) == team)
-							allies++;
-					}
-					else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
-					{
-						if(!IsPlayerAlive(i))
-							dead++;
-					}
-					else if(!SpecTeam && IsPlayerAlive(i))
-					{
-						dead++;
-					}
-				}
-			}
-			
 			bool hud;
 			float gameTime = GetGameTime();
 			
+			int dead = -1;
+			int allies = -1;
 			int count = -1;
 			static int button[4];
 			SortedSnapshot snap;
@@ -284,10 +264,61 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 					{
 						snap = CreateSortedSnapshot(cfg);
 						
-						if(HasAbility[client] == 1 && snap.Length > i)
+						if(HasAbility[client] == -1 && snap.Length > i)
 						{
-							
+							hud = ActivateAbility(client, boss, snap, i, gameTime, dead, allies);
 						}
+						else
+						{
+							hud = ChangeAbility(i == count);
+						}
+						break;
+					}
+				}
+			}
+			else if(buttons & IN_RELOAD)
+			{
+				holding[client] = IN_RELOAD;
+				
+				GetButtons(ability, false, count, button);
+				for(int i; i < count; i++)
+				{
+					if(button[i] == 2)
+					{
+						snap = CreateSortedSnapshot(cfg);
+						
+						if(HasAbility[client] == -1 && snap.Length > i)
+						{
+							hud = ActivateAbility(client, boss, snap, i, gameTime, dead, allies);
+						}
+						else
+						{
+							hud = ChangeAbility(i == count);
+						}
+						break;
+					}
+				}
+			}
+			else if(buttons & IN_ATTACK3)
+			{
+				holding[client] = IN_ATTACK3;
+				
+				GetButtons(ability, false, count, button);
+				for(int i; i < count; i++)
+				{
+					if(button[i] == 3)
+					{
+						snap = CreateSortedSnapshot(cfg);
+						
+						if(HasAbility[client] == -1 && snap.Length > i)
+						{
+							hud = ActivateAbility(client, boss, snap, i, gameTime, dead, allies);
+						}
+						else
+						{
+							hud = ChangeAbility(i == count);
+						}
+						break;
 					}
 				}
 			}
@@ -319,7 +350,9 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 					SetGlobalTransTarget(client);
 					int lang = GetClientLanguage(client);
 					
-					if(HasAbility[client] == 1)
+					static char buffer[512];
+					static PackVal val;
+					if(HasAbility[client] == -1)
 					{
 						GetButtons(ability, false, count, button);
 						
@@ -329,13 +362,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int entries = snap.Length;
 						if(entries >= count)
 						{
-							HasAbility[client] = 2;
+							HasAbility[client] = 1;
 							delete snap;
 							return;
 						}
 						
-						static char buffer[256];
-						static PackVal val;
 						for(int i; i < entries; i++)
 						{
 							int length = snap.KeyBufferSize(i)+1;
@@ -390,11 +421,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									}
 									
 									int flags = val.cfg.GetInt("flags");
-									if((flags & MAG_SUMMON) && !dead)
+									if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Summon");
 									}
-									else if((flags & MAG_PARTNER) && !allies)
+									else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Partner");
 									}
@@ -437,11 +468,106 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							entries--;
 						
 						SetHudTextParams(-1.0, 0.78 + (float(entries) * 0.05), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
-						ShowSyncHudText(client, SyncHud, buffer);
 					}
 					else
 					{
+						if(!snap)
+							snap = CreateSortedSnapshot(cfg);
+						
+						int entries = snap.Length;
+						if(!entries)
+						{
+							HasAbility[client] = 0;
+							delete snap;
+							return;
+						}
+						
+						if(entries > HasAbility[client])
+							HasAbility[client] = 1;
+						
+						int length = snap.KeyBufferSize(HasAbility[client] - 1)+1;
+						char[] key = new char[length];
+						snap.GetKey(HasAbility[client] - 1, key, length);
+						cfg.GetArray(key, val, sizeof(val));
+						
+						if(val.tag == KeyValType_Section && val.cfg)
+						{
+							if(!(buttons & IN_DUCK) || !GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang, "description"))
+							{
+								if(!GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang))
+									strcopy(val.data, sizeof(val.data), key);
+							}
+							
+							if(buttons & IN_DUCK)
+							{
+							}
+							else
+							{
+								int cost = val.cfg.GetFloat("cost");
+								if(cost)
+								{
+									Format(buffer, sizeof(buffer), "(%d%% RAGE)", cost);
+								}
+								else
+								{
+									buffer[0] = 0;
+								}
+								
+								float delay = val.cfg.GetFloat("delay");
+								if(delay > gameTime)
+									Format(buffer, sizeof(buffer), "%s (%.1fs)", buffer, delay - gameTime + 0.1);
+								
+								int flags = val.cfg.GetInt("flags");
+								if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+								{
+									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Summon");
+								}
+								else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+								{
+									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Partner");
+								}
+								else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
+								{
+									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs One Life");
+								}
+								else if((flags & MAG_GROUND) && !(GetEntityFlags(client) & FL_ONGROUND))
+								{
+									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Ground");
+								}
+								else
+								{
+									float delay = val.cfg.GetFloat("delay");
+									if(delay > gameTime)
+									{
+										Format(buffer, sizeof(buffer), "%s (%.1fs)", buffer, delay - gameTime + 0.1);
+									}
+									else
+									{
+										int cost = val.cfg.GetFloat("cost");
+										if(cost)
+											Format(buffer, sizeof(buffer), "%s (%d%%)", buffer, cost);
+									}
+								}
+							}
+								
+								if(i)
+								{
+									Format(buffer, sizeof(buffer), "%s\n%s", buffer, val.data);
+								}
+								else
+								{
+									strcopy(buffer, sizeof(buffer), val.data);
+								}
+							}
+						}
+						
+						if(boss.GetInt("lives") < 2)
+							entries--;
+						
+						SetHudTextParams(-1.0, 0.78 + (float(entries) * 0.05), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
 					}
+					
+					ShowSyncHudText(client, SyncHud, buffer);
 				}
 			}
 			
@@ -454,7 +580,95 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	}
 }
 
-public void GetButtons(ConfigData cfg, bool cycle, int &count, int buttons[4])
+bool ActivateAbility(int client, BossData boss, SortedSnapshot snap, int index, float gameTime, int &dead, int &allies)
+{
+	int length = snap.KeyBufferSize(index)+1;
+	char[] key = new char[length];
+	snap.GetKey(index, key, length);
+	
+	static PackVal val;
+	cfg.GetArray(key, val, sizeof(val));
+	if(val.tag == KeyValType_Section && val.cfg)
+	{
+		if(spell.GetFloat("delay") < gameTime)
+		{
+			int flags = spell.GetInt("flags");
+			if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+			{
+				
+			}
+			else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+			{
+				
+			}
+			else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
+			{
+				
+			}
+			else if((flags & MAG_GROUND) && !(GetEntityFlags(client) & FL_ONGROUND))
+			{
+			}
+			else
+			{
+				float rage = GetBossCharge(boss, "0");
+				float cost = spell.GetFloat("cost");
+				if(rage >= cost)
+				{
+					if(spell.GetBool("consume", true))
+						SetBossCharge(boss, "0", rage - cost);
+					
+					spell.SetFloat("delay", gameTime + spell.GetFloat("cooldown"));
+					
+					int slot = spell.GetInt("cast_high", spell.GetInt("cast_low"));
+					FF2R_DoBossSlot(client, spell.GetInt("cast_low", slot), slot);
+					return true;
+				}
+			}
+		}
+		
+		int slot = spell.GetInt("nocast_high", spell.GetInt("nocast_low", -2147483647));
+		if(slot != -2147483647)
+		{
+			FF2R_DoBossSlot(client, spell.GetInt("nocast_low", slot), slot);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool GetDeadCount(int client, int &dead, int &allies)
+{
+	if(dead == -1 || allies == -1)
+	{
+		dead = 0;
+		allies = 0;
+		
+		int team = GetClientTeam(client);
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(i != client && IsClientInGame(i))
+			{
+				if(FF2R_GetBossData(i))
+				{
+					if(GetClientTeam(i) == team)
+						allies++;
+				}
+				else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
+				{
+					if(!IsPlayerAlive(i))
+						dead++;
+				}
+				else if(!SpecTeam && IsPlayerAlive(i))
+				{
+					dead++;
+				}
+			}
+		}
+	
+	return true;
+}
+
+void GetButtons(ConfigData ability, bool cycle, int &count, int buttons[4])
 {
 	if(count == -1)
 	{

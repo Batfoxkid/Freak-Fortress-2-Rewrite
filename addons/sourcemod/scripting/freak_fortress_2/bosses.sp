@@ -1588,6 +1588,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	{
 		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
+		Client(client).Cfg = null;
 	}
 	
 	EnableSubplugins();
@@ -2115,8 +2116,34 @@ void Bosses_SetSpeed(int client)
 		}
 		
 		// Total Health / (This Life Max Health + Other Lives Max Health)
-		maxspeed += 70.0 - (70.0 * Client(client).Health / (SDKCall_GetMaxHealth(client) + (Client(client).MaxHealth * (Client(client).MaxLives - 1))));
-		TF2Attrib_SetByDefIndex(client, 442, maxspeed/defaul);
+		float speed = maxspeed + 70.0 - (70.0 * Client(client).Health / (SDKCall_GetMaxHealth(client) + (Client(client).MaxHealth * (Client(client).MaxLives - 1))));
+		
+		if(Enabled)
+		{
+			// Get the slowest class, eg. lastman scout will speed up the boss
+			
+			maxspeed += 70.0;
+			float lowest = maxspeed;
+			int team = GetClientTeam(client);
+			for(int target = 1; target <= MaxClients; target++)
+			{
+				if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
+				{
+					float sped = GetEntPropFloat(target, Prop_Send, "m_flMaxspeed") * 1.075;
+					if(sped < lowest)
+						lowest = sped;
+				}
+			}
+			
+			if(lowest > speed)
+			{
+				speed = lowest;
+				if(speed > maxspeed)
+					speed = maxspeed;
+			}
+		}
+		
+		TF2Attrib_SetByDefIndex(client, 442, speed/defaul);
 		SDKCall_SetSpeed(client);
 	}
 	else

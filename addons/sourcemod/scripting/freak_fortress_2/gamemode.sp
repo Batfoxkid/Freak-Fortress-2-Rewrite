@@ -19,15 +19,12 @@ static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
 static int PointUnlock;
-static Handle SelfSyncHud;
 static Handle TeamSyncHud[TFTeam_MAX];
 static Handle HudTimer[TFTeam_MAX];
 static bool HasBoss[TFTeam_MAX];
 
 void Gamemode_PluginStart()
 {
-	SelfSyncHud = CreateHudSynchronizer();
-	
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		TeamSyncHud[i] = CreateHudSynchronizer();
@@ -1029,11 +1026,11 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 			if(target == client)
 			{
-				ShowSyncHudText(client, SelfSyncHud, "%t", "Current Stats Hud", Client(client).TotalDamage, Client(client).Healing, Client(client).TotalAssist);
+				ShowSyncHudText(client, PlayerHud, "%t", "Current Stats Hud", Client(client).TotalDamage, Client(client).Healing, Client(client).TotalAssist);
 			}
 			else
 			{
-				ShowSyncHudText(client, SelfSyncHud, "%t", "Viewing Stats Hud", target, Client(target).TotalDamage, Client(target).Healing, Client(target).TotalAssist);
+				ShowSyncHudText(client, PlayerHud, "%t", "Viewing Stats Hud", target, Client(target).TotalDamage, Client(target).Healing, Client(target).TotalAssist);
 			}
 		}
 	}
