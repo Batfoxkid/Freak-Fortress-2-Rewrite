@@ -25,6 +25,7 @@ Supported:
 - [TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
+- [SteamWorks](https://github.com/ExperimentFailed/SteamWorks)
 
 ## Breaking Changes
 

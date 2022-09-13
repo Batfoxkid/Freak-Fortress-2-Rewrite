@@ -901,7 +901,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				}
 			}
 			
-			if(!(button & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime))
+			if(!(buttons & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime))
 			{
 				ability.SetFloat("hudin", gameTime + 0.09);
 				
@@ -1991,11 +1991,11 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 				}
 				
 				if(health != 1.0)
-					SDKHooks_TakeDamage(victim[i], client, client, GetEntProp(entity, Prop_Data, "m_iMaxHealth") * (1.0 - health), DMG_GENERIC, -1);
+					SDKHooks_TakeDamage(victim[i], client, client, GetEntProp(victim[i], Prop_Data, "m_iMaxHealth") * (1.0 - health), DMG_GENERIC, -1);
 			}
 			else
 			{
-				SDKHooks_TakeDamage(victim[i], client, client, GetEntProp(entity, Prop_Data, "m_iMaxHealth") * 4.0, DMG_GENERIC, -1);
+				SDKHooks_TakeDamage(victim[i], client, client, GetEntProp(victim[i], Prop_Data, "m_iMaxHealth") * 4.0, DMG_GENERIC, -1);
 			}
 			
 			if(particle[0] && duration > 0.0)
@@ -2261,6 +2261,14 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
 				}
 			}
+				
+			GetEntityNetClass(entity, attributes, sizeof(attributes));
+			int offset = FindSendPropInfo(attributes, "m_iItemIDHigh");
+			
+			SetEntData(entity, offset - 8, 0);	// m_iItemID
+			SetEntData(entity, offset - 4, 0);	// m_iItemID
+			SetEntData(entity, offset, 0);		// m_iItemIDHigh
+			SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
 			
 			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 		}

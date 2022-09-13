@@ -288,7 +288,7 @@ public void OnPluginStart()
 	Bosses_PluginStart();
 	Command_PluginStart();
 	ConVar_PluginStart();
-	Database_Setup();
+	Database_PluginStart();
 	DHook_Setup();
 	Events_PluginStart();
 	Gamemode_PluginStart();
@@ -315,12 +315,6 @@ public void OnAllPluginsLoaded()
 
 public void OnMapStart()
 {
-	/*if(FileExists("sound/saxton_hale/9000.wav", true))
-	{
-		AddFileToDownloadsTable("sound/saxton_hale/9000.wav");
-		PrecacheSound("saxton_hale/9000.wav");
-	}*/
-	
 	Configs_MapStart();
 	DHook_MapStart();
 	Gamemode_MapStart();

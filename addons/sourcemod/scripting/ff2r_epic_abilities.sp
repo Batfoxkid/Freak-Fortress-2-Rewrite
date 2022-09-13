@@ -237,9 +237,6 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		ConfigData cfg;
 		if(boss && (ability = boss.GetAbility("special_ability_management")) && (cfg = ability.GetSection("spells")))
 		{
-			float gameTime = GetGameTime();
-			bool hud;
-			
 			int team = GetClientTeam(client);
 			int dead, allies;
 			for(int i = 1; i <= MaxClients; i++)
@@ -263,159 +260,217 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 				}
 			}
 			
-			if(!(buttons & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime))
+			bool hud;
+			float gameTime = GetGameTime();
+			
+			int count = -1;
+			static int button[4];
+			SortedSnapshot snap;
+			
+			static int holding[MAXTF2PLAYERS];
+			if(holding[client])
 			{
-				ability.SetFloat("hudin", gameTime + 0.09);
+				if(!(buttons & holding[client]))
+					holding[client] = 0;
+			}
+			else if(buttons & IN_ATTACK2)
+			{
+				holding[client] = IN_ATTACK2;
 				
-				SetGlobalTransTarget(client);
-				int lang = GetClientLanguage(client);
-				
-				if(HasAbility[client] == 1)
+				GetButtons(ability, false, count, button);
+				for(int i; i < count; i++)
 				{
-					int count;
-					int button[4];
-					
-					if(ability.GetInt("slot") == 0)
-						button[count++] = 0;
-					
-					if(ability.GetBool("altfire", false))
-						button[count++] = 1;
-					
-					if(ability.GetBool("reload", true))
-						button[count++] = 2;
-					
-					if(ability.GetBool("special", true))
-						button[count++] = 3;
-					
-					SortedSnapshot snap = CreateSortedSnapshot(cfg);
-					
-					int entries = snap.Length;
-					if(entries >= count)
+					if(button[i] == 1)
 					{
-						HasAbility[client] = 2;
-						delete snap;
-						return;
-					}
-					
-					static char buffer[256];
-					static PackVal val;
-					for(int i; i < entries; i++)
-					{
-						int length = snap.KeyBufferSize(i)+1;
-						char[] key = new char[length];
-						snap.GetKey(i, key, length);
-						cfg.GetArray(key, val, sizeof(val));
+						snap = CreateSortedSnapshot(cfg);
 						
-						if(val.tag == KeyValType_Section && val.cfg)
+						if(HasAbility[client] == 1 && snap.Length > i)
 						{
-							if(buttons & IN_DUCK)
+							
+						}
+					}
+				}
+			}
+			
+			if(!(buttons & IN_SCORE))
+			{
+				if(!hud)
+				{
+					static bool wasDucking[MAXTF2PLAYERS];
+					if(buttons & IN_DUCK)
+					{
+						if(!wasDucking[client])
+						{
+							hud = true;
+							wasDucking[client] = true;
+						}
+					}
+					else if(!wasDucking[client])
+					{
+						hud = true;
+						wasDucking[client] = false;
+					}
+				}
+				
+				if(hud || ability.GetFloat("hudin") < gameTime)
+				{
+					ability.SetFloat("hudin", gameTime + 0.09);
+					
+					SetGlobalTransTarget(client);
+					int lang = GetClientLanguage(client);
+					
+					if(HasAbility[client] == 1)
+					{
+						GetButtons(ability, false, count, button);
+						
+						if(!snap)
+							snap = CreateSortedSnapshot(cfg);
+						
+						int entries = snap.Length;
+						if(entries >= count)
+						{
+							HasAbility[client] = 2;
+							delete snap;
+							return;
+						}
+						
+						static char buffer[256];
+						static PackVal val;
+						for(int i; i < entries; i++)
+						{
+							int length = snap.KeyBufferSize(i)+1;
+							char[] key = new char[length];
+							snap.GetKey(i, key, length);
+							cfg.GetArray(key, val, sizeof(val));
+							
+							if(val.tag == KeyValType_Section && val.cfg)
 							{
-								if(!GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang, "description"))
+								if(!(buttons & IN_DUCK) || !GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang, "description"))
 								{
 									if(!GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang))
 										strcopy(val.data, sizeof(val.data), key);
 								}
 								
-								switch(button[i])
+								if(buttons & IN_DUCK)
 								{
-									case 0:
-										Format(val.data, sizeof(val.data), "[voicemenu 0 0] %s", val.data);
+									switch(button[i])
+									{
+										case 0:
+											Format(val.data, sizeof(val.data), "[Call for Medic] %s", val.data);
+										
+										case 1:
+											Format(val.data, sizeof(val.data), "[Alt-Fire] %s", val.data);
+										
+										case 2:
+											Format(val.data, sizeof(val.data), "[Reload] %s", val.data);
+										
+										case 3:
+											Format(val.data, sizeof(val.data), "[Special Attack] %s", val.data);
+									}
 									
-									case 1:
-										Format(val.data, sizeof(val.data), "[+attack2] %s", val.data);
-									
-									case 2:
-										Format(val.data, sizeof(val.data), "[+reload] %s", val.data);
-									
-									case 3:
-										Format(val.data, sizeof(val.data), "[+attack3] %s", val.data);
-								}
-								
-								int cost = val.cfg.GetFloat("cost");
-								if(cost)
-									Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
-							}
-							else
-							{
-								if(!GetBossNameCfg(val.cfg, val.data, sizeof(val.data), lang))
-									strcopy(val.data, sizeof(val.data), key);
-								
-								switch(button[i])
-								{
-									case 0:
-										Format(val.data, sizeof(val.data), "[E] %s", val.data);
-									
-									case 1:
-										Format(val.data, sizeof(val.data), "[M2] %s", val.data);
-									
-									case 2:
-										Format(val.data, sizeof(val.data), "[R] %s", val.data);
-									
-									case 3:
-										Format(val.data, sizeof(val.data), "[M3] %s", val.data);
-								}
-								
-								int flags = val.cfg.GetInt("flags");
-								if((flags & MAG_SUMMON) && !dead)
-								{
-									Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Summon");
-								}
-								else if((flags & MAG_PARTNER) && !allies)
-								{
-									Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Partner");
-								}
-								else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
-								{
-									Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs One Life");
+									int cost = val.cfg.GetFloat("cost");
+									if(cost)
+										Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
 								}
 								else
 								{
-									float delay = val.cfg.GetFloat("delay");
-									if(delay > gameTime)
+									switch(button[i])
 									{
-										Format(val.data, sizeof(val.data), "%s (%.1fs)", val.data, delay - gameTime + 0.1);
+										case 0:
+											Format(val.data, sizeof(val.data), "[E] %s", val.data);
+										
+										case 1:
+											Format(val.data, sizeof(val.data), "[M2] %s", val.data);
+										
+										case 2:
+											Format(val.data, sizeof(val.data), "[R] %s", val.data);
+										
+										case 3:
+											Format(val.data, sizeof(val.data), "[M3] %s", val.data);
 									}
-									else if((flags & MAG_GROUND) && !(GetEntityFlags(client) & FL_ONGROUND))
+									
+									int flags = val.cfg.GetInt("flags");
+									if((flags & MAG_SUMMON) && !dead)
 									{
-										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Ground");
+										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Summon");
+									}
+									else if((flags & MAG_PARTNER) && !allies)
+									{
+										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Partner");
+									}
+									else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
+									{
+										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs One Life");
 									}
 									else
 									{
-										int cost = val.cfg.GetFloat("cost");
-										if(cost)
-											Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
+										float delay = val.cfg.GetFloat("delay");
+										if(delay > gameTime)
+										{
+											Format(val.data, sizeof(val.data), "%s (%.1fs)", val.data, delay - gameTime + 0.1);
+										}
+										else if((flags & MAG_GROUND) && !(GetEntityFlags(client) & FL_ONGROUND))
+										{
+											Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Ground");
+										}
+										else
+										{
+											int cost = val.cfg.GetFloat("cost");
+											if(cost)
+												Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
+										}
 									}
 								}
-							}
-							
-							if(i)
-							{
-								Format(buffer, sizeof(buffer), "%s\n%s", buffer, val.data);
-							}
-							else
-							{
-								strcopy(buffer, sizeof(buffer), val.data);
+								
+								if(i)
+								{
+									Format(buffer, sizeof(buffer), "%s\n%s", buffer, val.data);
+								}
+								else
+								{
+									strcopy(buffer, sizeof(buffer), val.data);
+								}
 							}
 						}
+						
+						if(boss.GetInt("lives") < 2)
+							entries--;
+						
+						SetHudTextParams(-1.0, 0.78 + (float(entries) * 0.05), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
+						ShowSyncHudText(client, SyncHud, buffer);
 					}
-					
-					delete snap;
-					
-					if(boss.GetInt("lives") < 2)
-						entries--;
-					
-					SetHudTextParams(-1.0, 0.78 + (float(entries) * 0.05), 0.15, 255, 255, 255, 255, _, _, 0.01, 0.5);
-					ShowSyncHudText(client, SyncHud, buffer);
-				}
-				else
-				{
+					else
+					{
+					}
 				}
 			}
+			
+			delete snap;
 		}
 		else
 		{
 			HasAbility[client] = 0;
 		}
+	}
+}
+
+public void GetButtons(ConfigData cfg, bool cycle, int &count, int buttons[4])
+{
+	if(count == -1)
+	{
+		count = 0;
+		
+		if(!cycle && ability.GetInt("slot") == 0)
+			button[count++] = 0;
+		
+		if(ability.GetBool("altfire", false))
+			button[count++] = 1;
+		
+		if(ability.GetBool("reload", true))
+			button[count++] = 2;
+		
+		if(ability.GetBool("special", true))
+			button[count++] = 3;
 	}
 }
 

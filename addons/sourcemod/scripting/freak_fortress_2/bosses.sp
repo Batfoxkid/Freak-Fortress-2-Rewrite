@@ -403,6 +403,9 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				}
 				
 				pack++;
+				
+				if(precache && Enabled)
+					SteamWorks_SetGameTitle(entries > 1 ? packname : "");
 			}
 			
 			delete snapSub;
@@ -416,6 +419,8 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		PackList.PushString("Freak Fortress 2");
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
 		LoadCharacterDirectory(filepath, "", true, 0, mapname, charset>=0);
+		if(Enabled && charset >= 0)
+			SteamWorks_SetGameTitle();
 	}
 	
 	LockStringTables(save);
@@ -2003,6 +2008,14 @@ static void EquipBoss(int client, bool weapons)
 							}
 						}
 						
+						GetEntityNetClass(entity, classname, sizeof(classname));
+						int offset = FindSendPropInfo(classname, "m_iItemIDHigh");
+						
+						SetEntData(entity, offset - 8, 0);	// m_iItemID
+						SetEntData(entity, offset - 4, 0);	// m_iItemID
+						SetEntData(entity, offset, 0);		// m_iItemIDHigh
+						SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
+						
 						SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 					}
 					else
@@ -2020,6 +2033,7 @@ static void EquipBoss(int client, bool weapons)
 					override = (cfg.GetInt("red", index) || override);
 					override = (cfg.GetInt("green", kills) || override);
 					override = (cfg.GetInt("blue", count) || override);
+					
 					if(override)
 					{
 						SetEntityRenderMode(entity, RENDER_TRANSCOLOR);

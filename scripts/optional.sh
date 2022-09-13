@@ -5,3 +5,4 @@ wget "https://raw.githubusercontent.com/nosoop/SM-TFEconData/master/scripting/in
 wget "https://raw.githubusercontent.com/nosoop/SM-TFCustomWeaponsX/master/scripting/include/cwx.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFUtils/master/scripting/include/tf2utils.inc"
 wget "https://raw.githubusercontent.com/Flyflo/SM-Goomba-Stomp/master/addons/sourcemod/scripting/include/goomba.inc"
+wget "https://raw.githubusercontent.com/ExperimentFailed/SteamWorks/master/Pawn/includes/SteamWorks.inc"

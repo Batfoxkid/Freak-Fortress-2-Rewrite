@@ -153,6 +153,7 @@ bool Preference_GetDifficulty(int client, int index, char[] buffer, int length)
 void Preference_ClearArrays(int client)
 {
 	UpdateDataBase[client] = false;
+	DiffOverride[client][0] = 0;
 	
 	delete BossListing[client];
 	delete DiffListing[client];
@@ -1632,6 +1633,7 @@ void Preference_ApplyDifficulty(int client, int leader, bool delay)
 		if(!delay && DiffOverride[client][0])
 		{
 			strcopy(choosen, sizeof(choosen), DiffOverride[client]);
+			DiffOverride[client][0] = 0;
 		}
 		else if(Cvar[PrefSpecial].BoolValue && Cvar[PrefSpecial].FloatValue >= GetURandomFloat())
 		{
@@ -1819,15 +1821,15 @@ public Action Preference_DifficultyMenuCmd(int client, int args)
 			if(DiffListing[client])
 			{
 				delete DiffListing[client];
-				UpdateDataBase[client] = true;
 				FReplyToCommand(client, "%t", "Enabled Special Rounds");
 			}
 			else
 			{
 				Preference_AddDifficulty(client, "#");
-				UpdateDataBase[client] = true;
 				FReplyToCommand(client, "%t", "Disabled Special Rounds");
 			}
+			
+			UpdateDataBase[client] = true;
 		}
 		else if(args && client)
 		{
@@ -2085,13 +2087,13 @@ public int Preference_DifficultyMenuItemH(Menu menu, MenuAction action, int clie
 				if(index == -1)
 				{
 					Preference_AddDifficulty(client, buffer);
-					UpdateDataBase[client] = true;
 				}
 				else
 				{
 					DiffListing[client].Erase(index);
-					UpdateDataBase[client] = true;
 				}
+				
+				UpdateDataBase[client] = true;
 			}
 			
 			DifficultyMenu(client);

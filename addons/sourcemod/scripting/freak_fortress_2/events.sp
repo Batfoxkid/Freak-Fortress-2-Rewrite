@@ -657,6 +657,9 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		{
 			if(!Client(clients[i]).NoHud)
 			{
+				if(dmg[0] > 9000)
+					ClientCommand(clients[i], "playgamesound saxton_hale/9000.wav");
+				
 				if(team > -1)
 				{
 					SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);
