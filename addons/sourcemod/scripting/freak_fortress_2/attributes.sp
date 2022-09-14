@@ -459,6 +459,19 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		
 		if(weapon != -1 && Attributes_FindOnWeapon(attacker, weapon, 226))	// honorbound
 		{
+			int max = Client(attacker).MaxHealth * 2;
+			int addedHealth = 0;
+
+			if (GetEntProp(weapon, Prop_Send, "m_bIsBloody"))
+				addedHealth = 25;
+			else
+				addedHealth = RoundToFloor(Client(attacker).MaxHealth / 2.0);
+
+			if (addedHealth + Client(attacker).Health > max)
+				addedHealth = max-Client(attacker).Health;
+
+			Client(attacker).Health += addedHealth;
+
 			SetEntProp(weapon, Prop_Send, "m_bIsBloody", true);
 			SetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy", GetEntProp(attacker, Prop_Send, "m_iKillCountSinceLastDeploy")+1);
 		}

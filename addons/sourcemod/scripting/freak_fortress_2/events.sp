@@ -24,7 +24,7 @@ void Events_PluginStart()
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
-	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_PostNoCopy);
+	//HookEvent("player_team", Events_PlayerSpawn, EventHookMode_PostNoCopy);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
@@ -168,8 +168,9 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 	if(!event.GetInt("weaponid") && Client(GetClientOfUserId(event.GetInt("ownerid"))).IsBoss)
 	{
 		int client = GetClientOfUserId(event.GetInt("userid"));
+		int boss = GetClientOfUserId(event.GetInt("ownerid"));
 		if(client)
-			Weapons_OnAirblastBoss(client);
+			Weapons_OnAirblastBoss(client, boss);
 	}
 	return Plugin_Continue;
 }
@@ -206,7 +207,8 @@ public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 
 public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(event.GetInt("userid"));
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	if(client && CvarDisguiseModels.BoolValue)
 	{
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);

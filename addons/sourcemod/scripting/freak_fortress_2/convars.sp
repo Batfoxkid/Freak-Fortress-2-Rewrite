@@ -45,6 +45,8 @@ void ConVar_PluginStart()
 	CvarPlayerGlow = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
 	CvarBossSapper = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
 	CvarRageOnSap = CreateConVar("ff2_game_sap_rage", "30.0", "Rage given every time a spy saps a boss.", _, true, 0.0, true, 1.0);
+	CvarSniperClimbDelay = CreateConVar("ff2_game_climb_delay", "1.56", "Delay between sniper climbing 0 = Disabled", _, true, 0.0);
+	CvarSniperClimbDmg = CreateConVar("ff2_game_climb_damage",  "15.0", "Damage taken when snipers climb walls.", _, true, 0.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

@@ -13,6 +13,8 @@
 	void Weapons_OnInventoryApplication(int userid)
 	void Weapons_OnWeaponSwitch(int client, int weapon)
 	void Weapons_EntityCreated(int entity, const char[] classname)
+	void Weapons_SickleClimb(int client, int weapon)
+	bool TraceRay_DontHitSelf(int entity, int mask, any data)
 */
 
 #tryinclude <cwx>
@@ -562,7 +564,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 	#endif
 }
 
-stock void Weapons_OnAirblastBoss(int attacker)
+stock void Weapons_OnAirblastBoss(int attacker, int boss)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded)
@@ -582,6 +584,15 @@ stock void Weapons_OnAirblastBoss(int attacker)
 		}
 	}
 	#endif
+
+	float charge = Client(boss).GetCharge(0);
+	if (charge + CvarRageOnSap.FloatValue > 100.0) {
+		Client(boss).SetCharge(0, 100.0);
+	}
+	else
+	{
+		Client(boss).SetCharge(0, charge + CvarRageOnSap.FloatValue);
+	}
 }
 
 stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
@@ -598,6 +609,73 @@ stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &
 	}
 	#endif
 }
+
+stock void Weapons_SickleClimb(int client, int weapon)
+{
+	if (!IsClientInGame(client) || GetClientHealth(client) <= CvarSniperClimbDmg.FloatValue)
+		return;
+
+	float eyePos[3];
+	float eyeAng[3];
+	GetClientEyePosition(client, eyePos);
+	GetClientEyeAngles(client, eyeAng);
+
+	TR_TraceRayFilter(eyePos, eyeAng, MASK_PLAYERSOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
+
+	if(!TR_DidHit(INVALID_HANDLE))
+		return;
+
+	char classname[64];
+	int index = TR_GetEntityIndex(INVALID_HANDLE);
+	GetEdictClassname(index, classname, sizeof(classname));
+	if (!StrEqual(classname, "worldspawn"))
+		return;
+
+	float normal[3];
+	TR_GetPlaneNormal(INVALID_HANDLE, normal);
+	GetVectorAngles(normal, normal);
+
+	if (normal[0] >= 30.0 && normal[0] <= 330.0)
+		return;
+
+	if (normal[0] <= -30.0)
+		return;
+
+	float pos[3];
+	TR_GetEndPosition(pos);
+	float distance = GetVectorDistance(eyePos, pos);
+
+	if (distance >= 100.0)
+		return;
+
+	float velocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
+	velocity[2] = 600.0;
+
+	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+
+	SDKHooks_TakeDamage(client, client, client, CvarSniperClimbDmg.FloatValue, DMG_CLUB, 0);
+
+	EmitSoundToClient(client, "player/taunt_clip_spin.wav");
+
+	RequestFrame(Timer_NoAttacking, EntIndexToEntRef(weapon));
+}
+
+void Timer_NoAttacking(any ref)
+{
+	int weapon = EntRefToEntIndex(ref);
+
+	if (weapon <= MaxClients)
+		return;
+
+	if (!IsValidEntity(weapon))
+		return;
+
+	float next = GetGameTime() + CvarSniperClimbDelay.FloatValue;
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", next);
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
+}
+
 
 void Weapons_OnInventoryApplication(int userid)
 {
@@ -899,4 +977,9 @@ static ConfigMap FindWeaponSection(int entity)
 		return cfg;
 	
 	return null;
+}
+
+public bool TraceRay_DontHitSelf(int entity, int mask, any data)
+{
+	return (entity != data);
 }
