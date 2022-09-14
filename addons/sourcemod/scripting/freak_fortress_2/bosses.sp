@@ -79,7 +79,7 @@ public Action Bosses_DebugCacheCmd(int args)
 	}
 	else
 	{
-		PrintToServer("[SM] Usage: ff2_checkboss [boss name / #index]");
+		PrintToServer("[SM] Usage: ff2_checkboss <boss name / #index>");
 	}
 	return Plugin_Handled;
 }

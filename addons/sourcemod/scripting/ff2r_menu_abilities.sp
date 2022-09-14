@@ -12,7 +12,7 @@
 		
 		"manas"
 		{
-			"0"	// Ability Slot, eg. 0 syncs with RAGE meter
+			"0"	// Ability Slot, eg. 0 syncs with RAGE meter. Don't use slots 1, 2, 3 or your going to have a bad time.
 			{
 				"name"		"MP"	// Name, can use "name_en", etc. If left blank, section name is used instead
 				"start"		"0.0"	// Starting amount
@@ -37,8 +37,8 @@
 				"name"		"RAGE"	// Name, can use "name_en", etc. If left blank, section name is used instead
 				"delay"		"10.0"	// Initial cooldown
 				"cooldown"	"30.0"	// Cooldown on use
-				"low"		"4"		// Lowest ability slot to activate. If left blank, "high" is used
-				"high"		"4"		// Highest ability slot to activate. If left blank, "low" is used
+				"low"		"8"		// Lowest ability slot to activate. If left blank, "high" is used
+				"high"		"8"		// Highest ability slot to activate. If left blank, "low" is used
 				"flags"		"0x0001"// Casting flags
 				// 0x0001: Magic (Sapper effect prevents casting)
 				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
@@ -107,6 +107,7 @@ bool Enabled;
 Handle SDKGetMaxHealth;
 Handle MenuTimer[MAXTF2PLAYERS];
 bool ViewingMenu[MAXTF2PLAYERS];
+int ViewingPage[MAXTF2PLAYERS];
 bool SetupMode[MAXTF2PLAYERS];
 int PlayersAlive[4];
 bool SpecTeam;
@@ -122,6 +123,11 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("ff2_rewrite.phrases");
+	LoadTranslations("core.phrases");
+	if(!TranslationPhraseExists("Ability Delay"))
+		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
+	
 	GameData gamedata = new GameData("sdkhooks.games");
 	
 	StartPrepSDKCall(SDKCall_Player);
@@ -215,6 +221,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				ConfigData cfg = ability.GetSection("spells");
 				if(cfg)
 				{
+					float gameTime = GetGameTime();
 					StringMapSnapshot snap = cfg.Snapshot();
 					
 					int entries = snap.Length;
@@ -295,6 +302,7 @@ public void FF2R_OnBossRemoved(int client)
 		CancelClientMenu(client, false);
 	
 	SetupMode[client] = false;
+	ViewingPage[client] = 0;
 	
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -465,13 +473,13 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 	if(!GetBossNameCfg(boss, buffer1, sizeof(buffer1), lang))
 		GetClientName(client, buffer1, sizeof(buffer1));
 	
-	Format(buffer1, sizeof(buffer1), "%s\n%d / %d HP\n", buffer1, alive ? GetClientHealth(client) : 0, GetClientMaxHealth(client));
+	Format(buffer1, sizeof(buffer1), "%s\n%t\n", buffer1, "Boss HP", alive ? GetClientHealth(client) : 0, GetClientMaxHealth(client));
 	
 	int var1 = boss.GetInt("lives", 1);
 	if(var1 > 1)
 	{
 		int lives = alive ? boss.GetInt("livesleft", 1) : 0;
-		Format(buffer1, sizeof(buffer1), "%s%d / %d Lives\n", buffer1, lives, var1);
+		Format(buffer1, sizeof(buffer1), "%s%t\n", buffer1, "Boss Lives", lives, var1);
 	}
 	
 	static char buffer2[64];
@@ -738,14 +746,53 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 	}
 	
 	if(!var1)
+	{
 		menu.AddItem("", "", ITEMDRAW_SPACER);
+	}
+	else if(var1 > 10)
+	{
+		for(int i = 7; ; i += 10)
+		{
+			if(i == 7)
+			{
+				menu.InsertItem(i, "", "", ITEMDRAW_SPACER);	// 8. 
+			}
+			else
+			{
+				Format(buffer2, sizeof(buffer2), "%t", "Previous");
+				
+				if(i >= var1)	// Not enough items for a new page
+				{
+					while(i > var1)
+					{
+						menu.AddItem("", "", ITEMDRAW_SPACER);	// 2-7. 
+						var1++;
+					}
+					
+					menu.AddItem("#", buffer2);	// 8. Back
+					break;
+				}
+				else
+				{
+					menu.InsertItem(i, "#", buffer2);	// 8. Back
+				}
+			}
+			
+			Format(buffer2, sizeof(buffer2), "%t", "Next");
+			menu.InsertItem(i + 1, "@", buffer2);		// 9. Next
+			menu.InsertItem(i + 2, "", "", ITEMDRAW_SPACER);	// 0. 
+			var1 += 3;
+		}
+	}
+	else
+	{
+		ViewingPage[client] = 0;
+	}
 	
-	if(var1 < 11)
-		menu.Pagination = 0;
-	
+	menu.Pagination = 0;
 	menu.ExitButton = false;
 	menu.OptionFlags |= MENUFLAG_NO_SOUND;
-	ViewingMenu[target] = menu.Display(target, RoundToCeil(tickrate + 0.1));
+	ViewingMenu[target] = menu.DisplayAt(target, ViewingPage[client] * 10, RoundToCeil(tickrate + 0.1));
 	if(!alive)
 		ViewingMenu[target] = false;
 }
@@ -806,7 +853,15 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 					{
 						char buffer[64];
 						menu.GetItem(selection, buffer, sizeof(buffer));
-						if(buffer[0])
+						if(buffer[0] == '@')
+						{
+							ViewingPage[client]++;
+						}
+						else if(buffer[0] == '#')
+						{
+							ViewingPage[client]--;
+						}
+						else if(buffer[0])
 						{
 							Format(buffer, sizeof(buffer), "spells.%s", buffer);
 							

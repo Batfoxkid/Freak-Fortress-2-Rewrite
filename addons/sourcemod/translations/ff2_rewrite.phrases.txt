@@ -6,7 +6,7 @@
 	}
 	"Available Commands"
 	{
-		"en"		"/ff2 - Main Menu\n/ff2boss - Whitelist Bosses\n/ff2queue - View Boss Queue\n/ff2music - Music Settings\n/ff2voice - Toggle Boss Voicelines\n/ff2weapons - View Weapon Changes"
+		"en"		"ff2 - Main Menu\nff2boss - Boss Listing\nff2queue - View Boss Queue\nff2music - Music Settings\nff2voice - Toggle Boss Voicelines\nff2weapons - View Weapon Changes\nff2hud - Toggle Round Stats HUD\nff2modifier - Modifier Listing"
 	}
 	
 	"Boss Spawned As"
@@ -600,6 +600,58 @@
 	"Rage Needs Ground"
 	{
 		"en"		"Ground"
+	}
+	"Boss HP"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"{1} / {2} HP"
+	}
+	"Boss Lives"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"{1} / {2} Lives"
+	}
+	"Ability Delay"
+	{
+		"#format"	"{1:.1f}"
+		"en"		"{1}s"
+	}
+	"Boss Rage"
+	{
+		"#format"	"{1:d}"
+		"en"		"{1}%% RAGE"
+	}
+	"Button E"
+	{
+		"en"		"Call for Medic"
+	}
+	"Button 11"
+	{
+		"en"		"Secondary Attack"
+	}
+	"Button 13"
+	{
+		"en"		"Reload"
+	}
+	"Button 25"
+	{
+		"en"		"Special Attack"
+	}
+	"Short E"
+	{
+		"en"		"E"
+	}
+	"Short 11"
+	{
+		"en"		"M2"
+	}
+	"Short 13"
+	{
+		"en"		"R"
+	}
+	"Short 25"
+	{
+		"en"		"M3"
 	}
 	
 	"Weapon Menu"

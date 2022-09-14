@@ -165,7 +165,9 @@ forward void FF2R_OnAliveChanged(const int alive[4], const int total[4]);
 /**
  * Called when a boss gets removed
  * 
- * @param client	Client index, however they may not always be in-game or have a boss cfg
+ * @note			Client could not be in-game or have a boss config
+ * 
+ * @param client	Client index
  * 
  * @noreturn
  */

@@ -472,14 +472,17 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					}
 				}
 				
-				if(Cvar[SoundType].BoolValue)
+				if(event.GetInt("customkill") != TF_CUSTOM_TELEFRAG)
 				{
-					if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
-						Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
-				}
-				else if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, _, _, _, _, 2.0))
-				{
-					Bosses_PlaySound(victim, boss, bosses, "sound_death", _, _, _, _, _, 2.0);
+					if(!Cvar[SoundType].BoolValue)
+					{
+						if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+							Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+					}
+					else if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, _, _, _, _, 2.0))
+					{
+						Bosses_PlaySound(victim, boss, bosses, "sound_death", _, _, _, _, _, 2.0);
+					}
 				}
 				
 				if(!deadRinger)

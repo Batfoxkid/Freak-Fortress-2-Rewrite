@@ -40,12 +40,12 @@ public Action Menu_MainMenuCmd(int client, int args)
 {
 	if(!client)
 	{
-		PrintToServer("Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+		PrintToServer("Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		
 		if(Cvar[Debugging].BoolValue)
 			PrintToServer("Debug Mode Enabled");
 		
-		PrintToServer("Status: %s", Charset<0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
+		PrintToServer("Status: %s", Charset < 0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
 		
 		if(Charset < 0)
 		{
@@ -81,7 +81,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 	}
 	else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
-		PrintToConsole(client, "Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+		PrintToConsole(client, "Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		PrintToConsole(client, "%T", "Available Commands", client);
 	}
 	else
@@ -95,7 +95,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 void Menu_MainMenu(int client)
 {
 	Menu menu = new Menu(Menu_MainMenuH);
-	menu.SetTitle("Freak Fortress 2: Rewrite (%s.%s)\n%s\n ", PLUGIN_VERSION, PLUGIN_VERSION_REVISION, GITHUB_URL);
+	menu.SetTitle("Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")\n" ... GITHUB_URL ... "\n ");
 	
 	char buffer[64];
 	SetGlobalTransTarget(client);

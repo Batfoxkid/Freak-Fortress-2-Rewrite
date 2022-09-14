@@ -20,7 +20,7 @@ static bool CvarHooked;
 
 void ConVar_PluginStart()
 {
-	Cvar[Version] = CreateConVar("ff2_version", PLUGIN_VERSION_FULL, "Freak Fortress 2 Version", FCVAR_NOTIFY);
+	Cvar[Version] = CreateConVar("ff2_version", PLUGIN_VERSION_FULL, "Freak Fortress 2 Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	Cvar[NextCharset] = CreateConVar("ff2_current", "0", "Boss pack set for next load", FCVAR_DONTRECORD);
 	Cvar[Debugging] = CreateConVar("ff2_debug", "0", "If to display debug outputs and keep full configs", FCVAR_NOTIFY|FCVAR_DONTRECORD, true, 0.0, true, 1.0);
 	
@@ -45,6 +45,7 @@ void ConVar_PluginStart()
 	Cvar[PlayerGlow] = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
 	Cvar[BossSapper] = CreateConVar("ff2_boss_sapper", "1", "If sappers can apply a slow on a boss similar to MvM.", _, true, 0.0, true, 1.0);
 	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	Cvar[Telefrags] = CreateConVar("ff2_game_telefrag", "5000", "How much damage telefrags do on bosses");
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
@@ -98,8 +99,9 @@ static void GenerateConfig()
 	File file = OpenFile("cfg/sourcemod/FF2Rewrite.cfg", "wt");
 	if(file)
 	{
-		file.WriteLine("// Settings present are for Freak Fortress 2: %s", PLUGIN_VERSION_FULL);
+		file.WriteLine("// Settings present are for Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		file.WriteLine("// Updating the plugin version will generate new ConVars and any non-FF2 commands will be lost");
+		file.WriteLine("ff2_version \"" ... PLUGIN_VERSION_FULL ... "\"");
 		file.WriteLine("");
 		
 		char buffer1[512], buffer2[256];

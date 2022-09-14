@@ -193,6 +193,7 @@ enum
 	DisguiseModels,
 	PlayerGlow,
 	BossSewer,
+	Telefrags,
 	
 	PrefBlacklist,
 	PrefToggle,
@@ -251,7 +252,7 @@ public Plugin myinfo =
 	name		=	"Freak Fortress 2: Rewrite",
 	author		=	"Batfoxkid based on the original done by many others",
 	description	=	"It's like Christmas Morning",
-	version		=	PLUGIN_VERSION,
+	version		=	PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
 	url			=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
 }
 
@@ -279,7 +280,6 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
-	
 	if(!TranslationPhraseExists("Difficulty Menu"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	

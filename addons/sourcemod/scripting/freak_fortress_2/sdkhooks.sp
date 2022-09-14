@@ -244,7 +244,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				}
 				case TF_CUSTOM_TELEFRAG:
 				{
-					damage = 1666.67;
+					damage = Cvar[Telefrags].FloatValue / 3.0;
 					damagetype |= DMG_CRIT;
 					critType = CritType_Crit;
 					
@@ -258,7 +258,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 							assister = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
 							if(assister != attacker && assister > 0 && assister <= MaxClients && GetClientTeam(assister) == GetClientTeam(attacker))
 							{
-								Client(assister).Assist += 6000;
+								Client(assister).Assist += Cvar[Telefrags].IntValue;
 								Client(assister).RefreshAt = 0.0;
 							}
 							else
