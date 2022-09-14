@@ -793,40 +793,44 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
 					if(charge >= 100.0 && tele)
 					{
-						FF2R_StartLagCompensation(client);
-						
-						float pos1[3];
-						GetClientEyePosition(client, pos1);
-						
-						Handle trace = TR_TraceRayFilterEx(pos1, angles, MASK_PLAYERSOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
-						TR_GetEndPosition(pos1, trace);
-							
 						int target = -1;
-						float distance;
-						float pos2[3];
-						float scale = GetEntPropFloat(client, Prop_Send, "m_flModelScale");
 						
-						for(int i = 1; i <= MaxClients; i++)
+						if(!emergency)
 						{
-							if(i == client || !IsClientInGame(i) || !IsPlayerAlive(i))
-								continue;
+							FF2R_StartLagCompensation(client);
 							
-							if(!SpecTeam && GetClientTeam(i) <= view_as<int>(TFTeam_Spectator))
-								continue;
+							float pos1[3];
+							GetClientEyePosition(client, pos1);
 							
-							if(scale < GetEntPropFloat(i, Prop_Send, "m_flModelScale"))
-								continue;
+							Handle trace = TR_TraceRayFilterEx(pos1, angles, MASK_PLAYERSOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
+							TR_GetEndPosition(pos1, trace);
 							
-							GetEntPropVector(i, Prop_Send, "m_vecOrigin", pos2);
-							float dist = GetVectorDistance(pos1, pos2, true);
-							if(target == -1 || dist < distance)
+							float distance;
+							float pos2[3];
+							float scale = GetEntPropFloat(client, Prop_Send, "m_flModelScale");
+							
+							for(int i = 1; i <= MaxClients; i++)
 							{
-								distance = dist;
-								target = i;
+								if(i == client || !IsClientInGame(i) || !IsPlayerAlive(i))
+									continue;
+								
+								if(!SpecTeam && GetClientTeam(i) <= view_as<int>(TFTeam_Spectator))
+									continue;
+								
+								if(scale < GetEntPropFloat(i, Prop_Send, "m_flModelScale"))
+									continue;
+								
+								GetEntPropVector(i, Prop_Send, "m_vecOrigin", pos2);
+								float dist = GetVectorDistance(pos1, pos2, true);
+								if(target == -1 || dist < distance)
+								{
+									distance = dist;
+									target = i;
+								}
 							}
+							
+							FF2R_FinishLagCompensation(client);
 						}
-						
-						FF2R_FinishLagCompensation(client);
 						
 						if(target != -1)
 						{
@@ -914,18 +918,22 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					SetGlobalTransTarget(client);
 					if(!emergency && cooldown)
 					{
-						SetHudTextParams(-1.0, 0.88, 0.1, 255, 64, 64, 255);
-						if(jump && tele)
+						float time = timeIn - gameTime + 0.09;
+						if(time < 999.9)
 						{
-							ShowSyncHudText(client, SyncHud, "%t", "Boss Mobility Time", timeIn - gameTime + 0.09);
-						}
-						else if(tele)
-						{
-							ShowSyncHudText(client, SyncHud, "%t", "Boss Tele Time", timeIn - gameTime + 0.09);
-						}
-						else
-						{
-							ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Time", timeIn - gameTime + 0.09);
+							SetHudTextParams(-1.0, 0.88, 0.1, 255, 64, 64, 255);
+							if(jump && tele)
+							{
+								ShowSyncHudText(client, SyncHud, "%t", "Boss Mobility Time", );
+							}
+							else if(tele)
+							{
+								ShowSyncHudText(client, SyncHud, "%t", "Boss Tele Time", timeIn - gameTime + 0.09);
+							}
+							else
+							{
+								ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Time", timeIn - gameTime + 0.09);
+							}
 						}
 					}
 					else
@@ -936,33 +944,36 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						if(timeIn)
 						{
 							float charge = ability.GetFloat("charge", 1.5);
-							if(charge < 0.001)
-								charge = 0.001;
-							
-							charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
-							if(charge >= 100.0)
+							if(emergency || jump || charge < 999.9)
 							{
-								if(tele)
+								if(charge < 0.001)
+									charge = 0.001;
+								
+								charge = emergency ? 100.0 : ((gameTime - timeIn) / charge * 100.0);
+								if(charge >= 100.0)
 								{
-									ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Ready", 100, "Boss Tele Look");
+									if(tele)
+									{
+										ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Ready", 100, "Boss Tele Look");
+									}
+									else
+									{
+										ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Ready", 100, "Boss Jump Look");
+									}
 								}
-								else
+								else if(jump)
 								{
-									ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Ready", 100, "Boss Jump Look");
+									ShowSyncHudText(client, SyncHud, "%t%t", "Boss Jump Ready", RoundToCeil(charge), "Boss Jump Look");
 								}
-							}
-							else if(jump)
-							{
-								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Jump Ready", RoundToCeil(charge), "Boss Jump Look");
-							}
-							else if(button >= 0)
-							{
-								char help[32];
-								FormatEx(help, sizeof(help), "Boss Mobility %d", button);
-								ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Charge", RoundToCeil(charge), help);
+								else if(button >= 0)
+								{
+									char help[32];
+									FormatEx(help, sizeof(help), "Boss Mobility %d", button);
+									ShowSyncHudText(client, SyncHud, "%t%t", "Boss Tele Charge", RoundToCeil(charge), help);
+								}
 							}
 						}
-						else if(button >= 0)
+						else if(button >= 0 && (jump || ability.GetFloat("charge", 1.5) < 999.9))
 						{
 							char help[32];
 							FormatEx(help, sizeof(help), "Boss Mobility %d", button);

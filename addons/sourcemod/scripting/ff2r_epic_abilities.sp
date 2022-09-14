@@ -1,5 +1,5 @@
 /*
-	"special_ability_management"
+	"rage_ability_management"
 	{
 		"slot"		"0"			// Ability slot, if 0, will override "ragemode" and "ragemin" values
 		"altfire"	"false"		// Can use alt-fire to activate/cycle abilities
@@ -32,6 +32,78 @@
 			}
 		}
 		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
+	"rage_watch_toggle"
+	{
+		"slot"			"8"	// Ability slot
+		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
+	"rage_random_slot"
+	{
+		"slot"			"0"	// Ability slot
+		
+		"delay"			"0.0"	// Activation delay
+		"low"			"10"	// Lowest slot to activate
+		"high"			"14"	// Highest slot to activate
+		"count"			"1"	// How many unique slots to activate
+		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
+	"rage_weapon_pickups"
+	{
+		"slot"			"0"	// Ability slot
+		
+		"restore_0"		""					// Boss's primary weapon to restore afterwards
+		"restore_1"		""					// Boss's secondary weapon to restore afterwards
+		"restore_2"		"tf_weapon_bat"		// Boss's melee weapon to restore afterwards
+		"restore_3"		""					// Boss's building PDA or disguise kit to restore afterwards
+		"restore_4"		"tf_weapon_invis"	// Boss's destruction PDA or cloak watch to restore afterwards
+		"restore_5"		""					// Boss's builder to restore afterwards
+		"restore_6"		""					// Boss's action item to restore afterwards
+		
+		"fists"			"1 ; 0.5"	// Attributes applied on players with stolen melees (aka they just have fists now with exception of Heavy & Engineer)
+		
+		"attributes"	"28 ; 0.5 ; 138 ; 0.6667"	// Attributes applied on stolen weapons
+		
+		"classswap"		"true"	// If to swap to the correct class
+		"animswap"		"true"	// If to swap animations to the correct class
+		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
+	"special_razorback_shield"
+	{
+		"slot"			"0"	// Weapon slot that will be the frontal shield
+		"durability"	"2250"	// Damage that can be absorbed before breaking
+		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
+	"special_wall_jump"
+	{
+		"walljumps"			"true"	// If to allow wall jumps
+		
+		// Applies on a wall jump
+		"wall_jump"			"2.0"	// Jump height multiplier
+		"wall_speed"		"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
+		"wall_air"			"10.0"	// Air control multiplier that decays over time
+		"double"			"true"	// Restore double jumps after wall jump
+		
+		// Applies on a double jump
+		"double_jump"		"1.0"	// Jump height multiplier
+		"double_speed"		"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
+		"double_air"		"5.0"	// Air control multiplier that decays over time
+		
 		"plugin_name"		"ff2r_epic_abilities"
 	}
 	
@@ -61,6 +133,7 @@
 
 #define AMS_DENYUSE	"vo/null.mp3"
 #define AMS_SWITCH	"vo/null.mp3"
+#define WALL_JUMP	"vo/null.mp3"
 
 #define MAG_MAGIC		0x0001	// Can be blocked by sapper effect
 #define MAG_MIND		0x0002	// Can't be blocked by stun effects
@@ -122,7 +195,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 	{
 		if(!HasAbility[client])
 		{
-			AbilityData ability = boss.GetAbility("special_ability_management");
+			AbilityData ability = boss.GetAbility("rage_ability_management");
 			if(ability.IsMyPlugin())
 			{
 				HasAbility[client] = -1;
@@ -198,7 +271,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				
 				char buffer[64];
 				boss.GetString("filename", buffer, sizeof(buffer));
-				LogError("[Boss] '%s' is missing 'spells' for 'special_ability_management'", buffer);
+				LogError("[Boss] '%s' is missing 'spells' for 'rage_ability_management'", buffer);
 			}
 		}
 	}
@@ -211,7 +284,7 @@ public void FF2R_OnBossRemoved(int client)
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
-	if(HasAbility[client] && !StrContains(ability, "special_ability_management", false))
+	if(HasAbility[client] && !StrContains(ability, "rage_ability_management", false))
 	{
 		ConfigData spells = cfg.GetSection("spells");
 		if(spells)
@@ -255,9 +328,9 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 	
 	if(boss.GetBool("nopassive"))
 	{
-		AbilityData ability = boss.GetAbility("special_ability_management");
+		AbilityData ability = boss.GetAbility("rage_ability_management");
 		if(ability.IsMyPlugin())
-			boss.Remove("special_ability_management");
+			boss.Remove("rage_ability_management");
 	}
 }
 
@@ -268,7 +341,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		BossData boss = FF2R_GetBossData(client);
 		AbilityData ability;
 		ConfigData spells;
-		if(boss && (ability = boss.GetAbility("special_ability_management")) && (spells = ability.GetSection("spells")))
+		if(boss && (ability = boss.GetAbility("rage_ability_management")) && (spells = ability.GetSection("spells")))
 		{
 			bool hud;
 			float gameTime = GetGameTime();

@@ -621,6 +621,10 @@
 		"#format"	"{1:d}"
 		"en"		"{1}%% RAGE"
 	}
+	"Boss Wall Jump"
+	{
+		"en"		"Wall Jumps - Jump while looking at a solid wall"
+	}
 	"Button E"
 	{
 		"en"		"Call for Medic"
