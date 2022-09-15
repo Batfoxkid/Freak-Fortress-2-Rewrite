@@ -36,9 +36,13 @@
 	}
 	
 	
-	"rage_watch_toggle"
+	"rage_dodge_hitscan"
 	{
-		"slot"			"8"	// Ability slot
+		"slot"			"0"	// Ability slot
+		
+		"duration"		"7.5"	// Duration (Timescale taken into account)
+		"timescale"		"0.5"	// Server timescale (Will only apply in Arena)
+		"speed"			"520.0"	// Movement speed (Capped at 520 HU/s by default TF2)
 		
 		"plugin_name"	"ff2r_epic_abilities"
 	}
@@ -61,14 +65,6 @@
 	{
 		"slot"			"0"	// Ability slot
 		
-		"restore_0"		""					// Boss's primary weapon to restore afterwards
-		"restore_1"		""					// Boss's secondary weapon to restore afterwards
-		"restore_2"		"tf_weapon_bat"		// Boss's melee weapon to restore afterwards
-		"restore_3"		""					// Boss's building PDA or disguise kit to restore afterwards
-		"restore_4"		"tf_weapon_invis"	// Boss's destruction PDA or cloak watch to restore afterwards
-		"restore_5"		""					// Boss's builder to restore afterwards
-		"restore_6"		""					// Boss's action item to restore afterwards
-		
 		"fists"			"1 ; 0.5"	// Attributes applied on players with stolen melees (aka they just have fists now with exception of Heavy & Engineer)
 		
 		"attributes"	"28 ; 0.5 ; 138 ; 0.6667"	// Attributes applied on stolen weapons
@@ -82,7 +78,7 @@
 	
 	"special_razorback_shield"
 	{
-		"slot"			"0"	// Weapon slot that will be the frontal shield
+		"secondary"		"false"	// Use secondary weapon slot instead of primary
 		"durability"	"2250"	// Damage that can be absorbed before breaking
 		
 		"plugin_name"	"ff2r_epic_abilities"
@@ -91,20 +87,20 @@
 	
 	"special_wall_jump"
 	{
-		"walljumps"			"true"	// If to allow wall jumps
+		"walljumps"		"true"	// If to allow wall jumps
 		
 		// Applies on a wall jump
-		"wall_jump"			"2.0"	// Jump height multiplier
-		"wall_speed"		"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
-		"wall_air"			"10.0"	// Air control multiplier that decays over time
-		"double"			"true"	// Restore double jumps after wall jump
+		"wall_jump"		"2.0"	// Jump height multiplier
+		"wall_speed"	"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
+		"wall_air"		"10.0"	// Air control multiplier that decays over time
+		"double"		"true"	// Restore double jumps after wall jump
 		
 		// Applies on a double jump
-		"double_jump"		"1.0"	// Jump height multiplier
-		"double_speed"		"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
-		"double_air"		"5.0"	// Air control multiplier that decays over time
+		"double_jump"	"1.0"	// Jump height multiplier
+		"double_speed"	"1.3"	// Jump speed multiplier (Capped at 520 HU/s by default TF2)
+		"double_air"	"5.0"	// Air control multiplier that decays over time
 		
-		"plugin_name"		"ff2r_epic_abilities"
+		"plugin_name"	"ff2r_epic_abilities"
 	}
 	
 	
@@ -146,8 +142,12 @@ Handle SDKGetMaxHealth;
 int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
+ConVar WeaponLifetime;
+int LastWeaponLifetime;
 
 int HasAbility[MAXTF2PLAYERS];
+
+int RazorbackRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 
 public Plugin myinfo =
 {
@@ -191,6 +191,22 @@ public void OnPluginStart()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
+	if(RazorbackRef[client] == INVALID_ENT_REFERENCE)
+	{
+		AbilityData ability = boss.GetAbility("special_razorback_shield");
+		if(ability.IsMyPlugin())
+		{
+			int weapon = -1;
+			if(cfg.GetBool("secondary"))
+			{
+			}
+			
+			if(weapon != -1)
+			{
+			}
+		}
+	}
+	
 	if(!setup)
 	{
 		if(!HasAbility[client])

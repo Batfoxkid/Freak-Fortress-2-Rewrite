@@ -332,6 +332,8 @@
 #include <tf2items>
 #include <tf2attributes>
 #undef REQUIRE_PLUGIN
+#tryinclude <tf2utils>
+#tryinclude <tf_custom_attributes>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -344,9 +346,14 @@
 #define FAR_FUTURE		100000000.0
 
 #define TF2U_LIBRARY	"nosoop_tf2utils"
+#define TCA_LIBRARY		"tf2custattr"
 
 #if defined __nosoop_tf2_utils_included
 bool TF2ULoaded;
+#endif
+
+#if defined __tf_custom_attributes_included
+bool TCALoaded;
 #endif
 
 Handle SDKEquipWearable;
@@ -410,6 +417,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
 	#endif
 	
+	#if defined __tf_custom_attributes_included
+	MarkNativeAsOptional("TF2CustAttr_SetString");
+	#endif
+	
 	MarkNativeAsOptional("SetEntityCollisionGroup");
 	return APLRes_Success;
 }
@@ -442,6 +453,10 @@ public void OnPluginStart()
 	
 	#if defined __nosoop_tf2_utils_included
 	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
+	#endif
+	
+	#if defined __tf_custom_attributes_included
+	TCALoaded = LibraryExists(TCA_LIBRARY);
 	#endif
 	
 	SyncHud = CreateHudSynchronizer();
@@ -477,9 +492,6 @@ public void OnPluginEnd()
 	{
 		if(IsClientInGame(client))
 		{
-			if(SpecialUber[client])
-				SetEntProp(client, Prop_Data, "m_takedamage", 2);
-			
 			if(OverlayTimer[client])
 				TriggerTimer(OverlayTimer[client]);
 			
@@ -507,6 +519,11 @@ public void OnLibraryAdded(const char[] name)
 	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
 		TF2ULoaded = true;
 	#endif
+	
+	#if defined __tf_custom_attributes_included
+	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
+		TCALoaded = true;
+	#endif
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -514,6 +531,11 @@ public void OnLibraryRemoved(const char[] name)
 	#if defined __nosoop_tf2_utils_included
 	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
 		TF2ULoaded = false;
+	#endif
+	
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded && StrEqual(name, TCA_LIBRARY))
+		TCALoaded = false;
 	#endif
 }
 
@@ -526,6 +548,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
+	SpecialUber[client] = 0.0;
 	SoloVictim[client] = false;
 	OverlayMuffled[client] = false;
 	CloneOwner[client] = 0;
@@ -1183,7 +1206,6 @@ public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 
 public void FF2R_OnBossRemoved(int client)
 {
-	SpecialUber[client] = 0.0;
 	MatrixFor[client] = 0.0;
 	SpecialCharge[client] = false;
 	WeighdownAirTimeAt[client] = 0.0;
@@ -1211,6 +1233,9 @@ public void FF2R_OnBossRemoved(int client)
 		MobilityEnabled[client] = false;
 		SDKUnhook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 	}
+	
+	if(SpecialUber[client])
+		SetEntProp(client, Prop_Data, "m_takedamage", 2);
 }
 
 public Action FF2R_OnAbilityPre(int client, const char[] ability, AbilityData cfg, bool &result)
@@ -2213,6 +2238,15 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			}
 		}
 		
+		#if defined __tf_custom_attributes_included
+		if(TCALoaded)
+		{
+			ConfigMap custom = cfg.GetSection("custom");
+			if(custom)
+				ApplyCustomAttributes(entity, custom);
+		}
+		#endif
+		
 		if(kills >= 0)
 		{
 			TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
@@ -3147,6 +3181,29 @@ void EquipPlayerWearable(int client, int entity)
 		SDKCall_EquipWearable(client, entity);
 	}
 }
+
+#if defined __tf_custom_attributes_included
+void ApplyCustomAttributes(int entity, ConfigData cfg)
+{
+	StringMapSnapshot snap = cfg.Snapshot();
+	
+	int entries = snap.Length;
+	for(int i; i < entries; i++)
+	{
+		int length = snap.KeyBufferSize(i) + 1;
+		
+		char[] key = new char[length];
+		snap.GetKey(i, key, length);
+		
+		static PackVal attribute;	
+		cfg.GetArray(key, attribute, sizeof(attribute));
+		if(attribute.tag == KeyValType_Value)
+			TF2CustAttr_SetString(entity, key, attribute.data);
+	}
+	
+	delete snap;
+}
+#endif
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
 {

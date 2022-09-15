@@ -1958,6 +1958,10 @@ static void EquipBoss(int client, bool weapons)
 						}
 					}
 					
+					ConfigMap custom = cfg.GetSection("custom");
+					if(custom)
+						Weapons_ApplyCustomAttributes(entity, custom);
+					
 					if(kills >= 0)
 					{
 						TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));

@@ -657,6 +657,49 @@ stock float Weapons_PlayerHurt(int entity)
 	return value;
 }
 
+void Weapons_ApplyCustomAttributes(int entity, ConfigMap cfg)
+{
+	StringMapSnapshot snap = cfg.Snapshot();
+	
+	int entries = snap.Length;
+	for(int i; i < entries; i++)
+	{
+		int length = snap.KeyBufferSize(i) + 1;
+		
+		char[] key = new char[length];
+		snap.GetKey(i, key, length);
+		
+		static PackVal attribute;	
+		cfg.GetArray(key, attribute, sizeof(attribute));
+		if(attribute.tag == KeyValType_Value)
+		{
+			#if defined __tf_custom_attributes_included
+			if(TCALoaded)
+			{
+				TF2CustAttr_SetString(entity, key, attribute.data);
+			}
+			else
+			#endif
+			{
+				if(StrEqual(key, "damage vs bosses"))
+				{
+					TF2Attrib_SetByDefIndex(entity, 476, StringToFloat(attribute.data));
+				}
+				else if(StrEqual(key, "mod crit type on bosses"))
+				{
+					TF2Attrib_SetByDefIndex(entity, 20, 1.0);
+					TF2Attrib_SetByDefIndex(entity, 408, 1.0);
+
+					if(StringToInt(attribute.data) == 1)
+						TF2Attrib_SetByDefIndex(entity, 868, 1.0);
+				}
+			}
+		}
+	}
+	
+	delete snap;
+}
+
 void Weapons_EntityCreated(int entity, const char[] classname)
 {
 	if(WeaponCfg && (!StrContains(classname, "tf_wea") || !StrContains(classname, "tf_powerup_bottle")))
@@ -773,52 +816,8 @@ public void Weapons_SpawnFrame(int ref)
 	}
 	
 	cfg = cfg.GetSection("custom");
-
 	if(cfg)
-	{
-		StringMapSnapshot snap = cfg.Snapshot();
-
-		int entries = snap.Length;
-
-		PackVal attribute;
-
-		for(int i = 0; i < entries; i++)
-		{
-			int length = snap.KeyBufferSize(i) + 1;
-
-			char[] key = new char[length];
-			snap.GetKey(i, key, length);
-				
-			cfg.GetArray(key, attribute, sizeof(attribute));
-
-			if(attribute.tag == KeyValType_Value)
-			{
-				#if defined __tf_custom_attributes_included
-				if(TCALoaded)
-				{
-					TF2CustAttr_SetString(entity, key, attribute.data);
-				}
-				else
-				#endif
-				{
-					if(StrEqual(key, "damage vs bosses"))
-					{
-						TF2Attrib_SetByDefIndex(entity, 476, StringToFloat(attribute.data));
-					}
-					else if(StrEqual(key, "mod crit type on bosses"))
-					{
-						TF2Attrib_SetByDefIndex(entity, 20, 1.0);
-						TF2Attrib_SetByDefIndex(entity, 408, 1.0);
-
-						if(StringToInt(attribute.data) == 1)
-							TF2Attrib_SetByDefIndex(entity, 868, 1.0);
-					}
-				}
-			}
-		}
-		
-		delete snap;
-	}
+		Weapons_ApplyCustomAttributes(entity, cfg);
 }
 
 static ConfigMap FindWeaponSection(int entity)
