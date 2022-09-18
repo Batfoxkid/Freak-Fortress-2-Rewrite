@@ -10,7 +10,7 @@ Contains plugin and boss assets separately.
 Required:
 
 - [SourceMod 1.11+](https://www.sourcemod.net/downloads.php)
-- [TF2Attributes 1.7.0+](https://github.com/nosoop/tf2attributes)
+- [TF2Attributes 1.7.0+](https://github.com/FlaminSarge/tf2attributes)
 - [TF2Items](https://github.com/asherkin/TF2Items)
 
 
