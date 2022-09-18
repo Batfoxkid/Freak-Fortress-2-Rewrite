@@ -414,7 +414,7 @@ public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 public MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
 {
 	if(Client(client).IsBoss && TF2_GetPlayerClass(client) == TFClass_Medic)
-		TF2_SetPlayerClass(client, TFClass_Unknown);
+		TF2_SetPlayerClass(client, TFClass_Unknown, _, false);
 	
 	return MRES_Ignored;
 }
@@ -422,7 +422,7 @@ public MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
 public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 {
 	if(Client(client).IsBoss && TF2_GetPlayerClass(client) == TFClass_Unknown)
-		TF2_SetPlayerClass(client, TFClass_Medic);
+		TF2_SetPlayerClass(client, TFClass_Medic, _, false);
 	
 	return MRES_Ignored;
 }
