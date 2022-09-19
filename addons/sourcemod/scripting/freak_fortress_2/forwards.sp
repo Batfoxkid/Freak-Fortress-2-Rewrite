@@ -11,6 +11,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static GlobalForward BossCreated;
 static GlobalForward BossRemoved;

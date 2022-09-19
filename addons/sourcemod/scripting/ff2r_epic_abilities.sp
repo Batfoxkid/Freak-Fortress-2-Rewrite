@@ -127,8 +127,8 @@
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
 
-#define AMS_DENYUSE	"vo/null.mp3"
-#define AMS_SWITCH	"vo/null.mp3"
+#define AMS_DENYUSE	"common/wpn_denyselect.wav"
+#define AMS_SWITCH	"common/wpn_moveselect.wav"
 #define WALL_JUMP	"vo/null.mp3"
 
 #define MAG_MAGIC		0x0001	// Can be blocked by sapper effect
@@ -138,6 +138,7 @@
 #define MAG_LASTLIFE	0x0010	// Require having no extra lives left
 #define MAG_GROUND		0x0020	// Require being on the ground
 
+Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
 int PlayersAlive[4];
 Handle SyncHud;
@@ -145,8 +146,13 @@ bool SpecTeam;
 ConVar WeaponLifetime;
 int LastWeaponLifetime;
 
+bool HookedWeaponSwap[MAXTF2PLAYERS];
+
 int HasAbility[MAXTF2PLAYERS];
 
+bool HookedRazorback;
+int PlayerShieldBlocked;
+bool RazorbackDeployed[MAXTF2PLAYERS];
 int RazorbackRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 
 public Plugin myinfo =
@@ -164,7 +170,18 @@ public void OnPluginStart()
 	if(!TranslationPhraseExists("Ability Delay"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
-	GameData gamedata = new GameData("sdkhooks.games");
+	GameData gamedata = new GameData("sm-tf2.games");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKEquipWearable = EndPrepSDKCall();
+	if(!SDKEquipWearable)
+		LogError("[Gamedata] Could not find RemoveWearable");
+	
+	delete gamedata;
+	
+	gamedata = new GameData("sdkhooks.games");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GetMaxHealth");
@@ -174,6 +191,8 @@ public void OnPluginStart()
 		LogError("[Gamedata] Could not find GetMaxHealth");
 	
 	delete gamedata;
+	
+	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
 	
@@ -191,18 +210,52 @@ public void OnPluginStart()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
+	bool hookSwapping;
+	
 	if(RazorbackRef[client] == INVALID_ENT_REFERENCE)
 	{
 		AbilityData ability = boss.GetAbility("special_razorback_shield");
 		if(ability.IsMyPlugin())
 		{
 			int weapon = -1;
-			if(cfg.GetBool("secondary"))
+			if(ability.GetBool("secondary"))
 			{
+				weapon = CreateEntityByName("tf_weapon_pistol");
+			}
+			else
+			{
+				weapon = CreateEntityByName("tf_weapon_scattergun");
 			}
 			
 			if(weapon != -1)
 			{
+				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 0);
+				SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
+				
+				SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 6);
+				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 101);
+				
+				DispatchSpawn(weapon);
+				
+				EquipPlayerWeapon(client, weapon);
+				
+				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 57);
+				
+				TF2Attrib_SetByDefIndex(weapon, 128, 1.0);
+				TF2Attrib_SetByDefIndex(weapon, 303, -1.0);
+				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
+				
+				RazorbackRef[client] = EntIndexToEntRef(weapon);
+			}
+			
+			weapon = EquipRazorback(client);
+			if(weapon != -1)
+				ability.SetInt("wearableref", EntIndexToEntRef(weapon));
+			
+			if(!HookedRazorback)
+			{
+				HookedRazorback = true;
+				HookUserMessage(PlayerShieldBlocked, OnShieldBlocked);
 			}
 		}
 	}
@@ -291,11 +344,30 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			}
 		}
 	}
+	
+	if(hookSwapping && !HookedWeaponSwap[client])
+	{
+		HookedWeaponSwap[client] = true;
+		SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
+	}
 }
 
 public void FF2R_OnBossRemoved(int client)
 {
 	HasAbility[client] = 0;
+	
+	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
+	{
+		RazorbackRef[client] = INVALID_ENT_REFERENCE;
+		CheckRazorbackHooks();
+	}
+	
+	if(HookedWeaponSwap[client])
+	{
+		HookedWeaponSwap[client] = false;
+		SDKUnhook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
+		OnWeaponSwitch(client, -2);
+	}
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
@@ -307,7 +379,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		{
 			bool hud;
 			SortedSnapshot snap;
-		
+			
 			if(HasAbility[client] != -1)
 			{
 				snap = CreateSortedSnapshot(spells);
@@ -772,6 +844,82 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	}
 }
 
+public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
+{
+	int attacker = bf.ReadByte();
+	int victim = bf.ReadByte();
+	if(RazorbackRef[victim] != INVALID_ENT_REFERENCE)
+	{
+		int entity = EntRefToEntIndex(RazorbackRef[victim]);
+		if(entity != INVALID_ENT_REFERENCE)
+		{
+			TF2_RemoveItem(client, entity);
+			if(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == entity)
+			{
+				entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+				if(entity != -1)
+				{
+					char buffer[36];
+					if(GetEntityClassname(entity, buffer, sizeof(buffer)))
+						FakeClientCommand(client, "use %s", buffer);
+				}
+			}
+		}
+		
+		BossData boss = FF2R_GetBossData(client);
+		AbilityData ability;
+		if(boss && (ability = boss.GetAbility("special_razorback_shield")))
+		{
+			entity = EntRefToEntIndex(ability.GetInt("wearableref", INVALID_ENT_REFERENCE));
+			if(entity != INVALID_ENT_REFERENCE)
+				TF2_RemoveWearable(client, entity);
+		}
+		
+		RazorbackRef[victim] = INVALID_ENT_REFERENCE;
+		CheckRazorbackHooks();
+	}
+}
+
+public void OnWeaponSwitch(int client, int weapon)
+{
+	if(RazorbackRef[client] != INVALID_ENT_REFERENCE && EntRefToEntIndex(RazorbackRef[client]) == weapon)
+	{
+		if(!RazorbackDeployed[client])
+		{
+			//TODO: Blah blah, custom viewmodels soon TM
+			
+			BossData boss = FF2R_GetBossData(client);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_razorback_shield")))
+			{
+				int entity = EntRefToEntIndex(ability.GetInt("wearableref", INVALID_ENT_REFERENCE));
+				if(entity != INVALID_ENT_REFERENCE)
+					TF2_RemoveWearable(client, entity);
+			}
+			
+			RazorbackDeployed[client] = true;
+		}
+	}
+	else if(RazorbackDeployed[client])
+	{
+		if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
+		{
+			BossData boss = FF2R_GetBossData(client);
+			AbilityData ability;
+			if(boss && (ability = boss.GetAbility("special_razorback_shield")))
+			{
+				int entity = EquipRazorback(client);
+				if(entity != -1)
+					entity = EntIndexToEntRef(entity);
+				
+				ability.SetInt("wearableref", entity);
+			}
+		}
+		
+		RazorbackDeployed[client] = false;
+	}
+}
+
 bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &dead = -2, int &allies = -2)
 {
 	bool refund = dead == -2;
@@ -931,6 +1079,36 @@ void GetButtons(ConfigData ability, bool cycle, int &count, int button[4])
 	}
 }
 
+int EquipRazorback(int client)
+{
+	int wearable = CreateEntityByName("tf_wearable");
+	if(wearable != -1)
+	{
+		SetEntProp(wearable, Prop_Send, "m_iItemDefinitionIndex", 57);
+		SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
+		
+		SetEntProp(wearable, Prop_Send, "m_iEntityQuality", 6);
+		SetEntProp(wearable, Prop_Send, "m_iEntityLevel", 101);
+		
+		DispatchSpawn(wearable);
+		
+		EquipWearable(client, wearable);
+	}
+	return wearable;
+}
+
+void CheckRazorbackHooks()
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(RazorbackRef[i] != INVALID_ENT_REFERENCE)
+			return;
+	}
+	
+	UnhookUserMessage(PlayerShieldBlocked, OnShieldBlocked);
+	HookedRazorback = false;
+}
+
 float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = "")
 {
 	static char buffer[1024];
@@ -971,6 +1149,32 @@ bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang = -1, co
 	}
 	
 	return view_as<bool>(buffer[0]);
+}
+
+void TF2_RemoveItem(int client, int weapon)
+{
+	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearableViewModel");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	RemovePlayerItem(client, weapon);
+	RemoveEntity(weapon);
+}
+
+void EquipWearable(int client, int entity)
+{
+	if(SDKEquipWearable)
+	{
+		SDKCall(SDKEquipWearable, client, entity);
+	}
+	else
+	{
+		RemoveEntity(entity);
+	}
 }
 
 int GetClientMaxHealth(int client)

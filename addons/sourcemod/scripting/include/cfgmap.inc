@@ -34,6 +34,9 @@
 #include <adt_stack>
 #include <textparse>
 
+#pragma semicolon 1
+#pragma newdecls required
+
 enum KeyValType {
 	KeyValType_Null,     /// nil
 	KeyValType_Section,  /// StringMap : char[*][*]

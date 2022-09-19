@@ -5,6 +5,9 @@
 
 #include <sdktools_sound>
 
+#pragma semicolon 1
+#pragma newdecls required
+
 #define SNDVOL_BOSS	2.0
 
 /**

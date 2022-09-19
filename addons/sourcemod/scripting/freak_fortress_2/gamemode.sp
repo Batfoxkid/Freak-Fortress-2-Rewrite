@@ -14,6 +14,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool Waiting;
 static float HealingFor;
@@ -1019,8 +1020,12 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			else if(IsClientObserver(client))
 			{
 				int aim = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-				if(aim != client && aim > 0 && aim <= MaxClients && IsClientInGame(aim) && GetClientTeam(client) == GetClientTeam(aim))
-					target = aim;
+				if(aim != client && aim > 0 && aim <= MaxClients && IsClientInGame(aim))
+				{
+					int team = GetClientTeam(client);
+					if(team == TFTeam_Spectator || team == GetClientTeam(aim))
+						target = aim;
+				}
 			}
 			
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);

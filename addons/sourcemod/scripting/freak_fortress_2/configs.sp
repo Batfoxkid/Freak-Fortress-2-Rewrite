@@ -5,6 +5,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define FILE_MAPS	"data/freak_fortress_2/maps.cfg"
 

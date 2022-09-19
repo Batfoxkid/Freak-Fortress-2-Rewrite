@@ -35,6 +35,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static ArrayList BossList;
 static ArrayList PackList;
@@ -2981,6 +2982,9 @@ static void EnableSubplugins()
 						{
 							FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
 							
+							if(!IsSubpluginLoaded(filename))
+								InsertServerCommand("sm plugins load freaks/%s", filename);
+							
 							DataPack pack = new DataPack();
 							pack.WriteString(filepath1);
 							RequestFrame(Bosses_RenameSubplugin, pack);
@@ -3013,6 +3017,24 @@ static void EnableSubplugins()
 			ServerExecute();
 		}
 	}
+}
+
+static bool IsSubpluginLoaded(const char[] name)
+{
+	char filename[PLATFORM_MAX_PATH];
+	Handle iter = GetPluginIterator();
+	while(MorePlugins(iter))
+	{
+		Handle plugin = ReadPlugin(iter);
+		GetPluginFilename(plugin, filename, sizeof(filename));
+		if(StrContains(filename, name, false) != -1)
+		{
+			delete iter;
+			return true;
+		}
+	}
+	delete iter;
+	return false;
 }
 
 public void Bosses_RenameSubplugin(DataPack pack)

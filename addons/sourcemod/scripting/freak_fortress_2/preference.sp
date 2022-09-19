@@ -23,6 +23,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define FILE_DIFF	"data/freak_fortress_2/modifiers.cfg"
 

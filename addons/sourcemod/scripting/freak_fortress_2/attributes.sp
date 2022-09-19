@@ -9,6 +9,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static float JarateDamage[MAXTF2PLAYERS];
 static int JarateApplyer[MAXTF2PLAYERS];

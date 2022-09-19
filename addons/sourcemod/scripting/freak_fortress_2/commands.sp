@@ -3,6 +3,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 enum FF2FilterSearch 
 {
@@ -23,7 +24,7 @@ void Command_PluginStart()
 	AddCommandListener(Command_KermitSewerSlide, "explode");
 	AddCommandListener(Command_KermitSewerSlide, "kill");
 	AddCommandListener(Command_Spectate, "spectate");
-	AddCommandListener(Command_JoinTeam, "jointeam");	
+	AddCommandListener(Command_JoinTeam, "jointeam");
 	AddCommandListener(Command_AutoTeam, "autoteam");
 	AddCommandListener(Command_JoinClass, "joinclass");
 	AddCommandListener(Command_EurekaTeleport, "eureka_teleport");
@@ -132,7 +133,7 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 
 public Action Command_Spectate(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	return SwapTeam(client, TFTeam_Spectator);
@@ -140,7 +141,7 @@ public Action Command_Spectate(int client, const char[] command, int args)
 
 public Action Command_AutoTeam(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	int reds, blus;
@@ -183,7 +184,7 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 
 public Action Command_JoinTeam(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	char buffer[10];
@@ -272,9 +273,32 @@ static Action SwapTeam(int client, int wantTeam)
 		if(newTeam > TFTeam_Spectator)
 			ShowVGUIPanel(client, newTeam == TFTeam_Red ? "class_red" : "class_blue");
 		
+		if(Cvar[AggressiveSwap].BoolValue)
+		{
+			DataPack pack = new DataPack();
+			CreateDataTimer(0.2, Command_AggressiveSwap, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+			pack.WriteCell(GetClientUserId(client));
+			pack.WriteCell(newTeam);
+		}
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
+}
+
+public Action Command_AggressiveSwap(Handle timer, DataPack pack)
+{
+	pack.Reset();
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client)
+	{
+		int team = pack.ReadCell();
+		if(GetClientTeam(client) != team)
+		{
+			ChangeClientTeam(client, team);
+			return Plugin_Continue;
+		}
+	}
+	return Plugin_Stop;
 }
 
 public Action Command_JoinClass(int client, const char[] command, int args)

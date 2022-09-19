@@ -20,6 +20,7 @@
 	void SetControlPoint(bool enable)
 	void SetArenaCapEnableTime(float time)
 	int GetRoundStatus()
+	void ScreenShake(const float pos[3], float amplitude, float frequency, float duration, float radius)
 	void FPrintToChat(int client, const char[] message, any ...)
 	void FPrintToChatEx(int client, int author, const char[] message, any ...)
 	void FPrintToChatAll(const char[] message, any ...)
@@ -35,6 +36,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
 {
@@ -851,6 +853,29 @@ stock int GetRoundStatus()
 		return 0;
 	
 	return 1;
+}
+
+stock void ScreenShake(const float pos[3], float amplitude, float frequency, float duration, float radius)
+{
+	int entity = CreateEntityByName("env_shake");
+	if(entity != -1)
+	{
+		DispatchKeyValueFloat(entity, "amplitude", amplitude);
+		DispatchKeyValueFloat(entity, "radius", radius);
+		DispatchKeyValueFloat(entity, "duration", duration);
+		DispatchKeyValueFloat(entity, "frequency", frequency);
+		
+		DispatchSpawn(entity);
+		
+		TeleportEntity(entity, position, NULL_VECTOR, NULL_VECTOR);
+		AcceptEntityInput(entity, "StartShake");
+		
+		char buffer[32];
+		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%f:1,0,1", duration + 0.1);
+		SetVariantString(buffer);
+		AcceptEntityInput(entity, "AddOutput");
+		AcceptEntityInput(entity, "FireUser1");
+	}
 }
 
 stock void FPrintToChat(int client, const char[] message, any ...)

@@ -8,6 +8,7 @@
 	void Weapons_ShowChanges(int client, int entity)
 	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
+	void Weapons_OnHitBossPost(int attacker, int victim, float &damage, int weapon, int critType)
 	void Weapons_OnAirblastBoss(int attacker)
 	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
 	void Weapons_OnInventoryApplication(int userid)
@@ -19,6 +20,7 @@
 #tryinclude <tf_custom_attributes>
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define CWX_LIBRARY		"cwx"
 #define TCA_LIBRARY		"tf2custattr"
@@ -553,6 +555,23 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 		}
 		
 		delete kv;
+	}
+	#endif
+}
+
+stock void Weapons_OnDamageIncrease(int attacker, int victim, int weapon, int )
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	{
+		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
+		if(kv)
+		{
+			float value = kv.GetFloat("primary ammo from damage", 1.0);
+			if(value != 1.0)
+			{
+			}
+		}
 	}
 	#endif
 }

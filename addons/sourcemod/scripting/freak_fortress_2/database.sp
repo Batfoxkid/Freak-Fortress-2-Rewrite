@@ -6,6 +6,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define DATABASE				"ff2"
 #define DATATABLE_GENERAL		"ff2_data_v3"

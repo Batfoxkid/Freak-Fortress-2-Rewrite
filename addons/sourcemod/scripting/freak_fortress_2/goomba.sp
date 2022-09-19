@@ -3,11 +3,10 @@
 	void Goomba_BossCreated(ConfigMap cfg)
 */
 
-#pragma newdecls optional
 #tryinclude <goomba>
-#pragma newdecls required
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static int GoombaOverride = 1;
 

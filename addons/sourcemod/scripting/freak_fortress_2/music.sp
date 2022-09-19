@@ -13,6 +13,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 enum struct MusicEnum
 {

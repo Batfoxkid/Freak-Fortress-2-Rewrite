@@ -6,6 +6,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool InMainMenu[MAXTF2PLAYERS];
 
@@ -118,6 +119,12 @@ void Menu_MainMenu(int client)
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Hud");
 	menu.AddItem("", buffer);
 	
+	if(Preference_HasDifficulties())
+	{
+		FormatEx(buffer, sizeof(buffer), "%t", "Command Difficulty");
+		menu.AddItem("", buffer);
+	}
+	
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -159,6 +166,10 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 				{
 					Menu_HudToggle(client, 0);
 					Menu_MainMenu(client);
+				}
+				case 6:
+				{
+					Preference_DifficultyMenu(client);
 				}
 			}
 		}

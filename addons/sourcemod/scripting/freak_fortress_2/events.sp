@@ -5,6 +5,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool FirstBlood;
 static bool LastMann;

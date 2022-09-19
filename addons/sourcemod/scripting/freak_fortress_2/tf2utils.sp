@@ -11,6 +11,7 @@
 #tryinclude <tf2utils>
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define TF2U_LIBRARY	"nosoop_tf2utils"
 

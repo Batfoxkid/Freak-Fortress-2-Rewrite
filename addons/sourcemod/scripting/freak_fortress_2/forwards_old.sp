@@ -14,6 +14,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static GlobalForward PreAbility;
 static GlobalForward OnAbility;

@@ -8,6 +8,7 @@
 #tryinclude <SteamWorks> 
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define STEAMWORKS_LIBRARY	"SteamWorks"
 

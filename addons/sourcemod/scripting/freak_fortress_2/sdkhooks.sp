@@ -7,6 +7,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #tryinclude <tf_ontakedamage>
 
@@ -352,13 +353,19 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 		if(!IsInvuln(victim))
 		{
 			bool changed;
-			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH));
+			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH)) && damagecustom != TF_CUSTOM_BASEBALL;
 			if(melee && SDKCall_CheckBlockBackstab(victim, attacker))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
 					TF2_RemoveCondition(victim, TFCond_RuneResist);
 				
-				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, damagePosition);
+				float pos[3];
+				GetClientAbsOrigin(victim, pos);
+				ScreenShake(pos, 25.0, 150.0, 1.0, 50.0);
+				
+				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
+				
+				TF2_RemoveCondition(victim, TFCond_Zoomed);
 				return Plugin_Handled;
 			}
 			

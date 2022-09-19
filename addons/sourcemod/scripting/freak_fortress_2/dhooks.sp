@@ -14,6 +14,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 enum struct RawHooks
 {
@@ -60,7 +61,6 @@ void DHook_Setup()
 	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
 	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
 	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
-	CreateDetour(gamedata, "CServerGameDLL::GetServerBrowserMapOverride", DHook_GetServerBrowserMapOverride);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
@@ -418,11 +418,6 @@ public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 	ret.Value += TF2_GetPlayerClass(client) == TFClass_Scout ? 1 : 2;
 
 	return MRES_Override;
-}
-
-public MRESReturn DHook_GetServerBrowserMapOverride(DHookReturn ret)
-{
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
