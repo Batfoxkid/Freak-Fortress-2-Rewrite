@@ -109,6 +109,10 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	if(value)
 		SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+RoundFloat(value));
 	
+	value = Attributes_FindOnWeapon(attacker, weapon, 399, true, 1.0);	// armor piercing
+	if(value != 1.0)
+		damage *= value;
+	
 	bool silent = view_as<bool>(Attributes_FindOnWeapon(attacker, weapon, 217));
 	
 	if(killfeed)
@@ -215,6 +219,8 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 	Client(attacker).Damage = lastPlayerDamage + idamage;
 	Client(attacker).SetDamage(slot, lastWeaponDamage + idamage);
 	
+	Weapons_OnHitBoss(attacker, weapon, Client(attacker).GetDamage(slot), lastWeaponDamage);
+	
 	float value = Attributes_FindOnPlayer(attacker, 203);	// drop health pack on kill
 	if(value > 0.0)
 	{
@@ -315,16 +321,15 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 						int i;
 						while(TF2_GetItem(target, entity, i))
 						{
+							SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
 							Address attrib = TF2Attrib_GetByDefIndex(entity, 28);
 							if(attrib != Address_Null)
 							{
-								TF2Attrib_SetValue(attrib, TF2Attrib_GetValue(attrib)*1.1);
-								TF2Attrib_SetByDefIndex(entity, 403, view_as<float>(222153573));	// Update attribute
+								TF2Attrib_SetByDefIndex(entity, 28, TF2Attrib_GetValue(attrib) * 1.1);
 							}
 							else
 							{
 								TF2Attrib_SetByDefIndex(entity, 28, 1.1);
-								SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 							}
 						}
 					}
@@ -737,9 +742,4 @@ public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
 			return Plugin_Continue;
 	}
 	return Plugin_Stop;
-}
-
-static int DamageGoal(int goal, int current, int last)
-{
-	return (current / goal) - (last / goal);
 }

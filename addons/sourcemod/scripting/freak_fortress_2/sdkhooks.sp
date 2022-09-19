@@ -376,45 +376,48 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				changed = true;
 			}
 			
-			if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
+			if(!Attributes_FindOnWeapon(attacker, weapon, 797))
 			{
-				// 25% resist while disguised, a good middle ground
-				// which requires a Spy to be both disguised and cloaked
-				// to a tank a hit from a standard boss
-				damage *= 0.75;
-				changed = true;
-			}
-			
-			if(melee)
-			{
-				if(critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
+				if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
 				{
-					// Make random crits less brutal for Dead Ringers
-					critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
-					damagetype &= ~DMG_CRIT;
+					// 25% resist while disguised, a good middle ground
+					// which requires a Spy to be both disguised and cloaked
+					// to a tank a hit from a standard boss
+					damage *= 0.75;
 					changed = true;
 				}
 				
-				// Vaccinator conditions
-				for(TFCond cond = TFCond_UberBulletResist; cond <= TFCond_UberFireResist; cond++)
+				if(melee)
 				{
-					if(TF2_IsPlayerInCondition(victim, cond))
+					// Vaccinator conditions
+					for(TFCond cond = TFCond_UberBulletResist; cond <= TFCond_UberFireResist; cond++)
 					{
-						// Uber Variant
-						damage *= 0.5;
-						critType = CritType_None;
-						damagetype &= ~DMG_CRIT;
-						changed = true;
-					}
-					
-					// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
-					if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
-					{
-						// Passive Variant
-						damage *= 0.9;
-						changed = true;
+						if(TF2_IsPlayerInCondition(victim, cond))
+						{
+							// Uber Variant
+							damage *= 0.5;
+							critType = CritType_None;
+							damagetype &= ~DMG_CRIT;
+							changed = true;
+						}
+						
+						// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
+						if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
+						{
+							// Passive Variant
+							damage *= 0.9;
+							changed = true;
+						}
 					}
 				}
+			}
+			
+			if(melee && critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
+			{
+				// Make random crits less brutal for Dead Ringers
+				critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
+				damagetype &= ~DMG_CRIT;
+				changed = true;
 			}
 			
 			if(changed && critType == CritType_None && (damagetype & DMG_CRIT))

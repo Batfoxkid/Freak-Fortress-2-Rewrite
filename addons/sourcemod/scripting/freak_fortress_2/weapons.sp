@@ -8,7 +8,7 @@
 	void Weapons_ShowChanges(int client, int entity)
 	void Weapons_PlayerDeath(int client)
 	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
-	void Weapons_OnHitBossPost(int attacker, int victim, float &damage, int weapon, int critType)
+	void Weapons_OnHitBoss(int attacker, int weapon, int newWeaponDamage, int lastWeaponDamage)
 	void Weapons_OnAirblastBoss(int attacker)
 	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
 	void Weapons_OnInventoryApplication(int userid)
@@ -469,7 +469,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 				}
 				else
 				{
-					value *= 1.0 + ((GetEntPropFloat(weapon, Prop_Send, "m_flHypeMeter") + GetEntPropFloat(weapon, Prop_Send, "m_flRageMeter")) / 50.0);
+					value *= 1.0 + ((GetEntPropFloat(attacker, Prop_Send, "m_flHypeMeter") + GetEntPropFloat(attacker, Prop_Send, "m_flRageMeter")) / 50.0);
 				}
 				
 				Gamemode_SetClientGlow(victim, value);
@@ -559,17 +559,28 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 	#endif
 }
 
-stock void Weapons_OnDamageIncrease(int attacker, int victim, int weapon, int )
+stock void Weapons_OnHitBoss(int attacker, int weapon, int newWeaponDamage, int lastWeaponDamage)
 {
 	#if defined __tf_custom_attributes_included
-	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
+	if(TCALoaded && weapon != -1)
 	{
 		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
 		if(kv)
 		{
-			float value = kv.GetFloat("primary ammo from damage", 1.0);
-			if(value != 1.0)
+			int value = kv.GetNum("primary ammo from damage");
+			if(value)
 			{
+				value = DamageGoal(value, newWeaponDamage, lastWeaponDamage);
+				if(value)
+					SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 1) + value, _, 1);
+			}
+			
+			value = kv.GetNum("secondary ammo from damage");
+			if(value)
+			{
+				value = DamageGoal(value, newWeaponDamage, lastWeaponDamage);
+				if(value)
+					SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 2) + value, _, 2);
 			}
 		}
 	}

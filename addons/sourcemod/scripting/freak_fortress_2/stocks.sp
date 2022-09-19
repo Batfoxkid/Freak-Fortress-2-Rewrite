@@ -10,6 +10,7 @@
 	void ShowGameText(int client, const char[] icon = "leaderboard_streak", int color = 0, const char[] buffer, any ...)
 	void ApplyAllyHealEvent(int healer, int patient, int amount)
 	void ApplySelfHealEvent(int entindex, int amount)
+	int DamageGoal(int goal, int current, int last)
 	bool TF2_GetItem(int client, int &weapon, int &pos)
 	void TF2_RemoveItem(int client, int weapon)
 	void TF2_RemoveAllItems(int client)
@@ -649,6 +650,11 @@ stock void ApplySelfHealEvent(int entindex, int amount)
 	event.Fire();
 }
 
+stock int DamageGoal(int goal, int current, int last)
+{
+	return (current / goal) - (last / goal);
+}
+
 stock bool TF2_GetItem(int client, int &weapon, int &pos)
 {
 	//TODO: Find out if we need to check m_bDisguiseWeapon
@@ -867,10 +873,10 @@ stock void ScreenShake(const float pos[3], float amplitude, float frequency, flo
 		
 		DispatchSpawn(entity);
 		
-		TeleportEntity(entity, position, NULL_VECTOR, NULL_VECTOR);
+		TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
 		AcceptEntityInput(entity, "StartShake");
 		
-		char buffer[32];
+		char buffer[64];
 		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%f:1,0,1", duration + 0.1);
 		SetVariantString(buffer);
 		AcceptEntityInput(entity, "AddOutput");

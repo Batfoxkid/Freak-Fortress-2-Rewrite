@@ -175,7 +175,7 @@ methodmap Client
 		}
 	}
 	
-	property bool NoHud
+	property bool NoHud	//TODO: FF2R native for this
 	{
 		public get()
 		{
