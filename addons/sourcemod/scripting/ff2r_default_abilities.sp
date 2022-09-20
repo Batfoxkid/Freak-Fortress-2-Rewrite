@@ -2031,7 +2031,7 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 				if(rockets != 1.0 && HasEntProp(victim[i], Prop_Send, "m_iAmmoRockets"))
 					SetEntProp(victim[i], Prop_Send, "m_iAmmoRockets", RoundToFloor(float(GetEntProp(victim[i], Prop_Send, "m_iAmmoRockets")) * rockets));
 				
-				if(duration > 0.0)
+				if(duration > 0.0 && !GetEntProp(victim[i], Prop_Send, "m_bDisabled"))
 				{
 					SetEntProp(victim[i], Prop_Send, "m_bDisabled", true);
 					CreateTimer(duration * GetBuildingStunMulti(victim[i]), Timer_EnableBuilding, EntIndexToEntRef(victim[i]), TIMER_FLAG_NO_MAPCHANGE);

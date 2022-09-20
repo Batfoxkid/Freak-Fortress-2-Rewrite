@@ -65,10 +65,6 @@
 	{
 		"slot"			"0"	// Ability slot
 		
-		"fists"			"1 ; 0.5"	// Attributes applied on players with stolen melees (aka they just have fists now with exception of Heavy & Engineer)
-		
-		"attributes"	"28 ; 0.5 ; 138 ; 0.6667"	// Attributes applied on stolen weapons
-		
 		"classswap"		"true"	// If to swap to the correct class
 		"animswap"		"true"	// If to swap animations to the correct class
 		
@@ -143,6 +139,8 @@
 #define SHIELD_HIT	"vo/null.mp3"
 #define WALL_JUMP	"General.banana_slip"
 
+#define STEAL_REACT	"sound_steal_react"
+
 #define MAG_MAGIC		0x0001	// Can be blocked by sapper effect
 #define MAG_MIND		0x0002	// Can't be blocked by stun effects
 #define MAG_SUMMON		0x0004	// Require dead players to use
@@ -162,6 +160,8 @@ bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
 
+bool ClassSwap[MAXTF2PLAYERS];
+bool AnimSwap[MAXTF2PLAYERS];
 bool CanPickup[MAXTF2PLAYERS];
 bool StealNext[MAXTF2PLAYERS];
 
@@ -265,6 +265,10 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 		AbilityData ability = boss.GetAbility("rage_weapon_pickups");
 		if(ability.IsMyPlugin())
 		{
+			ClassSwap[client] = ability.GetBool("classswap", true);
+			AnimSwap[client] = ability.GetBool("animswap", false);
+			hookSwapping = (ClassSwap[client] || AnimSwap[client]);
+			
 			bool found;
 			for(int i = 1; i <= MaxClients; i++)
 			{
@@ -484,6 +488,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 			if(hud)
 				cfg.SetFloat("hudin", 0.0);
 		}
+	}
+	else if(CanPickup[client] && !StrContains(ability, "rage_weapon_pickups", false))
+	{
+		StealNext[client] = true;
 	}
 }
 
@@ -1312,46 +1320,196 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 {
 	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM))
 	{
-		int weapon = GetEntPropEnt(victim, Prop_Send, "m_hActiveWeapon");
-		if(weapon != -1)
+		if(FF2R_GetBossData(victim))
 		{
-			if(FF2R_GetBossData(victim))
+			int health = GetClientHealth(attacker);
+			
+			StealNext[attacker] = false;
+			TF2_RegeneratePlayer(attacker);
+			FF2R_OnBossCreated(attacker, FF2R_GetBossData(attacker), false);
+			
+			SetEntityHealth(attacker, health + 600);
+			FF2R_UpdateBossAttributes(attacker);
+		}
+		else
+		{
+			int weapon = (TF2_IsPlayerInCondition(victim, TFCond_Cloaked) || GetEntProp(victim, Prop_Send, "m_bFeignDeathReady")) ? GetPlayerWeaponSlot(victim, TFWeaponSlot_Building) : GetEntPropEnt(victim, Prop_Send, "m_hActiveWeapon");
+			if(weapon != -1)
 			{
-			}
-			else
-			{
-				switch(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
+				int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+				switch(index)
 				{
 					case 5, 195:	// Fists are immune
 						return Plugin_Continue;
 				}
 				
 				char classname[36];
-				if(GetEntityClassname(entity, classname, sizeof(classname)))
+				if(GetEntityClassname(weapon, classname, sizeof(classname)))
 				{
 					if(!StrContains(classname, "tf_weapon_robot_arm") || !StrContains(classname, "tf_weapon_builder"))
 					{
-						// Gunslinger, Builder are immune
-						return Plugin_Continue;
-					}
-					else if(!StrContains(classname, "tf_weapon_pda_engineer_build"))
-					{
-						
-						return Plugin_Continue;
-					}
-					else if(!StrContains(classname, "tf_weapon_pda_engineer_destroy"))
-					{
-						
-						return Plugin_Continue;
-					}
-					TF2_RemoveItem(victim, entity);
-					if( == entity)
-					{
-						entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
-						if(entity != -1)
+						index = CreateEntityByName("env_explosion");
+						if(index != -1)
 						{
+							StealNext[attacker] = false;
+							
+							DispatchKeyValueFloat(index, "DamageForce", float(GetClientHealth(victim)));
+							SetEntPropEnt(index, Prop_Data, "m_hOwnerEntity", attacker);
+
+							DispatchSpawn(index);
+							
+							float pos[3];
+							GetClientAbsOrigin(victim, pos);
+							pos[2] += 5.0;
+							TeleportEntity(index, pos);
+							
+							AcceptEntityInput(index, "Explode");
+							AcceptEntityInput(index, "kill");
+						}
+						
+						damagetype |= DMG_ALWAYSGIB;
+						return Plugin_Changed;
+					}
+					
+					if(!StrContains(classname, "tf_weapon_pda_engineer"))
+					{
+						StealNext[attacker] = false;
+						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_Grenade);
+						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_Building);
+						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_PDA);
+						
+						index = -1;
+						while((index = FindEntityByClassname(index, "obj_*")) != -1)
+						{
+							if(GetEntPropEnt(index, Prop_Send, "m_hBuilder") == victim)
+							{
+								SetEntPropEnt(index, Prop_Send, "m_hBuilder", -1);
+								SetEntProp(index, Prop_Send, "m_bDisabled", true);
+							}
+						}
+						
+						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
+						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
+							FakeClientCommand(victim, "use %s", buffer);
+						
+						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						return Plugin_Handled;
+					}
+					
+					if(!StrContains(classname, "tf_weapon_pda_spy"))
+					{
+						TF2_RemoveCondition(victim, TFCond_Disguised);
+						TF2_RemoveItem(victim, weapon);
+						TF2_AddCondition(attacker, TFCond_DisguisedAsDispenser, 20.0);
+						TF2_StunPlayer(attacker, 20.0, 0.2, TF_STUNFLAG_NOSOUNDOREFFECT|TF_STUNFLAG_SLOWDOWN);
+						
+						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
+						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
+							FakeClientCommand(victim, "use %s", buffer);
+						
+						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						return Plugin_Handled;
+					}
+					
+					if(!StrContains(classname, "tf_weapon_invis"))
+					{
+						SetEntProp(victim, Prop_Send, "m_bFeignDeathReady", false);
+						TF2_RemoveCondition(victim, TFCond_Cloaked);
+						TF2_RemoveItem(victim, weapon);
+						TF2_AddCondition(attacker, TFCond_StealthedUserBuffFade, 15.0);
+						
+						if(index == 59)
+						{
+							TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, 3.0);
+							
+							index = CreateEntityByName("tf_ragdoll");
+							if(index != -1)
+							{
+								float pos[3], ang[3];
+								GetClientAbsOrigin(attacker, pos);
+								GetClientAbsAngles(attacker, ang);
+								
+								SetEntProp(index, Prop_Send, "m_iPlayerIndex", attacker);
+								SetEntProp(index, Prop_Send, "m_iTeam", GetClientTeam(attacker));
+								SetEntProp(index, Prop_Send, "m_iClass", TF2_GetPlayerClass(attacker));
+								SetEntProp(index, Prop_Send, "m_bOnGround", 1);
+								
+								SetEntityMoveType(index, MOVETYPE_NONE);
+								
+								DispatchSpawn(index);
+								ActivateEntity(index);
+								
+								SetVariantString("OnUser1 !self:Kill::15:1,0,1");
+								AcceptEntityInput(entity, "AddOutput");
+								AcceptEntityInput(entity, "FireUser1");
+							}
+						}
+						
+						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						return Plugin_Handled;
+					}
+					
+					GetClientEyePosition(attacker, pos);
+					GetClientEyeAngles(attacker, ang);
+					if(CreateDroppedWeapon(victim, weapon, pos, ang) != INVALID_ENT_REFERENCE)
+					{
+						TF2_RemoveItem(victim, weapon);
+						
+						if(!StrContains(classname, "tf_weapon_wrench"))
+						{
+							index = MaxClients + 1;
+							while((index = FindEntityByClassname(index, "obj_sentrygun")) != -1)
+							{
+								if(GetEntPropEnt(index, Prop_Send, "m_hBuilder") == victim && !GetEntProp(index, Prop_Send, "m_bMiniBuilding"))
+								{
+									FakeClientCommand(victim, "destroy 2");
+									AcceptEntityInput(index, "kill");
+								}
+							}
+							
+							index = CreateEntityByName("tf_weapon_robot_arm");
+							if(index != -1)
+							{
+								SetEntProp(index, Prop_Send, "m_iItemDefinitionIndex", 142);
+								SetEntProp(index, Prop_Send, "m_bInitialized", 1);
+								
+								SetEntProp(index, Prop_Send, "m_iEntityQuality", 6);
+								SetEntProp(index, Prop_Send, "m_iEntityLevel", 15);
+								
+								DispatchSpawn(index);
+								
+								EquipPlayerWeapon(client, index);
+							}
+						}
+						else if(TF2_GetClassnameSlot(classname) == TFWeaponSlot_Melee)
+						{
+							index = CreateEntityByName(classname);
+							if(index != -1)
+							{
+								SetEntProp(index, Prop_Send, "m_iItemDefinitionIndex", 5);
+								SetEntProp(index, Prop_Send, "m_bInitialized", 1);
+								
+								SetEntProp(index, Prop_Send, "m_iEntityQuality", 0);
+								SetEntProp(index, Prop_Send, "m_iEntityLevel", 1);
+								
+								DispatchSpawn(index);
+								
+								EquipPlayerWeapon(client, index);
+								
+								if(StrContains(classname, "tf_weapon_fists"))
+									TF2Attrib_SetByDefIndex(index, 138, 0.5);
+							}
+						}
+						else
+						{
+							index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
+							if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
 								FakeClientCommand(victim, "use %s", buffer);
 						}
+						
+						IntToString(TF2_GetPlayerClass(victim), classname, sizeof(classname));
+						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, classname, victim, SNDCHAN_VOICE, 90, _, 1.0);
+						return Plugin_Handled;
 					}
 				}
 			}
@@ -1663,6 +1821,81 @@ void ModelIndexToString(int index, char[] model, int size)
 {
 	int table = FindStringTable("modelprecache");
 	ReadStringTable(table, index, model, size);
+}
+
+
+
+int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
+{
+	if(StrContains(classname, "tf_weapon_"))
+	{
+		return -1;
+	}
+	else if(!StrContains(classname, "tf_weapon_scattergun") ||
+	  !StrContains(classname, "tf_weapon_handgun_scout_primary") ||
+	  !StrContains(classname, "tf_weapon_soda_popper") ||
+	  !StrContains(classname, "tf_weapon_pep_brawler_blaster") ||
+	  !StrContains(classname, "tf_weapon_rocketlauncher") ||
+	  !StrContains(classname, "tf_weapon_particle_cannon") ||
+	  !StrContains(classname, "tf_weapon_flamethrower") ||
+	  !StrContains(classname, "tf_weapon_grenadelauncher") ||
+	  !StrContains(classname, "tf_weapon_cannon") ||
+	  !StrContains(classname, "tf_weapon_minigun") ||
+	  !StrContains(classname, "tf_weapon_shotgun_primary") ||
+	  !StrContains(classname, "tf_weapon_sentry_revenge") ||
+	  !StrContains(classname, "tf_weapon_drg_pomson") ||
+	  !StrContains(classname, "tf_weapon_shotgun_building_rescue") ||
+	  !StrContains(classname, "tf_weapon_syringegun_medic") ||
+	  !StrContains(classname, "tf_weapon_crossbow") ||
+	  !StrContains(classname, "tf_weapon_sniperrifle") ||
+	  !StrContains(classname, "tf_weapon_compound_bow"))
+	{
+		return TFWeaponSlot_Primary;
+	}
+	else if(!StrContains(classname, "tf_weapon_pistol") ||
+	  !StrContains(classname, "tf_weapon_lunchbox") ||
+	  !StrContains(classname, "tf_weapon_jar") ||
+	  !StrContains(classname, "tf_weapon_handgun_scout_secondary") ||
+	  !StrContains(classname, "tf_weapon_cleaver") ||
+	  !StrContains(classname, "tf_weapon_shotgun") ||
+	  !StrContains(classname, "tf_weapon_buff_item") ||
+	  !StrContains(classname, "tf_weapon_raygun") ||
+	  !StrContains(classname, "tf_weapon_flaregun") ||
+	  !StrContains(classname, "tf_weapon_rocketpack") ||
+	  !StrContains(classname, "tf_weapon_pipebomblauncher") ||
+	  !StrContains(classname, "tf_weapon_laser_pointer") ||
+	  !StrContains(classname, "tf_weapon_mechanical_arm") ||
+	  !StrContains(classname, "tf_weapon_medigun") ||
+	  !StrContains(classname, "tf_weapon_smg") ||
+	  !StrContains(classname, "tf_weapon_charged_smg"))
+	{
+		return TFWeaponSlot_Secondary;
+	}
+	else if(!StrContains(classname, "tf_weapon_r"))	// Revolver
+	{
+		return econ ? TFWeaponSlot_Secondary : TFWeaponSlot_Primary;
+	}
+	else if(!StrContains(classname, "tf_weapon_sa"))	// Sapper
+	{
+		return econ ? TFWeaponSlot_Building : TFWeaponSlot_Secondary;
+	}
+	else if(!StrContains(classname, "tf_weapon_i") || !StrContains(classname, "tf_weapon_pda_engineer_d"))	// Invis & Destory PDA
+	{
+		return econ ? TFWeaponSlot_Item1 : TFWeaponSlot_Building;
+	}
+	else if(!StrContains(classname, "tf_weapon_p"))	// Disguise Kit & Build PDA
+	{
+		return econ ? TFWeaponSlot_PDA : TFWeaponSlot_Grenade;
+	}
+	else if(!StrContains(classname, "tf_weapon_bu"))	// Builder Box
+	{
+		return econ ? TFWeaponSlot_Building : TFWeaponSlot_PDA;
+	}
+	else if(!StrContains(classname, "tf_weapon_sp"))	 // Spellbook
+	{
+		return TFWeaponSlot_Item1;
+	}
+	return TFWeaponSlot_Melee;
 }
 
 void EquipWearable(int client, int entity)
