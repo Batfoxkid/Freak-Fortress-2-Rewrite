@@ -246,7 +246,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 					SetEntityMoveType(entity, MOVETYPE_VPHYSICS);
 					velocity[0] = GetRandomFloat(-10.0, 10.0);
 					velocity[1] = GetRandomFloat(-10.0, 10.0);
-					TeleportEntity(entity, position, NULL_VECTOR, velocity);
+					TeleportEntity(entity, position, _, velocity);
 					SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", attacker);
 				}
 			}

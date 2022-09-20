@@ -128,6 +128,16 @@
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
 
+#define	HITGROUP_GENERIC	0
+#define	HITGROUP_HEAD		1
+#define	HITGROUP_CHEST		2
+#define	HITGROUP_STOMACH	3
+#define HITGROUP_LEFTARM	4
+#define HITGROUP_RIGHTARM	5
+#define HITGROUP_LEFTLEG	6
+#define HITGROUP_RIGHTLEG	7
+#define HITGROUP_GEAR		10
+
 #define AMS_DENYUSE	"common/wpn_denyselect.wav"
 #define AMS_SWITCH	"common/wpn_moveselect.wav"
 #define SHIELD_HIT	"vo/null.mp3"
@@ -142,15 +152,18 @@
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
+Handle SDKCreate;
+Handle SDKInitDroppedWeapon;
 int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
-ConVar WeaponLifetime;
-int LastWeaponLifetime;
 
 bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
+
+bool CanPickup[MAXTF2PLAYERS];
+bool StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
 UserMsg PlayerShieldBlocked;
@@ -199,6 +212,32 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	gamedata = new GameData("ff2");
+	
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFDroppedWeapon::Create");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL);
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKCreate = EndPrepSDKCall();
+	if(!SDKCreate)
+		LogError("[Gamedata] Could not find CTFDroppedWeapon::Create");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFDroppedWeapon::InitDroppedWeapon");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+	SDKInitDroppedWeapon = EndPrepSDKCall();
+	if(!SDKInitDroppedWeapon)
+		LogError("[Gamedata] Could not find CTFDroppedWeapon::Create");
+	
+	delete gamedata;
+	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
@@ -208,6 +247,8 @@ public void OnPluginStart()
 	{
 		if(IsClientInGame(client))
 		{
+			OnClientPutInServer(client);
+			
 			BossData cfg = FF2R_GetBossData(client);
 			if(cfg)
 				FF2R_OnBossCreated(client, cfg, false);
@@ -218,6 +259,37 @@ public void OnPluginStart()
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
 	bool hookSwapping;
+	
+	if(!CanPickup[client])
+	{
+		AbilityData ability = boss.GetAbility("rage_weapon_pickups");
+		if(ability.IsMyPlugin())
+		{
+			bool found;
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(CanPickup[client])
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			CanPickup[client] = true;
+			
+			if(!found)
+			{
+				for(int i = 1; i <= MaxClients; i++)
+				{
+					if(IsClientInGame(i))
+					{
+						SDKHook(i, SDKHook_TraceAttack, StealingTraceAttack);
+						break;
+					}
+				}
+			}
+		}
+	}
 	
 	if(!WallJumper[client])
 	{
@@ -373,6 +445,7 @@ public void FF2R_OnBossRemoved(int client)
 {
 	HasAbility[client] = 0;
 	WallJumper[client] = false;
+	StealNext[client] = false;
 	
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
@@ -438,6 +511,18 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 	}
 }
 
+public void OnClientPutInServer(int client)
+{
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if(CanPickup[client])
+		{
+			SDKHook(client, SDKHook_TraceAttack, StealingTraceAttack);
+			break;
+		}
+	}
+}
+
 public void OnClientDisconnect(int client)
 {
 	WallAirMulti[client] = 1.0;
@@ -469,19 +554,29 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 						jumped = true;
 						
 						ability.SetFloat("cooldown", gameTime + 0.35);
-						SetEntProp(client, Prop_Send, "m_iAirDash", -1);
+						SetEntProp(client, Prop_Send, "m_iAirDash", ability.GetBool("double", true) ? 0 : -1);
+						EmitGameSoundToAll(WALL_JUMP, client, _, client, pos);
 						
-						WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
-						if(WallSpeedMulti[client] != 1.0)
-							JumperAttribApply(client, 107, WallSpeedMulti[client]);
+						if(WallSpeedMulti[client] == 1.0)
+						{
+							WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
+							if(WallSpeedMulti[client] != 1.0)
+								JumperAttribApply(client, 107, WallSpeedMulti[client]);
+						}
 						
-						WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
-						if(WallJumpMulti[client] != 1.0)
-							JumperAttribApply(client, 443, WallJumpMulti[client]);
+						if(WallJumpMulti[client] == 1.0)
+						{
+							WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
+							if(WallJumpMulti[client] != 1.0)
+								JumperAttribApply(client, 443, WallJumpMulti[client]);
+						}
 						
-						WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
-						if(WallAirMulti[client] != 1.0)
-							JumperAttribApply(client, 610, WallAirMulti[client]);
+						if(WallAirMulti[client] == 1.0)
+						{
+							WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
+							if(WallAirMulti[client] != 1.0)
+								JumperAttribApply(client, 610, WallAirMulti[client]);
+						}
 					}
 					
 					delete trace;
@@ -489,17 +584,26 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 				
 				if(!jumped)
 				{
-					WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
-					if(WallSpeedMulti[client] != 1.0)
-						JumperAttribApply(client, 107, WallSpeedMulti[client]);
+					if(WallSpeedMulti[client] == 1.0)
+					{
+						WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
+						if(WallSpeedMulti[client] != 1.0)
+							JumperAttribApply(client, 107, WallSpeedMulti[client]);
+					}
 					
-					WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
-					if(WallJumpMulti[client] != 1.0)
-						JumperAttribApply(client, 443, WallJumpMulti[client]);
+					if(WallJumpMulti[client] == 1.0)
+					{
+						WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
+						if(WallJumpMulti[client] != 1.0)
+							JumperAttribApply(client, 443, WallJumpMulti[client]);
+					}
 					
-					WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
-					if(WallAirMulti[client] != 1.0)
-						JumperAttribApply(client, 610, WallAirMulti[client]);
+					if(WallAirMulti[client] == 1.0)
+					{
+						WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
+						if(WallAirMulti[client] != 1.0)
+							JumperAttribApply(client, 610, WallAirMulti[client]);
+					}
 				}
 			}
 		}
@@ -1204,6 +1308,113 @@ void RemoveWeaponSwapHooks(int client)
 	OnWeaponSwitch(client, -2);
 }
 
+public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+{
+	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM))
+	{
+		int weapon = GetEntPropEnt(victim, Prop_Send, "m_hActiveWeapon");
+		if(weapon != -1)
+		{
+			if(FF2R_GetBossData(victim))
+			{
+			}
+			else
+			{
+				switch(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
+				{
+					case 5, 195:	// Fists are immune
+						return Plugin_Continue;
+				}
+				
+				char classname[36];
+				if(GetEntityClassname(entity, classname, sizeof(classname)))
+				{
+					if(!StrContains(classname, "tf_weapon_robot_arm") || !StrContains(classname, "tf_weapon_builder"))
+					{
+						// Gunslinger, Builder are immune
+						return Plugin_Continue;
+					}
+					else if(!StrContains(classname, "tf_weapon_pda_engineer_build"))
+					{
+						
+						return Plugin_Continue;
+					}
+					else if(!StrContains(classname, "tf_weapon_pda_engineer_destroy"))
+					{
+						
+						return Plugin_Continue;
+					}
+					TF2_RemoveItem(victim, entity);
+					if( == entity)
+					{
+						entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
+						if(entity != -1)
+						{
+								FakeClientCommand(victim, "use %s", buffer);
+						}
+					}
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
+int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float ang[3])
+{
+	if(!SDKInitDroppedWeapon || !SDKCreate)
+		return INVALID_ENT_REFERENCE;
+	
+	char classname[32];
+	GetEntityNetClass(weapon, classname, sizeof(classname));
+	int offset = FindSendPropInfo(classname, "m_Item");
+	if(offset < 0)
+		return INVALID_ENT_REFERENCE;
+	
+	int index;
+	if(HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex"))
+	{
+		index = GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex");
+	}
+	else
+	{
+		index = GetEntProp(weapon, Prop_Send, "m_nModelIndex");
+	}
+	
+	if(index < 1)
+		return INVALID_ENT_REFERENCE;
+	
+	char model[PLATFORM_MAX_PATH];
+	ModelIndexToString(index, model, sizeof(model));
+	
+	TR_TraceRayFilter(pos1, view_as<float>({ 90.0, 0.0, 0.0 }), MASK_SOLID, RayType_Infinite, Trace_WorldOnly);
+	if(!TR_DidHit())
+		return INVALID_ENT_REFERENCE;
+	
+	float pos2[3];
+	TR_GetEndPosition(pos2);
+	
+	bool mvm = view_as<bool>(GameRules_GetProp("m_bPlayingMannVsMachine"));
+	if(mvm)
+		GameRules_SetProp("m_bPlayingMannVsMachine", false);
+	
+	int entity = SDKCall(SDKCreate, client, pos2, ang, model, GetEntityAddress(weapon) + view_as<Address>(offset));
+	
+	if(mvm)
+		GameRules_SetProp("m_bPlayingMannVsMachine", true);
+	
+	if(entity == INVALID_ENT_REFERENCE)
+		return INVALID_ENT_REFERENCE;
+	
+	//DispatchSpawn(entity);
+	SDKCall(SDKInitDroppedWeapon, entity, client, weapon, false, true);
+	
+	SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 100.0);
+	
+	TeleportEntity(entity, pos1);
+	return entity;
+}
+
 int EquipRazorback(int client)
 {
 	int wearable = CreateEntityByName("tf_wearable");
@@ -1437,7 +1648,7 @@ void ScreenShake(const float pos[3], float amplitude, float frequency, float dur
 		
 		DispatchSpawn(entity);
 		
-		TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
+		TeleportEntity(entity, pos);
 		AcceptEntityInput(entity, "StartShake");
 		
 		char buffer[64];
@@ -1446,6 +1657,12 @@ void ScreenShake(const float pos[3], float amplitude, float frequency, float dur
 		AcceptEntityInput(entity, "AddOutput");
 		AcceptEntityInput(entity, "FireUser1");
 	}
+}
+
+void ModelIndexToString(int index, char[] model, int size)
+{
+	int table = FindStringTable("modelprecache");
+	ReadStringTable(table, index, model, size);
 }
 
 void EquipWearable(int client, int entity)

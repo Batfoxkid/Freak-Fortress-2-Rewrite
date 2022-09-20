@@ -622,7 +622,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					SubtractVectors(vec, pos, vec);
 					NormalizeVector(vec, vec);
 					ScaleVector(vec, speed);
-					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
+					TeleportEntity(client, _, _, vec);
 					
 					bool finished;
 					if(distance < maximum)
@@ -658,7 +658,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 									
 									SetEntProp(client, Prop_Send, "m_bDucked", true);
 									SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-									TeleportEntity(client, pos, NULL_VECTOR, NULL_VECTOR);
+									TeleportEntity(client, pos);
 								}
 							}
 						}
@@ -882,7 +882,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 								
 								SetEntProp(client, Prop_Send, "m_bDucked", true);
 								SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-								TeleportEntity(client, pos1, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+								TeleportEntity(client, pos1, _, view_as<float>({0.0, 0.0, 0.0}));
 								
 								char buffer[8];
 								if(ability.GetString("slot", buffer, sizeof(buffer)))
@@ -919,7 +919,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							ability.GetString("upward", buffer, sizeof(buffer), "1.0 + (n * 0.000275)");
 							velocity[2] = ParseFormula(buffer, power);
 							
-							TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+							TeleportEntity(client, _, _, velocity);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
 								FF2R_EmitBossSoundToAll("sound_ability", client, buffer, client, _, SNDLEVEL_TRAFFIC);
@@ -1077,7 +1077,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				float velocity[3];
 				GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
 				velocity[2] = -ability.GetFloat("velocity", 1000.0);
-				TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
+				TeleportEntity(client, _, _, velocity);
 			}
 			else
 			{
@@ -1398,7 +1398,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 			
 			SetEntProp(client, Prop_Send, "m_bDucked", true);
 			SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-			TeleportEntity(client, pos, NULL_VECTOR, NULL_VECTOR);
+			TeleportEntity(client, pos);
 		}
 	}
 	else if(!StrContains(ability, "rage_tradespam", false))
@@ -1689,7 +1689,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						float pos[3];
 						GetEntPropVector(victim, Prop_Send, "m_vecOrigin", pos);
 						pos[2] += 20;
-						TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
+						TeleportEntity(entity, pos);
 						
 						float duration = GetFormula(ability, "duration", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(attacker)), 0.0);
 						if(duration > 0.5)
@@ -2464,7 +2464,7 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		TF2_RespawnPlayer(clients[i]);
 		SetEntProp(clients[i], Prop_Send, "m_bDucked", true);
 		SetEntityFlags(clients[i], GetEntityFlags(clients[i]) | FL_DUCKING);
-		TeleportEntity(clients[i], pos, NULL_VECTOR, vel);
+		TeleportEntity(clients[i], pos, _, vel);
 		
 		// Lessen the strength cap between active and AFK players
 		CloneIdle[clients[i]] = true;
@@ -2490,7 +2490,7 @@ public Action CloneTakeDamage(int victim, int &attacker, int &inflictor, float &
 				
 				float pos[3];
 				GetEntPropVector(CloneOwner[victim], Prop_Send, "m_vecOrigin", pos);
-				TeleportEntity(victim, pos, NULL_VECTOR, vel);
+				TeleportEntity(victim, pos, _, vel);
 				return Plugin_Handled;
 			}
 		}
@@ -2641,7 +2641,7 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 				pos2[2] = pos1[2] + GetRandomFloat(distance * -0.428571, distance * 0.428571);
 			}
 			
-			TeleportEntity(entity, pos2, NULL_VECTOR, NULL_VECTOR);
+			TeleportEntity(entity, pos2);
 			AcceptEntityInput(entity, "Explode");
 			AcceptEntityInput(entity, "kill");
 		}
@@ -2959,7 +2959,7 @@ int AttachParticle(int entity, const char[] name, float lifetime)
 		float position[3];
 		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
 		position[2] += 75.0;
-		TeleportEntity(particle, position, NULL_VECTOR, NULL_VECTOR);
+		TeleportEntity(particle, position);
 		
 		DispatchKeyValue(particle, "effect_name", name);
 		DispatchSpawn(particle);

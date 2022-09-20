@@ -873,7 +873,7 @@ stock void ScreenShake(const float pos[3], float amplitude, float frequency, flo
 		
 		DispatchSpawn(entity);
 		
-		TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
+		TeleportEntity(entity, pos);
 		AcceptEntityInput(entity, "StartShake");
 		
 		char buffer[64];
