@@ -771,6 +771,7 @@ public void Weapons_SpawnFrame(int ref)
 	if(cfg.GetInt("clip", current))
 	{
 		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+		
 		if(HasEntProp(entity, Prop_Data, "m_iClip1"))
 			SetEntProp(entity, Prop_Data, "m_iClip1", current);
 	}

@@ -11,12 +11,13 @@
 		{
 			"0"	// Sorted in number and ABC order
 			{
-				"name"		"RAGE"	// Name, can use "name_en", etc. If left blank, section name is used instead
-				"delay"		"10.0"	// Initial cooldown
-				"cooldown"	"30.0"	// Cooldown on use
-				"cost"		"100.0"	// RAGE cost to use
-				"consume"	"true"	// Consumes RAGE on use
-				"flags"		"0x0003"// Casting flags
+				"name"			"RAGE"				// Name, can use "name_en", etc. If left blank, section name is used instead
+				"description"	"Use your magic"	// Description, can use "description_en", etc.
+				"delay"			"10.0"				// Initial cooldown
+				"cooldown"		"30.0"				// Cooldown on use
+				"cost"			"100.0"				// RAGE cost to use
+				"consume"		"true"				// Consumes RAGE on use
+				"flags"			"0x0003"			// Casting flags
 				// 0x0001: Magic (Sapper effect prevents casting)
 				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
 				// 0x0004: Summon (Requires a dead summonable player to cast)
@@ -52,21 +53,23 @@
 	{
 		"slot"			"0"	// Ability slot
 		
-		"delay"			"0.0"	// Activation delay
 		"low"			"10"	// Lowest slot to activate
 		"high"			"14"	// Highest slot to activate
 		"count"			"1"	// How many unique slots to activate
+		"repeat"		"false"	// If can cast the same slot when count is enabled
 		
 		"plugin_name"	"ff2r_epic_abilities"
 	}
 	
 	
-	"rage_weapon_pickups"
+	"rage_weapon_steal"
 	{
 		"slot"			"0"	// Ability slot
 		
-		"classswap"		"true"	// If to swap to the correct class
-		"animswap"		"true"	// If to swap animations to the correct class
+		"pickups"		"true"										// Can passively pick up weapons
+		"classswap"		"true"										// If to swap to the correct class
+		"animswap"		"true"										// If to swap animations to the correct class
+		"hands"			"models/weapons/c_models/c_scout_arms.mdl"	// Hands model if doing class swap
 		
 		"plugin_name"	"ff2r_epic_abilities"
 	}
@@ -113,6 +116,7 @@
 #include <cfgmap>
 #include <ff2r>
 #include <tf2attributes>
+#include <tf_econ_data>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -148,8 +152,26 @@
 #define MAG_LASTLIFE	0x0010	// Require having no extra lives left
 #define MAG_GROUND		0x0020	// Require being on the ground
 
+enum
+{
+	EF_BONEMERGE			= 0x001,	// Performs bone merge on client side
+	EF_BRIGHTLIGHT 			= 0x002,	// DLIGHT centered at entity origin
+	EF_DIMLIGHT 			= 0x004,	// player flashlight
+	EF_NOINTERP				= 0x008,	// don't interpolate the next frame
+	EF_NOSHADOW				= 0x010,	// Don't cast no shadow
+	EF_NODRAW				= 0x020,	// don't draw entity
+	EF_NORECEIVESHADOW		= 0x040,	// Don't receive no shadow
+	EF_BONEMERGE_FASTCULL	= 0x080,	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+										// parent and uses the parent's bbox + the max extents of the aiment.
+										// Otherwise, it sets up the parent's bones every frame to figure out where to place
+										// the aiment, which is inefficient because it'll setup the parent's bones even if
+										// the parent is not in the PVS.
+	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
+	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
+	EF_MAX_BITS = 10
+};
+
 Handle SDKEquipWearable;
-Handle SDKGetMaxHealth;
 Handle SDKCreate;
 Handle SDKInitDroppedWeapon;
 int PlayersAlive[4];
@@ -160,10 +182,14 @@ bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
 
-bool ClassSwap[MAXTF2PLAYERS];
+int BodyRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
+int WeapRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
+int HandRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
+TFClassType ClassSwap[MAXTF2PLAYERS];
 bool AnimSwap[MAXTF2PLAYERS];
+int HandSwap[MAXTF2PLAYERS];
 bool CanPickup[MAXTF2PLAYERS];
-bool StealNext[MAXTF2PLAYERS];
+int StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
 UserMsg PlayerShieldBlocked;
@@ -198,17 +224,6 @@ public void OnPluginStart()
 	SDKEquipWearable = EndPrepSDKCall();
 	if(!SDKEquipWearable)
 		LogError("[Gamedata] Could not find RemoveWearable");
-	
-	delete gamedata;
-	
-	gamedata = new GameData("sdkhooks.games");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GetMaxHealth");
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	SDKGetMaxHealth = EndPrepSDKCall();
-	if(!SDKGetMaxHealth)
-		LogError("[Gamedata] Could not find GetMaxHealth");
 	
 	delete gamedata;
 	
@@ -260,35 +275,45 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
 	bool hookSwapping;
 	
-	if(!CanPickup[client])
+	if(!CanPickup[client] && !ClassSwap[client])
 	{
-		AbilityData ability = boss.GetAbility("rage_weapon_pickups");
+		AbilityData ability = boss.GetAbility("rage_weapon_steal");
 		if(ability.IsMyPlugin())
 		{
-			ClassSwap[client] = ability.GetBool("classswap", true);
-			AnimSwap[client] = ability.GetBool("animswap", false);
-			hookSwapping = (ClassSwap[client] || AnimSwap[client]);
-			
-			bool found;
-			for(int i = 1; i <= MaxClients; i++)
+			if(ability.GetBool("classswap", true))
 			{
-				if(CanPickup[client])
-				{
-					found = true;
-					break;
-				}
+				ClassSwap[client] = TF2_GetPlayerClass(client);
+				
+				char buffer[PLATFORM_MAX_PATH];
+				ability.GetString("hands", buffer, sizeof(buffer));
+				HandSwap[client] = buffer[0] ? PrecacheModel(buffer) : 0;
+				AnimSwap[client] = ability.GetBool("animswap", false);
+				hookSwapping = true;
 			}
 			
-			CanPickup[client] = true;
-			
-			if(!found)
+			if(ability.GetBool("pickups", true))
 			{
+				bool found;
 				for(int i = 1; i <= MaxClients; i++)
 				{
-					if(IsClientInGame(i))
+					if(CanPickup[client])
 					{
-						SDKHook(i, SDKHook_TraceAttack, StealingTraceAttack);
+						found = true;
 						break;
+					}
+				}
+				
+				CanPickup[client] = true;
+				
+				if(!found)
+				{
+					for(int i = 1; i <= MaxClients; i++)
+					{
+						if(IsClientInGame(i))
+						{
+							SDKHook(i, SDKHook_TraceAttack, StealingTraceAttack);
+							break;
+						}
 					}
 				}
 			}
@@ -326,6 +351,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 101);
 				
 				DispatchSpawn(weapon);
+				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
 				
 				EquipPlayerWeapon(client, weapon);
 				
@@ -449,7 +475,9 @@ public void FF2R_OnBossRemoved(int client)
 {
 	HasAbility[client] = 0;
 	WallJumper[client] = false;
-	StealNext[client] = false;
+	CanPickup[client] = false;
+	ClassSwap[client] = TFClass_Unknown;
+	StealNext[client] = 0;
 	
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
@@ -489,9 +517,41 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				cfg.SetFloat("hudin", 0.0);
 		}
 	}
-	else if(CanPickup[client] && !StrContains(ability, "rage_weapon_pickups", false))
+	else if(CanPickup[client] && !StrContains(ability, "rage_weapon_steal", false))
 	{
-		StealNext[client] = true;
+		StealNext[client]++;
+	}
+	else if(!StrContains(ability, "rage_random_slot", false))
+	{
+		bool repeat = cfg.GetBool("repeat");
+		int count = cfg.GetInt("count", 1);
+		int low = cfg.GetInt("low");
+		int high = cfg.GetInt("high");
+		
+		if(count < 2 || repeat)
+		{
+			for(int i; i < count; i++)
+			{
+				FF2R_DoBossSlot(client, GetRandomInt(low, high));
+			}
+		}
+		else
+		{
+			int range = high - low + 1;
+			int[] slots = new int[range];
+			
+			for(int i; i < range; i++)
+			{
+				slots[i] = low + i;
+			}
+			
+			SortIntegers(slots, range, Sort_Random);
+			
+			for(int i; i < count; i++)
+			{
+				FF2R_DoBossSlot(client, slots[i]);
+			}
+		}
 	}
 }
 
@@ -517,6 +577,11 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 		if(ability.IsMyPlugin())
 			boss.Remove("rage_ability_management");
 	}
+}
+
+public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
+{
+	return CanPickup[client] ? Plugin_Handled : Plugin_Continue;
 }
 
 public void OnClientPutInServer(int client)
@@ -1142,6 +1207,128 @@ public void OnWeaponSwitch(int client, int weapon)
 		
 		RazorbackDeployed[client] = false;
 	}
+	
+	if(ClassSwap[client] && !RazorbackDeployed[client] && weapon > MaxClients)
+	{
+		TFClassType class = TF2_GetWeaponClass(weapon, ClassSwap[client]);
+		TF2_SetPlayerClass(client, class, _, false);
+		
+		if(AnimSwap[client] && BodyRef[client] == INVALID_ENT_REFERENCE)
+		{
+			int index = GetEntProp(client, Prop_Send, "m_nModelIndex");
+			if(index > 0)
+			{
+				int entity = CreateEntityByName("tf_wearable");
+				if(entity != -1)
+				{
+					SetEntProp(entity, Prop_Send, "m_nModelIndex", index);
+					SetEntProp(entity, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
+					SetEntProp(entity, Prop_Send, "m_nSkin", GetClientTeam(client) % 2);
+					
+					DispatchSpawn(entity);
+					SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+					
+					BodyRef[client] = EntIndexToEntRef(entity);
+					EquipWearable(client, entity);
+					
+					SetEntProp(client, Prop_Send, "m_nRenderFX", RENDERFX_FADE_FAST);
+					
+					SetVariantString(NULL_STRING);
+					AcceptEntityInput(client, "SetCustomModel");
+					SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+				}
+			}
+		}
+		
+		if(HandSwap[client])
+		{
+			if(HandRef[client] == INVALID_ENT_REFERENCE)
+			{
+				int entity = CreateEntityByName("tf_wearable_vm");
+				if(entity != -1)
+				{
+					SetEntProp(entity, Prop_Send, "m_nModelIndex", HandSwap[client]);
+					SetEntProp(entity, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
+					SetEntProp(entity, Prop_Send, "m_nSkin", GetClientTeam(client) % 2);
+					
+					DispatchSpawn(entity);
+					SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+					
+					HandRef[client] = EntIndexToEntRef(entity);
+					EquipWearable(client, entity);
+				}
+			}
+			
+			int entity = EntRefToEntIndex(WeapRef[client]);
+			if(entity != INVALID_ENT_REFERENCE)
+				TF2_RemoveWearable(client, entity);
+			
+			entity = CreateEntityByName("tf_wearable_vm");
+			if(entity != -1)
+			{
+				SetEntProp(entity, Prop_Send, "m_nModelIndex", GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex"));
+				SetEntProp(entity, Prop_Send, "m_fEffects", EF_BONEMERGE|EF_BONEMERGE_FASTCULL);
+				
+				DispatchSpawn(entity);
+				SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+				
+				WeapRef[client] = EntIndexToEntRef(entity);
+				EquipWearable(client, entity);
+				
+				entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
+				if(entity != -1)
+					SetEntProp(entity, Prop_Send, "m_fEffects", EF_NODRAW);
+			}
+			else
+			{
+				WeapRef[client] = INVALID_ENT_REFERENCE;
+			}
+		}
+	}
+	else
+	{
+		if(BodyRef[client] != INVALID_ENT_REFERENCE)
+		{
+			int entity = EntRefToEntIndex(BodyRef[client]);
+			if(entity != INVALID_ENT_REFERENCE)
+			{
+				int index = GetEntProp(entity, Prop_Send, "m_nModelIndex");
+				if(index > 0)
+				{
+					char buffer[PLATFORM_MAX_PATH];
+					
+					ModelIndexToString(index, buffer, sizeof(buffer));
+					
+					SetVariantString(buffer);
+					AcceptEntityInput(client, "SetCustomModel");
+					SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+				}
+				
+				TF2_RemoveWearable(client, entity);
+			}
+			
+			SetEntProp(client, Prop_Send, "m_nRenderFX", RENDERFX_NONE);
+			BodyRef[client] = INVALID_ENT_REFERENCE;
+		}
+		
+		if(WeapRef[client] != INVALID_ENT_REFERENCE || HandRef[client] != INVALID_ENT_REFERENCE)
+		{
+			int entity = EntRefToEntIndex(WeapRef[client]);
+			if(entity != INVALID_ENT_REFERENCE)
+				TF2_RemoveWearable(client, entity);
+			
+			entity = EntRefToEntIndex(HandRef[client]);
+			if(entity != INVALID_ENT_REFERENCE)
+				TF2_RemoveWearable(client, entity);
+			
+			entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
+			if(entity != -1)
+				SetEntProp(entity, Prop_Send, "m_fEffects", 0);
+			
+			WeapRef[client] = INVALID_ENT_REFERENCE;
+			HandRef[client] = INVALID_ENT_REFERENCE;
+		}
+	}
 }
 
 bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &dead = -2, int &allies = -2)
@@ -1305,7 +1492,7 @@ void GetButtons(ConfigData ability, bool cycle, int &count, int button[4])
 
 void CheckWeaponSwapHooks(int client)
 {
-	if(RazorbackRef[client] == INVALID_ENT_REFERENCE)
+	if(RazorbackRef[client] == INVALID_ENT_REFERENCE && !ClassSwap[client])
 		RemoveWeaponSwapHooks(client);
 }
 
@@ -1324,12 +1511,13 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 		{
 			int health = GetClientHealth(attacker);
 			
-			StealNext[attacker] = false;
 			TF2_RegeneratePlayer(attacker);
 			FF2R_OnBossCreated(attacker, FF2R_GetBossData(attacker), false);
 			
-			SetEntityHealth(attacker, health + 600);
+			SetEntityHealth(attacker, health + (600 * StealNext[attacker]));
 			FF2R_UpdateBossAttributes(attacker);
+			
+			StealNext[attacker] = 0;
 		}
 		else
 		{
@@ -1346,12 +1534,15 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 				char classname[36];
 				if(GetEntityClassname(weapon, classname, sizeof(classname)))
 				{
-					if(!StrContains(classname, "tf_weapon_robot_arm") || !StrContains(classname, "tf_weapon_builder"))
+					if(!StrContains(classname, "tf_weapon_robot_arm") ||
+					   !StrContains(classname, "tf_weapon_builder") ||
+					   !StrContains(classname, "tf_weapon_spellbook") ||
+					   !StrContains(classname, "tf_weapon_grapplinghook"))
 					{
 						index = CreateEntityByName("env_explosion");
 						if(index != -1)
 						{
-							StealNext[attacker] = false;
+							StealNext[attacker]--;
 							
 							DispatchKeyValueFloat(index, "DamageForce", float(GetClientHealth(victim)));
 							SetEntPropEnt(index, Prop_Data, "m_hOwnerEntity", attacker);
@@ -1373,10 +1564,11 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					
 					if(!StrContains(classname, "tf_weapon_pda_engineer"))
 					{
-						StealNext[attacker] = false;
+						StealNext[attacker]--;
 						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_Grenade);
 						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_Building);
 						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_PDA);
+						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						
 						index = -1;
 						while((index = FindEntityByClassname(index, "obj_*")) != -1)
@@ -1390,32 +1582,36 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-							FakeClientCommand(victim, "use %s", buffer);
+							FakeClientCommand(victim, "use %s", classname);
 						
-						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
 					
 					if(!StrContains(classname, "tf_weapon_pda_spy"))
 					{
+						StealNext[attacker]--;
 						TF2_RemoveCondition(victim, TFCond_Disguised);
 						TF2_RemoveItem(victim, weapon);
+						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						TF2_AddCondition(attacker, TFCond_DisguisedAsDispenser, 20.0);
 						TF2_StunPlayer(attacker, 20.0, 0.2, TF_STUNFLAG_NOSOUNDOREFFECT|TF_STUNFLAG_SLOWDOWN);
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-							FakeClientCommand(victim, "use %s", buffer);
+							FakeClientCommand(victim, "use %s", classname);
 						
-						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
 					
 					if(!StrContains(classname, "tf_weapon_invis"))
 					{
+						StealNext[attacker]--;
 						SetEntProp(victim, Prop_Send, "m_bFeignDeathReady", false);
 						TF2_RemoveCondition(victim, TFCond_Cloaked);
 						TF2_RemoveItem(victim, weapon);
+						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						TF2_AddCondition(attacker, TFCond_StealthedUserBuffFade, 15.0);
 						
 						if(index == 59)
@@ -1440,20 +1636,23 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								ActivateEntity(index);
 								
 								SetVariantString("OnUser1 !self:Kill::15:1,0,1");
-								AcceptEntityInput(entity, "AddOutput");
-								AcceptEntityInput(entity, "FireUser1");
+								AcceptEntityInput(index, "AddOutput");
+								AcceptEntityInput(index, "FireUser1");
 							}
 						}
 						
-						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
 					
-					GetClientEyePosition(attacker, pos);
-					GetClientEyeAngles(attacker, ang);
+					float pos[3], ang[3];
+					GetClientEyePosition(victim, pos);
+					GetClientEyeAngles(victim, ang);
 					if(CreateDroppedWeapon(victim, weapon, pos, ang) != INVALID_ENT_REFERENCE)
 					{
+						StealNext[attacker]--;
 						TF2_RemoveItem(victim, weapon);
+						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						
 						if(!StrContains(classname, "tf_weapon_wrench"))
 						{
@@ -1477,8 +1676,9 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								SetEntProp(index, Prop_Send, "m_iEntityLevel", 15);
 								
 								DispatchSpawn(index);
+								SetEntProp(index, Prop_Send, "m_bValidatedAttachedEntity", true);
 								
-								EquipPlayerWeapon(client, index);
+								EquipPlayerWeapon(victim, index);
 							}
 						}
 						else if(TF2_GetClassnameSlot(classname) == TFWeaponSlot_Melee)
@@ -1493,8 +1693,9 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								SetEntProp(index, Prop_Send, "m_iEntityLevel", 1);
 								
 								DispatchSpawn(index);
+								SetEntProp(index, Prop_Send, "m_bValidatedAttachedEntity", true);
 								
-								EquipPlayerWeapon(client, index);
+								EquipPlayerWeapon(victim, index);
 								
 								if(StrContains(classname, "tf_weapon_fists"))
 									TF2Attrib_SetByDefIndex(index, 138, 0.5);
@@ -1504,11 +1705,11 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						{
 							index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 							if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-								FakeClientCommand(victim, "use %s", buffer);
+								FakeClientCommand(victim, "use %s", classname);
 						}
 						
-						IntToString(TF2_GetPlayerClass(victim), classname, sizeof(classname));
-						FF2R_EmitBossSoundToAll(attacker, STEAL_REACT, classname, victim, SNDCHAN_VOICE, 90, _, 1.0);
+						IntToString(view_as<int>(TF2_GetPlayerClass(victim)), classname, sizeof(classname));
+						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, classname, victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
 				}
@@ -1523,9 +1724,9 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	if(!SDKInitDroppedWeapon || !SDKCreate)
 		return INVALID_ENT_REFERENCE;
 	
-	char classname[32];
-	GetEntityNetClass(weapon, classname, sizeof(classname));
-	int offset = FindSendPropInfo(classname, "m_Item");
+	char buffer[PLATFORM_MAX_PATH];
+	GetEntityNetClass(weapon, buffer, sizeof(buffer));
+	int offset = FindSendPropInfo(buffer, "m_Item");
 	if(offset < 0)
 		return INVALID_ENT_REFERENCE;
 	
@@ -1542,9 +1743,6 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	if(index < 1)
 		return INVALID_ENT_REFERENCE;
 	
-	char model[PLATFORM_MAX_PATH];
-	ModelIndexToString(index, model, sizeof(model));
-	
 	TR_TraceRayFilter(pos1, view_as<float>({ 90.0, 0.0, 0.0 }), MASK_SOLID, RayType_Infinite, Trace_WorldOnly);
 	if(!TR_DidHit())
 		return INVALID_ENT_REFERENCE;
@@ -1552,11 +1750,13 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	float pos2[3];
 	TR_GetEndPosition(pos2);
 	
+	ModelIndexToString(index, buffer, sizeof(buffer));
+	
 	bool mvm = view_as<bool>(GameRules_GetProp("m_bPlayingMannVsMachine"));
 	if(mvm)
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 	
-	int entity = SDKCall(SDKCreate, client, pos2, ang, model, GetEntityAddress(weapon) + view_as<Address>(offset));
+	int entity = SDKCall(SDKCreate, client, pos2, ang, buffer, GetEntityAddress(weapon) + view_as<Address>(offset));
 	
 	if(mvm)
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
@@ -1566,7 +1766,6 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	
 	//DispatchSpawn(entity);
 	SDKCall(SDKInitDroppedWeapon, entity, client, weapon, false, true);
-	
 	SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 100.0);
 	
 	TeleportEntity(entity, pos1);
@@ -1585,6 +1784,7 @@ int EquipRazorback(int client)
 		SetEntProp(wearable, Prop_Send, "m_iEntityLevel", 101);
 		
 		DispatchSpawn(wearable);
+		SetEntProp(wearable, Prop_Send, "m_bValidatedAttachedEntity", true);
 		
 		EquipWearable(client, wearable);
 	}
@@ -1898,6 +2098,24 @@ int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 	return TFWeaponSlot_Melee;
 }
 
+TFClassType TF2_GetWeaponClass(int weapon, TFClassType defaul)
+{
+	char classname[36];
+	GetEntityClassname(weapon, classname, sizeof(classname));
+	int slot = TF2_GetClassnameSlot(classname, true);
+	int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	
+	if(TF2Econ_GetItemLoadoutSlot(index, defaul) != slot)
+	{
+		for(TFClassType class=TFClass_Scout; class<=TFClass_Engineer; class++)
+		{
+			if(defaul != class && TF2Econ_GetItemLoadoutSlot(index, class) == slot)
+				return class;
+		}
+	}
+	return defaul;
+}
+
 void EquipWearable(int client, int entity)
 {
 	if(SDKEquipWearable)
@@ -1908,11 +2126,6 @@ void EquipWearable(int client, int entity)
 	{
 		RemoveEntity(entity);
 	}
-}
-
-int GetClientMaxHealth(int client)
-{
-	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
 
 public bool Trace_WorldOnly(int entity, int contentsMask)

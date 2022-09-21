@@ -21,6 +21,8 @@ void Native_PluginLoad()
 	CreateNative("FF2R_StartLagCompensation", Native_StartLagCompensation);
 	CreateNative("FF2R_FinishLagCompensation", Native_FinishLagCompensation);
 	CreateNative("FF2R_UpdateBossAttributes", Native_UpdateBossAttributes);
+	CreateNative("FF2R_GetClientHud", Native_GetClientHud);
+	CreateNative("FF2R_SetClientHud", Native_SetClientHud);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -207,5 +209,24 @@ public any Native_UpdateBossAttributes(Handle plugin, int params)
 	Bosses_UpdateHealth(client);
 	Bosses_SetSpeed(client);
 	Gamemode_UpdateHUD(GetClientTeam(client));
+	return 0;
+}
+
+public any Native_GetClientHud(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	return !Client(client).NoHud;
+}
+
+public any Native_SetClientHud(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 1 || client > MaxClients || !IsClientInGame(client))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	Client(client).NoHud = !GetNativeCell(2);
 	return 0;
 }

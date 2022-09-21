@@ -295,13 +295,28 @@ public MRESReturn DHook_CanBuildPost()
 
 public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
-	if(Client(client).IsBoss || Client(client).Minion)
+	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
 	{
-		ret.Value = false;
-		
-		return MRES_Supercede;
+		case Plugin_Continue:
+		{
+			if(Client(client).IsBoss || Client(client).Minion)
+			{
+				ret.Value = false;
+				return MRES_Supercede;
+			}
+		}
+		case Plugin_Handled:
+		{
+			ret.Value = true;
+			return MRES_Supercede;
+		}
+		case Plugin_Stop:
+		{
+			ret.Value = false;
+			return MRES_Supercede;
+		}
 	}
-
+	
 	return MRES_Ignored;
 }
 

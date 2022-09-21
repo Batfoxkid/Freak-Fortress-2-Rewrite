@@ -623,7 +623,7 @@
 	}
 	"Boss Wall Jump"
 	{
-		"en"		"Wall Jumps - Jump while looking at a solid wall"
+		"en"		"Wall Jumps - Jump while nearby a solid wall"
 	}
 	"Button E"
 	{

@@ -142,6 +142,29 @@ native void FF2R_FinishLagCompensation(int client);
 native void FF2R_UpdateBossAttributes(int boss);
 
 /**
+ * Gets if client has HUDs enabled
+ * 
+ * @param client	Client index
+ * 
+ * @error		Invalid client index
+ * 
+ * @return		If the client has HUDs enabled
+ */
+native bool FF2R_GetClientHud(int client);
+
+/**
+ * Sets if the client can see HUDs
+ * 
+ * @param client	Client index
+ * @param status	If the client can see HUDs
+ * 
+ * @error		Invalid client index or client is not in game
+ * 
+ * @noreturn
+ */
+native void FF2R_SetClientHud(int client, bool status);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted
@@ -175,6 +198,16 @@ forward void FF2R_OnAliveChanged(const int alive[4], const int total[4]);
  * @noreturn
  */
 forward void FF2R_OnBossRemoved(int client);
+
+/**
+ * Called when a player tries to pick up a dropped item
+ * 
+ * @param client	Client index
+ * @param weapon	Entity index of dropped weapon
+ * 
+ * @return		Plugin_Changed to let the game decide, Plugin_Handled to allow pickup, Plugin_Stop to block pickup
+ */
+forward Action FF2R_OnPickupDroppedWeapon(int client, int weapon);
 
 /**
  * Wrapper to emit sound to one client.
