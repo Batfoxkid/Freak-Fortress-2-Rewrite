@@ -42,10 +42,19 @@
 		"slot"			"0"	// Ability slot
 		
 		"duration"		"7.5"	// Duration (Timescale taken into account)
-		"timescale"		"0.5"	// Server timescale (Will only apply in Arena)
+		"timescale"		"0.5"	// Server timescale
 		"speed"			"520.0"	// Movement speed (Capped at 520 HU/s by default TF2)
 		
 		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	"sound_time_speedup"
+	{
+		"replay/exitperformancemode.wav"	""
+	}
+	"sound_time_speeddown"
+	{
+		"replay/enterperformancemode.wav"	""
 	}
 	
 	
@@ -117,6 +126,8 @@
 #include <ff2r>
 #include <tf2attributes>
 #include <tf_econ_data>
+#undef REQUIRE_PLUGIN
+#tryinclude <tf2utils>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -127,6 +138,8 @@
 
 #define MAXTF2PLAYERS	36
 #define FAR_FUTURE		100000000.0
+
+#define TF2U_LIBRARY	"nosoop_tf2utils"
 
 #define	HITGROUP_GENERIC	0
 #define	HITGROUP_HEAD		1
@@ -171,6 +184,10 @@ enum
 	EF_MAX_BITS = 10
 };
 
+#if defined __nosoop_tf2_utils_included
+bool TF2ULoaded;
+#endif
+
 Handle SDKEquipWearable;
 Handle SDKCreate;
 Handle SDKInitDroppedWeapon;
@@ -178,9 +195,17 @@ int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
 
+ConVar CvarCheats;
+ConVar CvarFriendlyFire;
+ConVar CvarTimeScale;
+
 bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
+
+Handle TimescaleTimer;
+float DodgeFor[MAXTF2PLAYERS];
+float DodgeSpeed[MAXTF2PLAYERS];
 
 int BodyRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 int WeapRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
@@ -193,7 +218,7 @@ int StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
 UserMsg PlayerShieldBlocked;
-bool RazorbackDeployed[MAXTF2PLAYERS];
+int RazorbackDeployed[MAXTF2PLAYERS];
 int RazorbackRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 
 bool WallJumper[MAXTF2PLAYERS];
@@ -210,10 +235,18 @@ public Plugin myinfo =
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	#if defined __nosoop_tf2_utils_included
+	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
+	#endif
+	return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Ability Delay"))
+	if(!TranslationPhraseExists("Boss Wall Jump"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	GameData gamedata = new GameData("sm-tf2.games");
@@ -253,6 +286,10 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	#if defined __nosoop_tf2_utils_included
+	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
+	#endif
+	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
@@ -269,6 +306,18 @@ public void OnPluginStart()
 				FF2R_OnBossCreated(client, cfg, false);
 		}
 	}
+}
+
+public void OnMapStart()
+{
+	PrecacheSound("replay/enterperformancemode.wav");
+	PrecacheSound("replay/exitperformancemode.wav");
+}
+
+public void OnMapEnd()
+{
+	if(TimescaleTimer)
+		TriggerTimer(TimescaleTimer);
 }
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
@@ -339,7 +388,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			}
 			else
 			{
-				weapon = CreateEntityByName("tf_weapon_scattergun");	//TODO: Change to Shortstop
+				weapon = CreateEntityByName("tf_weapon_handgun_scout_primary");
 			}
 			
 			if(weapon != -1)
@@ -348,10 +397,11 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
 				
 				SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 6);
-				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 101);
+				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 10);
 				
 				DispatchSpawn(weapon);
 				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+				SDKHook(weapon, SDKHook_SetTransmit, RazorbackSetTransmit);
 				
 				EquipPlayerWeapon(client, weapon);
 				
@@ -362,6 +412,8 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
 				
 				RazorbackRef[client] = EntIndexToEntRef(weapon);
+				
+				SetEntProp(client, Prop_Data, "m_iAmmo", ability.GetInt("durability"), _, GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType"));
 			}
 			
 			if(weapon != GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
@@ -479,6 +531,9 @@ public void FF2R_OnBossRemoved(int client)
 	ClassSwap[client] = TFClass_Unknown;
 	StealNext[client] = 0;
 	
+	if(DodgeFor[client])
+		DodgeFor[client] = 1.0;
+	
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
 		RazorbackRef[client] = INVALID_ENT_REFERENCE;
@@ -523,12 +578,11 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	}
 	else if(!StrContains(ability, "rage_random_slot", false))
 	{
-		bool repeat = cfg.GetBool("repeat");
 		int count = cfg.GetInt("count", 1);
 		int low = cfg.GetInt("low");
 		int high = cfg.GetInt("high");
 		
-		if(count < 2 || repeat)
+		if(count < 2 || cfg.GetBool("repeat"))
 		{
 			for(int i; i < count; i++)
 			{
@@ -552,6 +606,43 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				FF2R_DoBossSlot(client, slots[i]);
 			}
 		}
+	}
+	else if(!StrContains(ability, "rage_dodge_hitscan", false))
+	{
+		float timescale = cfg.GetFloat("timescale", 0.5);
+		if(timescale <= 0.0)
+			timescale = 1.0;
+		
+		float duration = cfg.GetFloat("duration", 7.5) * timescale;
+		
+		char particle[48];
+		if(cfg.GetString("particle", particle, sizeof(particle), GetClientTeam(client) % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
+			AttachParticle(client, particle, duration);
+		
+		if(!DodgeFor[client])
+			SDKHook(client, SDKHook_TraceAttack, DodgeTraceAttack);
+		
+		DodgeFor[client] = GetGameTime() + duration;
+		DodgeSpeed[client] = cfg.GetFloat("speed");
+		
+		TimescaleSound(client, CvarTimeScale.FloatValue, timescale);
+		
+		CvarTimeScale.FloatValue = timescale;
+		if(!TimescaleTimer)
+		{
+			HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
+			for(int target = 1; target <= MaxClients; target++)
+			{
+				if(IsClientInGame(target) && !IsFakeClient(target))
+					CvarCheats.ReplicateToClient(target, "1");
+			}
+		}
+		else
+		{
+			delete TimescaleTimer;
+		}
+		
+		TimescaleTimer = CreateTimer(duration, Timer_RestoreTime, GetClientUserId(client));
 	}
 }
 
@@ -584,8 +675,25 @@ public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 	return CanPickup[client] ? Plugin_Handled : Plugin_Continue;
 }
 
+#if defined __nosoop_tf2_utils_included
+public void OnLibraryAdded(const char[] name)
+{
+	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
+		TF2ULoaded = true;
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
+		TF2ULoaded = false;
+}
+#endif
+
 public void OnClientPutInServer(int client)
 {
+	if(TimescaleTimer && !IsFakeClient(client))
+		CvarCheats.ReplicateToClient(client, "1");
+	
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(CanPickup[client])
@@ -598,11 +706,28 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
+	DodgeFor[client] = 0.0;
 	WallAirMulti[client] = 1.0;
+	WallJumpMulti[client] = 1.0;
+	WallSpeedMulti[client] = 1.0;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons)
 {
+	if(DodgeFor[client])
+	{
+		if(DodgeFor[client] < GetGameTime())
+		{
+			DodgeFor[client] = 0.0;
+			TF2_AddCondition(client, TFCond_Slowed, 0.01);
+			SDKUnhook(client, SDKHook_TraceAttack, DodgeTraceAttack);
+		}
+		else if(DodgeSpeed[client])
+		{
+			SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", DodgeSpeed[client]);
+		}
+	}
+	
 	if(WallJumper[client] && (buttons & IN_JUMP))
 	{
 		BossData boss = FF2R_GetBossData(client);
@@ -1127,6 +1252,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	}
 }
 
+public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
+{
+	TriggerTimer(TimescaleTimer);
+}
+
 public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	bf.ReadByte();
@@ -1174,6 +1304,7 @@ public void OnWeaponSwitch(int client, int weapon)
 			//TODO: Blah blah, custom viewmodels soon TM
 			
 			SDKHook(client, SDKHook_OnTakeDamageAlive, RazorbackTakeDamage);
+			SDKUnhook(weapon, SDKHook_SetTransmit, RazorbackSetTransmit);
 			
 			BossData boss = FF2R_GetBossData(client);
 			AbilityData ability;
@@ -1184,7 +1315,9 @@ public void OnWeaponSwitch(int client, int weapon)
 					TF2_RemoveWearable(client, entity);
 			}
 			
-			RazorbackDeployed[client] = true;
+			RazorbackDeployed[client] = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+			if(!RazorbackDeployed[client])
+				RazorbackDeployed[client] = 3;
 		}
 	}
 	else if(RazorbackDeployed[client])
@@ -1193,11 +1326,15 @@ public void OnWeaponSwitch(int client, int weapon)
 		{
 			SDKUnhook(client, SDKHook_OnTakeDamageAlive, RazorbackTakeDamage);
 			
+			int entity = EntRefToEntIndex(RazorbackRef[client]);
+			if(entity != -1)
+				SDKHook(entity, SDKHook_SetTransmit, RazorbackSetTransmit);
+			
 			BossData boss = FF2R_GetBossData(client);
 			AbilityData ability;
 			if(boss && (ability = boss.GetAbility("special_razorback_shield")))
 			{
-				int entity = EquipRazorback(client);
+				entity = EquipRazorback(client);
 				if(entity != -1)
 					entity = EntIndexToEntRef(entity);
 				
@@ -1205,7 +1342,7 @@ public void OnWeaponSwitch(int client, int weapon)
 			}
 		}
 		
-		RazorbackDeployed[client] = false;
+		RazorbackDeployed[client] = 0;
 	}
 	
 	if(ClassSwap[client] && !RazorbackDeployed[client] && weapon > MaxClients)
@@ -1503,9 +1640,59 @@ void RemoveWeaponSwapHooks(int client)
 	OnWeaponSwitch(client, -2);
 }
 
+public Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+{
+	return Plugin_Handled;
+}
+
+public Action Timer_RestoreTime(Handle timer, int userid)
+{
+	TimescaleTimer = null;
+	UnhookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
+	
+	int client = GetClientOfUserId(userid);
+	if(client && !FF2R_GetBossData(client))
+		client = 0;
+	
+	TimescaleSound(client, CvarTimeScale.FloatValue, 1.0);
+	
+	CvarTimeScale.FloatValue = 1.0;
+	if(!CvarCheats.BoolValue)
+	{
+		for(int target = 1; target <= MaxClients; target++)
+		{
+			if(IsClientInGame(target) && !IsFakeClient(target))
+				CvarCheats.ReplicateToClient(target, "0");
+		}
+	}
+	return Plugin_Continue;
+}
+
+void TimescaleSound(int client, float current, float newvalue)
+{
+	if(current > newvalue)
+	{
+		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speedup", client))
+		{
+			EmitSoundToAll("replay/exitperformancemode.wav");
+			EmitSoundToAll("replay/exitperformancemode.wav");
+		}
+	}
+	else if(current != newvalue)
+	{
+		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speeddown", client))
+		{
+			EmitSoundToAll("replay/enterperformancemode.wav");
+			EmitSoundToAll("replay/enterperformancemode.wav");
+		}	
+	}
+}
+
 public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM))
+	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] &&
+	  ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM) &&
+	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
 		if(FF2R_GetBossData(victim))
 		{
@@ -1781,19 +1968,25 @@ int EquipRazorback(int client)
 		SetEntProp(wearable, Prop_Send, "m_bInitialized", 1);
 		
 		SetEntProp(wearable, Prop_Send, "m_iEntityQuality", 6);
-		SetEntProp(wearable, Prop_Send, "m_iEntityLevel", 101);
+		SetEntProp(wearable, Prop_Send, "m_iEntityLevel", 10);
 		
 		DispatchSpawn(wearable);
 		SetEntProp(wearable, Prop_Send, "m_bValidatedAttachedEntity", true);
+		SetEntProp(wearable, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 		
 		EquipWearable(client, wearable);
 	}
 	return wearable;
 }
 
+public Action RazorbackSetTransmit(int entity, int client)
+{
+	return GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client ? Plugin_Continue : Plugin_Handled;
+}
+
 public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	if(attacker > 0 && attacker <= MaxClients && damagecustom != TF_CUSTOM_BACKSTAB && !IsInvuln(victim))
+	if(attacker > 0 && attacker <= MaxClients && damagecustom != TF_CUSTOM_BACKSTAB && !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
 		// Directly from the original rage_front_protection
 		float pos1[3], pos2[3], ang[3];
@@ -1814,6 +2007,8 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 				{
 					ability.SetFloat("durability", hp - damage);
 					EmitGameSoundToAll(SHIELD_HIT, victim, _, victim, pos1);
+					
+					SetEntProp(victim, Prop_Data, "m_iAmmo", RoundToCeil(hp - damage), _, RazorbackDeployed[victim]);
 				}
 				else
 				{
@@ -2023,8 +2218,6 @@ void ModelIndexToString(int index, char[] model, int size)
 	ReadStringTable(table, index, model, size);
 }
 
-
-
 int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 {
 	if(StrContains(classname, "tf_weapon_"))
@@ -2116,8 +2309,45 @@ TFClassType TF2_GetWeaponClass(int weapon, TFClassType defaul)
 	return defaul;
 }
 
+int AttachParticle(int entity, const char[] name, float lifetime)
+{
+	int particle = CreateEntityByName("info_particle_system");
+	if(particle != -1)
+	{
+		float position[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+		position[2] += 75.0;
+		TeleportEntity(particle, position);
+		
+		DispatchKeyValue(particle, "effect_name", name);
+		DispatchSpawn(particle);
+		
+		SetVariantString("!activator");
+		AcceptEntityInput(particle, "SetParent", entity);
+		SetEntPropEnt(particle, Prop_Send, "m_hOwnerEntity", entity);
+		
+		ActivateEntity(particle);
+		AcceptEntityInput(particle, "start");
+		
+		char buffer[64];
+		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
+		SetVariantString(buffer);
+		AcceptEntityInput(particle, "AddOutput");
+		AcceptEntityInput(particle, "FireUser1");
+	}
+	return particle;
+}
+
 void EquipWearable(int client, int entity)
 {
+	#if defined __nosoop_tf2_utils_included
+	if(TF2ULoaded)
+	{
+		TF2Util_EquipPlayerWearable(client, entity);
+		return;
+	}
+	#endif
+	
 	if(SDKEquipWearable)
 	{
 		SDKCall(SDKEquipWearable, client, entity);

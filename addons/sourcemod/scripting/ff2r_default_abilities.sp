@@ -420,13 +420,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	#if defined __tf_custom_attributes_included
 	MarkNativeAsOptional("TF2CustAttr_SetString");
 	#endif
-	
-	MarkNativeAsOptional("SetEntityCollisionGroup");
 	return APLRes_Success;
 }
 
 public void OnPluginStart()
 {
+	LoadTranslations("ff2_rewrite.phrases");
+	
 	GameData gamedata = new GameData("sm-tf2.games");
 	
 	StartPrepSDKCall(SDKCall_Player);
@@ -449,8 +449,6 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	LoadTranslations("ff2_rewrite.phrases");
-	
 	#if defined __nosoop_tf2_utils_included
 	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
 	#endif
@@ -466,10 +464,9 @@ public void OnPluginStart()
 	CvarTimeScale = FindConVar("host_timescale");
 	
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Post);
-	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
 	HookEvent("post_inventory_application", OnInventoryApplication, EventHookMode_Post);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
-	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_Post);
+	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
 	
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -1721,23 +1718,6 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
-}
-
-public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
-{
-	/*if(Enabled)
-	{
-		int victim = GetClientOfUserId(event.GetInt("userid"));
-		if(victim)
-		{
-			float damage = float(event.GetInt("damageamount"));	// If we get neagtive damage, not my fault!
-			AddManaEvent(victim, "onhurt", damage);
-			
-			int attacker = GetClientOfUserId(event.GetInt("attacker"));
-			if(victim != attacker && attacker > 0 && attacker <= MaxClients)
-				AddManaEvent(attacker, "ondamage", damage);
-		}
-	}*/
 }
 
 public void OnInventoryApplication(Event event, const char[] name, bool dontBroadcast)
