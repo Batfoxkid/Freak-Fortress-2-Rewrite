@@ -157,7 +157,25 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 {
 	if(Client(client).IsBoss)
 	{
-		//TODO: How did I not make the boss menu description yet
+		char buffer[512];
+		if(Bosses_GetBossNameCfg(Client(client).Cfg, buffer, sizeof(buffer), GetClientLanguage(client), "description"))
+		{
+			Menu menu = new Menu(Weapons_ChangeMenuH);
+			
+			menu.SetTitle(buffer);
+			
+			if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
+			{
+				FormatEx(buffer, sizeof(buffer), "%t", "Back");
+				menu.AddItem(buffer, buffer);
+			}
+			else
+			{
+				menu.AddItem(buffer, buffer, ITEMDRAW_SPACER);
+			}
+			
+			menu.Display(client, time);
+		}
 	}
 	else if(WeaponCfg && !Client(client).Minion)
 	{
@@ -188,7 +206,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 		if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", "Back");
-			menu.AddItem(buffer1, buffer2, ITEMDRAW_DEFAULT);
+			menu.AddItem(buffer1, buffer2);
 		}
 		else
 		{
@@ -559,28 +577,32 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 	#endif
 }
 
-stock void Weapons_OnHitBoss(int attacker, int weapon, int newWeaponDamage, int lastWeaponDamage)
+stock void Weapons_OnHitBoss(int attacker, int newPlayerDamage, int lastPlayerDamage)
 {
 	#if defined __tf_custom_attributes_included
-	if(TCALoaded && weapon != -1)
+	if(TCALoaded)
 	{
-		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
-		if(kv)
+		int weapon, i;
+		while(TF2_GetItem(attacker, weapon, i))
 		{
-			int value = kv.GetNum("primary ammo from damage");
-			if(value)
+			KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
+			if(kv)
 			{
-				value = DamageGoal(value, newWeaponDamage, lastWeaponDamage);
+				int value = kv.GetNum("primary ammo from damage");
 				if(value)
-					SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 1) + value, _, 1);
-			}
-			
-			value = kv.GetNum("secondary ammo from damage");
-			if(value)
-			{
-				value = DamageGoal(value, newWeaponDamage, lastWeaponDamage);
+				{
+					value = DamageGoal(value, newPlayerDamage, lastPlayerDamage);
+					if(value)
+						SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 1) + value, _, 1);
+				}
+				
+				value = kv.GetNum("secondary ammo from damage");
 				if(value)
-					SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 2) + value, _, 2);
+				{
+					value = DamageGoal(value, newPlayerDamage, lastPlayerDamage);
+					if(value)
+						SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 2) + value, _, 2);
+				}
 			}
 		}
 	}

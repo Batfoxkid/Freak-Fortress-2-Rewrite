@@ -2830,7 +2830,6 @@ float GetPlayerStunMulti(int client)
 			 Attributes_FindOnPlayer(client, 66, true, 1.0) *
 			 Attributes_FindOnPlayer(client, 67, true, 1.0) *
 			 Attributes_FindOnPlayer(client, 412, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 491, true, 1.0) *
 			 Attributes_FindOnPlayer(client, 492, true, 1.0) *
 			 Attributes_FindOnPlayer(client, 516, true, 1.0) *
 			 Attributes_FindOnPlayer(client, 1001, true, 1.0);
