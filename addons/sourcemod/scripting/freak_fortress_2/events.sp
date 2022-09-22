@@ -206,14 +206,11 @@ public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 
 public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	if (event != null)
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client && CvarDisguiseModels.BoolValue)
 	{
-		int client = GetClientOfUserId(event.GetInt("userid"));
-		if(client && CvarDisguiseModels.BoolValue)
-		{
-			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
-			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
-		}
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
 	}
 	
 	Events_CheckAlivePlayers();
