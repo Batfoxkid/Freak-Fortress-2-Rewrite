@@ -24,7 +24,7 @@ void Events_PluginStart()
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
-	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_PostNoCopy);
+	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
