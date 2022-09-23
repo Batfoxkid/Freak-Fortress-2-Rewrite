@@ -132,7 +132,7 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 
 public Action Command_Spectate(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	return SwapTeam(client, TFTeam_Spectator);
@@ -140,7 +140,7 @@ public Action Command_Spectate(int client, const char[] command, int args)
 
 public Action Command_AutoTeam(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || !GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
 		return Plugin_Continue;
 	
 	int reds, blus;
