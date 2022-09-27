@@ -115,6 +115,7 @@
 		"red"			"255"							// Weapon red
 		"green"			"255"							// Weapon green
 		"blue"			"255"							// Weapon blue
+		"class"			""								// Override class setup
 		"force switch"	"false"							// Always force weapon switch
 		
 		"plugin_name"	"ff2r_default_abilities"
@@ -464,7 +465,6 @@ public void OnPluginStart()
 	CvarTimeScale = FindConVar("host_timescale");
 	
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Post);
-	HookEvent("post_inventory_application", OnInventoryApplication, EventHookMode_Post);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
 	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
 	
@@ -1437,6 +1437,16 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
+public void FF2R_OnBossEquipped(int client, bool weapons)
+{
+	AbilityData ability = FF2R_GetBossData(client).GetAbility("special_noanims");
+	if(ability.IsMyPlugin())
+	{
+		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", ability.GetBool("custom model animation"));
+		SetEntProp(client, Prop_Send, "m_bCustomModelRotates", ability.GetBool("custom model rotates"));
+	}
+}
+
 public void FF2R_OnBossModifier(int client, ConfigData cfg)
 {
 	BossData boss = FF2R_GetBossData(client);
@@ -1718,14 +1728,6 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
-}
-
-public void OnInventoryApplication(Event event, const char[] name, bool dontBroadcast)
-{
-	int userid = event.GetInt("userid");
-	int client = GetClientOfUserId(userid);
-	if(client && FF2R_GetBossData(client))
-		CreateTimer(0.15, Timer_EquipDelay, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
@@ -2123,7 +2125,8 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	
 	cfg.GetString("attributes", attributes, sizeof(attributes));
 	
-	GetClassWeaponClassname(TF2_GetPlayerClass(client), classname, sizeof(classname));
+	TFClassType class = TF2_GetPlayerClass(client);
+	GetClassWeaponClassname(class, classname, sizeof(classname));
 	bool wearable = StrContains(classname, "tf_weap") != 0;
 	
 	if(!wearable)
@@ -2152,6 +2155,14 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 		level = 101;
 	
 	static char buffers[40][256];
+	
+	TFClassType forceClass;
+	if(cfg.GetString("class", buffers[0], sizeof(buffers[])))
+		forceClass = GetClassOfName(buffers[0]);
+	
+	if(forceClass != TFClass_Unknown)
+		TF2_SetPlayerClass(client, forceClass, _, false);
+	
 	int count = ExplodeString(attributes, " ; ", buffers, sizeof(buffers), sizeof(buffers));
 	
 	if(count % 2)
@@ -2214,6 +2225,9 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 		{
 			EquipPlayerWeapon(client, entity);
 		}
+		
+		if(forceClass != TFClass_Unknown)
+			TF2_SetPlayerClass(client, class, _, false);
 		
 		for(; attribs < count; attribs += 2)
 		{
@@ -2338,6 +2352,10 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 				FakeClientCommand(client, "use %s", classname);
 			}
 		}
+	}
+	else if(forceClass != TFClass_Unknown)
+	{
+		TF2_SetPlayerClass(client, class, _, false);
 	}
 }
 
@@ -2640,25 +2658,6 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 		if(GetEntityMoveType(client) == MOVETYPE_NONE)
 			SetEntityMoveType(client, LastMoveType[client]);
 	}
-}
-
-public Action Timer_EquipDelay(Handle timer, int userid)
-{
-	int client = GetClientOfUserId(userid);
-	if(client)
-	{
-		BossData boss = FF2R_GetBossData(client);
-		if(boss)
-		{
-			AbilityData ability = boss.GetAbility("special_noanims");
-			if(ability.IsMyPlugin())
-			{
-				SetEntProp(client, Prop_Send, "m_bUseClassAnimations", ability.GetBool("custom model animation"));
-				SetEntProp(client, Prop_Send, "m_bCustomModelRotates", ability.GetBool("custom model rotates"));
-			}
-		}
-	}
-	return Plugin_Continue;
 }
 
 void SpawnManyObjects(int client, int target, ConfigData cfg)
@@ -3215,6 +3214,15 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 			return true;
 	}
 	return false;
+}
+
+TFClassType GetClassOfName(const char[] buffer)
+{
+	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
+	if(class == TFClass_Unknown)
+		class = TF2_GetClass(buffer);
+	
+	return class;
 }
 
 void GetClassWeaponClassname(TFClassType class, char[] name, int length)

@@ -1880,6 +1880,13 @@ static void EquipBoss(int client, bool weapons)
 					buffer[0] = 0;
 				}
 				
+				TFClassType forceClass;
+				if(cfg.Get("class", buffer, sizeof(buffer)))
+					forceClass = GetClassOfName(buffer);
+				
+				if(forceClass != TFClass_Unknown)
+					TF2_SetPlayerClass(client, forceClass, _, false);
+				
 				static char buffers[40][16];
 				int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
 				
@@ -1945,6 +1952,9 @@ static void EquipBoss(int client, bool weapons)
 						EquipPlayerWeapon(client, entity);
 					}
 					
+					if(forceClass != TFClass_Unknown)
+						TF2_SetPlayerClass(client, class, _, false);
+					
 					for(; attribs < count; attribs += 2)
 					{
 						int attrib = StringToInt(buffers[attribs]);
@@ -2007,7 +2017,9 @@ static void EquipBoss(int client, bool weapons)
 					{
 						if(cfg.GetInt("worldmodel", index) && index)
 						{
-							SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
+							if(!wearable)
+								SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
+							
 							for(level = 0; level < 4; level++)
 							{
 								SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
@@ -2024,7 +2036,7 @@ static void EquipBoss(int client, bool weapons)
 						
 						SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 					}
-					else
+					else if(!wearable)
 					{
 						SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
 						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
@@ -2054,6 +2066,10 @@ static void EquipBoss(int client, bool weapons)
 						SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
 					}
 				}
+				else if(forceClass != TFClass_Unknown)
+				{
+					TF2_SetPlayerClass(client, class, _, false);
+				}
 			}
 		}
 		
@@ -2063,6 +2079,7 @@ static void EquipBoss(int client, bool weapons)
 	Bosses_UpdateHealth(client);
 	Bosses_SetSpeed(client);
 	Gamemode_UpdateHUD(GetClientTeam(client));
+	Forward_OnBossEquipped(client, weapons);
 }
 
 void Bosses_UpdateHealth(int client)

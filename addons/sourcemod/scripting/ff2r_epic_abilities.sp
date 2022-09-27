@@ -64,7 +64,7 @@
 		
 		"low"			"10"	// Lowest slot to activate
 		"high"			"14"	// Highest slot to activate
-		"count"			"1"	// How many unique slots to activate
+		"count"			"1"		// How many unique slots to activate
 		"repeat"		"false"	// If can cast the same slot when count is enabled
 		
 		"plugin_name"	"ff2r_epic_abilities"
@@ -73,9 +73,9 @@
 	
 	"rage_weapon_steal"
 	{
-		"slot"			"0"	// Ability slot
+		"slot"			"0"		// Ability slot
+		"pickups"		"true"	// Can passively pick up weapons, rage has no effect when disabled
 		
-		"pickups"		"true"										// Can passively pick up weapons
 		"classswap"		"true"										// If to swap to the correct class
 		"animswap"		"true"										// If to swap animations to the correct class
 		"hands"			"models/weapons/c_models/c_scout_arms.mdl"	// Hands model if doing class swap
@@ -154,7 +154,7 @@
 #define AMS_DENYUSE	"common/wpn_denyselect.wav"
 #define AMS_SWITCH	"common/wpn_moveselect.wav"
 #define SHIELD_HIT	"vo/null.mp3"
-#define WALL_JUMP	"General.banana_slip"
+#define WALL_JUMP	"player/taunt_yeti_standee_engineer_kick.wav"
 
 #define STEAL_REACT	"sound_steal_react"
 
@@ -195,6 +195,7 @@ int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
 
+ConVar CvarDebug;
 ConVar CvarCheats;
 ConVar CvarFriendlyFire;
 ConVar CvarTimeScale;
@@ -222,6 +223,7 @@ int RazorbackDeployed[MAXTF2PLAYERS];
 int RazorbackRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 
 bool WallJumper[MAXTF2PLAYERS];
+int WallStale[MAXTF2PLAYERS];
 float WallSpeedMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallJumpMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
@@ -293,6 +295,11 @@ public void OnPluginStart()
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
+}
+
+public void OnAllPluginsLoaded()
+{
+	CvarDebug = FindConVar("ff2_debug");
 	
 	// Lateload Support
 	for(int client = 1; client <= MaxClients; client++)
@@ -312,6 +319,7 @@ public void OnMapStart()
 {
 	PrecacheSound("replay/enterperformancemode.wav");
 	PrecacheSound("replay/exitperformancemode.wav");
+	PrecacheSound(WALL_JUMP);
 }
 
 public void OnMapEnd()
@@ -322,8 +330,6 @@ public void OnMapEnd()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
-	bool hookSwapping;
-	
 	if(!CanPickup[client] && !ClassSwap[client])
 	{
 		AbilityData ability = boss.GetAbility("rage_weapon_steal");
@@ -337,7 +343,13 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				ability.GetString("hands", buffer, sizeof(buffer));
 				HandSwap[client] = buffer[0] ? PrecacheModel(buffer) : 0;
 				AnimSwap[client] = ability.GetBool("animswap", false);
-				hookSwapping = true;
+				
+				if(!HookedWeaponSwap[client])
+				{
+					Debug("Hooked Swapping on %N", client);
+					HookedWeaponSwap[client] = true;
+					SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
+				}
 			}
 			
 			if(ability.GetBool("pickups", true))
@@ -356,13 +368,11 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				
 				if(!found)
 				{
+					Debug("Hooked Stealing Trace");
 					for(int i = 1; i <= MaxClients; i++)
 					{
 						if(IsClientInGame(i))
-						{
 							SDKHook(i, SDKHook_TraceAttack, StealingTraceAttack);
-							break;
-						}
 					}
 				}
 			}
@@ -374,61 +384,6 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 		AbilityData ability = boss.GetAbility("special_wall_jump");
 		if(ability.IsMyPlugin())
 			WallJumper[client] = true;
-	}
-	
-	if(RazorbackRef[client] == INVALID_ENT_REFERENCE)
-	{
-		AbilityData ability = boss.GetAbility("special_razorback_shield");
-		if(ability.IsMyPlugin())
-		{
-			int weapon = -1;
-			if(ability.GetBool("secondary"))
-			{
-				weapon = CreateEntityByName("tf_weapon_pistol");
-			}
-			else
-			{
-				weapon = CreateEntityByName("tf_weapon_handgun_scout_primary");
-			}
-			
-			if(weapon != -1)
-			{
-				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 0);
-				SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
-				
-				SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 6);
-				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 10);
-				
-				DispatchSpawn(weapon);
-				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
-				SDKHook(weapon, SDKHook_SetTransmit, RazorbackSetTransmit);
-				
-				EquipPlayerWeapon(client, weapon);
-				
-				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 57);
-				
-				TF2Attrib_SetByDefIndex(weapon, 128, 1.0);
-				TF2Attrib_SetByDefIndex(weapon, 303, -1.0);
-				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
-				
-				RazorbackRef[client] = EntIndexToEntRef(weapon);
-				
-				SetEntProp(client, Prop_Data, "m_iAmmo", ability.GetInt("durability"), _, GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType"));
-			}
-			
-			if(weapon != GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
-			{
-				weapon = EquipRazorback(client);
-				if(weapon != -1)
-					ability.SetInt("wearableref", EntIndexToEntRef(weapon));
-			}
-			
-			if(!HookedRazorback)
-			{
-				HookedRazorback = true;
-				HookUserMessage(PlayerShieldBlocked, OnShieldBlocked);
-			}
-		}
 	}
 	
 	if(!setup)
@@ -494,11 +449,13 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 							}
 						}
 						
-						if(HasAbility[client] == -1 && (entries > buttons || ability.GetBool("cycler")))
+						if(entries > buttons || ability.GetBool("cycler"))
 						{
 							HasAbility[client] = entries;
 							ChangeAbility(client, boss, ability, cfg, snap, false);
 						}
+						
+						Debug("Found %d buttons, %d spells, using cycler: %d", buttons, entries, HasAbility[client]);
 						
 						delete snap;
 						return;
@@ -514,12 +471,6 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				LogError("[Boss] '%s' is missing 'spells' for 'rage_ability_management'", buffer);
 			}
 		}
-	}
-	
-	if(hookSwapping && !HookedWeaponSwap[client])
-	{
-		HookedWeaponSwap[client] = true;
-		SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
 	}
 }
 
@@ -670,8 +621,74 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 	}
 }
 
+public void FF2R_OnBossEquipped(int client, bool weapons)
+{
+	if(weapons)
+	{
+		AbilityData ability = FF2R_GetBossData(client).GetAbility("special_razorback_shield");
+		if(ability.IsMyPlugin())
+		{
+			int weapon = -1;
+			if(ability.GetBool("secondary"))
+			{
+				weapon = CreateEntityByName("tf_weapon_pistol");
+			}
+			else
+			{
+				weapon = CreateEntityByName("tf_weapon_handgun_scout_primary");
+			}
+			
+			if(weapon != -1)
+			{
+				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 0);
+				SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
+				
+				SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 6);
+				SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 10);
+				
+				DispatchSpawn(weapon);
+				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+				SDKHook(weapon, SDKHook_SetTransmit, RazorbackSetTransmit);
+				
+				EquipPlayerWeapon(client, weapon);
+				
+				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 57);
+				
+				TF2Attrib_SetByDefIndex(weapon, 128, 1.0);
+				TF2Attrib_SetByDefIndex(weapon, 303, -1.0);
+				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
+				
+				RazorbackRef[client] = EntIndexToEntRef(weapon);
+				
+				SetEntProp(weapon, Prop_Send, "m_iClip1", ability.GetInt("durability") / 10);
+			}
+			
+			if(weapon != GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
+			{
+				weapon = EquipRazorback(client);
+				if(weapon != -1)
+					ability.SetInt("wearableref", EntIndexToEntRef(weapon));
+			}
+			
+			if(!HookedRazorback)
+			{
+				HookedRazorback = true;
+				HookUserMessage(PlayerShieldBlocked, OnShieldBlocked);
+			}
+			
+			if(!HookedWeaponSwap[client])
+			{
+				Debug("Hooked Swapping on %N", client);
+				HookedWeaponSwap[client] = true;
+				SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
+			}
+		}
+	}
+}
+
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 {
+	Debug("FF2R_OnPickupDroppedWeapon::%N", client);
 	return CanPickup[client] ? Plugin_Handled : Plugin_Continue;
 }
 
@@ -734,73 +751,76 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		AbilityData ability;
 		if(boss && (ability = boss.GetAbility("special_wall_jump")))
 		{
-			float gameTime = GetGameTime();
-			if(ability.GetFloat("cooldown") < gameTime)
+			if(!(GetEntityFlags(client) & (FL_ONGROUND|FL_INWATER)))
 			{
-				bool jumped;
-				
-				float pos[3];
-				GetClientAbsOrigin(client, pos);
-				
-				static const float Mins[] = { -64.0, -64.0, 0.0 };
-				static const float Maxs[] = { 64.0, 64.0, 64.0 };
-				Handle trace = TR_TraceHullFilterEx(pos, pos, Mins, Maxs, MASK_SOLID, Trace_WorldOnly);
-				if(trace)
+				float gameTime = GetGameTime();
+				if(ability.GetFloat("cooldown") < gameTime)
 				{
-					if(TR_DidHit(trace))
+					bool jumped;
+					
+					float pos[3];
+					GetClientAbsOrigin(client, pos);
+					
+					static const float Mins[] = { -64.0, -64.0, 0.0 };
+					static const float Maxs[] = { 64.0, 64.0, 64.0 };
+					Handle trace = TR_TraceHullFilterEx(pos, pos, Mins, Maxs, MASK_SOLID, Trace_WorldOnly);
+					if(trace)
 					{
-						jumped = true;
+						if(TR_DidHit(trace))
+						{
+							jumped = true;
+							WallStale[client]++;
+							ability.SetFloat("cooldown", gameTime + 0.4 + (WallStale[client] * 0.1));
+							SetEntProp(client, Prop_Send, "m_iAirDash", ability.GetBool("double", true) ? -1 : 0);
+							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
+							
+							if(WallSpeedMulti[client] == 1.0)
+							{
+								WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
+								if(WallSpeedMulti[client] != 1.0)
+									JumperAttribApply(client, 107, WallSpeedMulti[client]);
+							}
+							
+							if(WallJumpMulti[client] == 1.0)
+							{
+								WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
+								if(WallJumpMulti[client] != 1.0)
+									JumperAttribApply(client, 443, WallJumpMulti[client]);
+							}
+							
+							if(WallAirMulti[client] == 1.0)
+							{
+								WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
+								if(WallAirMulti[client] != 1.0)
+									JumperAttribApply(client, 610, WallAirMulti[client]);
+							}
+						}
 						
-						ability.SetFloat("cooldown", gameTime + 0.35);
-						SetEntProp(client, Prop_Send, "m_iAirDash", ability.GetBool("double", true) ? 0 : -1);
-						EmitGameSoundToAll(WALL_JUMP, client, _, client, pos);
-						
+						delete trace;
+					}
+					
+					if(!jumped)
+					{
 						if(WallSpeedMulti[client] == 1.0)
 						{
-							WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
+							WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
 							if(WallSpeedMulti[client] != 1.0)
 								JumperAttribApply(client, 107, WallSpeedMulti[client]);
 						}
 						
 						if(WallJumpMulti[client] == 1.0)
 						{
-							WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
+							WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
 							if(WallJumpMulti[client] != 1.0)
 								JumperAttribApply(client, 443, WallJumpMulti[client]);
 						}
 						
 						if(WallAirMulti[client] == 1.0)
 						{
-							WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
+							WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
 							if(WallAirMulti[client] != 1.0)
 								JumperAttribApply(client, 610, WallAirMulti[client]);
 						}
-					}
-					
-					delete trace;
-				}
-				
-				if(!jumped)
-				{
-					if(WallSpeedMulti[client] == 1.0)
-					{
-						WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
-						if(WallSpeedMulti[client] != 1.0)
-							JumperAttribApply(client, 107, WallSpeedMulti[client]);
-					}
-					
-					if(WallJumpMulti[client] == 1.0)
-					{
-						WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
-						if(WallJumpMulti[client] != 1.0)
-							JumperAttribApply(client, 443, WallJumpMulti[client]);
-					}
-					
-					if(WallAirMulti[client] == 1.0)
-					{
-						WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
-						if(WallAirMulti[client] != 1.0)
-							JumperAttribApply(client, 610, WallAirMulti[client]);
 					}
 				}
 			}
@@ -814,6 +834,10 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		JumperAttribRestore(client, 610, WallAirMulti[client]);
 		WallAirMulti[client] = 1.0;
+	}
+	else if(WallStale[client] && (GetEntityFlags(client) & FL_ONGROUND))
+	{
+		WallStale[client] = 0;
 	}
 	return Plugin_Continue;
 }
@@ -964,8 +988,9 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							snap = CreateSortedSnapshot(spells);
 						
 						int entries = snap.Length;
-						if(entries >= count)
+						if(entries > count)
 						{
+							Debug("Somehow, we have less buttons or spells now");
 							HasAbility[client] = 1;
 							delete snap;
 							return;
@@ -1081,7 +1106,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						if(boss.GetInt("lives") < 2)
 							entries--;
 						
-						SetHudTextParams(-1.0, 0.78 + (float(entries) * 0.05), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
+						SetHudTextParams(-1.0, 0.78 - (float(entries) * 0.05), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
 					}
 					else
 					{
@@ -1350,7 +1375,7 @@ public void OnWeaponSwitch(int client, int weapon)
 		TFClassType class = TF2_GetWeaponClass(weapon, ClassSwap[client]);
 		TF2_SetPlayerClass(client, class, _, false);
 		
-		if(AnimSwap[client] && BodyRef[client] == INVALID_ENT_REFERENCE)
+		if(AnimSwap[client] && EntRefToEntIndex(BodyRef[client]) == INVALID_ENT_REFERENCE)
 		{
 			int index = GetEntProp(client, Prop_Send, "m_nModelIndex");
 			if(index > 0)
@@ -1379,7 +1404,7 @@ public void OnWeaponSwitch(int client, int weapon)
 		
 		if(HandSwap[client])
 		{
-			if(HandRef[client] == INVALID_ENT_REFERENCE)
+			if(EntRefToEntIndex(HandRef[client]) == INVALID_ENT_REFERENCE)
 			{
 				int entity = CreateEntityByName("tf_wearable_vm");
 				if(entity != -1)
@@ -1694,12 +1719,12 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 	  ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM) &&
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
+		Debug("Attempted Steal");
 		if(FF2R_GetBossData(victim))
 		{
 			int health = GetClientHealth(attacker);
 			
 			TF2_RegeneratePlayer(attacker);
-			FF2R_OnBossCreated(attacker, FF2R_GetBossData(attacker), false);
 			
 			SetEntityHealth(attacker, health + (600 * StealNext[attacker]));
 			FF2R_UpdateBossAttributes(attacker);
@@ -1712,6 +1737,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 			if(weapon != -1)
 			{
 				int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+				Debug("Valid Weapon %d", index);
 				switch(index)
 				{
 					case 5, 195:	// Fists are immune
@@ -2008,7 +2034,9 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 					ability.SetFloat("durability", hp - damage);
 					EmitGameSoundToAll(SHIELD_HIT, victim, _, victim, pos1);
 					
-					SetEntProp(victim, Prop_Data, "m_iAmmo", RoundToCeil(hp - damage), _, RazorbackDeployed[victim]);
+					int entity = EntRefToEntIndex(RazorbackRef[victim]);
+					if(entity != INVALID_ENT_REFERENCE)
+						SetEntProp(entity, Prop_Send, "m_iClip1", RoundToCeil(hp - damage) / 10);
 				}
 				else
 				{
@@ -2074,7 +2102,7 @@ void JumperAttribApply(int client, int index, float multi)
 	value *= multi;
 	if(value > 1.01 || value < 0.99)
 	{
-		TF2Attrib_SetByDefIndex(client, index, value * multi);
+		TF2Attrib_SetByDefIndex(client, index, value);
 	}
 	else if(attrib != Address_Null)
 	{
@@ -2092,7 +2120,7 @@ void JumperAttribRestore(int client, int index, float multi)
 	value /= multi;
 	if(value > 1.01 || value < 0.99)
 	{
-		TF2Attrib_SetByDefIndex(client, index, value * multi);
+		TF2Attrib_SetByDefIndex(client, index, value);
 	}
 	else if(attrib != Address_Null)
 	{
@@ -2361,4 +2389,15 @@ void EquipWearable(int client, int entity)
 public bool Trace_WorldOnly(int entity, int contentsMask)
 {
 	return !entity;
+}
+
+stock void Debug(const char[] buffer, any ...)
+{
+	if(CvarDebug.BoolValue)
+	{
+		char message[192];
+		VFormat(message, sizeof(message), buffer, 2);
+		PrintToChatAll("[FF2 DEBUG] %s", message);
+		PrintToServer("[FF2 DEBUG] %s", message);
+	}
 }

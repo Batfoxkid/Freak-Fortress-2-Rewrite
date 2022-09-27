@@ -220,7 +220,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 	Client(attacker).Damage = lastPlayerDamage + idamage;
 	Client(attacker).SetDamage(slot, lastWeaponDamage + idamage);
 	
-	Weapons_OnHitBoss(attacker, weapon, Client(attacker).Damage, lastPlayerDamage);
+	Weapons_OnHitBoss(attacker, Client(attacker).Damage, lastPlayerDamage);
 	
 	float value = Attributes_FindOnPlayer(attacker, 203);	// drop health pack on kill
 	if(value > 0.0)

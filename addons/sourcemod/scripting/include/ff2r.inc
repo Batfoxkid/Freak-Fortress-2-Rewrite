@@ -210,6 +210,16 @@ forward void FF2R_OnBossRemoved(int client);
 forward Action FF2R_OnPickupDroppedWeapon(int client, int weapon);
 
 /**
+ * Called when a boss equips their loadout
+ * 
+ * @param client	Client index
+ * @param weapons	If weapons were given
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnBossEquipped(int client, bool weapons);
+
+/**
  * Wrapper to emit sound to one client.
  * 
  * @param client		Client index
