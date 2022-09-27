@@ -1792,8 +1792,7 @@ static void EquipBoss(int client, bool weapons)
 	if(Client(client).Cfg.Get("model", buffer, sizeof(buffer)))
 	{
 		SetVariantString(buffer);
-		AcceptEntityInput(client, "SetCustomModel");
-		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 	}
 	
 	if(weapons)
@@ -2218,8 +2217,7 @@ void Bosses_Remove(int client)
 		}
 		
 		SetVariantString("");
-		AcceptEntityInput(client, "SetCustomModel");
-		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 		
 		TF2Attrib_SetByDefIndex(client, 442, 1.0);
 		TF2Attrib_SetByDefIndex(client, 26, 0.0);
@@ -2592,6 +2590,8 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 		int entries = snap.Length;
 		int[] list = new int[entries];
 		char buffer[PLATFORM_MAX_PATH];
+		bool number = IsCharNumeric(required[0]);
+		int num = StringToInt(required);
 		for(int i; i < entries; i++)
 		{
 			int length = snap.KeyBufferSize(i)+1;
@@ -2604,8 +2604,18 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 				{
 					if(required[0])
 					{	
-						if(!val.cfg.Get("key", key, length) || StrContains(required, key, false) != 0)
+						if(!val.cfg.Get("key", buffer, sizeof(buffer)))
 							continue;
+						
+						if(number)
+						{
+							if(num != StringToInt(buffer))
+								continue;
+						}
+						else if(StrContains(required, buffer, false) != 0)
+						{
+							continue;
+						}
 					}
 				}
 				case KeyValType_Value:
@@ -2623,8 +2633,15 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							if(!buffer[0])
 								strcopy(buffer, sizeof(buffer), "0");
 							
-							if(StrContains(required, buffer, false) != 0)
+							if(number)
+							{
+								if(num != StringToInt(buffer))
+									continue;
+							}
+							else if(StrContains(required, buffer, false) != 0)
+							{
 								continue;
+							}
 						}
 					}
 					else	// "1"	"example.mp3"
@@ -2642,8 +2659,15 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							if(!buffer[0])
 								strcopy(buffer, sizeof(buffer), "0");
 							
-							if(StrContains(required, buffer, false) != 0)
+							if(number)
+							{
+								if(num != StringToInt(buffer))
+									continue;
+							}
+							else if(StrContains(required, buffer, false) != 0)
+							{
 								continue;
+							}
 						}
 					}
 				}
@@ -2655,7 +2679,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 			
 			list[sounds++] = i;
 		}
-																																																	
+		
 		if(sounds)
 		{
 			sounds = list[GetRandomInt(0, sounds - 1)];

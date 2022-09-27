@@ -178,7 +178,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
 	TFObjectType type = view_as<TFObjectType>(event.GetInt("objecttype"));
-	if(type == TFObject_Teleporter)
+	if(Enabled && type == TFObject_Teleporter)
 	{
 		if(GetEntProp(event.GetInt("index"), Prop_Send, "m_iObjectMode") == view_as<int>(TFObjectMode_Exit))
 		{
@@ -230,9 +230,8 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 		else if(Enabled && !Client(client).Minion)
 		{
 			// Because minion plugins don't swap em back
-			SetVariantString("");
-			AcceptEntityInput(client, "SetCustomModel");
-			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+			SetVariantString(NULL_STRING);
+			AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 			
 			if(!Client(client).NoChanges && RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
 				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);

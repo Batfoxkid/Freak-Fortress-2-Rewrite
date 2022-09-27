@@ -367,7 +367,7 @@
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"signature"	"CTFPlayer::PickupWeaponFromOther"
-				"callconv"	"thiscall"
+				"hooktype"	"entity"
 				"return"	"bool"
 				"this"		"entity"
 				"arguments"

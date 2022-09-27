@@ -436,7 +436,7 @@ void Gamemode_RoundEnd(int winteam)
 {
 	RoundStatus = 2;
 	
-	// If we overrided the winner, such as spec teams
+	// If we overriden the winner, such as spec teams
 	int winner = WinnerOverride == -1 ? winteam : WinnerOverride;
 	
 	int[] clients = new int[MaxClients];
@@ -452,6 +452,20 @@ void Gamemode_RoundEnd(int winteam)
 			clients[total++] = client;
 			if(overlay)
 				Client(client).OverlayFor = 1.0;
+			
+			int entity, i;
+			while(TF2_GetItem(victim, entity, i))
+			{
+				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					TF2_RemoveItem(victim, entity);
+			}
+			
+			i = 0;
+			while(TF2U_GetWearable(victim, entity, i))
+			{
+				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					TF2_RemoveWearable(victim, entity);
+			}
 		}
 	}
 	

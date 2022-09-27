@@ -11,13 +11,13 @@
 		{
 			"0"	// Sorted in number and ABC order
 			{
-				"name"			"RAGE"				// Name, can use "name_en", etc. If left blank, section name is used instead
-				"description"	"Use your magic"	// Description, can use "description_en", etc.
-				"delay"			"10.0"				// Initial cooldown
-				"cooldown"		"30.0"				// Cooldown on use
-				"cost"			"100.0"				// RAGE cost to use
-				"consume"		"true"				// Consumes RAGE on use
-				"flags"			"0x0003"			// Casting flags
+				"name"		"RAGE"				// Name, can use "name_en", etc. If left blank, section name is used instead
+				"desc"		"Use your magic"	// Description, can use "desc_en", etc.
+				"delay"		"10.0"				// Initial cooldown
+				"cooldown"	"30.0"				// Cooldown on use
+				"cost"		"100.0"				// RAGE cost to use
+				"consume"	"true"				// Consumes RAGE on use
+				"flags"		"0x0003"			// Casting flags
 				// 0x0001: Magic (Sapper effect prevents casting)
 				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
 				// 0x0004: Summon (Requires a dead summonable player to cast)
@@ -25,8 +25,8 @@
 				// 0x0010: Last Life (Requires a single life left to cast)
 				// 0x0020: Grounded (Requires being on the ground to cast)
 				
-				"cast_low"		"8"	// Lowest ability slot to activate on cast. If left blank, "cast_high" is used
-				"cast_high"		"8"	// Highest ability slot to activate on cast. If left blank, "cast_low" is used
+				"cast_low"	"8"	// Lowest ability slot to activate on cast. If left blank, "cast_high" is used
+				"cast_high"	"8"	// Highest ability slot to activate on cast. If left blank, "cast_low" is used
 				
 				"nocast_low"	"9"	// Lowest ability slot to activate trying to cast but unable. If left blank, "nocast_high" is used
 				"nocast_high"	"9"	// Lowest ability slot to activate trying to cast but unable. If left blank, "nocast_low" is used
@@ -73,12 +73,12 @@
 	
 	"rage_weapon_steal"
 	{
-		"slot"			"0"		// Ability slot
-		"pickups"		"true"	// Can passively pick up weapons, rage has no effect when disabled
+		"slot"			"0"	// Ability slot
 		
+		"pickups"		"true"										// Can passively pick up weapons
 		"classswap"		"true"										// If to swap to the correct class
 		"animswap"		"true"										// If to swap animations to the correct class
-		"hands"			"models/weapons/c_models/c_scout_arms.mdl"	// Hands model if doing class swap
+		"hands"			"models/weapons/c_models/c_scout_arms.mdl"	// Arm model if doing class swap, blank to use default
 		
 		"plugin_name"	"ff2r_epic_abilities"
 	}
@@ -121,6 +121,7 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
+#include <dhooks>
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <ff2r>
@@ -191,6 +192,7 @@ bool TF2ULoaded;
 Handle SDKEquipWearable;
 Handle SDKCreate;
 Handle SDKInitDroppedWeapon;
+DynamicHook DHPickupWeaponFromOther;
 int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
@@ -214,7 +216,8 @@ int HandRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 TFClassType ClassSwap[MAXTF2PLAYERS];
 bool AnimSwap[MAXTF2PLAYERS];
 int HandSwap[MAXTF2PLAYERS];
-bool CanPickup[MAXTF2PLAYERS];
+int CanPickupPre[MAXTF2PLAYERS];
+int CanPickupPost[MAXTF2PLAYERS];
 int StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
@@ -284,7 +287,27 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
 	SDKInitDroppedWeapon = EndPrepSDKCall();
 	if(!SDKInitDroppedWeapon)
-		LogError("[Gamedata] Could not find CTFDroppedWeapon::Create");
+		LogError("[Gamedata] Could not find CTFDroppedWeapon::InitDroppedWeapon");
+	
+	DHPickupWeaponFromOther = DynamicHook.FromConf(gamedata, "CTFPlayer::PickupWeaponFromOther");
+	if(!DHPickupWeaponFromOther)
+		LogError("[Gamedata] Could not find CTFPlayer::PickupWeaponFromOther");
+	
+	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
+	if(detour)
+	{
+		if(preCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, false, preCallback))
+			LogError("[Gamedata] Failed to enable pre detour: %s", name);
+		
+		if(postCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, true, postCallback))
+			LogError("[Gamedata] Failed to enable post detour: %s", name);
+		
+		delete detour;
+	}
+	else
+	{
+		LogError("[Gamedata] Could not find %s", name);
+	}
 	
 	delete gamedata;
 	
@@ -315,6 +338,17 @@ public void OnAllPluginsLoaded()
 	}
 }
 
+public void OnPluginEnd()
+{
+	OnMapEnd();
+	
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client) && FF2R_GetBossData(client))
+			FF2R_OnBossRemoved(client);
+	}
+}
+
 public void OnMapStart()
 {
 	PrecacheSound("replay/enterperformancemode.wav");
@@ -330,7 +364,7 @@ public void OnMapEnd()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
-	if(!CanPickup[client] && !ClassSwap[client])
+	if(!CanPickupPre[client] && !ClassSwap[client])
 	{
 		AbilityData ability = boss.GetAbility("rage_weapon_steal");
 		if(ability.IsMyPlugin())
@@ -352,29 +386,20 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				}
 			}
 			
-			if(ability.GetBool("pickups", true))
+			if(DHPickupWeaponFromOther && ability.GetBool("pickups", true))
 			{
 				bool found;
 				for(int i = 1; i <= MaxClients; i++)
 				{
-					if(CanPickup[client])
+					if(CanPickupPre[client])
 					{
 						found = true;
 						break;
 					}
 				}
 				
-				CanPickup[client] = true;
-				
-				if(!found)
-				{
-					Debug("Hooked Stealing Trace");
-					for(int i = 1; i <= MaxClients; i++)
-					{
-						if(IsClientInGame(i))
-							SDKHook(i, SDKHook_TraceAttack, StealingTraceAttack);
-					}
-				}
+				CanPickupPre[client] = DHPickupWeaponFromOther.HookEntity(Hook_Pre, client, PickupWeaponFromOtherPre);
+				CanPickupPost[client] = DHPickupWeaponFromOther.HookEntity(Hook_Post, client, PickupWeaponFromOtherPost);
 			}
 		}
 	}
@@ -478,12 +503,23 @@ public void FF2R_OnBossRemoved(int client)
 {
 	HasAbility[client] = 0;
 	WallJumper[client] = false;
-	CanPickup[client] = false;
 	ClassSwap[client] = TFClass_Unknown;
 	StealNext[client] = 0;
 	
 	if(DodgeFor[client])
 		DodgeFor[client] = 1.0;
+	
+	if(CanPickupPre[client])
+	{
+		DynamicHook.RemoveHook(CanPickupPre[client]);
+		CanPickupPre[client] = 0;
+	}
+	
+	if(CanPickupPost[client])
+	{
+		DynamicHook.RemoveHook(CanPickupPost[client]);
+		CanPickupPost[client] = 0;
+	}
 	
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
@@ -523,7 +559,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				cfg.SetFloat("hudin", 0.0);
 		}
 	}
-	else if(CanPickup[client] && !StrContains(ability, "rage_weapon_steal", false))
+	else if(!StrContains(ability, "rage_weapon_steal", false))
 	{
 		StealNext[client]++;
 	}
@@ -568,7 +604,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		
 		char particle[48];
 		if(cfg.GetString("particle", particle, sizeof(particle), GetClientTeam(client) % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
+		{
 			AttachParticle(client, particle, duration);
+			TF2_AddCondition(client, TFCond_Stealthed, duration);
+		}
 		
 		if(!DodgeFor[client])
 			SDKHook(client, SDKHook_TraceAttack, DodgeTraceAttack);
@@ -689,7 +728,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 {
 	Debug("FF2R_OnPickupDroppedWeapon::%N", client);
-	return CanPickup[client] ? Plugin_Handled : Plugin_Continue;
+	return CanPickupPre[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
 }
 
 #if defined __nosoop_tf2_utils_included
@@ -711,14 +750,7 @@ public void OnClientPutInServer(int client)
 	if(TimescaleTimer && !IsFakeClient(client))
 		CvarCheats.ReplicateToClient(client, "1");
 	
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(CanPickup[client])
-		{
-			SDKHook(client, SDKHook_TraceAttack, StealingTraceAttack);
-			break;
-		}
-	}
+	SDKHook(client, SDKHook_TraceAttack, StealingTraceAttack);
 }
 
 public void OnClientDisconnect(int client)
@@ -751,7 +783,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		AbilityData ability;
 		if(boss && (ability = boss.GetAbility("special_wall_jump")))
 		{
-			if(!(GetEntityFlags(client) & (FL_ONGROUND|FL_INWATER)))
+			if(GetEntProp(client, Prop_Send, "m_iAirDash") > 0)
 			{
 				float gameTime = GetGameTime();
 				if(ability.GetFloat("cooldown") < gameTime)
@@ -770,7 +802,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 						{
 							jumped = true;
 							WallStale[client]++;
-							ability.SetFloat("cooldown", gameTime + 0.4 + (WallStale[client] * 0.1));
+							ability.SetFloat("cooldown", gameTime + 0.25 + (WallStale[client] * 0.25));
 							SetEntProp(client, Prop_Send, "m_iAirDash", ability.GetBool("double", true) ? -1 : 0);
 							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
 							
@@ -1006,7 +1038,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							if(val.tag == KeyValType_Section && val.cfg)
 							{
 								ConfigData cfg = view_as<ConfigData>(val.cfg);
-								if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "description"))
+								if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
 								{
 									if(!GetBossNameCfg(cfg, val.data, sizeof(val.data), lang))
 										strcopy(val.data, sizeof(val.data), key);
@@ -1132,7 +1164,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						if(val.tag == KeyValType_Section && val.cfg)
 						{
 							ConfigData cfg = view_as<ConfigData>(val.cfg);
-							if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "description"))
+							if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
 							{
 								if(!GetBossNameCfg(cfg, val.data, sizeof(val.data), lang))
 									strcopy(val.data, sizeof(val.data), key);
@@ -1396,8 +1428,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					SetEntProp(client, Prop_Send, "m_nRenderFX", RENDERFX_FADE_FAST);
 					
 					SetVariantString(NULL_STRING);
-					AcceptEntityInput(client, "SetCustomModel");
-					SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 				}
 			}
 		}
@@ -1462,8 +1493,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					ModelIndexToString(index, buffer, sizeof(buffer));
 					
 					SetVariantString(buffer);
-					AcceptEntityInput(client, "SetCustomModel");
-					SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 				}
 				
 				TF2_RemoveWearable(client, entity);
@@ -1491,6 +1521,22 @@ public void OnWeaponSwitch(int client, int weapon)
 			HandRef[client] = INVALID_ENT_REFERENCE;
 		}
 	}
+}
+
+public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookParam param)
+{
+	if(ClassSwap[client])
+		TF2_SetPlayerClass(client, TF2_GetDropClass(param.Get(1), ClassSwap[client]), _, false);
+	
+	return MRES_Ignored;
+}
+
+public MRESReturn PickupWeaponFromOtherPost(int client, DHookReturn ret, DHookParam param)
+{
+	if(ClassSwap[client])
+		TF2_SetPlayerClass(client, ClassSwap[client], _, false);
+	
+	return MRES_Ignored;
 }
 
 bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &dead = -2, int &allies = -2)
@@ -2317,6 +2363,20 @@ int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 		return TFWeaponSlot_Item1;
 	}
 	return TFWeaponSlot_Melee;
+}
+
+TFClassType TF2_GetDropClass(int weapon, TFClassType defaul)
+{
+	int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	if(TF2Econ_GetItemLoadoutSlot(index, defaul) >= 0)
+	{
+		for(TFClassType class=TFClass_Scout; class<=TFClass_Engineer; class++)
+		{
+			if(defaul != class && TF2Econ_GetItemLoadoutSlot(index, class) >= 0s)
+				return class;
+		}
+	}
+	return defaul;
 }
 
 TFClassType TF2_GetWeaponClass(int weapon, TFClassType defaul)
