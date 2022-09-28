@@ -99,10 +99,10 @@ static void CreateDetour(GameData gamedata, const char[] name, DHookCallback pre
 	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
 	if(detour)
 	{
-		if(preCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, false, preCallback))
+		if(preCallback != INVALID_FUNCTION && !detour.Enable(Hook_Pre, preCallback))
 			LogError("[Gamedata] Failed to enable pre detour: %s", name);
 		
-		if(postCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, true, postCallback))
+		if(postCallback != INVALID_FUNCTION && !detour.Enable(Hook_Post, postCallback))
 			LogError("[Gamedata] Failed to enable post detour: %s", name);
 		
 		delete detour;

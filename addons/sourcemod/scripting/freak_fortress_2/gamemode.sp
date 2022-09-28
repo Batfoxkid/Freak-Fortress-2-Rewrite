@@ -454,17 +454,17 @@ void Gamemode_RoundEnd(int winteam)
 				Client(client).OverlayFor = 1.0;
 			
 			int entity, i;
-			while(TF2_GetItem(victim, entity, i))
+			while(TF2_GetItem(client, entity, i))
 			{
 				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
-					TF2_RemoveItem(victim, entity);
+					TF2_RemoveItem(client, entity);
 			}
 			
 			i = 0;
-			while(TF2U_GetWearable(victim, entity, i))
+			while(TF2U_GetWearable(client, entity, i))
 			{
 				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
-					TF2_RemoveWearable(victim, entity);
+					TF2_RemoveWearable(client, entity);
 			}
 		}
 	}

@@ -96,6 +96,7 @@
 	"special_wall_jump"
 	{
 		"walljumps"		"true"	// If to allow wall jumps
+		"stale"			"false"	// Wall jump cooldown increases each jump until landed
 		
 		// Applies on a wall jump
 		"wall_jump"		"2.0"	// Jump height multiplier
@@ -190,9 +191,10 @@ bool TF2ULoaded;
 #endif
 
 Handle SDKEquipWearable;
+Handle SDKGiveNamedItem;
 Handle SDKCreate;
 Handle SDKInitDroppedWeapon;
-DynamicHook DHPickupWeaponFromOther;
+Handle SDKInitPickedUpWeapon;
 int PlayersAlive[4];
 Handle SyncHud;
 bool SpecTeam;
@@ -216,8 +218,7 @@ int HandRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 TFClassType ClassSwap[MAXTF2PLAYERS];
 bool AnimSwap[MAXTF2PLAYERS];
 int HandSwap[MAXTF2PLAYERS];
-int CanPickupPre[MAXTF2PLAYERS];
-int CanPickupPost[MAXTF2PLAYERS];
+bool CanPickup[MAXTF2PLAYERS];
 int StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
@@ -265,6 +266,21 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
+	gamedata = new GameData("tf2.items");
+	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GiveNamedItem");
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKGiveNamedItem = EndPrepSDKCall();
+	if(!SDKGiveNamedItem)
+		LogError("[Gamedata] Could not find GiveNamedItem");
+	
+	delete gamedata;
+	
 	gamedata = new GameData("ff2");
 	
 	StartPrepSDKCall(SDKCall_Static);
@@ -289,25 +305,16 @@ public void OnPluginStart()
 	if(!SDKInitDroppedWeapon)
 		LogError("[Gamedata] Could not find CTFDroppedWeapon::InitDroppedWeapon");
 	
-	DHPickupWeaponFromOther = DynamicHook.FromConf(gamedata, "CTFPlayer::PickupWeaponFromOther");
-	if(!DHPickupWeaponFromOther)
-		LogError("[Gamedata] Could not find CTFPlayer::PickupWeaponFromOther");
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFDroppedWeapon::InitPickedUpWeapon");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKInitPickedUpWeapon = EndPrepSDKCall();
+	if(!SDKInitPickedUpWeapon)
+		LogError("[Gamedata] Could not find CTFDroppedWeapon::InitPickedUpWeapon");
 	
-	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
-	if(detour)
-	{
-		if(preCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, false, preCallback))
-			LogError("[Gamedata] Failed to enable pre detour: %s", name);
-		
-		if(postCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, true, postCallback))
-			LogError("[Gamedata] Failed to enable post detour: %s", name);
-		
-		delete detour;
-	}
-	else
-	{
-		LogError("[Gamedata] Could not find %s", name);
-	}
+	CreateDetour(gamedata, "CTFPlayer::CanAirDash", _, CanAirDashPost);
+	CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", PickupWeaponFromOtherPre);
 	
 	delete gamedata;
 	
@@ -318,6 +325,29 @@ public void OnPluginStart()
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
+	
+	CvarCheats = FindConVar("sv_cheats");
+	CvarFriendlyFire = FindConVar("mp_friendlyfire");
+	CvarTimeScale = FindConVar("host_timescale");
+}
+
+void CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
+{
+	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
+	if(detour)
+	{
+		if(preCallback != INVALID_FUNCTION && !detour.Enable(Hook_Pre, preCallback))
+			LogError("[Gamedata] Failed to enable pre detour: %s", name);
+		
+		if(postCallback != INVALID_FUNCTION && !detour.Enable(Hook_Post, postCallback))
+			LogError("[Gamedata] Failed to enable post detour: %s", name);
+		
+		delete detour;
+	}
+	else
+	{
+		LogError("[Gamedata] Could not find %s", name);
+	}
 }
 
 public void OnAllPluginsLoaded()
@@ -353,7 +383,7 @@ public void OnMapStart()
 {
 	PrecacheSound("replay/enterperformancemode.wav");
 	PrecacheSound("replay/exitperformancemode.wav");
-	PrecacheSound(WALL_JUMP);
+	//PrecacheSound(WALL_JUMP);
 }
 
 public void OnMapEnd()
@@ -364,7 +394,7 @@ public void OnMapEnd()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
-	if(!CanPickupPre[client] && !ClassSwap[client])
+	if(!CanPickup[client] && !ClassSwap[client])
 	{
 		AbilityData ability = boss.GetAbility("rage_weapon_steal");
 		if(ability.IsMyPlugin())
@@ -386,21 +416,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				}
 			}
 			
-			if(DHPickupWeaponFromOther && ability.GetBool("pickups", true))
-			{
-				bool found;
-				for(int i = 1; i <= MaxClients; i++)
-				{
-					if(CanPickupPre[client])
-					{
-						found = true;
-						break;
-					}
-				}
-				
-				CanPickupPre[client] = DHPickupWeaponFromOther.HookEntity(Hook_Pre, client, PickupWeaponFromOtherPre);
-				CanPickupPost[client] = DHPickupWeaponFromOther.HookEntity(Hook_Post, client, PickupWeaponFromOtherPost);
-			}
+			CanPickup[client] = (SDKGiveNamedItem && SDKInitPickedUpWeapon && ability.GetBool("pickups", true));
 		}
 	}
 	
@@ -502,24 +518,13 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 public void FF2R_OnBossRemoved(int client)
 {
 	HasAbility[client] = 0;
+	CanPickup[client] = false;
 	WallJumper[client] = false;
 	ClassSwap[client] = TFClass_Unknown;
 	StealNext[client] = 0;
 	
 	if(DodgeFor[client])
 		DodgeFor[client] = 1.0;
-	
-	if(CanPickupPre[client])
-	{
-		DynamicHook.RemoveHook(CanPickupPre[client]);
-		CanPickupPre[client] = 0;
-	}
-	
-	if(CanPickupPost[client])
-	{
-		DynamicHook.RemoveHook(CanPickupPost[client]);
-		CanPickupPost[client] = 0;
-	}
 	
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
@@ -728,7 +733,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 {
 	Debug("FF2R_OnPickupDroppedWeapon::%N", client);
-	return CanPickupPre[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
+	return CanPickup[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
 }
 
 #if defined __nosoop_tf2_utils_included
@@ -777,99 +782,17 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 	
-	if(WallJumper[client] && (buttons & IN_JUMP))
+	if(!WallJumper[client] || !(buttons & IN_JUMP))
 	{
-		BossData boss = FF2R_GetBossData(client);
-		AbilityData ability;
-		if(boss && (ability = boss.GetAbility("special_wall_jump")))
+		if(WallAirMulti[client] != 1.0)
 		{
-			if(GetEntProp(client, Prop_Send, "m_iAirDash") > 0)
-			{
-				float gameTime = GetGameTime();
-				if(ability.GetFloat("cooldown") < gameTime)
-				{
-					bool jumped;
-					
-					float pos[3];
-					GetClientAbsOrigin(client, pos);
-					
-					static const float Mins[] = { -64.0, -64.0, 0.0 };
-					static const float Maxs[] = { 64.0, 64.0, 64.0 };
-					Handle trace = TR_TraceHullFilterEx(pos, pos, Mins, Maxs, MASK_SOLID, Trace_WorldOnly);
-					if(trace)
-					{
-						if(TR_DidHit(trace))
-						{
-							jumped = true;
-							WallStale[client]++;
-							ability.SetFloat("cooldown", gameTime + 0.25 + (WallStale[client] * 0.25));
-							SetEntProp(client, Prop_Send, "m_iAirDash", ability.GetBool("double", true) ? -1 : 0);
-							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
-							
-							if(WallSpeedMulti[client] == 1.0)
-							{
-								WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
-								if(WallSpeedMulti[client] != 1.0)
-									JumperAttribApply(client, 107, WallSpeedMulti[client]);
-							}
-							
-							if(WallJumpMulti[client] == 1.0)
-							{
-								WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
-								if(WallJumpMulti[client] != 1.0)
-									JumperAttribApply(client, 443, WallJumpMulti[client]);
-							}
-							
-							if(WallAirMulti[client] == 1.0)
-							{
-								WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
-								if(WallAirMulti[client] != 1.0)
-									JumperAttribApply(client, 610, WallAirMulti[client]);
-							}
-						}
-						
-						delete trace;
-					}
-					
-					if(!jumped)
-					{
-						if(WallSpeedMulti[client] == 1.0)
-						{
-							WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
-							if(WallSpeedMulti[client] != 1.0)
-								JumperAttribApply(client, 107, WallSpeedMulti[client]);
-						}
-						
-						if(WallJumpMulti[client] == 1.0)
-						{
-							WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
-							if(WallJumpMulti[client] != 1.0)
-								JumperAttribApply(client, 443, WallJumpMulti[client]);
-						}
-						
-						if(WallAirMulti[client] == 1.0)
-						{
-							WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
-							if(WallAirMulti[client] != 1.0)
-								JumperAttribApply(client, 610, WallAirMulti[client]);
-						}
-					}
-				}
-			}
+			JumperAttribRestore(client, 610, WallAirMulti[client]);
+			WallAirMulti[client] = 1.0;
 		}
-		else
+		else if(WallStale[client] && (GetEntityFlags(client) & FL_ONGROUND))
 		{
-			WallJumper[client] = false;
+			WallStale[client] = 0;
 		}
-	}
-	else if(WallAirMulti[client] != 1.0)
-	{
-		JumperAttribRestore(client, 610, WallAirMulti[client]);
-		WallAirMulti[client] = 1.0;
-	}
-	else if(WallStale[client] && (GetEntityFlags(client) & FL_ONGROUND))
-	{
-		WallStale[client] = 0;
 	}
 	return Plugin_Continue;
 }
@@ -1523,19 +1446,160 @@ public void OnWeaponSwitch(int client, int weapon)
 	}
 }
 
-public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookParam param)
+public MRESReturn CanAirDashPost(int client, DHookReturn ret)
 {
-	if(ClassSwap[client])
-		TF2_SetPlayerClass(client, TF2_GetDropClass(param.Get(1), ClassSwap[client]), _, false);
-	
+	if(WallJumper[client])
+	{
+		BossData boss = FF2R_GetBossData(client);
+		AbilityData ability;
+		if(boss && (ability = boss.GetAbility("special_wall_jump")))
+		{
+			bool jumped;
+			float gameTime = GetGameTime();
+			if(ability.GetFloat("cooldown") < gameTime)
+			{
+				float pos[3];
+				GetClientAbsOrigin(client, pos);
+				
+				static const float Mins[] = { -64.0, -64.0, 0.0 };
+				static const float Maxs[] = { 64.0, 64.0, 64.0 };
+				Handle trace = TR_TraceHullFilterEx(pos, pos, Mins, Maxs, MASK_SOLID, Trace_WorldOnly);
+				if(trace)
+				{
+					if(TR_DidHit(trace))
+					{
+						jumped = true;
+						
+						if(ability.GetBool("stale"))
+							WallStale[client]++;
+						
+						ability.SetFloat("cooldown", gameTime + 0.2 + (WallStale[client] * 0.1));
+						
+						if(ability.GetBool("double", true))
+						{
+							SetEntProp(client, Prop_Send, "m_iAirDash", -1);
+							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
+						}
+						
+						if(WallSpeedMulti[client] == 1.0)
+						{
+							WallSpeedMulti[client] = ability.GetFloat("wall_speed", 1.0);
+							if(WallSpeedMulti[client] != 1.0)
+								JumperAttribApply(client, 107, WallSpeedMulti[client]);
+						}
+						
+						if(WallJumpMulti[client] == 1.0)
+						{
+							WallJumpMulti[client] = ability.GetFloat("wall_jump", 1.0);
+							if(WallJumpMulti[client] != 1.0)
+								JumperAttribApply(client, 443, WallJumpMulti[client]);
+						}
+						
+						if(WallAirMulti[client] == 1.0)
+						{
+							WallAirMulti[client] = ability.GetFloat("wall_air", 1.0);
+							if(WallAirMulti[client] != 1.0)
+								JumperAttribApply(client, 610, WallAirMulti[client]);
+						}
+					}
+					
+					delete trace;
+					
+					if(jumped)
+					{
+						ret.Value = true;
+						return MRES_Override;
+					}
+				}
+			}
+			
+			if(!jumped && ret.Value)
+			{
+				if(WallSpeedMulti[client] == 1.0)
+				{
+					WallSpeedMulti[client] = ability.GetFloat("double_speed", 1.0);
+					if(WallSpeedMulti[client] != 1.0)
+						JumperAttribApply(client, 107, WallSpeedMulti[client]);
+				}
+				
+				if(WallJumpMulti[client] == 1.0)
+				{
+					WallJumpMulti[client] = ability.GetFloat("double_jump", 1.0);
+					if(WallJumpMulti[client] != 1.0)
+						JumperAttribApply(client, 443, WallJumpMulti[client]);
+				}
+				
+				if(WallAirMulti[client] == 1.0)
+				{
+					WallAirMulti[client] = ability.GetFloat("double_air", 1.0);
+					if(WallAirMulti[client] != 1.0)
+						JumperAttribApply(client, 610, WallAirMulti[client]);
+				}
+			}
+			else
+			{
+				ClientCommand(client, "playgamesound " ... AMS_DENYUSE);
+			}
+		}
+		else
+		{
+			WallJumper[client] = false;
+		}
+	}
 	return MRES_Ignored;
 }
 
-public MRESReturn PickupWeaponFromOtherPost(int client, DHookReturn ret, DHookParam param)
+public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookParam param)
 {
-	if(ClassSwap[client])
-		TF2_SetPlayerClass(client, ClassSwap[client], _, false);
-	
+	if(CanPickup[client] && ClassSwap[client])
+	{
+		int slot = -1;
+		int weapon = param.Get(1);
+		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+		TFClassType class = TF2_GetDropClass(index, ClassSwap[client], slot);
+		if(slot != -1 && slot != TFWeaponSlot_Melee)
+		{
+			TF2_RemoveWeaponSlot(client, slot);
+			TF2_SetPlayerClass(client, class, _, false);
+			
+			char classname[36];
+			TF2Econ_GetItemClassName(index, classname, sizeof(classname));
+			TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class);
+			
+			static int offset = -1;
+			if(offset == -1)
+				offset = FindSendPropInfo("CTFDroppedWeapon", "m_Item");
+			
+			int entity = SDKCall(SDKGiveNamedItem, client, classname,
+			(class == TFClass_Spy && (StrEqual(classname, "tf_weapon_builder") || StrEqual(classname, "tf_weapon_sapper"))) ? view_as<int>(TFObject_Sapper) : 0,
+			GetEntityAddress(weapon) + view_as<Address>(offset), true);
+			
+			if(GetEntProp(entity, Prop_Send, "m_iItemIDHigh") == -1 && GetEntProp(entity, Prop_Send, "m_iItemIDLow") == -1)
+			{
+				GetEntityNetClass(entity, classname, sizeof(classname));
+				int offse = FindSendPropInfo(classname, "m_iItemIDHigh");
+				
+				SetEntData(entity, offse - 8, 0);	// m_iItemID
+				SetEntData(entity, offse - 4, 0);	// m_iItemID
+				SetEntData(entity, offse, 0);		// m_iItemIDHigh
+				SetEntData(entity, offse + 4, 0);	// m_iItemIDLow
+			}
+			
+			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+			EquipPlayerWeapon(client, entity);
+			SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
+			
+			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+			OnWeaponSwitch(client, entity);
+		}
+		else
+		{
+			ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
+		}
+		
+		ret.Value = true;
+		return MRES_Supercede;
+	}
 	return MRES_Ignored;
 }
 
@@ -2365,17 +2429,29 @@ int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 	return TFWeaponSlot_Melee;
 }
 
-TFClassType TF2_GetDropClass(int weapon, TFClassType defaul)
+TFClassType TF2_GetDropClass(int index, TFClassType defaul, int &slot)
 {
-	int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-	if(TF2Econ_GetItemLoadoutSlot(index, defaul) >= 0)
+	slot = TF2Econ_GetItemLoadoutSlot(index, defaul);
+	Debug("Index = %d | %d Slot = %d", index, defaul, slot);
+	
+	if(slot == -1)
 	{
+		Debug("No Default");
 		for(TFClassType class=TFClass_Scout; class<=TFClass_Engineer; class++)
 		{
-			if(defaul != class && TF2Econ_GetItemLoadoutSlot(index, class) >= 0s)
-				return class;
+			if(defaul != class)
+			{
+				slot = TF2Econ_GetItemLoadoutSlot(index, class);
+				if(slot != -1)
+				{
+					Debug("%d Slot = %d", class, slot);
+					return class;
+				}
+			}
 		}
 	}
+	
+	Debug("Defaulted to %d", defaul);
 	return defaul;
 }
 

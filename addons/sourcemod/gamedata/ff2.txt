@@ -38,6 +38,12 @@
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 			}
+			"CTFDroppedWeapon::InitPickedUpWeapon"
+			{
+				"library"	"server"
+				"linux"		"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\xD9\xEE\x53\x56\x57"
+			}
 			"CTFGameStats::ResetRoundStats"
 			{
 				"library"	"server"
@@ -50,8 +56,15 @@
 				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
 			}
+			"CTFPlayer::CanAirDash"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x84\x1A\x00\x00\x00\x00\x04\x00"
+			}
 			"CTFPlayer::CanBuild"
 			{
+				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer8CanBuildEii"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x0C\x53\x8B\x5D\x08\x57\x8B\xF9\x83\xFB\x03"
 			}
@@ -310,6 +323,13 @@
 				"return"	"void"
 				"this"		"address"
 			}
+			"CTFPlayer::CanAirDash"
+			{
+				"signature"	"CTFPlayer::CanAirDash"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+			}
 			"CTFPlayer::CanBuild"
 			{
 				"signature"	"CTFPlayer::CanBuild"
@@ -367,7 +387,7 @@
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"signature"	"CTFPlayer::PickupWeaponFromOther"
-				"hooktype"	"entity"
+				"callconv"	"thiscall"
 				"return"	"bool"
 				"this"		"entity"
 				"arguments"
