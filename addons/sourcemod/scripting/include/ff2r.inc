@@ -397,6 +397,110 @@ methodmap BossData < ConfigData
 	{
 		return view_as<AbilityData>(view_as<ConfigMap>(this).GetSection(key));
 	}
+	
+	public BossData CreateBoss(int client, int team = 0)
+	{
+		return FF2R_CreateBoss(client, this, team);
+	}
+	
+	property int Lives
+	{
+		public get()
+		{
+			return this.GetInt("livesleft", 1);
+		}
+		public set(int value)
+		{
+			this.SetInt("livesleft", value);
+			FF2R_UpdateBossAttributes(client);
+		}
+	}
+	
+	property int MaxLives
+	{
+		public get()
+		{
+			return this.GetInt("lives", 1);
+		}
+		public set(int value)
+		{
+			this.SetInt("lives", value);
+			FF2R_UpdateBossAttributes(client);
+		}
+	}
+	
+	property int MaxHealth
+	{
+		public get()
+		{
+			return this.GetInt("maxhealth");
+		}
+		public set(int value)
+		{
+			this.SetInt("maxhealth", value);
+			FF2R_UpdateBossAttributes(client);
+		}
+	}
+	
+	property float RageDamage
+	{
+		public get()
+		{
+			return this.GetFloat("ragedmg");
+		}
+		public set(float value)
+		{
+			this.SetFloat("ragedmg", value);
+		}
+	}
+	
+	property float RageMin
+	{
+		public get()
+		{
+			return this.GetFloat("ragemin", 100.0);
+		}
+		public set(float value)
+		{
+			this.SetFloat("ragemin", value);
+		}
+	}
+	
+	property float RageMax
+	{
+		public get()
+		{
+			return this.GetFloat("ragemax", 100.0);
+		}
+		public set(float value)
+		{
+			this.SetFloat("ragemax", value);
+		}
+	}
+	
+	property int RageMode
+	{
+		public get()
+		{
+			return this.GetInt("ragemode");
+		}
+		public set(int value)
+		{
+			this.SetInt("ragemode", value);
+		}
+	}
+	
+	property bool BlockVo
+	{
+		public get()
+		{
+			return this.GetBool("sound_block_vo");
+		}
+		public set(bool value)
+		{
+			this.SetBool("sound_block_vo", value);
+		}
+	}
 }
 
 /**
