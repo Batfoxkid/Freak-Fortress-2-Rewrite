@@ -2564,16 +2564,16 @@ void TimescaleSound(int client, float current, float newvalue)
 	{
 		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speedup", client))
 		{
-			EmitSoundToAll("replay/exitperformancemode.wav");
-			EmitSoundToAll("replay/exitperformancemode.wav");
+			EmitSoundToAll("replay/enterperformancemode.wav");
+			EmitSoundToAll("replay/enterperformancemode.wav");
 		}
 	}
 	else if(current != newvalue)
 	{
 		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speeddown", client))
 		{
-			EmitSoundToAll("replay/enterperformancemode.wav");
-			EmitSoundToAll("replay/enterperformancemode.wav");
+			EmitSoundToAll("replay/exitperformancemode.wav");
+			EmitSoundToAll("replay/exitperformancemode.wav");
 		}	
 	}
 }

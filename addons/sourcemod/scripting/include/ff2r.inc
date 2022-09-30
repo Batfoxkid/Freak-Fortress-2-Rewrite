@@ -412,7 +412,6 @@ methodmap BossData < ConfigData
 		public set(int value)
 		{
 			this.SetInt("livesleft", value);
-			FF2R_UpdateBossAttributes(client);
 		}
 	}
 	
@@ -425,7 +424,6 @@ methodmap BossData < ConfigData
 		public set(int value)
 		{
 			this.SetInt("lives", value);
-			FF2R_UpdateBossAttributes(client);
 		}
 	}
 	
@@ -438,7 +436,6 @@ methodmap BossData < ConfigData
 		public set(int value)
 		{
 			this.SetInt("maxhealth", value);
-			FF2R_UpdateBossAttributes(client);
 		}
 	}
 	

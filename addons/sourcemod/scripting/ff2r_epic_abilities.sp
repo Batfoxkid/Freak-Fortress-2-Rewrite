@@ -155,7 +155,7 @@
 
 #define AMS_DENYUSE	"common/wpn_denyselect.wav"
 #define AMS_SWITCH	"common/wpn_moveselect.wav"
-#define SHIELD_HIT	"vo/null.mp3"
+#define SHIELD_HIT	"Wood_Box.BulletImpact"
 #define WALL_JUMP	"player/taunt_yeti_standee_engineer_kick.wav"
 
 #define STEAL_REACT	"sound_steal_react"
@@ -227,7 +227,7 @@ int StealNext[MAXTF2PLAYERS];
 
 bool HookedRazorback;
 UserMsg PlayerShieldBlocked;
-int RazorbackDeployed[MAXTF2PLAYERS];
+int RazorbackDeployed[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 int RazorbackRef[MAXTF2PLAYERS] = {INVALID_ENT_REFERENCE, ...};
 
 bool WallInLagComp;
@@ -703,7 +703,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 			int weapon = CreateEntityByName(ability.GetBool("secondary") ? "tf_weapon_pistol" : "tf_weapon_handgun_scout_primary");
 			if(weapon != -1)
 			{
-				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 0);
+				SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", 200);
 				SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
 				
 				SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 0);
@@ -711,6 +711,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				
 				DispatchSpawn(weapon);
 				SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+				SetEntProp(weapon, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 				
 				EquipPlayerWeapon(client, weapon);
 				
@@ -799,7 +800,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 	
-	if(WallJumper[client] && (GetEntityFlags(client) & FL_ONGROUND) && CvarUnlag.BoolValue && GetEntProp(client, Prop_Data, "m_bLagCompensation") && !IsFakeClient(client))
+	if(WallJumper[client] && !(GetEntityFlags(client) & FL_ONGROUND) && CvarUnlag.BoolValue && GetEntProp(client, Prop_Data, "m_bLagCompensation") && !IsFakeClient(client))
 	{
 		WallInLagComp = true;
 		SDKCall(SDKCanAirDash, client);
@@ -825,16 +826,13 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		}
 	}
 	
-	if(!WallJumper[client])
+	if(WallAirMulti[client] != 1.0)
 	{
-		if(WallAirMulti[client] != 1.0)
-		{
-			float value = WallAirMulti[client] * 0.95;
-			if(value < 1.0)
-				value = 1.0;
-			
-			JumperAttribApply(client, 610, WallAirMulti[client], value);
-		}
+		float value = WallAirMulti[client] * 0.95;
+		if(value < 1.0)
+			value = 1.0;
+		
+		JumperAttribApply(client, 610, WallAirMulti[client], value);
 	}
 	
 	if(HasAbility[client])
@@ -1333,10 +1331,20 @@ public void OnWeaponSwitch(int client, int weapon)
 						GetClientAbsOrigin(client, pos);
 						GetClientAbsAngles(client, ang);
 						
-						pos[0] += 50.0;
-						pos[2] += 30.0;
-						ang[0] += 180.0;
-						FixAngle(ang[0]);
+						float offset = ang[1];
+						if(offset > 90.0)
+						{
+							offset = 180.0 - offset;
+						}
+						else if(offset < -90.0)
+						{
+							offset = -180.0 - offset;
+						}
+						
+						pos[0] += 15.0 * offset / 90.0;
+						pos[1] -= 15.0 * (90.0 - Fabs(ang[1])) / 90.0;
+						pos[2] -= 72.5;
+						ang[1] += 180.0;
 						
 						TeleportEntity(entity, pos, ang, NULL_VECTOR);
 						DispatchSpawn(entity);
@@ -1353,22 +1361,27 @@ public void OnWeaponSwitch(int client, int weapon)
 						if(entity != -1)
 							SetEntProp(entity, Prop_Send, "m_fEffects", EF_NODRAW);
 						
-						entity = CreateEntityByName("prop_dynamic");
+						entity = CreateEntityByName("tf_wearable");
 						if(entity != -1)
 						{
-							DispatchKeyValue(entity, "model", buffer);
-							SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", client);
+							SetEntProp(entity, Prop_Send, "m_nModelIndex", index);
 							
-							GetEntPropVector(weapon, Prop_Data, "m_vecOrigin", pos);
-							GetEntPropVector(weapon, Prop_Data, "m_angRotation", ang);
-							
-							TeleportEntity(entity, pos, ang, NULL_VECTOR);
 							DispatchSpawn(entity);
+							SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+							
+							ability.SetInt("tpref", EntIndexToEntRef(entity));
+							EquipWearable(client, entity);
+							
+							SetEntProp(entity, Prop_Send, "m_fEffects", 0);
 							
 							SetVariantString("!activator");
 							AcceptEntityInput(entity, "SetParent", weapon);
 							
-							ability.SetInt("tpref", EntIndexToEntRef(entity));
+							pos[0] = 5.0;
+							pos[1] = -7.5;
+							pos[2] = -60.0;
+							ang[1] = 180.0;
+							TeleportEntity(entity, pos, ang, NULL_VECTOR);
 						}
 					}
 				}
@@ -1394,7 +1407,7 @@ public void OnWeaponSwitch(int client, int weapon)
 			
 			int entity = EntRefToEntIndex(ability.GetInt("tpref", INVALID_ENT_REFERENCE));
 			if(entity != INVALID_ENT_REFERENCE)
-				RemoveEntity(entity);
+				TF2_RemoveWearable(client, entity);
 			
 			ability.SetInt("tpref", INVALID_ENT_REFERENCE);
 		}
@@ -1410,7 +1423,7 @@ public void OnWeaponSwitch(int client, int weapon)
 		RazorbackDeployed[client] = INVALID_ENT_REFERENCE;
 	}
 	
-	if(ClassSwap[client] && !RazorbackDeployed[client] && weapon > MaxClients)
+	if(ClassSwap[client] && RazorbackDeployed[client] == INVALID_ENT_REFERENCE && weapon > MaxClients)
 	{
 		TFClassType class = TF2_GetWeaponClass(weapon, ClassSwap[client]);
 		TF2_SetPlayerClass(client, class, _, false);
@@ -1525,9 +1538,12 @@ public void OnWeaponSwitch(int client, int weapon)
 			if(entity != INVALID_ENT_REFERENCE)
 				TF2_RemoveWearable(client, entity);
 			
-			entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
-			if(entity != -1)
-				SetEntProp(entity, Prop_Send, "m_fEffects", 0);
+			if(RazorbackDeployed[client] == INVALID_ENT_REFERENCE)
+			{
+				entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
+				if(entity != -1)
+					SetEntProp(entity, Prop_Send, "m_fEffects", 0);
+			}
 			
 			WeapRef[client] = INVALID_ENT_REFERENCE;
 			HandRef[client] = INVALID_ENT_REFERENCE;
@@ -1836,16 +1852,16 @@ void TimescaleSound(int client, float current, float newvalue)
 	{
 		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speedup", client))
 		{
-			EmitSoundToAll("replay/exitperformancemode.wav");
-			EmitSoundToAll("replay/exitperformancemode.wav");
+			EmitSoundToAll("replay/enterperformancemode.wav");
+			EmitSoundToAll("replay/enterperformancemode.wav");
 		}
 	}
 	else if(current != newvalue)
 	{
 		if(!client || !FF2R_EmitBossSoundToAll("sound_time_speeddown", client))
 		{
-			EmitSoundToAll("replay/enterperformancemode.wav");
-			EmitSoundToAll("replay/enterperformancemode.wav");
+			EmitSoundToAll("replay/exitperformancemode.wav");
+			EmitSoundToAll("replay/exitperformancemode.wav");
 		}	
 	}
 }
@@ -2116,7 +2132,7 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	
 	//DispatchSpawn(entity);
 	SDKCall(SDKInitDroppedWeapon, entity, client, weapon, false, true);
-	SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 100.0);
+	SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 1.0);
 	
 	TeleportEntity(entity, pos1);
 	return entity;
@@ -2335,6 +2351,7 @@ void JumperAttribApply(int client, int index, float &current, float multi)
 		}
 		
 		current = multi;
+		Debug("%d now %f (%f)", index, value, current);
 		
 		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
@@ -2361,6 +2378,7 @@ void JumperAttribRestore(int client, int index, float &current)
 		}
 		
 		current = 1.0;
+		Debug("%d restored %f (%f)", index, value, current);
 		
 		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
@@ -2443,6 +2461,14 @@ void GetVectorAnglesTwoPoints(float startPos[3], float endPos[3], float angles[3
 	tmpVec[1] = endPos[1] - startPos[1];
 	tmpVec[2] = endPos[2] - startPos[2];
 	GetVectorAngles(tmpVec, angles);
+}
+
+float Fabs(float value)
+{
+	if(value < 0.0)
+		return -value;
+	
+	return value;
 }
 
 bool IsInvuln(int client)
