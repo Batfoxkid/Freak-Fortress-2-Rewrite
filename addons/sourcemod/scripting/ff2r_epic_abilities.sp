@@ -1873,37 +1873,41 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
 		Debug("Attempted Steal");
-		if(FF2R_GetBossData(victim))
+		bool isBoss = view_as<bool>(FF2R_GetBossData(victim));
+		
+		int weapon = (TF2_IsPlayerInCondition(victim, TFCond_Cloaked) || GetEntProp(victim, Prop_Send, "m_bFeignDeathReady")) ? GetPlayerWeaponSlot(victim, TFWeaponSlot_Building) : GetEntPropEnt(victim, Prop_Send, "m_hActiveWeapon");
+		if(weapon != -1)
 		{
-			int health = GetClientHealth(attacker);
-			
-			TF2_RegeneratePlayer(attacker);
-			
-			SetEntityHealth(attacker, health + (600 * StealNext[attacker]));
-			FF2R_UpdateBossAttributes(attacker);
-			
-			StealNext[attacker] = 0;
-		}
-		else
-		{
-			int weapon = (TF2_IsPlayerInCondition(victim, TFCond_Cloaked) || GetEntProp(victim, Prop_Send, "m_bFeignDeathReady")) ? GetPlayerWeaponSlot(victim, TFWeaponSlot_Building) : GetEntPropEnt(victim, Prop_Send, "m_hActiveWeapon");
-			if(weapon != -1)
+			int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+			Debug("Valid Weapon %d", index);
+			switch(index)
 			{
-				int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-				Debug("Valid Weapon %d", index);
-				switch(index)
+				case 5, 195:	// Fists are immune
 				{
-					case 5, 195:	// Fists are immune
-						return Plugin_Continue;
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					
+					return Plugin_Continue;
 				}
-				
-				char classname[36];
-				if(GetEntityClassname(weapon, classname, sizeof(classname)))
+			}
+			
+			char classname[36];
+			if(GetEntityClassname(weapon, classname, sizeof(classname)))
+			{
+				if(!StrContains(classname, "tf_weapon_robot_arm") ||
+				   !StrContains(classname, "tf_weapon_builder") ||
+				   !StrContains(classname, "tf_weapon_spellbook") ||
+				   !StrContains(classname, "tf_weapon_grapplinghook"))
 				{
-					if(!StrContains(classname, "tf_weapon_robot_arm") ||
-					   !StrContains(classname, "tf_weapon_builder") ||
-					   !StrContains(classname, "tf_weapon_spellbook") ||
-					   !StrContains(classname, "tf_weapon_grapplinghook"))
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					else
 					{
 						index = CreateEntityByName("env_explosion");
 						if(index != -1)
@@ -1912,7 +1916,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 							
 							DispatchKeyValueFloat(index, "DamageForce", float(GetClientHealth(victim)));
 							SetEntPropEnt(index, Prop_Data, "m_hOwnerEntity", attacker);
-
+							
 							DispatchSpawn(index);
 							
 							float pos[3];
@@ -1927,8 +1931,16 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						damagetype |= DMG_ALWAYSGIB;
 						return Plugin_Changed;
 					}
+				}
 					
-					if(!StrContains(classname, "tf_weapon_pda_engineer"))
+				if(!StrContains(classname, "tf_weapon_pda_engineer"))
+				{
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					else
 					{
 						StealNext[attacker]--;
 						TF2_RemoveWeaponSlot(victim, TFWeaponSlot_Grenade);
@@ -1953,8 +1965,16 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
-					
-					if(!StrContains(classname, "tf_weapon_pda_spy"))
+				}
+				
+				if(!StrContains(classname, "tf_weapon_pda_spy"))
+				{
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					else
 					{
 						StealNext[attacker]--;
 						TF2_RemoveCondition(victim, TFCond_Disguised);
@@ -1970,8 +1990,16 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
-					
-					if(!StrContains(classname, "tf_weapon_invis"))
+				}
+				
+				if(!StrContains(classname, "tf_weapon_invis"))
+				{
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					else
 					{
 						StealNext[attacker]--;
 						SetEntProp(victim, Prop_Send, "m_bFeignDeathReady", false);
@@ -2010,8 +2038,16 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
 					}
-					
-					if(StrEqual(classname, "tf_weapon_lunchbox"))
+				}
+				
+				if(StrEqual(classname, "tf_weapon_lunchbox"))
+				{
+					if(isBoss)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					else
 					{
 						StealNext[attacker]--;
 						TF2_RemoveItem(victim, weapon);
@@ -2026,7 +2062,77 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
 						return Plugin_Handled;
 					}
+				}
+				
+				if(isBoss)
+				{
+					if(ClassSwap[attacker])
+					{
+						int slot = -1;
+						TFClassType class = TF2_GetDropClass(index, ClassSwap[attacker], slot);
+						if(slot == -1 || slot >= TFWeaponSlot_Melee)
+						{
+							StealFromBoss(victim, attacker);
+							return Plugin_Handled;
+						}
+						
+						TF2_RemoveWeaponSlot(attacker, slot);
+						TF2_SetPlayerClass(attacker, class, _, false);
+					}
+					else if(TF2_GetClassnameSlot(classname) >= TFWeaponSlot_Melee)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
 					
+					weapon = CreateEntityByName(classname);
+					if(weapon == -1)
+					{
+						StealFromBoss(victim, attacker);
+						return Plugin_Handled;
+					}
+					
+					StealNext[attacker]--;
+					
+					SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", index);
+					SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
+					
+					SetEntProp(weapon, Prop_Send, "m_iEntityQuality", 5);
+					SetEntProp(weapon, Prop_Send, "m_iEntityLevel", 101);
+					
+					DispatchSpawn(weapon);
+					SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", true);
+					SetEntProp(weapon, Prop_Send, "m_iAccountID", GetSteamAccountID(attacker, false));
+					
+					EquipPlayerWeapon(attacker, weapon);
+					
+					float value = 1.0;
+					Address attrib = TF2Attrib_GetByDefIndex(weapon, 2);
+					if(attrib != Address_Null)
+						value = TF2Attrib_GetValue(attrib);
+					
+					TF2Attrib_SetByDefIndex(weapon, 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
+					
+					int entity = CreateEntityByName("item_ammopack_full");
+					if(entity != -1)
+					{
+						DispatchKeyValue(entity, "OnPlayerTouch", "!self,Kill,,0,-1");
+						DispatchSpawn(entity);
+						
+						SetVariantString("OnUser1 !self:Kill::1:1,0,1");
+						AcceptEntityInput(entity, "AddOutput");
+						AcceptEntityInput(entity, "FireUser1");
+						
+						float pos[3];
+						GetClientAbsOrigin(attacker, pos);
+						pos[2] += 16.0;
+						
+						TeleportEntity(entity, pos, NULL_VECTOR, NULL_VECTOR);
+					}
+					return Plugin_Handled;
+				}
+				else
+				{
 					float pos[3], ang[3];
 					GetClientEyePosition(victim, pos);
 					GetClientEyeAngles(victim, ang);
@@ -2096,9 +2202,28 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					}
 				}
 			}
+			else if(isBoss)
+			{
+				StealFromBoss(victim, attacker);
+				return Plugin_Handled;
+			}
 		}
 	}
 	return Plugin_Continue;
+}
+
+void StealFromBoss(int victim, int attacker)
+{
+	TF2_StunPlayer(victim, 0.4, 0.5, TF_STUNFLAG_SLOWDOWN, attacker);
+	
+	int health = GetClientHealth(attacker);
+	
+	TF2_RegeneratePlayer(attacker);
+	
+	SetEntityHealth(attacker, health + (600 * StealNext[attacker]));
+	FF2R_UpdateBossAttributes(attacker);
+	
+	StealNext[attacker] = 0;
 }
 
 int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float ang[3])
