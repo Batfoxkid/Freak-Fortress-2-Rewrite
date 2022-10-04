@@ -81,7 +81,7 @@ jobs:
         working-directory: ./
       
       - name: Full Compile
-        run: bash scripts/compile.sh
+        run: bash compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package Sorting

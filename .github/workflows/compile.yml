@@ -25,7 +25,7 @@ jobs:
         working-directory: ./
       
       - name: Minimum Compile ${{ matrix.sm-version }}
-        run: bash scripts/compile.sh
+        run: bash compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Install Optional Includes
