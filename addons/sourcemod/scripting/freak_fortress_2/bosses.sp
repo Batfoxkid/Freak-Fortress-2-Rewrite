@@ -1601,7 +1601,6 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	
 	DHook_HookBoss(client);
 	Events_CheckAlivePlayers(_, false);
-	SDKHook_BossCreated(client);
 	
 	SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
 	SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);

@@ -3,7 +3,6 @@
 	void SDKHook_LibraryAdded(const char[] name)
 	void SDKHook_LibraryRemoved(const char[] name)
 	void SDKHook_HookClient(int client)
-	void SDKHook_BossCreated(int client)
 */
 
 #pragma semicolon 1
@@ -22,7 +21,8 @@ enum CritType
 };
 #endif
 
-static char SoundCache[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
+static char SoundCache[PLATFORM_MAX_PATH];
+static int SoundCacheTarget;
 static bool OTDLoaded;
 
 void SDKHook_PluginStart()
@@ -67,11 +67,6 @@ void SDKHook_HookClient(int client)
 	
 	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
 	SDKHook(client, SDKHook_WeaponSwitchPost, SDKHook_SwitchPost);
-}
-
-void SDKHook_BossCreated(int client)
-{
-	SoundCache[client][0] = 0;
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -475,9 +470,12 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 			sound.Volume = volume;
 			sound.Pitch = pitch;
 			
-			bool found = StrEqual(SoundCache[client], sample);
+			bool found = (SoundCacheTarget == entity && StrEqual(SoundCache, sample));
 			if(!found)
-				strcopy(SoundCache[client], sizeof(SoundCache[]), sample);
+			{
+				strcopy(SoundCache, sizeof(SoundCache), sample);
+				SoundCacheTarget = entity;
+			}
 			
 			if(found || Bosses_GetRandomSound(client, "catch_replace", sound, sample) || Bosses_GetRandomSound(client, "catch_phrase", sound))
 			{
@@ -522,8 +520,13 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 			
 			if(Client(client).BlockVo)
 				return Plugin_Stop;
+			
+			return Plugin_Continue;
 		}
 	}
+	
+	SoundCache[0] = 0;
+	SoundCacheTarget = entity;
 	return Plugin_Continue;
 }
 

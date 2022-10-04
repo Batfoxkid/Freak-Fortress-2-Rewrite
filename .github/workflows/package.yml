@@ -5,12 +5,12 @@ permissions:
 
 on:
   push:
-    branches: main
+    branches: epic-scout
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '*')"
+    if: "contains(github.event.head_commit.message, '[')"
     
     steps:
       - name: Install Checkout
@@ -28,42 +28,29 @@ jobs:
         working-directory: ./
       
       - name: Full Compile
-        run: |
-          mkdir -p plugins
-          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
-          for file in $(find -type f -name "ff2r_*.sp")
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" -o "plugins/$file" $file
-          done
+        run: bash scripts/compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package Sorting
-        run: |
-          for file in $(find -type f -name "*.smx")
-          do
-            echo -e "\nPlugin at: $file..."
-          done
-          mkdir -p assets
-          mkdir -p plugin
-          cp -r addons/sourcemod/scripting/plugins plugin
-          cp -r addons/sourcemod/translations plugin
-          cp -r addons/sourcemod/gamedata plugin
-          cp -r addons/sourcemod/data plugin
-          cp -r addons/sourcemod/configs plugin
-          cp -r models assets
-          cp -r materials assets
-          cp -r sound assets
+        run: bash scripts/package.sh
       
       - name: Package Plugin
         uses: montudor/action-zip@v1
+        if: "contains(github.event.head_commit.message, '[M]')"
         with:
           args: zip -qq -r FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip plugin
       
-      - name: Package Assets
+      - name: Package Defaults
         uses: montudor/action-zip@v1
+        if: "contains(github.event.head_commit.message, '[D]')"
         with:
-          args: zip -qq -r Assets-${{env.PLUGIN_VERSION}}.zip assets
+          args: zip -qq -r Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/ff2r_defaults
+      
+      - name: Package Epic Scout
+        uses: montudor/action-zip@v1
+        if: "contains(github.event.head_commit.message, '[E]')"
+        with:
+          args: zip -qq -r Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/epic_scout
       
       - name: Release
         uses: softprops/action-gh-release@master
@@ -71,11 +58,12 @@ jobs:
           tag_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           files: |
             FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-            Assets-${{env.PLUGIN_VERSION}}.zip
+            Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
   
   nonrelease:
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, '*')"
+    if: "!contains(github.event.head_commit.message, '[')"
     
     steps:
       - name: Install Checkout
@@ -93,32 +81,11 @@ jobs:
         working-directory: ./
       
       - name: Full Compile
-        run: |
-          mkdir -p plugins
-          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
-          for file in $(find -type f -name "ff2r_*.sp")
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" -o "plugins/$file" $file
-          done
+        run: bash scripts/compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Package Sorting
-        run: |
-          for file in $(find -type f -name "*.smx")
-          do
-            echo -e "\nPlugin at: $file..."
-          done
-          mkdir -p assets
-          mkdir -p plugin
-          cp -r addons/sourcemod/scripting/plugins plugin
-          cp -r addons/sourcemod/translations plugin
-          cp -r addons/sourcemod/gamedata plugin
-          cp -r addons/sourcemod/data plugin
-          cp -r addons/sourcemod/configs plugin
-          cp -r models assets
-          cp -r materials assets
-          cp -r sound assets
+        run:  bash scripts/package.sh
       
       - name: Upload Plugin
         uses: actions/upload-artifact@master
@@ -126,8 +93,14 @@ jobs:
           name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./plugin
       
-      - name: Upload Assets
+      - name: Upload Defaults
         uses: actions/upload-artifact@master
         with:
-          name: Assets-${{env.PLUGIN_VERSION}}
-          path: ./assets
+          name: Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./custom/ff2r_defaults
+      
+      - name: Upload Epic Scout
+        uses: actions/upload-artifact@master
+        with:
+          name: Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./custom/epic_scout

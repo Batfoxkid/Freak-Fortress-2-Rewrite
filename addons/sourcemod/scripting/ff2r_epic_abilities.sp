@@ -2011,6 +2011,22 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						return Plugin_Handled;
 					}
 					
+					if(StrEqual(classname, "tf_weapon_lunchbox"))
+					{
+						StealNext[attacker]--;
+						TF2_RemoveItem(victim, weapon);
+						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
+						
+						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
+						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
+							FakeClientCommand(victim, "use %s", classname);
+						
+						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
+						
+						SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
+						return Plugin_Handled;
+					}
+					
 					float pos[3], ang[3];
 					GetClientEyePosition(victim, pos);
 					GetClientEyeAngles(victim, ang);
