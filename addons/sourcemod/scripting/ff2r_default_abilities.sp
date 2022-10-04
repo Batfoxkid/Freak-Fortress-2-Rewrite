@@ -1181,19 +1181,18 @@ public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 	if(!BossTimers[client])
 		BossTimers[client] = new ArrayList();
 	
+	AbilityData ability = cfg.GetAbility("special_democharge");
+	if(ability.IsMyPlugin())
+		SpecialCharge[client] = true;
+	
 	if(!setup || FF2R_GetGamemodeType() != 2)
 	{
-		AbilityData ability;
 		if(!AnchorStartTime[client])
 		{
 			ability = cfg.GetAbility("special_anchor");
 			if(ability.IsMyPlugin())
 				AnchorStartTime[client] = 1.0;
 		}
-		
-		ability = cfg.GetAbility("special_democharge");
-		if(ability.IsMyPlugin())
-			SpecialCharge[client] = true;
 		
 		if(!MobilityEnabled[client])
 		{
