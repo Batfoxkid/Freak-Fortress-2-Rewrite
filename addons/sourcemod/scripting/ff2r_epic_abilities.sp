@@ -626,7 +626,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	}
 	else if(!StrContains(ability, "rage_dodge_hitscan", false))
 	{
-		float timescale = cfg.GetFloat("timescale", 0.5);
+		float timescale = cfg.GetFloat("timescale", 1.0);
 		if(timescale <= 0.0)
 			timescale = 1.0;
 		
@@ -1868,7 +1868,7 @@ void TimescaleSound(int client, float current, float newvalue)
 
 public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
-	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] &&
+	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && RazorbackDeployed[victim] == INVALID_ENT_REFERENCE &&
 	  ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM) &&
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
@@ -2112,6 +2112,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						value = TF2Attrib_GetValue(attrib);
 					
 					TF2Attrib_SetByDefIndex(weapon, 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
+					TF2Attrib_SetByDefIndex(weapon, 28, 0.1);
 					
 					int entity = CreateEntityByName("item_ammopack_full");
 					if(entity != -1)
