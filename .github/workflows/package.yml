@@ -31,20 +31,20 @@ jobs:
         run: bash scripts/compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
-      - name: Package Sorting
+      - name: Setup Package
         run: bash scripts/package.sh
       
-      - name: Package Plugin
+      - name: Package Full
         uses: montudor/action-zip@v1
         if: "contains(github.event.head_commit.message, '[M]')"
         with:
-          args: zip -qq -r FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip plugin
+          args: zip -qq -r New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/ff2r_defaults
       
-      - name: Package Defaults
+      - name: Package Update
         uses: montudor/action-zip@v1
-        if: "contains(github.event.head_commit.message, '[D]')"
+        if: "contains(github.event.head_commit.message, '[M]')"
         with:
-          args: zip -qq -r Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/ff2r_defaults
+          args: zip -qq -r Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip update
       
       - name: Package Epic Scout
         uses: montudor/action-zip@v1
@@ -57,8 +57,8 @@ jobs:
         with:
           tag_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           files: |
-            FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-            Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
   
   nonrelease:
@@ -87,17 +87,17 @@ jobs:
       - name: Package Sorting
         run:  bash scripts/package.sh
       
-      - name: Upload Plugin
+      - name: Upload Full
         uses: actions/upload-artifact@master
         with:
-          name: FF2R-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./plugin
-      
-      - name: Upload Defaults
-        uses: actions/upload-artifact@master
-        with:
-          name: Default-Bosses-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          name: New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./custom/ff2r_defaults
+      
+      - name: Upload Update
+        uses: actions/upload-artifact@master
+        with:
+          name: Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./update
       
       - name: Upload Epic Scout
         uses: actions/upload-artifact@master

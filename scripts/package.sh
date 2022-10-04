@@ -5,14 +5,17 @@ cp addons/sourcemod/configs/freak_fortress_2/non-default/epicscout.cfg custom/ep
 cp addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx custom/epic_scout/addons/sourcemod/plugins/ff2r_epic_abilities.smx
 rm addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx
 
-# Default Package
+# Update Package
+mkdir -p plugin/addons/sourcemod
+cp -r addons/sourcemod/scripting/plugins update
+cp -r addons/sourcemod/translations update
+cp -r addons/sourcemod/gamedata update
+
+# Full Package
 rmdir addons/sourcemod/configs/freak_fortress_2/non-default
 mkdir -p custom/ff2r_defaults/addons/sourcemod
-cp -r addons/sourcemod/configs custom/ff2r_defaults/addons/sourcemod/
-
-# Main Package
-mkdir -p plugin/addons/sourcemod
-cp -r addons/sourcemod/scripting/plugins plugin/addons/sourcemod
-cp -r addons/sourcemod/translations plugin/addons/sourcemod
-cp -r addons/sourcemod/gamedata plugin/addons/sourcemod
-cp -r addons/sourcemod/data plugin/addons/sourcemod
+cp -r addons/sourcemod/scripting/plugins custom/ff2r_defaults/addons/sourcemod
+cp -r addons/sourcemod/translations custom/ff2r_defaults/addons/sourcemod
+cp -r addons/sourcemod/gamedata custom/ff2r_defaults/addons/sourcemod
+cp -r addons/sourcemod/data custom/ff2r_defaults/addons/sourcemod
+cp -r addons/sourcemod/configs custom/ff2r_defaults/addons/sourcemod
