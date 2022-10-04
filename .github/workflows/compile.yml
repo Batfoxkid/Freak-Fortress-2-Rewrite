@@ -26,9 +26,9 @@ jobs:
       
       - name: Minimum Compile ${{ matrix.sm-version }}
         run: |
-        spcomp -E -O2 -v2 -i "include" -o freak_fortress_2.sp
-        spcomp -E -O2 -v2 -i "include" -o ff2r_default_abilities.sp
-        spcomp -E -O2 -v2 -i "include" -o ff2r_menu_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o ff2r_default_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Install Optional Includes
