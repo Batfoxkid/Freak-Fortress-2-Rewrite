@@ -388,21 +388,75 @@ methodmap AbilityData < ConfigData
 
 methodmap BossData < ConfigData
 {
+	// Get's the ConfigMap of the boss the player's playing as
+	// 
+	// @note			Don't close this handle
+	// @param client	Client index
+	// @error			Invalid client index
+	// @return			ConfigMap handle if found, null otherwise
 	public BossData(int client)
 	{
 		return view_as<BossData>(FF2R_GetBossData(client));
 	}
 	
+	// Get's the ConfigMap of the boss the player's playing as
+	// 
+	// @note		Don't close this handle
+	// @param key	Get's a section from a name
+	// @return		ConfigMap handle if found, null otherwise
 	public AbilityData GetAbility(const char[] key)
 	{
 		return view_as<AbilityData>(view_as<ConfigMap>(this).GetSection(key));
 	}
 	
+	// Creates or removes a boss on a player
+	// 
+	// @note			Handle input is cloned and calling plugin may still DeleteCfg when necessary
+	// @param client	Client index
+	// @param team		Team number the player is assigned to
+	// @error			Invalid client index or client is not in game
+	// @return			ConfigMap handle of created boss, null given on boss remove
 	public BossData CreateBoss(int client, int team = 0)
 	{
 		return FF2R_CreateBoss(client, this, team);
 	}
 	
+	// Gets charge from a charge slot
+	//
+	// @param slot	Slot number
+	// @return	Amount of charge, eg. 100% RAGE returns 100.0
+	public float GetCharge(int slot)
+	{
+		char buffer[8];
+		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
+		return this.GetFloat(buffer);
+	}
+	
+	// Sets charge from a charge slot
+	// 
+	// @param slot	Slot number
+	// @param value	Amount of charge
+	public void SetCharge(int slot, float value)
+	{
+		char buffer[8];
+		FormatEx(buffer, sizeof(buffer), "charge%d", slot);
+		this.SetFloat(buffer, value);
+	}
+	
+	// Index where the boss was generated from in the boss list, -1 if none
+	property int Special
+	{
+		public get()
+		{
+			return this.GetInt("special", -1);
+		}
+		public set(int value)
+		{
+			this.SetInt("special", value);
+		}
+	}
+	
+	// Amount of lives remaining on user
 	property int Lives
 	{
 		public get()
@@ -415,6 +469,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// Starting amount of lives
 	property int MaxLives
 	{
 		public get()
@@ -427,6 +482,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// Starting health and when losing a life
 	property int MaxHealth
 	{
 		public get()
@@ -439,6 +495,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// Amount of damage to fill up 100% of RAGE
 	property float RageDamage
 	{
 		public get()
@@ -451,6 +508,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// Minimum amount of rage required to activate
 	property float RageMin
 	{
 		public get()
@@ -463,6 +521,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// Maximum amount of rage the boss can hold
 	property float RageMax
 	{
 		public get()
@@ -475,6 +534,10 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// How rage is consumed when activating
+	// 0 = Default, removes all rage on use
+	// 1 = Only consume minimum required on use
+	// 2 = Can't activate rage
 	property int RageMode
 	{
 		public get()
@@ -487,6 +550,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
+	// If to block normal class voicelines
 	property bool BlockVo
 	{
 		public get()
@@ -496,6 +560,192 @@ methodmap BossData < ConfigData
 		public set(bool value)
 		{
 			this.SetBool("sound_block_vo", value);
+		}
+	}
+	
+	// If can randomly critical hit
+	property bool Crits
+	{
+		public get()
+		{
+			return this.GetBool("crits", true);
+		}
+		public set(bool value)
+		{
+			this.SetBool("crits", value);
+		}
+	}
+	
+	// If to triple all damage that deals less than 160
+	property bool Triple
+	{
+		public get()
+		{
+			return this.GetBool("triple");
+		}
+		public set(bool value)
+		{
+			this.SetBool("triple", value);
+		}
+	}
+	
+	// If to allow rocket jumping, 2 means to also deal self damage
+	property int Knockback
+	{
+		public get()
+		{
+			return this.GetInt("knockback");
+		}
+		public set(int value)
+		{
+			this.SetInt("knockback", value);
+		}
+	}
+	
+	// If to allow picking up health/ammo kits
+	// 0 = Allow None
+	// 1 = Allow Health
+	// 2 = Allow Ammo
+	// 3 = Allow Both
+	property int Pickups
+	{
+		public get()
+		{
+			return this.GetInt("pickups");
+		}
+		public set(int value)
+		{
+			this.SetInt("pickups", value);
+		}
+	}
+	
+	// The game time since the last backstab taken
+	property float LastStabTime
+	{
+		public get()
+		{
+			return this.GetFloat("laststabtime");
+		}
+		public set(float value)
+		{
+			this.SetFloat("laststabtime", value);
+		}
+	}
+	
+	// The last amount of trigger damage taken
+	property float LastTriggerDamage
+	{
+		public get()
+		{
+			return this.GetFloat("lasttriggerdamage");
+		}
+		public set(float value)
+		{
+			this.SetFloat("lasttriggerdamage", value);
+		}
+	}
+	
+	// The game time since the last trigger damage taken
+	property float LastTriggerTime
+	{
+		public get()
+		{
+			return this.GetFloat("lasttriggertime");
+		}
+		public set(float value)
+		{
+			this.SetFloat("lasttriggertime", value);
+		}
+	}
+	
+	// The current kill spree for the sound
+	property int KillSpree
+	{
+		public get()
+		{
+			return this.GetInt("killspree");
+		}
+		public set(int value)
+		{
+			this.SetInt("killspree", value);
+		}
+	}
+	
+	// The game time since the last kill
+	property float LastKillTime
+	{
+		public get()
+		{
+			return this.GetFloat("lastkilltime");
+		}
+		public set(float value)
+		{
+			this.SetFloat("lastkilltime", value);
+		}
+	}
+	
+	// The game time until passive charge slots are activated
+	property float PassiveAt
+	{
+		public get()
+		{
+			return this.GetFloat("passivetimeat");
+		}
+		public set(float value)
+		{
+			this.SetFloat("passivetimeat", value);
+		}
+	}
+	
+	// If the boss is currently speaking in this SoundHook
+	property bool Speaking
+	{
+		public get()
+		{
+			return this.GetBool("speaking");
+		}
+		public set(bool value)
+		{
+			this.SetBool("speaking", value);
+		}
+	}
+	
+	// RPS lose count
+	property int RPSHit
+	{
+		public get()
+		{
+			return this.GetInt("rpshit");
+		}
+		public set(int value)
+		{
+			this.SetInt("rpshit", value);
+		}
+	}
+	
+	// First RPS damage taken
+	property int RPSDamage
+	{
+		public get()
+		{
+			return this.GetInt("rpsdmg");
+		}
+		public set(int value)
+		{
+			this.SetInt("rpsdmg", value);
+		}
+	}
+	
+	// Multiplies the amount of rage gained from the next damage taken
+	property float RageDebuff
+	{
+		public get()
+		{
+			return this.GetFloat("ragedebuff", 1.0);
+		}
+		public set(float value)
+		{
+			this.SetFloat("ragedebuff", value);
 		}
 	}
 }
@@ -528,6 +778,17 @@ native BossData FF2R_GetBossData(int client);
  * @noreturn
  */
 native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards = false);
+
+/**
+ * Get's the ConfigMap of the boss in the boss list
+ * 
+ * @note			Don't close this handle
+ * 
+ * @param special	Special index
+ * 
+ * @return			ConfigMap handle if found, null otherwise
+ */
+native BossData FF2R_GetSpecialData(int client);
 
 /**
  * Creates or removes a boss on a player
@@ -628,12 +889,9 @@ native bool FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client, bool forwards = true);
 native bool FF2R_GetSpecialData(int special);
 native bool FF2R_CreateBoss(int client);
-//forward Action FF2R_OnAbilityPre(int client, const char[] ability, any cfg, bool &result);
 forward void FF2R_OnAbility(int client, const char[] ability);
 forward void FF2R_OnAbilityPost(int client, const char[] ability);
-//forward void FF2R_OnBossCreated(int client, any cfg, bool setup);
-//forward Action FF2R_OnBossPrecache(any cfg, bool &enabled);
-//forward void FF2R_OnBossPrecached(any cfg, bool enabled, int index);
+forward void FF2R_OnBossModifier(int client);
 
 #endif
 
@@ -653,6 +911,15 @@ public void __pl_ff2r_SetNTVOptional()
 {
 	MarkNativeAsOptional("FF2R_DoBossSlot");
 	MarkNativeAsOptional("FF2R_EmitBossSound");
+	MarkNativeAsOptional("FF2R_GetClientMinion");
+	MarkNativeAsOptional("FF2R_SetClientMinion");
+	MarkNativeAsOptional("FF2R_GetPluginHandle");
+	MarkNativeAsOptional("FF2R_GetGamemodeType");
+	MarkNativeAsOptional("FF2R_StartLagCompensation");
+	MarkNativeAsOptional("FF2R_FinishLagCompensation");
+	MarkNativeAsOptional("FF2R_UpdateBossAttributes");
+	MarkNativeAsOptional("FF2R_GetClientHud");
+	MarkNativeAsOptional("FF2R_SetClientHud");
 	MarkNativeAsOptional("FF2R_GetBossData");
 	MarkNativeAsOptional("FF2R_SetBossData");
 	MarkNativeAsOptional("FF2R_GetSpecialData");

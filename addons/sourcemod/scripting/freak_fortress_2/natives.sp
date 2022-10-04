@@ -67,7 +67,7 @@ public any Native_SetBossData(Handle plugin, int params)
 	}
 	
 	Client(client).Cfg = cfg;
-	if(forwards)
+	if(forwards && Client(client).Cfg)
 		Forward_OnBossCreated(client, cfg, GetRoundStatus() == 1);
 	
 	return 0;
