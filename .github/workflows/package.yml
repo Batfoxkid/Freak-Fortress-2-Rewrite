@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: epic-scout
+    branches: main
 
 jobs:
   release:
@@ -84,8 +84,8 @@ jobs:
         run: bash compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}
       
-      - name: Package Sorting
-        run:  bash scripts/package.sh
+      - name: Setup Package
+        run: bash scripts/package.sh
       
       - name: Upload Full
         uses: actions/upload-artifact@master
