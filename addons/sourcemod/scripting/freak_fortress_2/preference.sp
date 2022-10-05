@@ -374,6 +374,9 @@ public Action Preference_BossMenuCmd(int client, int args)
 					index = GetBlacklistCount(client, index);
 					if(index < blacklist)
 					{
+						if(!BossListing[client])
+							BossListing[client] = new ArrayList();
+						
 						UpdateDataBase[client] = true;
 						BossListing[client].Push(special);
 						FReplyToCommand(client, "%t (%d / %d)", "Boss Blacklisted", buffer, index+1, blacklist);
@@ -385,6 +388,9 @@ public Action Preference_BossMenuCmd(int client, int args)
 				}
 				else
 				{
+					if(!BossListing[client])
+						BossListing[client] = new ArrayList();
+					
 					UpdateDataBase[client] = true;
 					BossListing[client].Push(special);
 					FReplyToCommand(client, "%t", "Boss Whitelisted", buffer);

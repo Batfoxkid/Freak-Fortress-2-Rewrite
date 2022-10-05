@@ -1506,7 +1506,7 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int tea
 	
 	bool admin = view_as<bool>(cfg.Get("admin", buffer1, sizeof(buffer1)));
 	if(admin)
-		blocked = (playing || !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer1), true));
+		blocked = !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer1), true);
 	
 	if(!admin || blocked)
 	{

@@ -224,6 +224,7 @@ bool AnimSwap[MAXTF2PLAYERS];
 int HandSwap[MAXTF2PLAYERS];
 bool CanPickup[MAXTF2PLAYERS];
 int StealNext[MAXTF2PLAYERS];
+int SetHealthTo[MAXTF2PLAYERS];
 
 bool HookedRazorback;
 UserMsg PlayerShieldBlocked;
@@ -415,6 +416,8 @@ public void OnMapEnd()
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
+	SetHealthTo[client] = 0;
+	
 	if(!CanPickup[client] && !ClassSwap[client])
 	{
 		AbilityData ability = boss.GetAbility("rage_weapon_steal");
@@ -721,7 +724,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				
 				RazorbackRef[client] = EntIndexToEntRef(weapon);
 				
-				SetEntProp(weapon, Prop_Send, "m_iClip1", ability.GetInt("durability") / 10);
+				int durability = ability.GetInt("durability");
+				ability.SetInt("current", durability);
+				SetEntProp(weapon, Prop_Send, "m_iClip1", durability / 10);
 			}
 			
 			if(weapon != GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
@@ -743,6 +748,13 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				HookedWeaponSwap[client] = true;
 				SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
 			}
+		}
+		
+		if(SetHealthTo[client])
+		{
+			SetEntityHealth(client, SetHealthTo[client]);
+			FF2R_UpdateBossAttributes(client);
+			SetHealthTo[client] = 0;
 		}
 	}
 }
@@ -787,7 +799,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if(DodgeFor[client])
 	{
-		if(DodgeFor[client] < GetGameTime())
+		if(DodgeFor[client] < GetGameTime() || !IsPlayerAlive(client))
 		{
 			DodgeFor[client] = 0.0;
 			SDKUnhook(client, SDKHook_TraceAttack, DodgeTraceAttack);
@@ -800,7 +812,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 	
-	if(WallJumper[client] && !(GetEntityFlags(client) & FL_ONGROUND) && CvarUnlag.BoolValue && GetEntProp(client, Prop_Data, "m_bLagCompensation") && !IsFakeClient(client))
+	if(WallJumper[client] && IsPlayerAlive(client) && !(GetEntityFlags(client) & FL_ONGROUND) && CvarUnlag.BoolValue && GetEntProp(client, Prop_Data, "m_bLagCompensation") && !IsFakeClient(client))
 	{
 		WallInLagComp = true;
 		SDKCall(SDKCanAirDash, client);
@@ -835,7 +847,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		JumperAttribApply(client, 610, WallAirMulti[client], value);
 	}
 	
-	if(HasAbility[client])
+	if(HasAbility[client] && IsPlayerAlive(client))
 	{
 		BossData boss = FF2R_GetBossData(client);
 		AbilityData ability;
@@ -2217,14 +2229,10 @@ void StealFromBoss(int victim, int attacker)
 {
 	TF2_StunPlayer(victim, 0.4, 0.5, TF_STUNFLAG_SLOWDOWN, attacker);
 	
-	int health = GetClientHealth(attacker);
+	SetHealthTo[attacker] = GetClientHealth(attacker) + (600 * StealNext[attacker]);
+	StealNext[attacker] = 0;
 	
 	TF2_RegeneratePlayer(attacker);
-	
-	SetEntityHealth(attacker, health + (600 * StealNext[attacker]));
-	FF2R_UpdateBossAttributes(attacker);
-	
-	StealNext[attacker] = 0;
 }
 
 int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float ang[3])
@@ -2318,10 +2326,10 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 			AbilityData ability;
 			if(RazorbackRef[victim] != INVALID_ENT_REFERENCE && boss && (ability = boss.GetAbility("special_razorback_shield")))
 			{
-				float hp = ability.GetFloat("durability");
+				float hp = ability.GetFloat("current");
 				if(hp > damage)
 				{
-					ability.SetFloat("durability", hp - damage);
+					ability.SetFloat("current", hp - damage);
 					EmitGameSoundToAll(SHIELD_HIT, victim, _, victim, pos1);
 					
 					int entity = EntRefToEntIndex(RazorbackRef[victim]);
