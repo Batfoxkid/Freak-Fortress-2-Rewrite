@@ -2,6 +2,9 @@
  * Remade FF2 formula parser by Nergal.
  */
 
+#pragma semicolon 1
+#pragma newdecls required
+
 enum {
 	TokenInvalid,
 	TokenNum,

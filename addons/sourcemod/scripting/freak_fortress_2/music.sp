@@ -13,6 +13,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 enum struct MusicEnum
 {
@@ -34,9 +35,7 @@ void Music_PluginStart()
 
 void Music_ClearPlaylist()
 {
-	if(Playlist)
-		delete Playlist;
-	
+	delete Playlist;
 	Playlist = new ArrayList(sizeof(MusicEnum));
 }
 

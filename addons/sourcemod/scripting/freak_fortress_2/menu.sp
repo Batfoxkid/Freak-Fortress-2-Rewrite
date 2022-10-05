@@ -6,6 +6,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool InMainMenu[MAXTF2PLAYERS];
 
@@ -40,12 +41,12 @@ public Action Menu_MainMenuCmd(int client, int args)
 {
 	if(!client)
 	{
-		PrintToServer("Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+		PrintToServer("Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		
-		if(CvarDebug.BoolValue)
+		if(Cvar[Debugging].BoolValue)
 			PrintToServer("Debug Mode Enabled");
 		
-		PrintToServer("Status: %s", Charset<0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
+		PrintToServer("Status: %s", Charset < 0 ? "Disabled" : Enabled ? "Gamemode Running" : "Ready");
 		
 		if(Charset < 0)
 		{
@@ -81,7 +82,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 	}
 	else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
-		PrintToConsole(client, "Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+		PrintToConsole(client, "Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		PrintToConsole(client, "%T", "Available Commands", client);
 	}
 	else
@@ -95,7 +96,7 @@ public Action Menu_MainMenuCmd(int client, int args)
 void Menu_MainMenu(int client)
 {
 	Menu menu = new Menu(Menu_MainMenuH);
-	menu.SetTitle("Freak Fortress 2: Rewrite (%s.%s)", PLUGIN_VERSION, PLUGIN_VERSION_REVISION);
+	menu.SetTitle("Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")\n" ... GITHUB_URL ... "\n ");
 	
 	char buffer[64];
 	SetGlobalTransTarget(client);
@@ -117,6 +118,12 @@ void Menu_MainMenu(int client)
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Hud");
 	menu.AddItem("", buffer);
+	
+	if(Preference_HasDifficulties())
+	{
+		FormatEx(buffer, sizeof(buffer), "%t", "Command Difficulty");
+		menu.AddItem("", buffer);
+	}
 	
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -159,6 +166,10 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 				{
 					Menu_HudToggle(client, 0);
 					Menu_MainMenu(client);
+				}
+				case 6:
+				{
+					Preference_DifficultyMenu(client);
 				}
 			}
 		}
@@ -239,7 +250,7 @@ static void QueueMenu(int client)
 	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
-	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && CvarPrefToggle.BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && Cvar[PrefToggle].BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	menu.Pagination = 0;
 	menu.ExitButton = true;
@@ -370,10 +381,11 @@ static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 		
 		menu.AddItem(userid, "1000");
 		menu.AddItem(userid, "100");
+		menu.AddItem(userid, "50");
 		menu.AddItem(userid, "10");
 		menu.AddItem(userid, "-10");
-		menu.AddItem(userid, "-100");
-		menu.AddItem(userid, "-1000");
+		menu.AddItem(userid, "-50");
+		menu.AddItem(userid, "-500");
 		
 		menu.ExitBackButton = true;
 		menu.Display(client, MENU_TIME_FOREVER);
@@ -434,22 +446,25 @@ public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int c
 				switch(choice)
 				{
 					case 0:
-						points = -1000;
+						points = 1000;
 					
 					case 1:
-						points = -100;
+						points = 100;
 					
 					case 2:
-						points = -10;
+						points = 50;
 					
 					case 3:
 						points = 10;
 					
 					case 4:
-						points = 100;
+						points = -10;
 					
 					case 5:
-						points = 1000;
+						points = -50;
+					
+					case 6:
+						points = -100;
 				}
 				
 				GetClientName(target[0], buffer, sizeof(buffer));

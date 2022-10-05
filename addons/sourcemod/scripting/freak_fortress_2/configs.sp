@@ -5,6 +5,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define FILE_MAPS	"data/freak_fortress_2/maps.cfg"
 
@@ -30,51 +31,48 @@ bool Configs_CheckMap(const char[] mapname)
 	if(cfg)
 	{	
 		StringMapSnapshot snap = cfg.Snapshot();
-		if(snap)
+		
+		int entries = snap.Length;
+		if(entries)
 		{
-			int entries = snap.Length;
-			if(entries)
-			{
-				enableResult = -1;
-				
-				PackVal val;
-				for(int i; i < entries; i++)
-				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] buffer = new char[length];
-					snap.GetKey(i, buffer, length);
-					cfg.GetArray(buffer, val, sizeof(val));
-					if(val.tag != KeyValType_Section)
-						continue;
-					
-					switch(ReplaceString(buffer, length, "*", ""))
-					{
-						case 0:	// Exact
-						{
-							if(!StrEqual(mapname, buffer, false))
-								continue;
-						}
-						case 1:	// Prefix
-						{
-							if(StrContains(mapname, buffer, false) != 0)
-								continue;
-						}
-						default:	// Any Match
-						{
-							if(StrContains(mapname, buffer, false) == -1)
-								continue;
-						}
-					}
-					
-					int current = -1;
-					if(val.cfg.GetInt("enable", current) && current > enableResult)
-						enableResult = current;
-				}
-			}
+			enableResult = -1;
 			
-			delete snap;
+			PackVal val;
+			for(int i; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i)+1;
+				char[] buffer = new char[length];
+				snap.GetKey(i, buffer, length);
+				cfg.GetArray(buffer, val, sizeof(val));
+				if(val.tag != KeyValType_Section)
+					continue;
+				
+				switch(ReplaceString(buffer, length, "*", ""))
+				{
+					case 0:	// Exact
+					{
+						if(!StrEqual(mapname, buffer, false))
+							continue;
+					}
+					case 1:	// Prefix
+					{
+						if(StrContains(mapname, buffer, false) != 0)
+							continue;
+					}
+					default:	// Any Match
+					{
+						if(StrContains(mapname, buffer, false) == -1)
+							continue;
+					}
+				}
+				
+				int current = -1;
+				if(val.cfg.GetInt("enable", current) && current > enableResult)
+					enableResult = current;
+			}
 		}
 		
+		delete snap;
 		DeleteCfg(cfg);
 	}
 	
@@ -108,51 +106,49 @@ public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] n
 		if(cfg)
 		{	
 			StringMapSnapshot snap = cfg.Snapshot();
-			if(snap)
+			
+			int entries = snap.Length;
+			if(entries)
 			{
-				int entries = snap.Length;
-				if(entries)
+				PackVal val;
+				for(int i; i < entries; i++)
 				{
-					PackVal val;
-					for(int i; i < entries; i++)
+					int length = snap.KeyBufferSize(i)+1;
+					char[] buffer = new char[length];
+					snap.GetKey(i, buffer, length);
+					cfg.GetArray(buffer, val, sizeof(val));
+					if(val.tag != KeyValType_Section)
+						continue;
+					
+					switch(ReplaceString(buffer, length, "*", ""))
 					{
-						int length = snap.KeyBufferSize(i)+1;
-						char[] buffer = new char[length];
-						snap.GetKey(i, buffer, length);
-						cfg.GetArray(buffer, val, sizeof(val));
-						if(val.tag != KeyValType_Section)
-							continue;
-						
-						switch(ReplaceString(buffer, length, "*", ""))
+						case 0:	// Exact
 						{
-							case 0:	// Exact
-							{
-								if(!StrEqual(newValue, buffer, false))
-									continue;
-							}
-							case 1:	// Prefix
-							{
-								if(StrContains(newValue, buffer, false) != 0)
-									continue;
-							}
-							default:	// Any Match
-							{
-								if(StrContains(newValue, buffer, false) == -1)
-									continue;
-							}
+							if(!StrEqual(newValue, buffer, false))
+								continue;
 						}
-						
-						if(val.cfg.GetInt("enable", length) && length == 1)
+						case 1:	// Prefix
 						{
-							// Found
-							CreateTimer(0.1, Configs_PackVote, _, TIMER_FLAG_NO_MAPCHANGE);
-							break;
+							if(StrContains(newValue, buffer, false) != 0)
+								continue;
+						}
+						default:	// Any Match
+						{
+							if(StrContains(newValue, buffer, false) == -1)
+								continue;
 						}
 					}
+					
+					if(val.cfg.GetInt("enable", length) && length == 1)
+					{
+						// Found
+						CreateTimer(0.1, Configs_PackVote, _, TIMER_FLAG_NO_MAPCHANGE);
+						break;
+					}
 				}
-				
-				delete snap;
 			}
+			
+			delete snap;
 			
 			DeleteCfg(cfg);
 		}
@@ -234,7 +230,7 @@ public int Configs_PackVoteH(Menu menu, MenuAction action, int param1, int param
 			char buffer1[12], buffer2[64];
 			menu.GetItem(param1, buffer1, sizeof(buffer1), _, buffer2, sizeof(buffer2));
 			
-			CvarCharset.SetString(buffer1);
+			Cvar[NextCharset].SetString(buffer1);
 			FPrintToChatAll("%t", "Next Pack Voted", buffer2);
 		}
 	}

@@ -21,31 +21,20 @@ jobs:
           version: ${{ matrix.sm-version }}
       
       - name: Install Misc
-        run: |
-          bash scripts/setup.sh
+        run: bash scripts/setup.sh
         working-directory: ./
       
       - name: Minimum Compile ${{ matrix.sm-version }}
         run: |
           spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
-          for file in $(find -type f -name "ff2r_*.sp")
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" $file
-          done
+          spcomp -E -O2 -v2 -i "include" ff2r_default_abilities.sp
+          spcomp -E -O2 -v2 -i "include" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Install Optional Includes
-        run: |
-          bash scripts/optional.sh
+        run: bash scripts/optional.sh
         working-directory: ./
       
       - name: Full Compile ${{ matrix.sm-version }}
-        run: |
-          spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
-          for file in $(find -type f -name "ff2r_*.sp")
-          do
-            echo -e "\nCompiling $file..."
-            spcomp -E -O2 -v2 -i "include" $file
-          done
+        run: bash compile.sh
         working-directory: ${{ env.SCRIPTS_PATH }}

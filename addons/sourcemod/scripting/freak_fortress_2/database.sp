@@ -1,49 +1,68 @@
 /*
-	void Database_Setup()
+	void Database_PluginStart()
 	void Database_PluginEnd()
-	void Database_ClientAuthorized(int client)
+	void Database_ClientPostAdminCheck(int client)
 	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
-#define DATABASE			"ff2"
-#define DATATABLE_GENERAL	"ff2_data_v3"
-#define DATATABLE_LISTING	"ff2_listing_v1"
+#define DATABASE				"ff2"
+#define DATATABLE_GENERAL		"ff2_data_v3"
+#define DATATABLE_LISTING		"ff2_listing_v1"
+#define DATATABLE_DIFFICULTY	"ff2_difficulty_v1"
 
 static Database DataBase;
-static int Cached[MAXTF2PLAYERS];
+static bool Cached[MAXTF2PLAYERS];
 static float StartTime[MAXTF2PLAYERS];
 
-void Database_Setup()
+void Database_PluginStart()
 {
 	RegServerCmd("ff2_query", Database_QueryCmd, "Query the database");
 	RegServerCmd("ff2_steamid", Database_SteamIdCmd, "Get the account id");
 	
-	char error[512];
-	Database db = SQLite_UseDatabase(DATABASE, error, sizeof(error));
-	if(!db)
+	if(SQL_CheckConfig(DATABASE))
+	{
+		Database.Connect(Database_Connected, DATABASE);
+	}
+	else
+	{
+		char error[512];
+		Database db = SQLite_UseDatabase(DATABASE, error, sizeof(error));
+		Database_Connected(db, error, 0);
+	}
+}
+
+public void Database_Connected(Database db, const char[] error, any data)
+{
+	if(db)
+	{
+		Transaction tr = new Transaction();
+		
+		tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_GENERAL ... " ("
+		... "steamid INTEGER PRIMARY KEY, "
+		... "queue INTEGER NOT NULL DEFAULT 0, "
+		... "music_type INTEGER NOT NULL DEFAULT 1, "
+		... "toggle_voice INTEGER NOT NULL DEFAULT 1, "
+		... "weapon_changes INTEGER NOT NULL DEFAULT 1, "
+		... "damage_hud INTEGER NOT NULL DEFAULT 1, "
+		... "last_played TEXT NOT NULL DEFAULT '');");
+		
+		tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_LISTING ... " ("
+		... "steamid INTEGER NOT NULL, "
+		... "boss TEXT NOT NULL);");
+		
+		tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_DIFFICULTY ... " ("
+		... "steamid INTEGER NOT NULL, "
+		... "name TEXT NOT NULL);");
+		
+		db.Execute(tr, Database_SetupCallback, Database_FailHandle, db);
+	}
+	else
 	{
 		LogError("[Database] %s", error);
-		return;
 	}
-	
-	Transaction tr = new Transaction();
-	
-	tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_GENERAL ... " ("
-	... "steamid INTEGER PRIMARY KEY, "
-	... "queue INTEGER NOT NULL DEFAULT 0, "
-	... "music_type INTEGER NOT NULL DEFAULT 1, "
-	... "toggle_voice INTEGER NOT NULL DEFAULT 1, "
-	... "weapon_changes INTEGER NOT NULL DEFAULT 1, "
-	... "damage_hud INTEGER NOT NULL DEFAULT 1, "
-	... "last_played TEXT NOT NULL DEFAULT '');");
-	
-	tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_LISTING ... " ("
-	... "steamid INTEGER NOT NULL, "
-	... "boss TEXT NOT NULL);");
-	
-	db.Execute(tr, Database_SetupCallback, Database_FailHandle, db);
 }
 
 public Action Database_SteamIdCmd(int args)
@@ -118,7 +137,7 @@ public void Database_SetupCallback(Database db, any data, int numQueries, DBResu
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientAuthorized(client))
-			Database_ClientAuthorized(client);
+			Database_ClientPostAdminCheck(client);
 	}
 }
 
@@ -134,7 +153,7 @@ void Database_PluginEnd()
 	}
 }
 
-void Database_ClientAuthorized(int client)
+void Database_ClientPostAdminCheck(int client)
 {
 	if(DataBase && !IsFakeClient(client))
 	{
@@ -152,19 +171,17 @@ void Database_ClientAuthorized(int client)
 			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_LISTING ... " WHERE steamid = %d;", id);
 			tr.AddQuery(buffer);
 			
-			DataPack pack = new DataPack();
-			pack.WriteCell(GetClientUserId(client));
-			pack.WriteCell(id);
+			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_DIFFICULTY ... " WHERE steamid = %d;", id);
+			tr.AddQuery(buffer);
 			
-			DataBase.Execute(tr, Database_ClientSetup, Database_FailHandle, pack);
+			DataBase.Execute(tr, Database_ClientSetup, Database_FailHandle, GetClientUserId(client));
 		}
 	}
 }
 
-public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBResultSet[] results, any[] queryData)
+public void Database_ClientSetup(Database db, int userid, int numQueries, DBResultSet[] results, any[] queryData)
 {
-	pack.Reset();
-	int client = GetClientOfUserId(pack.ReadCell());
+	int client = GetClientOfUserId(userid);
 	if(client)
 	{
 		char buffer[256];
@@ -190,7 +207,7 @@ public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBR
 			tr.AddQuery(buffer);	
 		}
 		
-		Preference_ClearBosses(client);
+		Preference_ClearArrays(client);
 		
 		while(results[1].MoreRows)
 		{
@@ -198,6 +215,15 @@ public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBR
 			{
 				results[1].FetchString(1, buffer, sizeof(buffer));
 				Preference_AddBoss(client, buffer);
+			}
+		}
+		
+		while(results[2].MoreRows)
+		{
+			if(results[2].FetchRow())
+			{
+				results[2].FetchString(1, buffer, sizeof(buffer));
+				Preference_AddDifficulty(client, buffer);
 			}
 		}
 		
@@ -210,7 +236,7 @@ public void Database_ClientSetup(Database db, DataPack pack, int numQueries, DBR
 			FPrintToChat(client, "%t", "Preference Updated");
 		}
 		
-		Cached[client] = pack.ReadCell();
+		Cached[client] = true;
 	}
 }
 
@@ -218,7 +244,7 @@ public void Database_ClientRetry(Database db, any data, int numQueries, const ch
 {
 	int client = GetClientOfUserId(data);
 	if(client)
-		Database_ClientAuthorized(client);
+		Database_ClientPostAdminCheck(client);
 }
 
 void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
@@ -226,13 +252,6 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 	if(DataBase && !IsFakeClient(client) && Cached[client])
 	{
 		int id = GetSteamAccountID(client);
-		if(Cached[client] != id)
-		{
-			// TODO: Remove this
-			LogError("%N has different id from what was loaded (%d vs %d)", id, Cached[client]);
-			return;
-		}
-		
 		if(id)
 		{
 			Transaction tr = new Transaction();
@@ -273,13 +292,22 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 					tr.AddQuery(buffer);
 				}
 				
+				FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_DIFFICULTY ... " WHERE steamid = %d;", id);
+				tr.AddQuery(buffer);
+				
+				for(int i; Preference_GetDifficulty(client, i, buffer, sizeof(buffer)); i++)
+				{
+					DataBase.Format(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_DIFFICULTY ... " (steamid, name) VALUES ('%d', '%s')", id, buffer);
+					tr.AddQuery(buffer);
+				}
+				
 				DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			}
 		}
 	}
 	
-	Cached[client] = 0;
-	Preference_ClearBosses(client);
+	Cached[client] = false;
+	Preference_ClearArrays(client);
 }
 
 public void Database_Success(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)

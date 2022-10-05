@@ -3,10 +3,10 @@
 	void SDKHook_LibraryAdded(const char[] name)
 	void SDKHook_LibraryRemoved(const char[] name)
 	void SDKHook_HookClient(int client)
-	void SDKHook_BossCreated(int client)
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #tryinclude <tf_ontakedamage>
 
@@ -21,7 +21,8 @@ enum CritType
 };
 #endif
 
-static char SoundCache[MAXTF2PLAYERS][PLATFORM_MAX_PATH];
+static char SoundCache[PLATFORM_MAX_PATH];
+static int SoundCacheTarget;
 static bool OTDLoaded;
 
 void SDKHook_PluginStart()
@@ -68,11 +69,6 @@ void SDKHook_HookClient(int client)
 	SDKHook(client, SDKHook_WeaponSwitchPost, SDKHook_SwitchPost);
 }
 
-void SDKHook_BossCreated(int client)
-{
-	SoundCache[client][0] = 0;
-}
-
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	if(StrContains(classname, "item_healthkit") != -1)
@@ -91,8 +87,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 	}
 	else if(Enabled && StrEqual(classname, "obj_attachment_sapper"))
 	{
-		//SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
-		//SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
+		SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
+		SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
 	}
 	else
 	{
@@ -193,7 +189,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						
-						if(CvarSoundType.BoolValue)
+						if(Cvar[SoundType].BoolValue)
 						{
 							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, 2.0))
 								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, 2.0);
@@ -244,7 +240,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				}
 				case TF_CUSTOM_TELEFRAG:
 				{
-					damage = 1666.67;
+					damage = Cvar[Telefrags].FloatValue / 3.0;
 					damagetype |= DMG_CRIT;
 					critType = CritType_Crit;
 					
@@ -258,7 +254,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 							assister = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
 							if(assister != attacker && assister > 0 && assister <= MaxClients && GetClientTeam(assister) == GetClientTeam(attacker))
 							{
-								Client(assister).Assist += 6000;
+								Client(assister).Assist += Cvar[Telefrags].IntValue;
 								Client(assister).RefreshAt = 0.0;
 							}
 							else
@@ -287,7 +283,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					event.Cancel();
 					
-					if(CvarSoundType.BoolValue)
+					if(Cvar[SoundType].BoolValue)
 					{
 						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
 					}
@@ -299,6 +295,9 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				}
 			}
 			
+			if(critType == CritType_None && (damagetype & DMG_CRIT))
+				critType = CritType_Crit;
+			
 			if(Client(attacker).IsBoss)
 			{
 				if(damage <= 160.0 && Client(attacker).Triple)
@@ -309,11 +308,8 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			}
 			else
 			{
-				Attributes_OnHitBossPre(attacker, victim, damagetype, weapon);
+				Attributes_OnHitBossPre(attacker, victim, damagetype, weapon, view_as<int>(critType));
 			}
-			
-			if(critType == CritType_None && (damagetype & DMG_CRIT))
-				critType = CritType_Crit;
 			
 			return Plugin_Changed;
 		}
@@ -352,13 +348,19 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 		if(!IsInvuln(victim))
 		{
 			bool changed;
-			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH));
+			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH)) && damagecustom != TF_CUSTOM_BASEBALL;
 			if(melee && SDKCall_CheckBlockBackstab(victim, attacker))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
 					TF2_RemoveCondition(victim, TFCond_RuneResist);
 				
-				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, damagePosition);
+				float pos[3];
+				GetClientAbsOrigin(victim, pos);
+				ScreenShake(pos, 25.0, 150.0, 1.0, 50.0);
+				
+				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
+				
+				TF2_RemoveCondition(victim, TFCond_Zoomed);
 				return Plugin_Handled;
 			}
 			
@@ -369,61 +371,47 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				changed = true;
 			}
 			
-			if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
+			if(!Attributes_FindOnWeapon(attacker, weapon, 797))
 			{
-				// 25% resist while disguised, a good middle ground
-				// which requires a Spy to be both disguised and cloaked
-				// to a tank a hit from a standard boss
-				damage *= 0.75;
-				changed = true;
-			}
-			
-			/*if(TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffed) ||
-			   TF2_IsPlayerInCondition(victim, TFCond_DefenseBuffNoCritBlock))
-			{
-				// 35% resist to 50% resist
-				damage /= 1.3;
-				changed = true;
-			}*/
-			
-			if(melee)
-			{
-				if(critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
+				if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
 				{
-					// Make random crits less brutal for Dead Ringers
-					critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
-					damagetype &= ~DMG_CRIT;
+					// 25% resist while disguised, a good middle ground
+					// which requires a Spy to be both disguised and cloaked
+					// to a tank a hit from a standard boss
+					damage *= 0.75;
 					changed = true;
 				}
 				
-				// Vaccinator conditions
-				for(TFCond cond = TFCond_UberBulletResist; cond <= TFCond_UberFireResist; cond++)
+				if(melee)
 				{
-					if(TF2_IsPlayerInCondition(victim, cond))
+					// Vaccinator conditions
+					for(TFCond cond = TFCond_UberBulletResist; cond <= TFCond_UberFireResist; cond++)
 					{
-						// Uber Variant
-						damage *= 0.5;
-						critType = CritType_None;
-						damagetype &= ~DMG_CRIT;
-						changed = true;
-					}
-					
-					// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
-					if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
-					{
-						// Passive Variant
-						damage *= 0.9;
-						changed = true;
+						if(TF2_IsPlayerInCondition(victim, cond))
+						{
+							// Uber Variant
+							damage *= 0.5;
+							critType = CritType_None;
+							damagetype &= ~DMG_CRIT;
+							changed = true;
+						}
+						
+						// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
+						if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
+						{
+							// Passive Variant
+							damage *= 0.9;
+							changed = true;
+						}
 					}
 				}
 			}
 			
-			if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
+			if(melee && critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
 			{
-				// 25% resist while disguised, a good middle ground
-				// which requires a Spy to be both disguised and cloaked
-				// to a tank a hit from a standard boss
-				damage *= 0.75;
+				// Make random crits less brutal for Dead Ringers
+				critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
+				damagetype &= ~DMG_CRIT;
 				changed = true;
 			}
 			
@@ -482,9 +470,12 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 			sound.Volume = volume;
 			sound.Pitch = pitch;
 			
-			bool found = StrEqual(SoundCache[client], sample);
+			bool found = (SoundCacheTarget == entity && StrEqual(SoundCache, sample));
 			if(!found)
-				strcopy(SoundCache[client], sizeof(SoundCache[]), sample);
+			{
+				strcopy(SoundCache, sizeof(SoundCache), sample);
+				SoundCacheTarget = entity;
+			}
 			
 			if(found || Bosses_GetRandomSound(client, "catch_replace", sound, sample) || Bosses_GetRandomSound(client, "catch_phrase", sound))
 			{
@@ -529,8 +520,13 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 			
 			if(Client(client).BlockVo)
 				return Plugin_Stop;
+			
+			return Plugin_Continue;
 		}
 	}
+	
+	SoundCache[0] = 0;
+	SoundCacheTarget = entity;
 	return Plugin_Continue;
 }
 

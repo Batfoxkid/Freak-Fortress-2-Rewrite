@@ -3,6 +3,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define FF2FLAG_UBERREADY			(1<<1)		//Used when medic says "I'm charged!"
 #define FF2FLAG_ISBUFFED			(1<<2)		//Used when soldier uses the Battalion's Backup
@@ -876,14 +877,14 @@ public any NativeOld_GetClientShield(Handle plugin, int params)
 		int entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
+			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 				return 100.0;
 		}
 		
 		entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
 		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
+			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 				return 100.0;
 		}
 	}
@@ -904,14 +905,14 @@ public any NativeOld_RemoveClientShield(Handle plugin, int params)
 		int entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
+			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 				TF2_RemoveWearable(client, entity);
 		}
 		
 		entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
 		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
+			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 				TF2_RemoveWearable(client, entity);
 		}
 	}
@@ -929,7 +930,7 @@ public any NativeOld_LogError(Handle plugin, int params)
 
 public any NativeOld_Debug(Handle plugin, int params)
 {
-	return CvarDebug.BoolValue;
+	return Cvar[Debugging].BoolValue;
 }
 
 public any NativeOld_SetCheats(Handle plugin, int params)

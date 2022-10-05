@@ -14,20 +14,18 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
 static int PointUnlock;
-static Handle SelfSyncHud;
 static Handle TeamSyncHud[TFTeam_MAX];
 static Handle HudTimer[TFTeam_MAX];
 static bool HasBoss[TFTeam_MAX];
 
 void Gamemode_PluginStart()
 {
-	SelfSyncHud = CreateHudSynchronizer();
-	
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		TeamSyncHud[i] = CreateHudSynchronizer();
@@ -74,19 +72,19 @@ void Gamemode_RoundSetup()
 	{
 		if(Waiting)
 		{
-			CvarTournament.BoolValue = true;
-			CvarMovementFreeze.BoolValue = false;
+			Cvar[Tournament].BoolValue = true;
+			Cvar[MovementFreeze].BoolValue = false;
 			ServerCommand("mp_waitingforplayers_restart 1");
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
 			Goomba_RoundSetup();
 			
-			float preround = CvarPreroundTime.FloatValue;
+			float preround = Cvar[PreroundTime].FloatValue;
 			CreateTimer(preround / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
 			
-			int bosses = CvarBossVsBoss.IntValue;
+			int bosses = Cvar[BossVsBoss].IntValue;
 			if(bosses > 0)	// Boss vs Boss
 			{
 				int reds;
@@ -215,7 +213,7 @@ public void TF2_OnWaitingForPlayersStart()
 	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		Waiting = false;
-		CvarTournament.BoolValue = false;
+		Cvar[Tournament].BoolValue = false;
 		CreateTimer(4.0, Gamemode_TimerRespawn, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	}
 }
@@ -223,7 +221,7 @@ public void TF2_OnWaitingForPlayersStart()
 public void TF2_OnWaitingForPlayersEnd()
 {
 	if(Enabled)
-		CvarMovementFreeze.BoolValue = true;
+		Cvar[MovementFreeze].BoolValue = true;
 }
 
 public Action Gamemode_TimerRespawn(Handle timer)
@@ -304,10 +302,10 @@ public Action Gamemode_SetControlPoint(Handle timer)
 	if(!found)
 	{
 		char buffer[256];
-		CvarCaptureTime.GetString(buffer, sizeof(buffer));
+		Cvar[CaptureTime].GetString(buffer, sizeof(buffer));
 		time = ParseFormula(buffer, players);
 		
-		CvarCaptureAlive.GetString(buffer, sizeof(buffer));
+		Cvar[CaptureAlive].GetString(buffer, sizeof(buffer));
 		PointUnlock = RoundToCeil(ParseFormula(buffer, players));
 	}
 	
@@ -360,7 +358,7 @@ void Gamemode_RoundStart()
 	}
 	
 	char buffer[512];
-	bool specTeam = CvarSpecTeam.BoolValue;
+	bool specTeam = Cvar[SpecTeam].BoolValue;
 	for(int i; i < bosses; i++)
 	{
 		int team = GetClientTeam(boss[i]);
@@ -371,9 +369,20 @@ void Gamemode_RoundStart()
 				amount += PlayersAlive[a];
 		}
 		
-		int maxhealth = Bosses_SetHealth(boss[i], amount);
+		Bosses_SetHealth(boss[i], amount);
+		
 		if(enabled)
 		{
+			if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
+				ServerCommand(buffer);
+			
+			Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
+			Preference_ApplyDifficulty(boss[i], boss[i], false);
+		}
+		
+		if(enabled)
+		{
+			int maxhealth = Client(boss[i]).MaxHealth;
 			int maxlives = Client(boss[i]).MaxLives;
 			
 			for(int a; a < mercs; a++)
@@ -393,11 +402,6 @@ void Gamemode_RoundStart()
 				}
 			}
 		}
-		
-		if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
-			ServerCommand(buffer);
-		
-		Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
 	}
 	
 	Music_RoundStart();
@@ -432,14 +436,14 @@ void Gamemode_RoundEnd(int winteam)
 {
 	RoundStatus = 2;
 	
-	// If we overrided the winner, such as spec teams
+	// If we overriden the winner, such as spec teams
 	int winner = WinnerOverride == -1 ? winteam : WinnerOverride;
 	
 	int[] clients = new int[MaxClients];
 	int[] teams = new int[MaxClients];
 	int total;
 	
-	bool overlay = CvarAggressiveOverlay.BoolValue;
+	bool overlay = Cvar[AggressiveOverlay].BoolValue;
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
@@ -448,6 +452,20 @@ void Gamemode_RoundEnd(int winteam)
 			clients[total++] = client;
 			if(overlay)
 				Client(client).OverlayFor = 1.0;
+			
+			int entity, i;
+			while(TF2_GetItem(client, entity, i))
+			{
+				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					TF2_RemoveItem(client, entity);
+			}
+			
+			i = 0;
+			while(TF2U_GetWearable(client, entity, i))
+			{
+				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					TF2_RemoveWearable(client, entity);
+			}
 		}
 	}
 	
@@ -541,7 +559,7 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	bool spec = CvarSpecTeam.BoolValue;
+	bool spec = Cvar[SpecTeam].BoolValue;
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		if(HasBoss[i] && bosses[i])
@@ -675,7 +693,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 {
 	if(!Enabled || RoundStatus == 1)
 	{
-		int setting = CvarHealthBar.IntValue;
+		int setting = Cvar[HealthBar].IntValue;
 		if(setting)
 		{
 			int lastCount, count;
@@ -802,7 +820,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				}
 			}
 			
-			float refresh = CvarRefreshTime.FloatValue;
+			float refresh = Cvar[RefreshTime].FloatValue;
 			if(setting == 1 || nobar)
 			{
 			}
@@ -961,7 +979,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 2) 
 			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
-				if (CvarPlayerGlow.BoolValue)
+				if (Cvar[PlayerGlow].BoolValue)
 				{
 					Gamemode_SetClientGlow(client, 5.0);
 				}
@@ -1016,18 +1034,22 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			else if(IsClientObserver(client))
 			{
 				int aim = GetEntPropEnt(client, Prop_Send, "m_hObserverTarget");
-				if(aim != client && aim > 0 && aim <= MaxClients && IsClientInGame(aim) && GetClientTeam(client) == GetClientTeam(aim))
-					target = aim;
+				if(aim != client && aim > 0 && aim <= MaxClients && IsClientInGame(aim))
+				{
+					int team = GetClientTeam(client);
+					if(team == TFTeam_Spectator || team == GetClientTeam(aim))
+						target = aim;
+				}
 			}
 			
 			SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
 			if(target == client)
 			{
-				ShowSyncHudText(client, SelfSyncHud, "%t", "Current Stats Hud", Client(client).TotalDamage, Client(client).Healing, Client(client).TotalAssist);
+				ShowSyncHudText(client, PlayerHud, "%t", "Current Stats Hud", Client(client).TotalDamage, Client(client).Healing, Client(client).TotalAssist);
 			}
 			else
 			{
-				ShowSyncHudText(client, SelfSyncHud, "%t", "Viewing Stats Hud", target, Client(target).TotalDamage, Client(target).Healing, Client(target).TotalAssist);
+				ShowSyncHudText(client, PlayerHud, "%t", "Viewing Stats Hud", target, Client(target).TotalDamage, Client(target).Healing, Client(target).TotalAssist);
 			}
 		}
 	}
@@ -1045,13 +1067,13 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 
 void Gamemode_ConditionAdded(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
 		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
 }
 
 void Gamemode_ConditionRemoved(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && CvarDisguiseModels.BoolValue)
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
 	{
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);

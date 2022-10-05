@@ -5,6 +5,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static bool FirstBlood;
 static bool LastMann;
@@ -51,7 +52,7 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		PlayersAlive[i] = 0;
 	}
 	
-	bool spec = CvarSpecTeam.BoolValue;
+	bool spec = Cvar[SpecTeam].BoolValue;
 	int redBoss, bluBoss;
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -94,7 +95,7 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		LastMann = true;
 		
 		bool found;
-		for(int i = CvarSpecTeam.BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
+		for(int i = Cvar[SpecTeam].BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
 		{
 			if(PlayersAlive[i])
 			{
@@ -177,7 +178,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
 	TFObjectType type = view_as<TFObjectType>(event.GetInt("objecttype"));
-	if(type == TFObject_Teleporter)
+	if(Enabled && type == TFObject_Teleporter)
 	{
 		if(GetEntProp(event.GetInt("index"), Prop_Send, "m_iObjectMode") == view_as<int>(TFObjectMode_Exit))
 		{
@@ -207,7 +208,7 @@ public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(client && CvarDisguiseModels.BoolValue)
+	if(client && Cvar[DisguiseModels].BoolValue)
 	{
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
@@ -229,12 +230,11 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 		else if(Enabled && !Client(client).Minion)
 		{
 			// Because minion plugins don't swap em back
-			SetVariantString("");
-			AcceptEntityInput(client, "SetCustomModel");
-			SetEntProp(client, Prop_Send, "m_bUseClassAnimations", true);
+			SetVariantString(NULL_STRING);
+			AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 			
 			if(!Client(client).NoChanges && RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
-				Weapons_ChangeMenu(client, CvarPreroundTime.IntValue);
+				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		
 		Weapons_OnInventoryApplication(userid);
@@ -244,7 +244,7 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 
 public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadcast)
 {
-	if(CvarRefreshDmg.BoolValue)
+	if(Cvar[RefreshDmg].BoolValue)
 	{
 		int client = GetClientOfUserId(event.GetInt("patient"));
 		if(Client(client).IsBoss)
@@ -290,16 +290,20 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		if(Client(victim).IsBoss)
 		{
-			float debuff = Client(victim).RageDebuff;
-			if(debuff != 1.0)
-				Client(victim).RageDebuff = 1.0;
-			
-			float rage = Client(victim).GetCharge(0) + (damage * 100.0 * debuff / Client(victim).RageDamage);
-			float maxrage = Client(victim).RageMax;
-			if(rage > maxrage)
-				rage = maxrage;
-			
-			Client(victim).SetCharge(0, rage);
+			float rage = Client(victim).RageDamage;
+			if(rage > 0.0)
+			{
+				float debuff = Client(victim).RageDebuff;
+				if(debuff != 1.0)
+					Client(victim).RageDebuff = 1.0;
+				
+				rage = Client(victim).GetCharge(0) + (damage * 100.0 * debuff / rage);
+				float maxrage = Client(victim).RageMax;
+				if(rage > maxrage)
+					rage = maxrage;
+				
+				Client(victim).SetCharge(0, rage);
+			}
 			
 			if(event.GetBool("minicrit") && event.GetBool("allseecrit"))
 			{
@@ -380,7 +384,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						}
 						
 						IntToString(lives, buffer, sizeof(buffer));
-						if(CvarSoundType.BoolValue)
+						if(Cvar[SoundType].BoolValue)
 						{
 							if(!Bosses_PlaySoundToAll(victim, "sound_lifeloss", buffer, _, _, _, _, 2.0))
 							{
@@ -408,7 +412,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 				Client(victim).MaxLives = maxlives;
 			}
 			
-			if(CvarRefreshDmg.BoolValue)
+			if(Cvar[RefreshDmg].BoolValue)
 				Gamemode_UpdateHUD(team);
 		}
 	}
@@ -426,7 +430,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			bool deadRinger = view_as<bool>(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER);
 			if(!deadRinger)
 			{
-				if(CvarAggressiveOverlay.BoolValue)
+				if(Cvar[AggressiveOverlay].BoolValue)
 					Client(victim).OverlayFor = 1.0;
 				
 				Events_CheckAlivePlayers(victim);
@@ -468,14 +472,17 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					}
 				}
 				
-				if(CvarSoundType.BoolValue)
+				if(event.GetInt("customkill") != TF_CUSTOM_TELEFRAG)
 				{
-					if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
-						Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
-				}
-				else if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, _, _, _, _, 2.0))
-				{
-					Bosses_PlaySound(victim, boss, bosses, "sound_death", _, _, _, _, _, 2.0);
+					if(!Cvar[SoundType].BoolValue)
+					{
+						if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+							Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+					}
+					else if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, _, _, _, _, 2.0))
+					{
+						Bosses_PlaySound(victim, boss, bosses, "sound_death", _, _, _, _, _, 2.0);
+					}
 				}
 				
 				if(!deadRinger)
@@ -552,9 +559,6 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				if(Client(victim).IsBoss)
 				{
 					Bosses_UseSlot(victim, 5, 5);
-					
-					if(!Enabled)
-						CreateTimer(0.1, Events_RemoveBossTimer, userid, TIMER_FLAG_NO_MAPCHANGE);
 				}
 				else if(Enabled)
 				{
@@ -573,15 +577,6 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			}
 		}
 	}
-}
-
-public Action Events_RemoveBossTimer(Handle timer, int userid)
-{
-	int client = GetClientOfUserId(userid);
-	if(client && !IsPlayerAlive(client))
-		Bosses_Remove(client);
-	
-	return Plugin_Continue;
 }
 
 public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)
@@ -653,6 +648,9 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		{
 			if(!Client(clients[i]).NoHud)
 			{
+				if(dmg[0] > 9000)
+					ClientCommand(clients[i], "playgamesound saxton_hale/9000.wav");
+				
 				if(team > -1)
 				{
 					SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], 2, 0.1, 0.1);

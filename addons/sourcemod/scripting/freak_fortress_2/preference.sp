@@ -1,10 +1,13 @@
 /*
 	void Preference_PluginStart()
+	void Preference_ConfigsExecuted()
 	void Preference_MapEnd()
 	void Preference_AddBoss(int client, const char[] name)
+	void Preference_AddDifficulty(int client, const char[] name)
 	bool Preference_ShouldUpdate(int client)
 	bool Preference_GetBoss(int client, int index, char[] buffer, int length)
-	void Preference_ClearBosses(int client)
+	bool Preference_GetDifficulty(int client, int index, char[] buffer, int length)
+	void Preference_ClearArrays(int client)
 	bool Preference_DisabledBoss(int client, int charset)
 	int Preference_PickBoss(int client, int team = -1)
 	void Preference_BossMenu(int client)
@@ -14,10 +17,17 @@
 	int Preference_GetCompanion(int client, int special, int team, bool &disband)
 	int Preference_GetFullQueuePoints(int client)
 	int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
+	void Preference_ApplyDifficulty(int client, int leader, bool delay)
+	bool Preference_HasDifficulties()
+	void Preference_DifficultyMenu(int client)
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
+#define FILE_DIFF	"data/freak_fortress_2/modifiers.cfg"
+
+static ConfigMap Difficulties;
 static int BossOverride = -1;
 static int ViewingPack[MAXTF2PLAYERS];
 static int ViewingPage[MAXTF2PLAYERS];
@@ -27,7 +37,9 @@ static int PartyChoice[MAXTF2PLAYERS];
 static int PartyMainBoss[MAXTF2PLAYERS];
 static int PartyInvite[MAXTF2PLAYERS][MAXTF2PLAYERS];
 static bool UpdateDataBase[MAXTF2PLAYERS];
+static char DiffOverride[MAXTF2PLAYERS][64];
 static ArrayList BossListing[MAXTF2PLAYERS];
+static ArrayList DiffListing[MAXTF2PLAYERS];
 
 void Preference_PluginStart()
 {
@@ -35,9 +47,12 @@ void Preference_PluginStart()
 	RegFreakCmd("party", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
-	//RegFreakCmd("difficulty", Preference_BossMenuCmd, "Freak Fortress 2 Boss Difficulties");
-
-	RegAdminCmd("ff2_special", Preference_ForceBossCmd, ADMFLAG_CHEATS, "Force a specific boss to appear");
+	RegFreakCmd("modifier", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers");
+	RegFreakCmd("modifiers", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers", FCVAR_HIDDEN);
+	RegFreakCmd("difficulty", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers", FCVAR_HIDDEN);
+	RegFreakCmd("special", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers", FCVAR_HIDDEN);
+	
+	RegAdminCmd("ff2_override", Preference_ForceBossCmd, ADMFLAG_CHEATS, "Force a specific boss to appear");
 	
 	for(int a; a < sizeof(PartyInvite); a++)
 	{
@@ -45,6 +60,33 @@ void Preference_PluginStart()
 		{
 			PartyInvite[a][b] = -1;
 		}
+	}
+}
+
+void Preference_ConfigsExecuted()
+{
+	if(Difficulties)
+		DeleteCfg(Difficulties);
+	
+	char buffer[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, buffer, sizeof(buffer), FILE_DIFF);
+	if(FileExists(buffer))
+	{
+		Difficulties = new ConfigMap(FILE_DIFF);
+		
+		StringMapSnapshot snap = Difficulties.Snapshot();
+		
+		if(!snap.Length)
+		{
+			DeleteCfg(Difficulties);
+			Difficulties = null;
+		}
+		
+		delete snap;
+	}
+	else
+	{
+		Difficulties = null;
 	}
 }
 
@@ -70,6 +112,14 @@ void Preference_AddBoss(int client, const char[] name)
 	}
 }
 
+void Preference_AddDifficulty(int client, const char[] name)
+{
+	if(!DiffListing[client])
+		DiffListing[client] = new ArrayList(ByteCountToCells(64));
+	
+	DiffListing[client].PushString(name);
+}
+
 bool Preference_ShouldUpdate(int client)
 {
 	return UpdateDataBase[client];
@@ -92,15 +142,22 @@ bool Preference_GetBoss(int client, int index, char[] buffer, int length)
 	return true;
 }
 
-void Preference_ClearBosses(int client)
+bool Preference_GetDifficulty(int client, int index, char[] buffer, int length)
+{
+	if(!DiffListing[client] || index >= DiffListing[client].Length)
+		return false;
+	
+	DiffListing[client].GetString(index, buffer, length);
+	return true;
+}
+
+void Preference_ClearArrays(int client)
 {
 	UpdateDataBase[client] = false;
+	DiffOverride[client][0] = 0;
 	
-	if(BossListing[client])
-	{
-		delete BossListing[client];
-		BossListing[client] = null;
-	}
+	delete BossListing[client];
+	delete DiffListing[client];
 }
 
 bool Preference_DisabledBoss(int client, int charset)
@@ -136,7 +193,7 @@ int Preference_PickBoss(int client, int team = -1)
 			length = list.Length;
 			if(length)
 			{
-				int count = CvarPrefBlacklist.IntValue;
+				int count = Cvar[PrefBlacklist].IntValue;
 				if(BossListing[client] && count != 0)
 				{
 					ArrayList list2 = count > 0 ? list.Clone() : new ArrayList();
@@ -256,7 +313,7 @@ public Action Preference_BossMenuCmd(int client, int args)
 {
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
-		int blacklist = CvarPrefBlacklist.IntValue;
+		int blacklist = Cvar[PrefBlacklist].IntValue;
 		if(args && blacklist != 0)
 		{
 			char buffer[64];
@@ -317,6 +374,9 @@ public Action Preference_BossMenuCmd(int client, int args)
 					index = GetBlacklistCount(client, index);
 					if(index < blacklist)
 					{
+						if(!BossListing[client])
+							BossListing[client] = new ArrayList();
+						
 						UpdateDataBase[client] = true;
 						BossListing[client].Push(special);
 						FReplyToCommand(client, "%t (%d / %d)", "Boss Blacklisted", buffer, index+1, blacklist);
@@ -328,6 +388,9 @@ public Action Preference_BossMenuCmd(int client, int args)
 				}
 				else
 				{
+					if(!BossListing[client])
+						BossListing[client] = new ArrayList();
+					
 					UpdateDataBase[client] = true;
 					BossListing[client].Push(special);
 					FReplyToCommand(client, "%t", "Boss Whitelisted", buffer);
@@ -399,7 +462,7 @@ void Preference_BossMenu(int client)
 
 static void BossMenu(int client)
 {
-	int blacklist = CvarPrefBlacklist.IntValue;
+	int blacklist = Cvar[PrefBlacklist].IntValue;
 	Menu menu = new Menu(Preference_BossMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -565,7 +628,7 @@ static void BossMenu(int client)
 				FormatEx(data, sizeof(data), "%t", blacklist > 0 ? "Clear Blacklist" : "Clear Whitelist");
 				menu.InsertItem(0, "-1", data);
 			}
-			else if(CvarPrefToggle.BoolValue)
+			else if(Cvar[PrefToggle].BoolValue)
 			{
 				FormatEx(data, sizeof(data), "%t", "Disable Playing Boss");
 				menu.InsertItem(0, "-2", data);
@@ -609,7 +672,7 @@ static void BossMenu(int client)
 		}
 		
 		// Show if any boss pack doesn't have one disaabled
-		if(enables && CvarPrefToggle.BoolValue)
+		if(enables && Cvar[PrefToggle].BoolValue)
 		{
 			FormatEx(data, sizeof(data), "%t", "Disable Playing Boss All");
 			menu.AddItem("-2", data);
@@ -806,7 +869,6 @@ public int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 						{
 							UpdateDataBase[client] = true;
 							delete BossListing[client];
-							BossListing[client] = null;
 						}
 					}
 					default:
@@ -1568,4 +1630,537 @@ public void Preference_DisplayBosses(DataPack pack)
 	}
 	
 	delete pack;
+}
+
+void Preference_ApplyDifficulty(int client, int leader, bool delay)
+{
+	if(Preference_HasDifficulties())
+	{
+		char choosen[64];
+		if(!delay && DiffOverride[client][0])
+		{
+			strcopy(choosen, sizeof(choosen), DiffOverride[client]);
+			DiffOverride[client][0] = 0;
+		}
+		else if(Cvar[PrefSpecial].BoolValue && Cvar[PrefSpecial].FloatValue >= GetURandomFloat())
+		{
+			if(!DiffListing[leader])
+			{
+				StringMapSnapshot snap = Difficulties.Snapshot();
+				
+				snap.GetKey((GetTime() + leader) % snap.Length, choosen, sizeof(choosen));
+				
+				delete snap;
+			}
+		}
+		else if(DiffListing[leader])
+		{
+			int lengt = DiffListing[leader].Length;
+			if(lengt)
+				DiffListing[leader].GetString((GetTime() + leader) % lengt, choosen, sizeof(choosen));
+		}
+		
+		if(choosen[0])
+		{
+			if(delay)
+			{
+				strcopy(DiffOverride[client], sizeof(DiffOverride[]), choosen);
+			}
+			else
+			{
+				ConfigMap cfg = Difficulties.GetSection(choosen);
+				if(cfg)
+				{
+					char buffer1[128];
+					StringMapSnapshot snap = cfg.Snapshot();
+					
+					PackVal val;
+					int entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						int length = snap.KeyBufferSize(i)+5;
+						char[] section = new char[length];
+						snap.GetKey(i, section, length);
+						if(cfg.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
+						{
+							Format(section, length, "%s.smx", section);
+							
+							length = -2;
+							
+							Handle iterator = GetPluginIterator();
+							
+							while(MorePlugins(iterator))
+							{
+								Handle plugin = ReadPlugin(iterator);
+								GetPluginFilename(plugin, buffer1, sizeof(buffer1));
+								if(StrContains(buffer1, section, false) != -1)
+								{
+									Function func = GetFunctionByName(plugin, "FF2R_OnBossModifier");
+									if(func != INVALID_FUNCTION)
+									{
+										Call_StartFunction(plugin, func);
+										Call_PushCell(client);
+										Call_PushCell(val.cfg);
+										length = Call_Finish();
+									}
+									else
+									{
+										length = -1;
+									}
+									break;
+								}
+							}
+							
+							delete iterator;
+							
+							switch(length)
+							{
+								case -2:
+									LogError("[Modifier] Plugin '%s' is missing for '%s'", section, choosen);
+								
+								case -1:
+									LogError("[Modifier] Plugin '%s' is does not have modifiers for '%s'", section, choosen);
+							}
+						}
+					}
+					
+					delete snap;
+					
+					// Set "name_X" and "group_X" for any present on the boss
+					snap = Client(client).Cfg.Snapshot();
+					
+					char buffer2[64], buffer3[64], buffer4[64];
+					entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						snap.GetKey(i, buffer3, sizeof(buffer3));
+						if((!StrContains(buffer3, "name_") || !StrContains(buffer3, "group_")) && Client(client).Cfg.Get(buffer3, buffer2, sizeof(buffer2)))
+						{
+							strcopy(buffer4, sizeof(buffer4), buffer3);
+							ReplaceStringEx(buffer4, sizeof(buffer4), "group_", "name_");
+							if(!cfg.Get(buffer4, buffer1, sizeof(buffer1)))
+							{
+								if(!cfg.Get("name", buffer1, sizeof(buffer1)))
+									strcopy(buffer1, sizeof(buffer1), choosen);
+							}
+							
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer2, buffer1);
+							Client(client).Cfg.Set(buffer3, buffer2);
+						}
+					}
+					
+					delete snap;
+					
+					snap = cfg.Snapshot();
+					
+					entries = snap.Length;
+					for(int i; i < entries; i++)
+					{
+						snap.GetKey(i, buffer3, sizeof(buffer3));
+						if(!StrContains(buffer3, "name_") && cfg.Get(buffer3, buffer2, sizeof(buffer2)))
+						{
+							// Set "name_X" for any present on the diff but not on the boss
+							if(!Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)))
+							{
+								Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
+								Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+								Client(client).Cfg.Set(buffer3, buffer2);
+							}
+							
+							// Set "group_X" for any present on the diff but not on the boss but has a group
+							if(ReplaceStringEx(buffer3, sizeof(buffer3), "name_", "group_") != -1 && !Client(client).Cfg.Get(buffer3, buffer1, sizeof(buffer1)) && Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
+							{
+								Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+								Client(client).Cfg.Set(buffer3, buffer2);
+							}
+						}
+					}
+					
+					delete snap;
+					
+					// Set "name"
+					Client(client).Cfg.Get("name", buffer1, sizeof(buffer1));
+					if(cfg.Get("name", buffer2, sizeof(buffer2)))
+					{
+						Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+					}
+					else
+					{
+						Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, choosen);
+					}
+					
+					Client(client).Cfg.Set("name", buffer2);
+					
+					// Set "group"
+					if(Client(client).Cfg.Get("group", buffer1, sizeof(buffer1)))
+					{
+						if(cfg.Get("name", buffer2, sizeof(buffer2)))
+						{
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, buffer2);
+						}
+						else
+						{
+							Format(buffer2, sizeof(buffer2), "%s [%s]", buffer1, choosen);
+						}
+						
+						Client(client).Cfg.Set("group", buffer2);
+					}
+				}
+			}
+		}
+	}
+}
+
+bool Preference_HasDifficulties()
+{
+	return view_as<bool>(Difficulties);
+}
+
+public Action Preference_DifficultyMenuCmd(int client, int args)
+{
+	if(!Preference_HasDifficulties())
+		return Plugin_Continue;
+	
+	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	{
+		if(Cvar[PrefSpecial].BoolValue)
+		{
+			if(DiffListing[client])
+			{
+				delete DiffListing[client];
+				FReplyToCommand(client, "%t", "Enabled Special Rounds");
+			}
+			else
+			{
+				Preference_AddDifficulty(client, "#");
+				FReplyToCommand(client, "%t", "Disabled Special Rounds");
+			}
+			
+			UpdateDataBase[client] = true;
+		}
+		else if(args && client)
+		{
+			int lang = GetClientLanguage(client);
+			
+			char buffer[64];
+			GetCmdArgString(buffer, sizeof(buffer));
+			if(GetDiffByName(buffer, buffer, sizeof(buffer), lang))
+			{
+				int index = -1;
+				if(DiffListing[client])
+					index = DiffListing[client].FindString(buffer);
+				
+				ConfigMap cfg = Difficulties.GetSection(buffer);
+				if(!cfg)
+				{
+					FReplyToCommand(client, "%t", "Unknown Difficulty");
+				}
+				else if(index == -1)
+				{
+					Preference_AddDifficulty(client, buffer);
+					UpdateDataBase[client] = true;
+					
+					Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+					FReplyToCommand(client, "%t", "Boss Whitelisted", buffer);
+				}
+				else
+				{
+					DiffListing[client].Erase(index);
+					UpdateDataBase[client] = true;
+					
+					Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+					FReplyToCommand(client, "%t", "Boss Blacklisted", buffer);
+				}
+			}
+			else
+			{
+				FReplyToCommand(client, "%t", "Unknown Difficulty");
+			}
+		}
+		else
+		{
+			char buffer[64];
+			int lang = client ? GetClientLanguage(client) : -1;
+			SortedSnapshot snap = CreateSortedSnapshot(Difficulties);
+			
+			PackVal val;
+			int entries = snap.Length;
+			for(int i; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i)+1;
+				char[] section = new char[length];
+				snap.GetKey(i, section, length);
+				if(Difficulties.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
+				{
+					if(!client)
+					{
+						PrintToServer(section);
+					}
+					else if(Bosses_GetBossNameCfg(val.cfg, buffer, sizeof(buffer), lang))
+					{
+						PrintToConsole(client, buffer);
+					}
+					else
+					{
+						PrintToConsole(client, section);
+					}
+				}
+			}
+			
+			delete snap;
+		}
+	}
+	else if(args)
+	{
+		Menu_Command(client);
+		
+		char buffer[64];
+		GetCmdArgString(buffer, sizeof(buffer));
+		if(GetDiffByName(buffer, buffer, sizeof(buffer), GetClientLanguage(client)))
+		{
+			ViewingPage[client] = 0;
+			DifficultyMenu(client, buffer);
+		}
+		else
+		{
+			Preference_DifficultyMenu(client);
+		}
+	}
+	else
+	{
+		Menu_Command(client);
+		Preference_DifficultyMenu(client);
+	}
+	return Plugin_Handled;
+}
+
+void Preference_DifficultyMenu(int client)
+{
+	ViewingPage[client] = 0;
+	DifficultyMenu(client);
+}
+
+static void DifficultyMenu(int client, const char[] name = "")
+{
+	SetGlobalTransTarget(client);
+	
+	if(name[0])
+	{
+		ConfigMap cfg = Difficulties.GetSection(name);
+		if(cfg)
+		{
+			Menu menu = new Menu(Preference_DifficultyMenuItemH);
+			
+			int lang = GetClientLanguage(client);
+			
+			char buffer[512];
+			if(Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang, "description"))
+			{
+				menu.SetTitle("%t\n%s\n ", "Difficulty Menu", buffer);
+			}
+			else
+			{
+				menu.SetTitle("%t\n%t\n ", "Difficulty Menu", "No Description");
+			}
+			
+			if(Cvar[PrefSpecial].BoolValue)
+			{
+				menu.AddItem("", " ", ITEMDRAW_NOTEXT);
+			}
+			else
+			{
+				if(!Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang))
+					strcopy(buffer, sizeof(buffer), name);
+				
+				Format(buffer, sizeof(buffer), "%t", (DiffListing[client] && DiffListing[client].FindString(name) != -1) ? "Boss Blacklist" : "Boss Whitelist", buffer);
+				menu.AddItem(name, buffer);
+			}
+			
+			menu.ExitBackButton = true;
+			menu.Display(client, MENU_TIME_FOREVER);
+		}
+	}
+	else
+	{
+		Menu menu = new Menu(Preference_DifficultyMenuH);
+		
+		menu.SetTitle("%t", "Difficulty Menu");
+		
+		bool random = Cvar[PrefSpecial].BoolValue;
+		char buffer[64];
+		if(random)
+		{
+			FormatEx(buffer, sizeof(buffer), "%t\n ", DiffListing[client] ? "Enable Special Rounds" : "Disable Special Rounds");
+			menu.AddItem("", buffer);
+		}
+		else
+		{
+			FormatEx(buffer, sizeof(buffer), "%t", "Clear Whitelist");
+			menu.AddItem("", buffer, DiffListing[client] ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		}
+		
+		int lang = GetClientLanguage(client);
+		SortedSnapshot snap = CreateSortedSnapshot(Difficulties);
+		
+		PackVal val;
+		int entries = snap.Length;
+		for(int i; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i)+1;
+			char[] section = new char[length];
+			snap.GetKey(i, section, length);
+			if(Difficulties.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
+			{
+				if(!Bosses_GetBossNameCfg(val.cfg, buffer, sizeof(buffer), lang))
+					strcopy(buffer, sizeof(buffer), section);
+				
+				if(!random)
+					Format(buffer, sizeof(buffer), "[%s] %s", (DiffListing[client] && DiffListing[client].FindString(section) != -1) ? "X" : " ", buffer);
+				
+				menu.AddItem(section, buffer);
+			}
+		}
+		
+		delete snap;
+		
+		menu.ExitBackButton = Menu_BackButton(client);
+		menu.DisplayAt(client, ViewingPage[client], MENU_TIME_FOREVER);
+	}
+}
+
+public int Preference_DifficultyMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				Menu_MainMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			ViewingPage[client] = choice / 7 * 7;
+			
+			if(choice)
+			{
+				char buffer[64];
+				menu.GetItem(choice, buffer, sizeof(buffer));
+				DifficultyMenu(client, buffer);
+			}
+			else if(DiffListing[client])
+			{
+				delete DiffListing[client];
+				UpdateDataBase[client] = true;
+				DifficultyMenu(client);
+			}
+			else
+			{
+				Preference_AddDifficulty(client, "#");
+				UpdateDataBase[client] = true;
+				DifficultyMenu(client);
+			}
+		}
+	}
+	return 0;
+}
+
+public int Preference_DifficultyMenuItemH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				DifficultyMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			if(buffer[0])
+			{
+				int index = -1;
+				if(DiffListing[client])
+					index = DiffListing[client].FindString(buffer);
+				
+				if(index == -1)
+				{
+					Preference_AddDifficulty(client, buffer);
+				}
+				else
+				{
+					DiffListing[client].Erase(index);
+				}
+				
+				UpdateDataBase[client] = true;
+			}
+			
+			DifficultyMenu(client);
+		}
+	}
+	return 0;
+}
+
+static bool GetDiffByName(const char[] name, char[] buffer, int length, int lang = -1)
+{
+	int similarDiff = -1;
+	int size1 = strlen(name);
+	int similarChars;
+	
+	StringMapSnapshot snap = Difficulties.Snapshot();
+	
+	PackVal val;
+	int entries = snap.Length;
+	for(int i; i < entries; i++)
+	{
+		int lengt = snap.KeyBufferSize(i)+1;
+		char[] section = new char[lengt];
+		snap.GetKey(i, section, lengt);
+		if(Difficulties.GetArray(section, val, sizeof(val)) && val.tag == KeyValType_Section && val.cfg)
+		{
+			if(!Bosses_GetBossNameCfg(val.cfg, buffer, length, lang))
+				strcopy(buffer, length, section);
+			
+			if(StrEqual(name, buffer, false))
+			{
+				similarDiff = i;
+				break;
+			}
+			
+			int bump = StrContains(buffer, name, false);
+			if(bump == -1)
+				bump = 0;
+			
+			int size2 = strlen(buffer) - bump;
+			if(size2 > size1)
+				size2 = size1;
+			
+			int amount;
+			for(int c; c < size2; c++)
+			{
+				if(CharToLower(name[c]) == CharToLower(buffer[c + bump]))
+					amount++;
+			}
+			
+			if(amount > similarChars)
+			{
+				similarChars = amount;
+				similarDiff = i;
+			}
+		}
+	}
+	
+	if(similarDiff != -1)
+		snap.GetKey(similarDiff, buffer, length);
+	
+	delete snap;
+	return similarDiff != -1;
 }

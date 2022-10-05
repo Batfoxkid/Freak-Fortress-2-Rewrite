@@ -9,6 +9,7 @@
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 static float JarateDamage[MAXTF2PLAYERS];
 static int JarateApplyer[MAXTF2PLAYERS];
@@ -108,7 +109,11 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	if(value)
 		SetEntProp(attacker, Prop_Send, "m_iRevengeCrits", GetEntProp(attacker, Prop_Send, "m_iRevengeCrits")+RoundFloat(value));
 	
-	bool silent = view_as<bool>(Attributes_FindOnWeapon(attacker, weapon, 217));
+	value = Attributes_FindOnWeapon(attacker, weapon, 399, true, 1.0);	// armor piercing
+	if(value != 1.0)
+		damage *= value;
+	
+	bool silent = view_as<bool>(Attributes_FindOnWeapon(attacker, weapon, 156));	// silent killer
 	
 	if(killfeed)
 	{
@@ -156,14 +161,8 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	return silent;
 }
 
-void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weapon)
+void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weapon, int &critType)
 {
-	if((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attributes_FindOnWeapon(attacker, weapon, 621)) ||	// rocketjump attackrate bonus
-	   (TF2_IsPlayerInCondition(attacker, TFCond_DisguiseRemoved) && Attributes_FindOnWeapon(attacker, weapon, 410))) 	// damage bonus while disguised
-	{
-		TF2_AddCondition(attacker, TFCond_MiniCritOnKill, 0.001);
-	}
-	
 	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		char classname[36];
@@ -175,8 +174,9 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 				if(!GetEntProp(weapon, Prop_Send, "m_iDetonated"))
 				{
 					damagetype |= DMG_CRIT;
+					critType = 2;
 					
-					if(CvarSoundType.BoolValue)
+					if(Cvar[SoundType].BoolValue)
 					{
 						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
 					}
@@ -187,6 +187,12 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 				}
 			}
 		}
+	}
+	
+	if(!critType && ((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attributes_FindOnWeapon(attacker, weapon, 621)) ||	// rocketjump attackrate bonus
+	   (TF2_IsPlayerInCondition(attacker, TFCond_DisguiseRemoved) && Attributes_FindOnWeapon(attacker, weapon, 410)))) 	// damage bonus while disguised
+	{
+		critType = 1;
 	}
 }
 
@@ -214,6 +220,8 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 	Client(attacker).Damage = lastPlayerDamage + idamage;
 	Client(attacker).SetDamage(slot, lastWeaponDamage + idamage);
 	
+	Weapons_OnHitBoss(attacker, Client(attacker).Damage, lastPlayerDamage);
+	
 	float value = Attributes_FindOnPlayer(attacker, 203);	// drop health pack on kill
 	if(value > 0.0)
 	{
@@ -239,7 +247,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 					SetEntityMoveType(entity, MOVETYPE_VPHYSICS);
 					velocity[0] = GetRandomFloat(-10.0, 10.0);
 					velocity[1] = GetRandomFloat(-10.0, 10.0);
-					TeleportEntity(entity, position, NULL_VECTOR, velocity);
+					TeleportEntity(entity, position, _, velocity);
 					SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", attacker);
 				}
 			}
@@ -281,11 +289,12 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		if(Attributes_FindOnWeapon(attacker, weapon, 30))	// fists have radial buff
 		{
 			int entity;
+			int team = GetClientTeam(attacker);
 			float pos1[3], pos2[3];
 			GetClientAbsOrigin(attacker, pos1);
 			for(int target = 1; target <= MaxClients; target++)
 			{
-				if(attacker!=target && IsClientInGame(target) && IsPlayerAlive(target))
+				if(attacker != target && IsClientInGame(target) && GetClientTeam(target) == team && IsPlayerAlive(target))
 				{
 					GetClientAbsOrigin(target, pos2);
 					if(GetVectorDistance(pos1, pos2, true) < 160000)
@@ -314,16 +323,15 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 						int i;
 						while(TF2_GetItem(target, entity, i))
 						{
+							SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
 							Address attrib = TF2Attrib_GetByDefIndex(entity, 28);
 							if(attrib != Address_Null)
 							{
-								TF2Attrib_SetValue(attrib, TF2Attrib_GetValue(attrib)*1.1);
-								TF2Attrib_SetByDefIndex(entity, 403, view_as<float>(222153573));	// Update attribute
+								TF2Attrib_SetByDefIndex(entity, 28, TF2Attrib_GetValue(attrib) * 1.1);
 							}
 							else
 							{
 								TF2Attrib_SetByDefIndex(entity, 28, 1.1);
-								SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 							}
 						}
 					}
@@ -465,11 +473,11 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		
 		if(Attributes_FindOnWeapon(attacker, weapon, 409))	// kill forces attacker to laugh
 			TF2_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
-	
+		
 		value = Attributes_FindOnWeapon(attacker, weapon, 613);	// minicritboost on kill
 		if(value)
 			TF2_AddCondition(attacker, TFCond_MiniCritOnKill, value);
-	
+		
 		if(Attributes_FindOnWeapon(attacker, weapon, 644))	// clipsize increase on kill
 		{
 			int amount = DamageGoal(375, Client(attacker).GetDamage(slot), lastWeaponDamage);
@@ -732,13 +740,8 @@ public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
 			hype = 0.0;
 		
 		SetEntPropFloat(client, Prop_Send, "m_flHypeMeter", hype);
-		if(Enabled || RoundStatus == 1)
+		if(Enabled && RoundStatus == 1)
 			return Plugin_Continue;
 	}
 	return Plugin_Stop;
-}
-
-static int DamageGoal(int goal, int current, int last)
-{
-	return (current / goal) - (last / goal);
 }

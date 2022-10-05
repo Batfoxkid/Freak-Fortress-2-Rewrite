@@ -5,8 +5,8 @@
 
 #include <sourcemod>
 #include <sdkhooks>
-#include <adminmenu>
 #include <tf2_stocks>
+#include <adminmenu>
 #include <clientprefs>
 #include <adt_trie_sort>
 #include <cfgmap>
@@ -20,8 +20,9 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.0"
+#define PLUGIN_VERSION			"1.1"
 #define PLUGIN_VERSION_REVISION	"custom"
+#define PLUGIN_VERSION_FULL		"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
@@ -30,7 +31,7 @@
 #define MINOR_REVISION	11
 #define STABLE_REVISION	0
 
-#define GITHUB_URL	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+#define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
 #define FAR_FUTURE		100000000.0
 #define MAXENTITIES		2048
@@ -118,13 +119,13 @@ enum SectionType
 {
 	Section_Unknown = 0,
 	Section_Ability,	// ability | Ability Name
-	Section_Map,	// map_
-	Section_Weapon,	// weapon | wearable | tf_ | saxxy
-	Section_Sound,	// sound_ | catch_
+	Section_Map,		// map_
+	Section_Weapon,		// weapon | wearable | tf_ | saxxy
+	Section_Sound,		// sound_ | catch_
 	Section_ModCache,	// mod_precache
 	Section_Precache,	// precache
 	Section_Download,	// download
-	Section_Model,	// mod_download
+	Section_Model,		// mod_download
 	Section_Material	// mat_download
 };
 
@@ -166,34 +167,48 @@ public const int TeamColors[][] =
 	{100, 100, 255, 255}
 };
 
-ConVar CvarCharset;
-ConVar CvarDebug;
-ConVar CvarSpecTeam;
-ConVar CvarBossVsBoss;
-ConVar CvarBossSewer;
-ConVar CvarHealthBar;
-ConVar CvarRefreshDmg;
-ConVar CvarRefreshTime;
-ConVar CvarBossTriple;
-ConVar CvarBossCrits;
-ConVar CvarBossHealing;
-ConVar CvarBossKnockback;
-ConVar CvarPrefBlacklist;
-ConVar CvarPrefToggle;
-ConVar CvarCaptureTime;
-ConVar CvarCaptureAlive;
-ConVar CvarAggressiveSwap;
-ConVar CvarAggressiveOverlay;
-ConVar CvarSoundType;
-ConVar CvarDisguiseModels;
-ConVar CvarPlayerGlow;
-ConVar CvarBossSapper;
+enum
+{
+	Version,
+	NextCharset,
+	Debugging,
+	
+	AggressiveOverlay,
+	AggressiveSwap,
+	
+	SoundType,
+	BossTriple,
+	BossCrits,
+	BossHealing,
+	BossKnockback,
+	BossSapper,
+	
+	BossVsBoss,
+	SpecTeam,
+	CaptureTime,
+	CaptureAlive,
+	HealthBar,
+	RefreshDmg,
+	RefreshTime,
+	DisguiseModels,
+	PlayerGlow,
+	BossSewer,
+	Telefrags,
+	
+	PrefBlacklist,
+	PrefToggle,
+	PrefSpecial,
+	
+	AllowSpectators,
+	MovementFreeze,
+	PreroundTime,
+	//BonusRoundTime,
+	Tournament,
+	
+	Cvar_MAX
+}
 
-ConVar CvarAllowSpectators;
-ConVar CvarMovementFreeze;
-ConVar CvarPreroundTime;
-//ConVar CvarBonusRoundTime;
-ConVar CvarTournament;
+ConVar Cvar[Cvar_MAX];
 
 int PlayersAlive[TFTeam_MAX];
 int MaxPlayersAlive[TFTeam_MAX];
@@ -228,6 +243,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/preference.sp"
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
+#include "freak_fortress_2/steamworks.sp"
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/weapons.sp"
 
@@ -236,7 +252,7 @@ public Plugin myinfo =
 	name		=	"Freak Fortress 2: Rewrite",
 	author		=	"Batfoxkid based on the original done by many others",
 	description	=	"It's like Christmas Morning",
-	version		=	PLUGIN_VERSION,
+	version		=	PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
 	url			=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
 }
 
@@ -264,6 +280,8 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
+	if(!TranslationPhraseExists("Difficulty Menu"))
+		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	PlayerHud = CreateHudSynchronizer();
 	
@@ -271,7 +289,7 @@ public void OnPluginStart()
 	Bosses_PluginStart();
 	Command_PluginStart();
 	ConVar_PluginStart();
-	Database_Setup();
+	Database_PluginStart();
 	DHook_Setup();
 	Events_PluginStart();
 	Gamemode_PluginStart();
@@ -280,6 +298,7 @@ public void OnPluginStart()
 	Preference_PluginStart();
 	SDKCall_Setup();
 	SDKHook_PluginStart();
+	SteamWorks_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	Weapons_PluginStart();
@@ -298,12 +317,6 @@ public void OnAllPluginsLoaded()
 
 public void OnMapStart()
 {
-	/*if(FileExists("sound/saxton_hale/9000.wav", true))
-	{
-		AddFileToDownloadsTable("sound/saxton_hale/9000.wav");
-		PrecacheSound("saxton_hale/9000.wav");
-	}*/
-	
 	Configs_MapStart();
 	DHook_MapStart();
 	Gamemode_MapStart();
@@ -315,7 +328,7 @@ public void OnConfigsExecuted()
 	GetCurrentMap(mapname, sizeof(mapname));
 	if(Configs_CheckMap(mapname))
 	{
-		Charset = CvarCharset.IntValue;
+		Charset = Cvar[NextCharset].IntValue;
 	}
 	else
 	{
@@ -323,10 +336,8 @@ public void OnConfigsExecuted()
 	}
 	
 	Bosses_BuildPacks(Charset, mapname);
-	
-	if(Enabled)
-		ConVar_Enable();
-	
+	ConVar_ConfigsExecuted();
+	Preference_ConfigsExecuted();
 	Weapons_ConfigsExecuted();
 }
 
@@ -348,6 +359,7 @@ public void OnPluginEnd()
 public void OnLibraryAdded(const char[] name)
 {
 	SDKHook_LibraryAdded(name);
+	SteamWorks_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
@@ -356,20 +368,21 @@ public void OnLibraryAdded(const char[] name)
 public void OnLibraryRemoved(const char[] name)
 {
 	SDKHook_LibraryRemoved(name);
+	SteamWorks_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);
-}
-
-public void OnClientAuthorized(int client, const char[] auth)
-{
-	Database_ClientAuthorized(client);
 }
 
 public void OnClientPutInServer(int client)
 {
 	DHook_HookClient(client);
 	SDKHook_HookClient(client);
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	Database_ClientPostAdminCheck(client);
 }
 
 public void OnClientDisconnect(int client)

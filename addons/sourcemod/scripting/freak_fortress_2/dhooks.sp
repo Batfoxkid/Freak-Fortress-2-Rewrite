@@ -10,9 +10,11 @@
 	void DHook_UnhookClient(int client)
 	void DHook_UnhookBoss(int client)
 	Address DHook_GetGameStats()
+	Address DHook_GetLagCompensationManager()
 */
 
 #pragma semicolon 1
+#pragma newdecls required
 
 enum struct RawHooks
 {
@@ -32,6 +34,7 @@ static DynamicHook HookItemIterateAttribute;
 
 static ArrayList RawEntityHooks;
 static Address CTFGameStats;
+static Address CLagCompensationManager;
 static int DamageTypeOffset = -1;
 static int m_bOnlyIterateItemViewAttributes;
 static int m_Item;
@@ -56,6 +59,7 @@ void DHook_Setup()
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
 	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
+	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
 	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
 	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
@@ -95,10 +99,10 @@ static void CreateDetour(GameData gamedata, const char[] name, DHookCallback pre
 	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
 	if(detour)
 	{
-		if(preCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, false, preCallback))
+		if(preCallback != INVALID_FUNCTION && !detour.Enable(Hook_Pre, preCallback))
 			LogError("[Gamedata] Failed to enable pre detour: %s", name);
 		
-		if(postCallback != INVALID_FUNCTION && !DHookEnableDetour(detour, true, postCallback))
+		if(postCallback != INVALID_FUNCTION && !detour.Enable(Hook_Post, postCallback))
 			LogError("[Gamedata] Failed to enable post detour: %s", name);
 		
 		delete detour;
@@ -129,14 +133,14 @@ void DHook_HookClient(int client)
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
 	
-	if(ChangeTeam && CvarDisguiseModels.BoolValue)
+	if(ChangeTeam && Cvar[DisguiseModels].BoolValue)
 		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
 void DHook_HookBoss(int client)
 {
 	DHook_UnhookBoss(client);
-	if(ChangeTeam && CvarAggressiveSwap.BoolValue)
+	if(ChangeTeam && Cvar[AggressiveSwap].BoolValue)
 		ChangeTeamPreHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
 }
 
@@ -235,6 +239,11 @@ Address DHook_GetGameStats()
 	return CTFGameStats;
 }
 
+Address DHook_GetLagCompensationManager()
+{
+	return CLagCompensationManager;
+}
+
 public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
@@ -286,13 +295,28 @@ public MRESReturn DHook_CanBuildPost()
 
 public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
-	if(Client(client).IsBoss || Client(client).Minion)
+	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
 	{
-		ret.Value = false;
-		
-		return MRES_Supercede;
+		case Plugin_Continue:
+		{
+			if(Client(client).IsBoss || Client(client).Minion)
+			{
+				ret.Value = false;
+				return MRES_Supercede;
+			}
+		}
+		case Plugin_Handled:
+		{
+			ret.Value = true;
+			return MRES_Supercede;
+		}
+		case Plugin_Stop:
+		{
+			ret.Value = false;
+			return MRES_Supercede;
+		}
 	}
-
+	
 	return MRES_Ignored;
 }
 
@@ -321,7 +345,7 @@ public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 
 public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 {
-	if(Enabled && CvarBossSapper.BoolValue)
+	if(Enabled && Cvar[BossSapper].BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", true);
 		
@@ -351,7 +375,7 @@ public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
 
 public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
 {
-	if(Enabled && CvarBossSapper.BoolValue)
+	if(Enabled && Cvar[BossSapper].BoolValue)
 	{
 		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 		
@@ -430,20 +454,24 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 public MRESReturn DHook_ResetRoundStats(Address address)
 {
 	CTFGameStats = address;
-
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
+	return MRES_Ignored;
+}
 
+public MRESReturn DHook_StartLagCompensation(Address address)
+{
+	CLagCompensationManager = address;
 	return MRES_Ignored;
 }
 
 public MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
-	if(Enabled && RoundStatus == 1 && CvarSpecTeam.BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
+	if(Enabled && RoundStatus == 1 && Cvar[SpecTeam].BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
 	{
 		Events_CheckAlivePlayers();
 		
@@ -546,13 +574,11 @@ public MRESReturn DHook_StartBuildingPost(int entity)
 public MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
-
     return MRES_Ignored;
 }
 
 public MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
-
     return MRES_Ignored;
 } 

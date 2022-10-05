@@ -12,6 +12,7 @@
 #tryinclude <tf_econ_data> 
 
 #pragma semicolon 1
+#pragma newdecls required
 
 #define TFED_LIBRARY	"tf_econ_data"
 
