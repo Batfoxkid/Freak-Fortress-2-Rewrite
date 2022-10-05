@@ -1,7 +1,7 @@
 /*
 	void Database_PluginStart()
 	void Database_PluginEnd()
-	void Database_ClientAuthorized(int client)
+	void Database_ClientPostAdminCheck(int client)
 	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
 */
 
@@ -137,7 +137,7 @@ public void Database_SetupCallback(Database db, any data, int numQueries, DBResu
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientAuthorized(client))
-			Database_ClientAuthorized(client);
+			Database_ClientPostAdminCheck(client);
 	}
 }
 
@@ -153,7 +153,7 @@ void Database_PluginEnd()
 	}
 }
 
-void Database_ClientAuthorized(int client)
+void Database_ClientPostAdminCheck(int client)
 {
 	if(DataBase && !IsFakeClient(client))
 	{
@@ -244,7 +244,7 @@ public void Database_ClientRetry(Database db, any data, int numQueries, const ch
 {
 	int client = GetClientOfUserId(data);
 	if(client)
-		Database_ClientAuthorized(client);
+		Database_ClientPostAdminCheck(client);
 }
 
 void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)

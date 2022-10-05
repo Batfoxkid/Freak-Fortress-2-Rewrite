@@ -374,15 +374,15 @@ public void OnLibraryRemoved(const char[] name)
 	Weapons_LibraryRemoved(name);
 }
 
-public void OnClientAuthorized(int client, const char[] auth)
-{
-	Database_ClientAuthorized(client);
-}
-
 public void OnClientPutInServer(int client)
 {
 	DHook_HookClient(client);
 	SDKHook_HookClient(client);
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	Database_ClientPostAdminCheck(client);
 }
 
 public void OnClientDisconnect(int client)

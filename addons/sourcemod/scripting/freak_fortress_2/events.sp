@@ -559,9 +559,6 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				if(Client(victim).IsBoss)
 				{
 					Bosses_UseSlot(victim, 5, 5);
-					
-					if(!Enabled)
-						CreateTimer(0.1, Events_RemoveBossTimer, userid, TIMER_FLAG_NO_MAPCHANGE);
 				}
 				else if(Enabled)
 				{
@@ -580,15 +577,6 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			}
 		}
 	}
-}
-
-public Action Events_RemoveBossTimer(Handle timer, int userid)
-{
-	int client = GetClientOfUserId(userid);
-	if(client && !IsPlayerAlive(client))
-		Bosses_Remove(client);
-	
-	return Plugin_Continue;
 }
 
 public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)

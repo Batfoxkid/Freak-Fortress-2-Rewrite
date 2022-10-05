@@ -2071,6 +2071,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						
+						ApplyHealEvent(attacker, attacker, 600);
 						SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
 						return Plugin_Handled;
 					}
@@ -2078,20 +2079,54 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 				
 				if(isBoss)
 				{
+					bool found;
+					
 					if(ClassSwap[attacker])
 					{
 						int slot = -1;
 						TFClassType class = TF2_GetDropClass(index, ClassSwap[attacker], slot);
-						if(slot == -1 || slot >= TFWeaponSlot_Melee)
+						if(slot != -1 && slot < TFWeaponSlot_Melee)
 						{
-							StealFromBoss(victim, attacker);
-							return Plugin_Handled;
+							TF2_RemoveWeaponSlot(attacker, slot);
+							TF2_SetPlayerClass(attacker, class, _, false);
+							found = true;
 						}
-						
-						TF2_RemoveWeaponSlot(attacker, slot);
-						TF2_SetPlayerClass(attacker, class, _, false);
 					}
-					else if(TF2_GetClassnameSlot(classname) >= TFWeaponSlot_Melee)
+					else if(TF2_GetClassnameSlot(classname) < TFWeaponSlot_Melee)
+					{
+						found = true;
+					}
+					
+					if(!found)
+					{
+						for(int i; i < TFWeaponSlot_Melee; i++)
+						{
+							weapon = GetPlayerWeaponSlot(victim, i);
+							if(weapon != -1 && GetEntityClassname(weapon, classname, sizeof(classname)))
+							{
+								index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+								if(ClassSwap[attacker])
+								{
+									int slot = -1;
+									TFClassType class = TF2_GetDropClass(index, ClassSwap[attacker], slot);
+									if(slot != -1 && slot < TFWeaponSlot_Melee)
+									{
+										TF2_RemoveWeaponSlot(attacker, slot);
+										TF2_SetPlayerClass(attacker, class, _, false);
+										found = true;
+										break;
+									}
+								}
+								else if(TF2_GetClassnameSlot(classname) < TFWeaponSlot_Melee)
+								{
+									found = true;
+									break;
+								}
+							}
+						}
+					}
+					
+					if(!found)
 					{
 						StealFromBoss(victim, attacker);
 						return Plugin_Handled;
@@ -2105,6 +2140,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					}
 					
 					StealNext[attacker]--;
+					SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
+					ApplyHealEvent(attacker, attacker, 600);
 					
 					SetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex", index);
 					SetEntProp(weapon, Prop_Send, "m_bInitialized", 1);
@@ -2118,6 +2155,13 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					
 					EquipPlayerWeapon(attacker, weapon);
 					
+					if(HasEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType"))
+					{
+						int type = GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType");
+						if(type >= 0)
+							SetEntProp(attacker, Prop_Data, "m_iAmmo", 0, _, type);
+					}
+					
 					float value = 1.0;
 					Address attrib = TF2Attrib_GetByDefIndex(weapon, 2);
 					if(attrib != Address_Null)
@@ -2126,7 +2170,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					TF2Attrib_SetByDefIndex(weapon, 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
 					TF2Attrib_SetByDefIndex(weapon, 28, 0.1);
 					
-					int entity = CreateEntityByName("item_ammopack_full");
+					int entity = CreateEntityByName("item_ammopack_medium");
 					if(entity != -1)
 					{
 						DispatchKeyValue(entity, "OnPlayerTouch", "!self,Kill,,0,-1");
@@ -2229,6 +2273,7 @@ void StealFromBoss(int victim, int attacker)
 {
 	TF2_StunPlayer(victim, 0.4, 0.5, TF_STUNFLAG_SLOWDOWN, attacker);
 	
+	ApplyHealEvent(attacker, attacker, 600 * StealNext[attacker]);
 	SetHealthTo[attacker] = GetClientHealth(attacker) + (600 * StealNext[attacker]);
 	StealNext[attacker] = 0;
 	
@@ -2805,6 +2850,17 @@ int AttachParticle(int entity, const char[] name, float lifetime)
 		AcceptEntityInput(particle, "FireUser1");
 	}
 	return particle;
+}
+
+void ApplyHealEvent(int patient, int healer, int amount)
+{
+	Event event = CreateEvent("player_healed", true);
+
+	event.SetInt("patient", patient);
+	event.SetInt("healer", healer);
+	event.SetInt("heals", amount);
+
+	event.Fire();
 }
 
 void EquipWearable(int client, int entity)
