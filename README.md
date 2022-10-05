@@ -4,7 +4,7 @@
 
 ## Installation:
 
-**[Lastest Release](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases/latest)** or [Other Releases](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases)  
+**[View Releases](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases)  
 Use `New Install Package` for installing for the first time
 Use `Update Package` to update your current version of Rewrite
 
