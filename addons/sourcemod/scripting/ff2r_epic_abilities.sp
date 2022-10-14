@@ -259,7 +259,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Boss Wall Jump"))
+	if(!TranslationPhraseExists("Boss Weapon Pickups"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	GameData gamedata = new GameData("sm-tf2.games");
@@ -441,6 +441,11 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			}
 			
 			CanPickup[client] = (SDKGiveNamedItem && SDKInitPickedUpWeapon && ability.GetBool("pickups", true));
+			if(CanPickup[client])
+			{
+				PrintCenterText(client, "%t", "Boss Weapon Pickups");
+				PrintToChat(client, "%t", "Boss Weapon Pickups");
+			}
 		}
 	}
 	
@@ -453,6 +458,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			{
 				WallJumper[client] = true;
 				PrintCenterText(client, "%t", "Boss Wall Jump");
+				PrintToChat(client, "%t", "Boss Wall Jump");
 			}
 		}
 		
@@ -561,7 +567,7 @@ public void FF2R_OnBossRemoved(int client)
 	}
 	
 	if(HookedWeaponSwap[client])
-		RemoveWeaponSwapHooks(client);
+		CheckWeaponSwapHooks(client);
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
@@ -1459,7 +1465,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					BodyRef[client] = EntIndexToEntRef(entity);
 					EquipWearable(client, entity);
 					
-					SetEntProp(client, Prop_Send, "m_nRenderFX", RENDERFX_FADE_FAST);
+					SetEntityRenderFx(client, RENDERFX_FADE_FAST);
 					
 					SetVariantString(NULL_STRING);
 					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
@@ -1516,7 +1522,7 @@ public void OnWeaponSwitch(int client, int weapon)
 			}
 		}
 	}
-	else
+	else if(IsPlayerAlive(client))
 	{
 		if(BodyRef[client] != INVALID_ENT_REFERENCE)
 		{
@@ -1536,7 +1542,7 @@ public void OnWeaponSwitch(int client, int weapon)
 				TF2_RemoveWearable(client, entity);
 			}
 			
-			SetEntProp(client, Prop_Send, "m_nRenderFX", RENDERFX_NONE);
+			SetEntityRenderFx(client, RENDERFX_NONE);
 			BodyRef[client] = INVALID_ENT_REFERENCE;
 		}
 		
@@ -1819,15 +1825,19 @@ void GetButtons(ConfigData ability, bool cycle, int &count, int button[4])
 
 void CheckWeaponSwapHooks(int client)
 {
-	if(RazorbackRef[client] == INVALID_ENT_REFERENCE && !ClassSwap[client])
+	if(RazorbackRef[client] == INVALID_ENT_REFERENCE && !ClassSwap[client] && BodyRef[client] == INVALID_ENT_REFERENCE && WeapRef[client] != INVALID_ENT_REFERENCE)
 		RemoveWeaponSwapHooks(client);
 }
 
 void RemoveWeaponSwapHooks(int client)
 {
-	HookedWeaponSwap[client] = false;
-	SDKUnhook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
 	OnWeaponSwitch(client, -2);
+	
+	if(RazorbackRef[client] == INVALID_ENT_REFERENCE && !ClassSwap[client] && BodyRef[client] == INVALID_ENT_REFERENCE && WeapRef[client] != INVALID_ENT_REFERENCE)
+	{
+		SDKUnhook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitch);
+		HookedWeaponSwap[client] = false;
+	}
 }
 
 public Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
@@ -2794,15 +2804,34 @@ TFClassType TF2_GetDropClass(int index, TFClassType defaul, int &slot)
 				slot = TF2Econ_GetItemLoadoutSlot(index, class);
 				if(slot != -1)
 				{
+					if(class == TFClass_Spy)
+						FixSpyClass(slot);
+					
 					Debug("%d Slot = %d", class, slot);
 					return class;
 				}
 			}
 		}
 	}
+	else if(defaul == TFClass_Spy)
+	{
+		FixSpyClass(slot);
+	}
 	
 	Debug("Defaulted to %d", defaul);
 	return defaul;
+}
+
+void FixSpyClass(int &slot)
+{
+	switch(slot)
+	{
+		case TFWeaponSlot_Secondary:
+			slot = TFWeaponSlot_Primary;
+		
+		case TFWeaponSlot_Building:
+			slot = TFWeaponSlot_Secondary;
+	}
 }
 
 TFClassType TF2_GetWeaponClass(int weapon, TFClassType defaul)

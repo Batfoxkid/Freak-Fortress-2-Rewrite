@@ -359,6 +359,7 @@ bool TCALoaded;
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
+Handle SDKSetSpeed;
 Handle SyncHud;
 int PlayersAlive[4];
 bool SpecTeam;
@@ -447,6 +448,16 @@ public void OnPluginStart()
 	SDKGetMaxHealth = EndPrepSDKCall();
 	if(!SDKGetMaxHealth)
 		LogError("[Gamedata] Could not find GetMaxHealth");
+	
+	delete gamedata;
+	
+	gamedata = new GameData("ff2");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
+	SDKSetSpeed = EndPrepSDKCall();
+	if(!SDKSetSpeed)
+		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
 	
 	delete gamedata;
 	
@@ -719,7 +730,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						if(AnchorStartTime[client] < (gameTime - ability.GetFloat("full", 3.5)))
 						{
 							TF2_AddCondition(client, TFCond_MegaHeal, 0.05, client);
-							if(GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
+							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 						}
 						else if(AnchorStartTime[client] < (gameTime - ability.GetFloat("basic", 0.5)))
@@ -729,7 +740,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							TF2Attrib_SetByDefIndex(client, 252, 0.0);
 							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
-							if(GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
+							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 						}
 					}
@@ -739,9 +750,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					}
 				}
 			}
-			else
+			else if(AnchorStartTime[client] != 1.0)
 			{
 				AnchorStartTime[client] = 1.0;
+				if(SDKSetSpeed)
+					SDKCall(SDKSetSpeed, client);
 			}
 		}
 		else
@@ -2790,7 +2803,7 @@ public Action Timer_RestoreCollision(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
-	if(client && GetEntProp(client, Prop_Send, "m_CollisionGroup") != 2)
+	if(client && GetEntProp(client, Prop_Send, "m_CollisionGroup") == 2)
 		SetEntityCollisionGroup(client, pack.ReadCell());
 	
 	return Plugin_Continue;

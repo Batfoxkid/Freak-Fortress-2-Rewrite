@@ -625,6 +625,10 @@
 	{
 		"en"		"Wall Jumps - Jump while nearby a solid wall"
 	}
+	"Boss Weapon Pickups"
+	{
+		"en"		"Weapon Pickups - Pickup non-melee weapons to use them in combat"
+	}
 	"Button E"
 	{
 		"en"		"Call for Medic"
