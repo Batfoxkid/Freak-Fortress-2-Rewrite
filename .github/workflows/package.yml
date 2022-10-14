@@ -38,19 +38,19 @@ jobs:
         uses: montudor/action-zip@v1
         if: "contains(github.event.head_commit.message, '[M]')"
         with:
-          args: zip -qq -r New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/ff2r_defaults
+          args: zip -qq -r New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip New-Install-Package
       
       - name: Package Update
         uses: montudor/action-zip@v1
         if: "contains(github.event.head_commit.message, '[M]')"
         with:
-          args: zip -qq -r Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip update
+          args: zip -qq -r Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Update-Package
       
       - name: Package Epic Scout
         uses: montudor/action-zip@v1
         if: "contains(github.event.head_commit.message, '[E]')"
         with:
-          args: zip -qq -r Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip custom/epic_scout
+          args: zip -qq -r Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Epic-Scout
       
       - name: Release
         uses: softprops/action-gh-release@master
@@ -91,16 +91,16 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./custom/ff2r_defaults
+          path: ./New-Install-Package
       
       - name: Upload Update
         uses: actions/upload-artifact@master
         with:
           name: Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./update
+          path: ./Update-Package
       
       - name: Upload Epic Scout
         uses: actions/upload-artifact@master
         with:
           name: Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./custom/epic_scout
+          path: ./Epic-Scout
