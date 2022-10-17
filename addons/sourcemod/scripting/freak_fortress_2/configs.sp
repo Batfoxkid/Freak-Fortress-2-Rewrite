@@ -47,7 +47,7 @@ bool Configs_CheckMap(const char[] mapname)
 				if(val.tag != KeyValType_Section)
 					continue;
 				
-				switch(ReplaceString(buffer, length, "*", ""))
+				switch(ReplaceString(buffer, length, "*", NULL_STRING))
 				{
 					case 0:	// Exact
 					{
@@ -120,7 +120,7 @@ public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] n
 					if(val.tag != KeyValType_Section)
 						continue;
 					
-					switch(ReplaceString(buffer, length, "*", ""))
+					switch(ReplaceString(buffer, length, "*", NULL_STRING))
 					{
 						case 0:	// Exact
 						{

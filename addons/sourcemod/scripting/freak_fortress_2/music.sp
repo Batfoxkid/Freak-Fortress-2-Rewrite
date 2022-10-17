@@ -6,9 +6,9 @@
 	void Music_RoundEnd(int[] clients, int amount, int winner)
 	void Music_PlayerRunCmd(int client)
 	void Music_PlayNextSong(int client = 0)
-	void Music_PlaySong(int[] clients, int numClients, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
-	void Music_PlaySongToClient(int client, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
-	void Music_PlaySongToAll(const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+	void Music_PlaySong(int[] clients, int numClients, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+	void Music_PlaySongToClient(int client, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+	void Music_PlaySongToAll(const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 	void Music_MainMenu(int client)
 */
 
@@ -171,7 +171,7 @@ void Music_PlayNextSong(int client = 0)
 	}
 }
 
-void Music_PlaySong(const int[] clients, int numClients, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+void Music_PlaySong(const int[] clients, int numClients, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
 	for(int i; i < numClients; i++)
 	{
@@ -252,14 +252,14 @@ void Music_PlaySong(const int[] clients, int numClients, const char[] sample = "
 	}
 }
 
-void Music_PlaySongToClient(int client, const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+void Music_PlaySongToClient(int client, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
 	int clients[1];
 	clients[0] = client;
 	Music_PlaySong(clients, 1, sample, source, name, artist, duration, volume, pitch);
 }
 
-void Music_PlaySongToAll(const char[] sample = "", int source = 0, const char[] name = "", const char[] artist = "", float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
+void Music_PlaySongToAll(const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
 {
 	int[] clients = new int[MaxClients];
 	int total;
@@ -441,16 +441,16 @@ void Music_MainMenu(int client)
 	
 	char buffer[64];
 	FormatEx(buffer, sizeof(buffer), "%t", !Client(client).NoMusic ? Client(client).MusicShuffle ? "Music Disable" : "Music Random" : "Music Enable");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Music Skip");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Music Shuffle");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Music List");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	menu.ExitButton = true;
 	menu.ExitBackButton = Menu_BackButton(client);

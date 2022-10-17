@@ -281,7 +281,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 	}
 }
 
-float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = "")
+float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = NULL_STRING)
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);
@@ -624,7 +624,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				{
 					if(!limited)
 					{
-						menu.AddItem("", "", ITEMDRAW_DISABLED|ITEMDRAW_NOTEXT);
+						menu.AddItem(NULL_STRING, NULL_STRING, ITEMDRAW_DISABLED|ITEMDRAW_NOTEXT);
 						var1++;
 					}
 					continue;
@@ -733,7 +733,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				
 				if(blocked)
 				{
-					menu.AddItem("", buffer1, ITEMDRAW_DISABLED);
+					menu.AddItem(NULL_STRING, buffer1, ITEMDRAW_DISABLED);
 				}
 				else
 				{
@@ -747,7 +747,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 	
 	if(!var1)
 	{
-		menu.AddItem("", "", ITEMDRAW_SPACER);
+		menu.AddItem(NULL_STRING, NULL_STRING, ITEMDRAW_SPACER);
 	}
 	else if(var1 > 10)
 	{
@@ -755,7 +755,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 		{
 			if(i == 7)
 			{
-				menu.InsertItem(i, "", "", ITEMDRAW_SPACER);	// 8. 
+				menu.InsertItem(i, NULL_STRING, NULL_STRING, ITEMDRAW_SPACER);	// 8. 
 			}
 			else
 			{
@@ -765,7 +765,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				{
 					while(i > var1)
 					{
-						menu.AddItem("", "", ITEMDRAW_SPACER);	// 2-7. 
+						menu.AddItem(NULL_STRING, NULL_STRING, ITEMDRAW_SPACER);	// 2-7. 
 						var1++;
 					}
 					
@@ -780,7 +780,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 			
 			Format(buffer2, sizeof(buffer2), "%t", "Next");
 			menu.InsertItem(i + 1, "@", buffer2);		// 9. Next
-			menu.InsertItem(i + 2, "", "", ITEMDRAW_SPACER);	// 0. 
+			menu.InsertItem(i + 2, NULL_STRING, NULL_STRING, ITEMDRAW_SPACER);	// 0. 
 			var1 += 3;
 		}
 	}

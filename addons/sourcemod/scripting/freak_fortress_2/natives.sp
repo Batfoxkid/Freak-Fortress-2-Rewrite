@@ -60,7 +60,7 @@ public any Native_SetBossData(Handle plugin, int params)
 	
 	if(Client(client).Cfg)
 	{
-		if(forwards)
+		if(forwards || !cfg)
 			Forward_OnBossRemoved(client);
 		
 		DeleteCfg(Client(client).Cfg);

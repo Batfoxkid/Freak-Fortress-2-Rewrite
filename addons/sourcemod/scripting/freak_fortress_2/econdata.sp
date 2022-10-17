@@ -3,9 +3,9 @@
 	void TFED_PluginStart()
 	void TFED_LibraryAdded(const char[] name)
 	void TFED_LibraryRemoved(const char[] name)
-	bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
-	bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
-	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
+	bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
+	bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = NULL_STRING)
+	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
 	int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] name)
 */
 
@@ -53,7 +53,7 @@ stock void TFED_LibraryRemoved(const char[] name)
 	#endif
 }
 
-stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
+stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
 {
 	//TODO: Find a way to use m_pszItemIconClassname instead
 	
@@ -66,7 +66,7 @@ stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] bu
 	return false;
 }
 
-stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = "")
+stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = NULL_STRING)
 {
 	#if defined __tf_econ_data_included
 	if(Loaded && TF2Econ_GetLocalizedItemName(itemdef, name, maxlen))
@@ -84,7 +84,7 @@ stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, cons
 	return false;
 }
 
-stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = "")
+stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
 {
 	#if defined __tf_econ_data_included
 	if(Loaded)

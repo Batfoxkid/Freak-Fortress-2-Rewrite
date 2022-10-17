@@ -1,5 +1,5 @@
 /*
-	void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
+	void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = NULL_STRING, int flags = 0)
 	SectionType GetSectionType(const char[] buffer)
 	int FindClientOfBossIndex(int boss = 0)
 	TFClassType GetClassOfName(const char[] buffer)
@@ -27,7 +27,7 @@
 	void FPrintToChatAll(const char[] message, any ...)
 	void FReplyToCommand(int client, const char[] message, any ...)
 	void FShowActivity(int client, const char[] message, any ...)
-	void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
+	void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1 = NULL_STRING, const char[] param2 = NULL_STRING, const char[] param3 = NULL_STRING, const char[] param4 = NULL_STRING)
 	void Debug(const char[] buffer, any ...)
 	any Min(any value, any min)
 	any Max(any value, any max)
@@ -39,7 +39,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = "", int flags = 0)
+void RegFreakCmd(const char[] cmd, ConCmd callback, const char[] description = NULL_STRING, int flags = 0)
 {
 	static const char Prefixes[][] = { "ff2_", "ff2", "hale_", "hale", "vsh_", "vsh", "pony_", "pony" };
 	
@@ -274,7 +274,7 @@ int GetKillsOfWeaponRank(int rank = -1, int index = 0)
 	}
 }
 
-stock int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
+int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 {
 	switch(rank)
 	{
@@ -603,7 +603,7 @@ stock int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 	}
 }
 
-stock void ShowGameText(int client, const char[] icon = "leaderboard_streak", int color = 0, const char[] buffer, any ...)
+void ShowGameText(int client, const char[] icon = "leaderboard_streak", int color = 0, const char[] buffer, any ...)
 {
 	BfWrite bf;
 	if(client)
@@ -629,7 +629,7 @@ stock void ShowGameText(int client, const char[] icon = "leaderboard_streak", in
 	}
 }
 
-stock void ApplyAllyHealEvent(int healer, int patient, int amount)
+void ApplyAllyHealEvent(int healer, int patient, int amount)
 {
 	Event event = CreateEvent("player_healed", true);
 
@@ -640,7 +640,7 @@ stock void ApplyAllyHealEvent(int healer, int patient, int amount)
 	event.Fire();
 }
 
-stock void ApplySelfHealEvent(int entindex, int amount)
+void ApplySelfHealEvent(int entindex, int amount)
 {
 	Event event = CreateEvent("player_healonhit", true);
 
@@ -650,12 +650,12 @@ stock void ApplySelfHealEvent(int entindex, int amount)
 	event.Fire();
 }
 
-stock int DamageGoal(int goal, int current, int last)
+int DamageGoal(int goal, int current, int last)
 {
 	return (current / goal) - (last / goal);
 }
 
-stock bool TF2_GetItem(int client, int &weapon, int &pos)
+bool TF2_GetItem(int client, int &weapon, int &pos)
 {
 	//TODO: Find out if we need to check m_bDisguiseWeapon
 	
@@ -677,7 +677,7 @@ stock bool TF2_GetItem(int client, int &weapon, int &pos)
 	return false;
 }
 
-stock void TF2_RemoveItem(int client, int weapon)
+void TF2_RemoveItem(int client, int weapon)
 {
 	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
 	if(entity != -1)
@@ -691,7 +691,7 @@ stock void TF2_RemoveItem(int client, int weapon)
 	RemoveEntity(weapon);
 }
 
-stock void TF2_RemoveAllItems(int client)
+void TF2_RemoveAllItems(int client)
 {
 	int entity, i;
 	while(TF2_GetItem(client, entity, i))
@@ -700,7 +700,7 @@ stock void TF2_RemoveAllItems(int client)
 	}
 }
 
-stock bool IsInvuln(int client)
+bool IsInvuln(int client)
 {
 	return (TF2_IsPlayerInCondition(client, TFCond_Ubercharged) ||
 		TF2_IsPlayerInCondition(client, TFCond_UberchargedCanteen) ||
@@ -711,7 +711,7 @@ stock bool IsInvuln(int client)
 		!GetEntProp(client, Prop_Data, "m_takedamage"));
 }
 
-stock bool TF2_IsCritBoosted(int client)
+bool TF2_IsCritBoosted(int client)
 {
 	return (TF2_IsPlayerInCondition(client, TFCond_Kritzkrieged) ||
 			TF2_IsPlayerInCondition(client, TFCond_HalloweenCritCandy) ||
@@ -725,7 +725,7 @@ stock bool TF2_IsCritBoosted(int client)
 			TF2_IsPlayerInCondition(client, TFCond_CritRuneTemp));
 }
 
-stock int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
+int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 {
 	if(StrContains(classname, "tf_weapon_"))
 	{
@@ -798,7 +798,7 @@ stock int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 	return TFWeaponSlot_Melee;
 }
 
-stock bool GetControlPoint()
+bool GetControlPoint()
 {
 	int entity = MaxClients + 1;
 	while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
@@ -809,7 +809,7 @@ stock bool GetControlPoint()
 	return true;
 }
 
-stock void SetControlPoint(bool enable)
+void SetControlPoint(bool enable)
 {
 	if(enable)
 	{
@@ -841,7 +841,7 @@ stock void SetControlPoint(bool enable)
 	}
 }
 
-stock void SetArenaCapEnableTime(float time)
+void SetArenaCapEnableTime(float time)
 {
 	Debug("Set unlock time to: %f", time);
 	
@@ -850,7 +850,7 @@ stock void SetArenaCapEnableTime(float time)
 		DispatchKeyValueFloat(entity, "CapEnableDelay", time);
 }
 
-stock int GetRoundStatus()
+int GetRoundStatus()
 {
 	if(RoundStatus || Enabled)
 		return RoundStatus;
@@ -861,7 +861,7 @@ stock int GetRoundStatus()
 	return 1;
 }
 
-stock void ScreenShake(const float pos[3], float amplitude, float frequency, float duration, float radius)
+void ScreenShake(const float pos[3], float amplitude, float frequency, float duration, float radius)
 {
 	int entity = CreateEntityByName("env_shake");
 	if(entity != -1)
@@ -884,7 +884,7 @@ stock void ScreenShake(const float pos[3], float amplitude, float frequency, flo
 	}
 }
 
-stock void FPrintToChat(int client, const char[] message, any ...)
+void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
@@ -895,7 +895,7 @@ stock void FPrintToChat(int client, const char[] message, any ...)
 	CSendMessage(client, buffer2);
 }
 
-stock void FPrintToChatEx(int client, int author, const char[] message, any ...)
+void FPrintToChatEx(int client, int author, const char[] message, any ...)
 {
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
@@ -906,7 +906,7 @@ stock void FPrintToChatEx(int client, int author, const char[] message, any ...)
 	CSendMessage(client, buffer2, author);
 }
 
-stock void FPrintToChatAll(const char[] message, any ...)
+void FPrintToChatAll(const char[] message, any ...)
 {
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];
@@ -926,7 +926,7 @@ stock void FPrintToChatAll(const char[] message, any ...)
 	}
 }
 
-stock void FReplyToCommand(int client, const char[] message, any ...)
+void FReplyToCommand(int client, const char[] message, any ...)
 {
 	char buffer[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
@@ -942,7 +942,7 @@ stock void FReplyToCommand(int client, const char[] message, any ...)
 	}
 }
 
-stock void FShowActivity(int client, const char[] message, any ...)
+void FShowActivity(int client, const char[] message, any ...)
 {
 	char tag[MAX_BUFFER_LENGTH], buffer[MAX_BUFFER_LENGTH];
 	SetGlobalTransTarget(client);
@@ -951,7 +951,7 @@ stock void FShowActivity(int client, const char[] message, any ...)
 	CShowActivity2(client, tag, "%s", buffer);
 }
 
-stock void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1="", const char[] param2="", const char[] param3="", const char[] param4="")
+void PrintSayText2(int client, int author, bool chat = true, const char[] message, const char[] param1 = NULL_STRING, const char[] param2 = NULL_STRING, const char[] param3 = NULL_STRING, const char[] param4 = NULL_STRING)
 {
 	BfWrite bf = view_as<BfWrite>(StartMessageOne("SayText2", client, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS)); 
 	
@@ -968,7 +968,7 @@ stock void PrintSayText2(int client, int author, bool chat = true, const char[] 
 	EndMessage();
 }
 
-stock void Debug(const char[] buffer, any ...)
+void Debug(const char[] buffer, any ...)
 {
 	if(Cvar[Debugging].BoolValue)
 	{
@@ -979,7 +979,7 @@ stock void Debug(const char[] buffer, any ...)
 	}
 }
 
-stock any Min(any value, any min)
+any Min(any value, any min)
 {
 	if(value < min)
 		return min;
@@ -995,7 +995,7 @@ stock any Max(any value, any max)
 	return value;
 }
 
-stock any Clamp(any value, any min, any max)
+any Clamp(any value, any min, any max)
 {
 	if(value > max)
 		return max;

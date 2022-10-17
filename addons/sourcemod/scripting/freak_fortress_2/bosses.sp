@@ -22,16 +22,16 @@
 	int Bosses_GetBossTeam()
 	void Bosses_PlayerRunCmd(int client, int buttons)
 	void Bosses_UseSlot(int client, int low, int high)
-	void Bosses_UseAbility(int client, const char[] plugin = "", const char[] ability, int slot, int buttonmode = 0)
+	void Bosses_UseAbility(int client, const char[] plugin = NULL_STRING, const char[] ability, int slot, int buttonmode = 0)
 	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base = 10)
 	int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, float &value)
 	int Bosses_GetArgString(int client, const char[] ability, const char[] argument, char[] value, int length)
-	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required = "")
-	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required = "")
+	int Bosses_GetRandomSound(int client, const char[] key, SoundEnum sound, const char[] required = NULL_STRING)
+	int Bosses_GetRandomSoundCfg(ConfigMap cfg, const char[] key, SoundEnum sound, const char[] required = NULL_STRING)
 	int Bosses_GetSpecificSoundCfg(ConfigMap cfg, const char[] section, char[] key, int length, SoundEnum sound)
-	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
-	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
-	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+	bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+	bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+	bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 */
 
 #pragma semicolon 1
@@ -360,7 +360,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					{
 						case KeyValType_Section:
 						{
-							length = ReplaceString(bossname, length, "*", "");
+							length = ReplaceString(bossname, length, "*", NULL_STRING);
 							if(length)
 							{
 								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, precache);
@@ -376,7 +376,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							{
 								if(!StrEqual(bossname, "hidden"))
 								{
-									length = ReplaceString(bossname, length, "*", "");
+									length = ReplaceString(bossname, length, "*", NULL_STRING);
 									if(length)
 									{
 										LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, precache);
@@ -389,7 +389,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							}
 							else	// "1"	"saxton_hale"
 							{
-								length = ReplaceString(val.data, sizeof(val.data), "*", "");
+								length = ReplaceString(val.data, sizeof(val.data), "*", NULL_STRING);
 								if(length)
 								{
 									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, precache);
@@ -406,7 +406,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 				pack++;
 				
 				if(precache && Enabled)
-					SteamWorks_SetGameTitle(entries > 1 ? packname : "");
+					SteamWorks_SetGameTitle(entries > 1 ? packname : NULL_STRING);
 			}
 			
 			delete snapSub;
@@ -419,7 +419,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	{
 		PackList.PushString("Freak Fortress 2");
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
-		LoadCharacterDirectory(filepath, "", true, 0, mapname, charset>=0);
+		LoadCharacterDirectory(filepath, NULL_STRING, true, 0, mapname, charset>=0);
 		if(Enabled && charset >= 0)
 			SteamWorks_SetGameTitle();
 	}
@@ -473,7 +473,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	}
 }
 
-static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = "")
+static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = NULL_STRING)
 {
 	char filepath[PLATFORM_MAX_PATH];
 	if(current[0])
@@ -496,7 +496,7 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 		{
 			case FileType_File:
 			{
-				if(ReplaceString(filepath, sizeof(filepath), ".cfg", "", false) != 1)
+				if(ReplaceString(filepath, sizeof(filepath), ".cfg", NULL_STRING, false) != 1)
 					continue;
 				
 				if(current[0])
@@ -654,7 +654,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						if(val.tag != KeyValType_Value)
 							continue;
 						
-						int amount = ReplaceString(mapname, length, "*", "");
+						int amount = ReplaceString(mapname, length, "*", NULL_STRING);
 						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 						{
 							precache = view_as<bool>(StringToInt(val.data));
@@ -2181,6 +2181,22 @@ void Bosses_ClientDisconnect(int client)
 		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
+		
+		if(!Enabled)
+		{
+			bool found;
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(Client(i).IsBoss)
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			if(!found)
+				Music_PlaySongToAll();
+		}
 	}
 }
 
@@ -2215,7 +2231,7 @@ void Bosses_Remove(int client)
 				Music_PlaySongToAll();
 		}
 		
-		SetVariantString("");
+		SetVariantString(NULL_STRING);
 		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 		
 		TF2Attrib_SetByDefIndex(client, 442, 1.0);
@@ -2364,7 +2380,7 @@ void Bosses_UseSlot(int client, int low, int high)
 			}
 			else
 			{
-				UseAbility(client, cfg, "", ability, slot, button);
+				UseAbility(client, cfg, NULL_STRING, ability, slot, button);
 			}
 		}
 	}
@@ -2372,7 +2388,7 @@ void Bosses_UseSlot(int client, int low, int high)
 	delete snap;
 }
 
-void Bosses_UseAbility(int client, const char[] plugin = "", const char[] ability, int slot, int buttonmode = 0)
+void Bosses_UseAbility(int client, const char[] plugin = NULL_STRING, const char[] ability, int slot, int buttonmode = 0)
 {
 	ConfigMap cfg = Client(client).Cfg.GetSection(ability);
 	if(cfg)
@@ -2571,12 +2587,12 @@ int Bosses_GetArgString(int client, const char[] ability, const char[] argument,
 	return cfg.Get(argument, value, length);
 }
 
-int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required = "")
+int Bosses_GetRandomSound(int client, const char[] section, SoundEnum sound, const char[] required = NULL_STRING)
 {
 	return Bosses_GetRandomSoundCfg(Client(client).Cfg, section, sound, required);
 }
 
-int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sound, const char[] required = "")
+int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sound, const char[] required = NULL_STRING)
 {
 	int size;
 	
@@ -2743,7 +2759,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 						}
 						else	// "1"	"example.mp3"
 						{
-							ReplaceStringEx(key, length, "path", "");
+							ReplaceStringEx(key, length, "path", NULL_STRING);
 							
 							Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
 							if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
@@ -2861,7 +2877,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 				}
 				else	// "1"	"example.mp3"
 				{
-					ReplaceStringEx(key, length, "path", "");
+					ReplaceStringEx(key, length, "path", NULL_STRING);
 					
 					Format(sound.Sound, sizeof(sound.Sound), "%s_overlay", key);
 					if(cfg.Get(sound.Sound, sound.Overlay, sizeof(sound.Overlay)))
@@ -2910,7 +2926,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 	return size;
 }
 
-bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	SoundEnum sound;
 	sound.Entity = entity;
@@ -2977,14 +2993,14 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	return true;
 }
 
-bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+bool Bosses_PlaySoundToClient(int boss, int client, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	int clients[1];
 	clients[0] = client;
 	return Bosses_PlaySound(boss, clients, 1, key, required, entity, channel, level, flags, volume, pitch, speakerentity, origin, dir, updatePos, soundtime);
 }
 
-bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = "", int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+bool Bosses_PlaySoundToAll(int boss, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	int[] clients = new int[MaxClients];
 	int total;

@@ -732,7 +732,7 @@ methodmap Client
 		this.NoVoice = false;
 		this.NoDmgHud = false;
 		this.NoHud = false;
-		this.SetLastPlayed("");
+		this.SetLastPlayed(NULL_STRING);
 		this.OverlayFor = 0.0;
 		this.GlowFor = 0.0;
 		this.Glowing = false;

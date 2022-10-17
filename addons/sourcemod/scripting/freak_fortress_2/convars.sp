@@ -103,7 +103,7 @@ static void GenerateConfig()
 		file.WriteLine("// Settings present are for Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")");
 		file.WriteLine("// Updating the plugin version will generate new ConVars and any non-FF2 commands will be lost");
 		file.WriteLine("ff2_version \"" ... PLUGIN_VERSION_FULL ... "\"");
-		file.WriteLine("");
+		file.WriteLine(NULL_STRING);
 		
 		char buffer1[512], buffer2[256];
 		for(int i; i < AllowSpectators; i++)
@@ -137,7 +137,7 @@ static void GenerateConfig()
 			Cvar[i].GetName(buffer2, sizeof(buffer2));
 			Cvar[i].GetString(buffer1, sizeof(buffer1));
 			file.WriteLine("%s \"%s\"", buffer2, buffer1);
-			file.WriteLine("");
+			file.WriteLine(NULL_STRING);
 		}
 		
 		delete file;

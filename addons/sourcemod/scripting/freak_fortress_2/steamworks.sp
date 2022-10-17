@@ -2,7 +2,7 @@
 	void SteamWorks_PluginStart()
 	void SteamWorks_LibraryAdded(const char[] name)
 	void SteamWorks_LibraryRemoved(const char[] name)
-	void SteamWorks_SetGameTitle(const char[] pack = "")
+	void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
 */
 
 #tryinclude <SteamWorks> 
@@ -43,7 +43,7 @@ stock void SteamWorks_LibraryRemoved(const char[] name)
 	#endif
 }
 
-stock void SteamWorks_SetGameTitle(const char[] pack = "")
+stock void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
 {
 	#if defined _SteamWorks_Included
 	strcopy(Pack, sizeof(Pack), pack);

@@ -102,27 +102,27 @@ void Menu_MainMenu(int client)
 	SetGlobalTransTarget(client);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Selection");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Queue");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Music");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Voice");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Weapon");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Hud");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	if(Preference_HasDifficulties())
 	{
 		FormatEx(buffer, sizeof(buffer), "%t", "Command Difficulty");
-		menu.AddItem("", buffer);
+		menu.AddItem(NULL_STRING, buffer);
 	}
 	
 	menu.ExitButton = true;
@@ -201,7 +201,7 @@ public Action Menu_QueueMenuCmd(int client, int args)
 		{
 			for(int i; i < amount; i++)
 			{
-				ReplyToCommand(client, "%s%N - %d", clients[i]==client ? " " : "", clients[i], Preference_GetFullQueuePoints(clients[i]));
+				ReplyToCommand(client, "%s%N - %d", clients[i]==client ? " " : NULL_STRING, clients[i], Preference_GetFullQueuePoints(clients[i]));
 			}
 		}
 		else
@@ -235,22 +235,22 @@ static void QueueMenu(int client)
 		if(i < amount)
 		{
 			FormatEx(buffer, sizeof(buffer), "%N - %d", clients[i], Preference_GetFullQueuePoints(clients[i]));
-			menu.AddItem("", buffer, clients[i] == client ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+			menu.AddItem(NULL_STRING, buffer, clients[i] == client ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			menu.AddItem("", buffer, ITEMDRAW_SPACER);
+			menu.AddItem(NULL_STRING, buffer, ITEMDRAW_SPACER);
 		}
 	}
 	
 	if(exitButton)
 	{
 		FormatEx(buffer, sizeof(buffer), "%t", "Back");
-		menu.AddItem("", buffer, ITEMDRAW_DEFAULT);
+		menu.AddItem(NULL_STRING, buffer, ITEMDRAW_DEFAULT);
 	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Reset Queue Points", Client(client).Queue);
-	menu.AddItem("", buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && Cvar[PrefToggle].BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(NULL_STRING, buffer, (!Preference_IsInParty(client) && Client(client).Queue > 0 && Cvar[PrefToggle].BoolValue) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	menu.Pagination = 0;
 	menu.ExitButton = true;
@@ -295,10 +295,10 @@ static void ResetQueueMenu(int client)
 	char buffer[16];
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Yes");
-	menu.AddItem("", buffer, Client(client).Queue > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	menu.AddItem(NULL_STRING, buffer, Client(client).Queue > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "No");
-	menu.AddItem("", buffer);
+	menu.AddItem(NULL_STRING, buffer);
 	
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);

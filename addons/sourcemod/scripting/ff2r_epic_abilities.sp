@@ -799,6 +799,9 @@ public void OnClientDisconnect(int client)
 	WallAirMulti[client] = 1.0;
 	WallJumpMulti[client] = 1.0;
 	WallSpeedMulti[client] = 1.0;
+	BodyRef[client] = INVALID_ENT_REFERENCE;
+	HandRef[client] = INVALID_ENT_REFERENCE;
+	WeapRef[client] = INVALID_ENT_REFERENCE;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons)
@@ -2590,7 +2593,7 @@ void JumperAttribRestore(int client, int index, float &current)
 	}
 }
 
-float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = "")
+float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const char[] defaul = NULL_STRING)
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);

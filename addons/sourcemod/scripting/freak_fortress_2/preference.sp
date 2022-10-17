@@ -525,7 +525,7 @@ static void BossMenu(int client)
 				{
 					if(blacklist > 0 || !cfg.GetBool("enabled", preview) || !preview)
 					{
-						menu.AddItem("0", " ", ITEMDRAW_NOTEXT);
+						menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 					}
 					else
 					{
@@ -557,7 +557,7 @@ static void BossMenu(int client)
 			}
 			else
 			{
-				menu.AddItem("0", " ", ITEMDRAW_NOTEXT);
+				menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 			}
 			
 			menu.ExitBackButton = true;
@@ -566,12 +566,12 @@ static void BossMenu(int client)
 		{
 			Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
 			menu.SetTitle("%t%s\n%t", "Boss Selection Command", data, "Boss No View");
-			menu.AddItem("0", " ", ITEMDRAW_NOTEXT);
+			menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 		}
 		else
 		{
 			menu.SetTitle("%t%t", "Boss Selection Command", "Boss No View");
-			menu.AddItem("0", " ", ITEMDRAW_NOTEXT);
+			menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 		}
 		
 		menu.ExitBackButton = true;
@@ -1146,14 +1146,14 @@ public int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int c
 				Menu menu2 = new Menu(Preference_PartyInviteH);
 				if(Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client), "description"))
 				{
-					menu2.SetTitle("%t\n%s\n ", "Boss Party Menu", "", buffer);
+					menu2.SetTitle("%t\n%s\n ", "Boss Party Menu", NULL_STRING, buffer);
 				}
 				else
 				{
-					menu2.SetTitle("%t\n%t\n ", "Boss Party Menu", "", "No Description");
+					menu2.SetTitle("%t\n%t\n ", "Boss Party Menu", NULL_STRING, "No Description");
 				}
 				
-				menu2.AddItem("-1", " ", ITEMDRAW_NOTEXT);
+				menu2.AddItem("-1", NULL_STRING, ITEMDRAW_NOTEXT);
 				
 				menu2.ExitBackButton = true;
 				menu2.Display(client, MENU_TIME_FOREVER);
@@ -1940,7 +1940,7 @@ void Preference_DifficultyMenu(int client)
 	DifficultyMenu(client);
 }
 
-static void DifficultyMenu(int client, const char[] name = "")
+static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 {
 	SetGlobalTransTarget(client);
 	
@@ -1965,7 +1965,7 @@ static void DifficultyMenu(int client, const char[] name = "")
 			
 			if(Cvar[PrefSpecial].BoolValue)
 			{
-				menu.AddItem("", " ", ITEMDRAW_NOTEXT);
+				menu.AddItem(NULL_STRING, NULL_STRING, ITEMDRAW_NOTEXT);
 			}
 			else
 			{
@@ -1991,12 +1991,12 @@ static void DifficultyMenu(int client, const char[] name = "")
 		if(random)
 		{
 			FormatEx(buffer, sizeof(buffer), "%t\n ", DiffListing[client] ? "Enable Special Rounds" : "Disable Special Rounds");
-			menu.AddItem("", buffer);
+			menu.AddItem(NULL_STRING, buffer);
 		}
 		else
 		{
 			FormatEx(buffer, sizeof(buffer), "%t", "Clear Whitelist");
-			menu.AddItem("", buffer, DiffListing[client] ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+			menu.AddItem(NULL_STRING, buffer, DiffListing[client] ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 		}
 		
 		int lang = GetClientLanguage(client);

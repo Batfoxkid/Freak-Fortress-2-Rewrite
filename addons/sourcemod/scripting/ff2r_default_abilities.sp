@@ -3469,7 +3469,7 @@ int GetKillsOfWeaponRank(int rank = -1, int index = 0)
 	}
 }
 
-stock int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
+int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 {
 	switch(rank)
 	{
