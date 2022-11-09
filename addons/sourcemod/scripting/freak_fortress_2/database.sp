@@ -174,7 +174,7 @@ void Database_ClientPostAdminCheck(int client)
 			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_DIFFICULTY ... " WHERE steamid = %d;", id);
 			tr.AddQuery(buffer);
 			
-			DataBase.Execute(tr, Database_ClientSetup, Database_FailHandle, GetClientUserId(client));
+			DataBase.Execute(tr, Database_ClientSetup, Database_Fail, GetClientUserId(client));
 		}
 	}
 }
@@ -238,13 +238,6 @@ public void Database_ClientSetup(Database db, int userid, int numQueries, DBResu
 		
 		Cached[client] = true;
 	}
-}
-
-public void Database_ClientRetry(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
-{
-	int client = GetClientOfUserId(data);
-	if(client)
-		Database_ClientPostAdminCheck(client);
 }
 
 void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
