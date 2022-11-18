@@ -133,7 +133,7 @@ public Action Command_KermitSewerSlide(int client, const char[] command, int arg
 
 public Action Command_Spectate(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	return SwapTeam(client, TFTeam_Spectator);
@@ -141,7 +141,7 @@ public Action Command_Spectate(int client, const char[] command, int args)
 
 public Action Command_AutoTeam(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	int reds, blus;
@@ -184,7 +184,7 @@ public Action Command_AutoTeam(int client, const char[] command, int args)
 
 public Action Command_JoinTeam(int client, const char[] command, int args)
 {
-	if(!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1)))
+	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	char buffer[10];
@@ -352,4 +352,14 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 		}
 	}
 	return Plugin_Continue;
+}
+
+static bool IsEmptyServer()
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+			return false;
+	}
+	return true;
 }
