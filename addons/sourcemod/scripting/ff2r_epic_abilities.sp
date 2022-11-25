@@ -639,7 +639,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		if(timescale <= 0.0)
 			timescale = 1.0;
 		
-		float duration = cfg.GetFloat("duration", 7.5) * timescale;
+		float duration = cfg.GetFloat("duration", 7.5) / timescale;
 		
 		char particle[48];
 		if(cfg.GetString("particle", particle, sizeof(particle), GetClientTeam(client) % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
@@ -896,7 +896,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						}
 						else
 						{
-							hud = ChangeAbility(client, boss, ability, spells, snap, i == count);
+							hud = ChangeAbility(client, boss, ability, spells, snap, (i == count - 1));
 						}
 						break;
 					}
@@ -920,7 +920,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						}
 						else
 						{
-							hud = ChangeAbility(client, boss, ability, spells, snap, i == count);
+							hud = ChangeAbility(client, boss, ability, spells, snap, (i == count - 1));
 						}
 						break;
 					}
@@ -944,7 +944,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						}
 						else
 						{
-							hud = ChangeAbility(client, boss, ability, spells, snap, i == count);
+							hud = ChangeAbility(client, boss, ability, spells, snap, (i == count - 1));
 						}
 						break;
 					}
@@ -1121,10 +1121,10 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							return;
 						}
 						
-						if(entries > HasAbility[client])
+						if(HasAbility[client] > entries)
 							HasAbility[client] = 1;
 						
-						int length = snap.KeyBufferSize(HasAbility[client] - 1)+1;
+						int length = snap.KeyBufferSize(HasAbility[client] - 1) + 1;
 						char[] key = new char[length];
 						snap.GetKey(HasAbility[client] - 1, key, length);
 						spells.GetArray(key, val, sizeof(val));
@@ -1138,8 +1138,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									strcopy(val.data, sizeof(val.data), key);
 							}
 							
-							if(buttons & IN_DUCK)
-								GetButtons(ability, true, count, button);
+							GetButtons(ability, true, count, button);
 							
 							bool blocked = true;
 							if((buttons & IN_DUCK) && count)
@@ -1279,6 +1278,20 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			BossData boss = FF2R_GetBossData(client);
+			if(boss)
+			{
+				AbilityData ability = boss.GetAbility("rage_ability_management");
+				if(ability.IsMyPlugin())
+					ability.SetFloat("hudin", FAR_FUTURE);
+			}
+		}
+	}
+	
 	TriggerTimer(TimescaleTimer);
 }
 
@@ -1758,7 +1771,7 @@ bool ChangeAbility(int client, BossData boss, ConfigData ability, ConfigData spe
 	
 	if(ability.GetInt("slot") == 0)
 	{
-		length = snap.KeyBufferSize(HasAbility[client] - 1)+1;
+		length = snap.KeyBufferSize(HasAbility[client] - 1) + 1;
 		char[] key = new char[length];
 		snap.GetKey(HasAbility[client] - 1, key, length);
 		
@@ -2559,8 +2572,6 @@ void JumperAttribApply(int client, int index, float &current, float multi)
 		}
 		
 		current = multi;
-		Debug("%d now %f (%f)", index, value, current);
-		
 		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
 	}
@@ -2586,8 +2597,6 @@ void JumperAttribRestore(int client, int index, float &current)
 		}
 		
 		current = 1.0;
-		Debug("%d restored %f (%f)", index, value, current);
-		
 		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
 	}

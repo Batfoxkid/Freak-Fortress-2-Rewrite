@@ -32,8 +32,6 @@
 	any Min(any value, any min)
 	any Max(any value, any max)
 	any Clamp(any value, any min, any max)
-	int GetBossQueue(int[] players, int maxsize, int team = -1)
-	int GetBossQueueSort(int elem1, int elem2, const int[] array, Handle hndl)
 */
 
 #pragma semicolon 1

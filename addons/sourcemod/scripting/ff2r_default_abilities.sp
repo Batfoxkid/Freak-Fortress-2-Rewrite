@@ -811,6 +811,18 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				else
 				{
 					int button = ability.GetInt("button", 11);
+					if(SpecialCharge[client])
+					{
+						if(button == IN_ATTACK2)
+						{
+							button = IN_RELOAD;
+						}
+						else if(button == IN_RELOAD)
+						{
+							button = IN_ATTACK2;
+						}
+					}
+
 					if(buttons & (1 << button))
 					{
 						if(!timeIn)
@@ -919,6 +931,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							int power = RoundToFloor(charge);
+							if(power > 100)
+								power = 100;
+							
 							static char buffer[512];
 							
 							ability.GetString("forward", buffer, sizeof(buffer), "750 + (n * 3.25)");
@@ -1001,7 +1016,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 										}
 										else
 										{
-											ShowSyncHudText(client, SyncHud, "%t", "Boss Jump Ready", 100, "Boss Jump Look");
+											ShowSyncHudText(client, SyncHud, "%t%t", "Boss Jump Ready", 100, "Boss Jump Look");
 										}
 									}
 									else if(jump)
@@ -1763,6 +1778,20 @@ public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			BossData boss = FF2R_GetBossData(client);
+			if(boss)
+			{
+				AbilityData ability = boss.GetAbility("special_mobility");
+				if(ability.IsMyPlugin())
+					ability.SetFloat("hudin", FAR_FUTURE);
+			}
+		}
+	}
+	
 	if(TimescaleTimer)
 		TriggerTimer(TimescaleTimer);
 }
@@ -2520,7 +2549,7 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 	if(timescale <= 0.0)
 		timescale = 1.0;
 	
-	float duration = GetFormula(cfg, "duration", alive, 2.0) * timescale;
+	float duration = GetFormula(cfg, "duration", alive, 2.0) / timescale;
 	
 	char particle[48];
 	if(cfg.GetString("particle", particle, sizeof(particle), team % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
