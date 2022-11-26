@@ -9,6 +9,7 @@
 
 static bool FirstBlood;
 static bool LastMann;
+static bool InRegen;
 static Handle YourHud;
 static Handle TopHud;
 
@@ -234,36 +235,41 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 		else if(Enabled && !Client(client).Minion)
 		{
 			// There's issues with items sometimes carrying over
-			bool found;
-			int entity, i;
-			while(TF2_GetItem(client, entity, i))
+			if(!InRegen)
 			{
-				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+				bool found;
+				int entity, i;
+				while(TF2_GetItem(client, entity, i))
 				{
-					Debug("Found Bad Weapon");
-					TF2_RemoveItem(client, entity);
-					found = true;
+					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					{
+						Debug("Found Bad Weapon");
+						TF2_RemoveItem(client, entity);
+						found = true;
+					}
 				}
-			}
 
-
-			/* Things such as spellbooks get detected by this
-			i = 0;
-			while(TF2U_GetWearable(client, entity, i))
-			{
-				if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+				/* Things such as spellbooks get detected by this
+				i = 0;
+				while(TF2U_GetWearable(client, entity, i))
 				{
-					Debug("Found Bad Wearable");
-					TF2_RemoveWearable(client, entity);
-					found = true;
-				}
-			}*/
+					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+					{
+						Debug("Found Bad Wearable");
+						TF2_RemoveWearable(client, entity);
+						found = true;
+					}
+				}*/
 
-			if(found)
-			{
-				Debug("Regenerating");
-				TF2_RegeneratePlayer(client);
-				return Plugin_Continue;
+				if(found)
+				{
+					InRegen = true;
+					Debug("Regenerating");
+					TF2_RegeneratePlayer(client);
+					InRegen = false;
+					// If it finds bad weapons twice, we can assume it's some other plugin doing this
+					return Plugin_Continue;
+				}
 			}
 
 			// Because minion plugins don't swap em back
