@@ -10,6 +10,7 @@
 	void Forward_OnBossPrecached(ConfigMap cfg, bool precache, int index)
 	Action Forward_OnPickupDroppedWeapon(int client, int weapon)
 	void Forward_OnBossEquipped(int client, bool weapons)
+	void Forward_OnAllBossesLoaded()
 */
 
 #pragma semicolon 1
@@ -26,6 +27,7 @@ static GlobalForward BossPrecachePre;
 static GlobalForward BossPrecachePost;
 static GlobalForward PickupDroppedWeaponPre;
 static GlobalForward BossEquippedPost;
+static GlobalForward AllBossesLoaded;
 
 void Forward_PluginLoad()
 {
@@ -40,6 +42,7 @@ void Forward_PluginLoad()
 	BossPrecachePost = new GlobalForward("FF2R_OnBossPrecached", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	PickupDroppedWeaponPre = new GlobalForward("FF2R_OnPickupDroppedWeapon", ET_Event, Param_Cell, Param_Cell, Param_CellByRef);
 	BossEquippedPost = new GlobalForward("FF2R_OnBossEquipped", ET_Ignore, Param_Cell, Param_Cell);
+	AllBossesLoaded = new GlobalForward("FF2R_OnAllBossesLoaded", ET_Ignore);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -216,5 +219,11 @@ void Forward_OnBossEquipped(int client, bool weapons)
 	Call_StartForward(BossEquippedPost);
 	Call_PushCell(client);
 	Call_PushCell(weapons);
+	Call_Finish();
+}
+
+void Forward_OnAllBossesLoaded()
+{
+	Call_StartForward(AllBossesLoaded);
 	Call_Finish();
 }

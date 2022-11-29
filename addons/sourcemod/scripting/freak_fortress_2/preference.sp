@@ -1,6 +1,7 @@
 /*
 	void Preference_PluginStart()
 	void Preference_ConfigsExecuted()
+	void Preference_LoadConfigs()
 	void Preference_MapEnd()
 	void Preference_AddBoss(int client, const char[] name)
 	void Preference_AddDifficulty(int client, const char[] name)
@@ -66,8 +67,16 @@ void Preference_PluginStart()
 void Preference_ConfigsExecuted()
 {
 	if(Difficulties)
+	{
 		DeleteCfg(Difficulties);
+		Difficulties = null;
+	}
 	
+	RequestFrame(Preference_LoadConfigs);
+}
+
+public void Preference_LoadConfigs()
+{
 	char buffer[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, buffer, sizeof(buffer), FILE_DIFF);
 	if(FileExists(buffer))
@@ -83,10 +92,6 @@ void Preference_ConfigsExecuted()
 		}
 		
 		delete snap;
-	}
-	else
-	{
-		Difficulties = null;
 	}
 }
 
@@ -297,6 +302,9 @@ int Preference_PickBoss(int client, int team = -1)
 
 public Action Preference_BossMenuLegacy(int client, int args)
 {
+	if(!Bosses_AllLoaded())
+		return Plugin_Continue;	// Generic reply for now
+	
 	FReplyToCommand(client, "%t", "Legacy Boss Menu Command");
 	
 	if(client)
@@ -311,6 +319,9 @@ public Action Preference_BossMenuLegacy(int client, int args)
 
 public Action Preference_BossMenuCmd(int client, int args)
 {
+	if(!Bosses_AllLoaded())
+		return Plugin_Continue;	// Generic reply for now
+	
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
 		int blacklist = Cvar[PrefBlacklist].IntValue;
@@ -1489,6 +1500,9 @@ public int Preference_BossQueueSort(int[] elem1, int[] elem2, const int[][] arra
 
 public Action Preference_ForceBossCmd(int client, int args)
 {
+	if(!Bosses_AllLoaded())
+		return Plugin_Continue;	// Generic reply for now
+
 	if(args)
 	{
 		char name[64];

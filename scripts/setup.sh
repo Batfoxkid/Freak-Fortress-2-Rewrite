@@ -3,6 +3,7 @@ echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
 echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
 git rev-list --count HEAD >> $GITHUB_ENV
 echo 'EOF' >> $GITHUB_ENV
+echo $PLUGIN_VERSION_REVISION
 cp scripts/compile.sh addons/sourcemod/scripting/compile.sh
 cd addons/sourcemod/scripting
 
@@ -15,7 +16,7 @@ echo 'EOF' >> $GITHUB_ENV
 sed -i -e 's/#define PLUGIN_VERSION_REVISION.*".*"/#define PLUGIN_VERSION_REVISION "'$PLUGIN_VERSION_REVISION'"/g' freak_fortress_2.sp
 for file in $(find -type f -name "ff2r_*.sp")
 do
-  sed -i -e 's/#define PLUGIN_VERSION.*".*"/#define PLUGIN_VERSION "'$PLUGIN_VERSION'.'$PLUGIN_VERSION_REVISION'"/g' $file
+  sed -i -e 's/#define PLUGIN_VERSION.*".*"/#define PLUGIN_VERSION "'$PLUGIN_VERSION'"."'$PLUGIN_VERSION_REVISION'"/g' $file
 done
 
 # Install Required Includes

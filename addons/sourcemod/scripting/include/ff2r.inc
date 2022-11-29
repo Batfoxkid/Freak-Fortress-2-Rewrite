@@ -220,6 +220,13 @@ forward Action FF2R_OnPickupDroppedWeapon(int client, int weapon);
 forward void FF2R_OnBossEquipped(int client, bool weapons);
 
 /**
+ * Called when all bosses are loaded
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnAllBossesLoaded();
+
+/**
  * Wrapper to emit sound to one client.
  * 
  * @param client		Client index

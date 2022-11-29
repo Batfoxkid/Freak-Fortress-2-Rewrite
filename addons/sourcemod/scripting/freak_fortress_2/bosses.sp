@@ -1,5 +1,6 @@
 /*
 	void Bosses_PluginStart()
+	bool Bosses_AllLoaded()
 	void Bosses_BuildPacks(int &charset, const char[] mapname)
 	void Bosses_MapEnd()
 	void Bosses_PluginEnd()
@@ -37,8 +38,18 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+enum struct LoadInfo
+{
+	char Character[PLATFORM_MAX_PATH];
+	int Pack;
+	bool Precached;
+}
+
 static ArrayList BossList;
 static ArrayList PackList;
+static ArrayStack LoadList;
+static bool BossesLoaded;
+static bool InLoadProcess;
 static int DownloadTable;
 
 void Bosses_PluginStart()
@@ -50,6 +61,11 @@ void Bosses_PluginStart()
 	RegServerCmd("ff2_checkboss", Bosses_DebugCacheCmd, "Check's the boss config cache");
 	RegServerCmd("ff2_loadsubplugins", Bosses_DebugLoadCmd, "Loads freak subplugins");
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnloadCmd, "Unloads freak subplugins");
+}
+
+bool Bosses_AllLoaded()
+{
+	return BossesLoaded;
 }
 
 public Action Bosses_DebugCacheCmd(int args)
@@ -270,13 +286,18 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		
 		delete BossList;
 	}
-	
+
+	BossesLoaded = false;
+
 	BossList = new ArrayList();
 	
 	delete PackList;
 	PackList = new ArrayList(64, 0);
 	// TODO: Hidden boss packs or boss pack settings
 	
+	delete LoadList;
+	LoadList = new ArrayStack(sizeof(LoadInfo));
+
 	Music_ClearPlaylist();
 	
 	DownloadTable = FindStringTable("downloadables");
@@ -292,7 +313,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		ConfigMap cfg = new ConfigMap(FILE_CHARACTERS);
 		SortedSnapshot snap = CreateSortedSnapshot(cfg);
 		
-		int pack;
+		LoadInfo load;
 		PackVal val;
 		int entries = snap.Length;
 		if(charset != -1)
@@ -311,7 +332,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					
 					if(StrEqual(packname, name, false))
 					{
-						charset = pack;
+						charset = load.Pack;
 						break;
 					}
 					
@@ -321,12 +342,12 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					
 					StringMapSnapshot snapSub = cfgSub.Snapshot();
 					if(snapSub.Length)
-						pack++;
+						load.Pack++;
 					
 					delete snapSub;
 				}
 				
-				pack = 0;
+				load.Pack = 0;
 			}
 		}
 		
@@ -343,47 +364,45 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			if(!cfgSub)
 				continue;
 			
-			SortedSnapshot snapSub = CreateSortedSnapshot(cfgSub);
+			SortedSnapshot snapSub = CreateSortedSnapshot(cfgSub, Sort_Descending);
 			int entriesSub = snapSub.Length;
 			if(entriesSub)
 			{
-				bool precache = charset == pack;
+				load.Precached = charset == load.Pack;
 				PackList.PushString(packname);
 				
 				for(int a; a < entriesSub; a++)	// Bosses in this Pack
 				{
-					length = snapSub.KeyBufferSize(a)+1;
-					char[] bossname = new char[length];
-					snapSub.GetKey(a, bossname, length);
-					cfgSub.GetArray(bossname, val, sizeof(val));
+					snapSub.GetKey(a, load.Character, sizeof(load.Character));
+					cfgSub.GetArray(load.Character, val, sizeof(val));
 					switch(val.tag)
 					{
 						case KeyValType_Section:
 						{
-							length = ReplaceString(bossname, length, "*", NULL_STRING);
+							length = ReplaceString(load.Character, length, "*", NULL_STRING);
 							if(length)
 							{
-								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, precache);
+								LoadCharacterDirectory(filepath, load.Character, length>1, load.Pack, mapname, load.Precached);
 							}
 							else
 							{
-								LoadCharacter(bossname, pack, mapname, precache);
+								LoadList.PushArray(load);
 							}
 						}
 						case KeyValType_Value:
 						{
 							if(length > val.size)	// "saxton_hale"	""
 							{
-								if(!StrEqual(bossname, "hidden"))
+								if(!StrEqual(load.Character, "hidden"))
 								{
-									length = ReplaceString(bossname, length, "*", NULL_STRING);
+									length = ReplaceString(load.Character, length, "*", NULL_STRING);
 									if(length)
 									{
-										LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, precache);
+										LoadCharacterDirectory(filepath, load.Character, length>1, load.Pack, mapname, load.Precached);
 									}
 									else
 									{
-										LoadCharacter(bossname, pack, mapname, precache);
+										LoadList.PushArray(load);
 									}
 								}
 							}
@@ -392,20 +411,20 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 								length = ReplaceString(val.data, sizeof(val.data), "*", NULL_STRING);
 								if(length)
 								{
-									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, precache);
+									LoadCharacterDirectory(filepath, val.data, length>1, load.Pack, mapname, load.Precached);
 								}
 								else
 								{
-									LoadCharacter(val.data, pack, mapname, precache);
+									LoadList.PushArray(load);
 								}
 							}
 						}
 					}
 				}
 				
-				pack++;
+				load.Pack++;
 				
-				if(precache && Enabled)
+				if(load.Precached && Enabled)
 					SteamWorks_SetGameTitle(entries > 1 ? packname : NULL_STRING);
 			}
 			
@@ -423,9 +442,35 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		if(Enabled && charset >= 0)
 			SteamWorks_SetGameTitle();
 	}
-	
+
 	LockStringTables(save);
 	
+	if(!InLoadProcess)
+	{
+		RequestFrame(Bosses_LoadByFrame);
+		InLoadProcess = true;
+	}
+}
+
+public void Bosses_LoadByFrame()
+{
+	if(!LoadList.Empty)
+	{
+		LoadInfo load;
+		LoadList.PopArray(load);
+
+		char map[64];
+		GetCurrentMap(map, sizeof(map));
+		LoadCharacter(load.Character, load.Pack, map, load.Precached);
+
+		RequestFrame(Bosses_LoadByFrame);
+		return;
+	}
+
+	delete LoadList;
+	InLoadProcess = false;
+	BossesLoaded = true;
+
 	PackVal val;
 	int length = BossList.Length;
 	for(int i; i < length; i++)
@@ -471,6 +516,8 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			}
 		}
 	}
+	
+	Forward_OnAllBossesLoaded();
 }
 
 static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = NULL_STRING)

@@ -134,11 +134,7 @@ public void Database_QueryFail(Database db, any data, int numQueries, const char
 public void Database_SetupCallback(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)
 {
 	DataBase = data;
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientAuthorized(client))
-			Database_ClientPostAdminCheck(client);
-	}
+	Database_CheckAllClients();
 }
 
 void Database_PluginEnd()
@@ -149,6 +145,18 @@ void Database_PluginEnd()
 		{
 			if(IsClientInGame(client))
 				Database_ClientDisconnect(client, DBPrio_High);
+		}
+	}
+}
+
+void Database_CheckAllClients()
+{
+	if(DataBase && Bosses_AllLoaded())
+	{
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(!Cached[client] && IsClientAuthorized(client))
+				Database_ClientPostAdminCheck(client);
 		}
 	}
 }

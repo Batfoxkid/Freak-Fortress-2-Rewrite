@@ -85,7 +85,7 @@ void Gamemode_RoundSetup()
 			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
 			
 			int bosses = Cvar[BossVsBoss].IntValue;
-			if(bosses > 0)	// Boss vs Boss
+			if(Bosses_AllLoaded() && bosses > 0)	// Boss vs Boss
 			{
 				int reds;
 				int[] red = new int[MaxClients];
@@ -133,7 +133,7 @@ void Gamemode_RoundSetup()
 			else	// Standard FF2
 			{
 				int boss[1];
-				if(Preference_GetBossQueue(boss, 1, false))
+				if(Bosses_AllLoaded() && Preference_GetBossQueue(boss, 1, false))
 				{
 					int team;
 					int special = Preference_PickBoss(boss[0]);

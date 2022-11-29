@@ -3,7 +3,8 @@
 	void Weapons_PluginStart()
 	void Weapons_LibraryAdded(const char[] name)
 	void Weapons_LibraryRemoved(const char[] name)
-	bool Weapons_ConfigsExecuted(bool force = false)
+	bool Weapons_ConfigsExecuted()
+	void Weapons_LoadConfigs(bool force)
 	void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 	void Weapons_ShowChanges(int client, int entity)
 	void Weapons_PlayerDeath(int client)
@@ -106,18 +107,8 @@ public Action Weapons_DebugRefresh(int client, int args)
 
 public Action Weapons_DebugReload(int client, int args)
 {
-	if(Weapons_ConfigsExecuted(true))
-	{
-		FReplyToCommand(client, "Reloaded");
-	}
-	else if(client && CheckCommandAccess(client, "sm_rcon", ADMFLAG_RCON))
-	{
-		FReplyToCommand(client, "Config Error, use sm_rcon to print errors");
-	}
-	else
-	{
-		FReplyToCommand(client, "Config Error");
-	}
+	Weapons_LoadConfigs(true);
+	FReplyToCommand(client, "Reloaded");
 	return Plugin_Handled;
 }
 
@@ -131,14 +122,19 @@ public Action Weapons_ChangeMenuCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-bool Weapons_ConfigsExecuted(bool force = false)
+void Weapons_ConfigsExecuted()
+{
+	RequestFrame(Weapons_LoadConfigs, false);
+}
+
+public void Weapons_LoadConfigs(bool force)
 {
 	ConfigMap cfg;
 	if(Enabled || force)
 	{
 		cfg = new ConfigMap(FILE_WEAPONS);
 		if(!cfg)
-			return false;
+			return;
 	}
 	
 	if(WeaponCfg)
@@ -149,8 +145,6 @@ bool Weapons_ConfigsExecuted(bool force = false)
 	
 	if(Enabled || force)
 		WeaponCfg = cfg;
-	
-	return true;
 }
 
 void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
