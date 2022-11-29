@@ -1,6 +1,7 @@
 /*
 	void Database_PluginStart()
 	void Database_PluginEnd()
+	void Database_CheckAllClients()
 	void Database_ClientPostAdminCheck(int client)
 	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
 */

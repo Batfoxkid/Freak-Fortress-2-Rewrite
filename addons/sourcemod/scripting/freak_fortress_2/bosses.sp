@@ -518,6 +518,7 @@ public void Bosses_LoadByFrame()
 	}
 	
 	Forward_OnAllBossesLoaded();
+	Database_CheckAllClients();
 }
 
 static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = NULL_STRING)
