@@ -115,13 +115,13 @@
 		{
 			"CBaseEntity::ChangeTeam"
 			{
-				"linux"		"95"
-				"windows"	"94"
+				"linux"		"97"
+				"windows"	"96"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
-				"linux"		"334"
-				"windows"	"333"
+				"linux"		"337"
+				"windows"	"336"
 			}
 			"CEconItemView::IterateAttributes"
 			{
@@ -130,38 +130,38 @@
 			}
 			"CTeamplayRoundBasedRules::RoundRespawn"
 			{
-				"linux"		"227"
-				"windows"	"225"
+				"linux"		"231"
+				"windows"	"229"
 			}
 			"CTeamplayRules::SetWinningTeam"
 			{
-				"linux"		"161"
-				"windows"	"160"
+				"linux"		"165"
+				"windows"	"164"
 			}
 			"CTeam::AddPlayer"
 			{
-				"linux"		"206"
-				"windows"	"205"
+				"linux"		"209"
+				"windows"	"208"
 			}
 			"CTeam::RemovePlayer"
 			{
-				"linux"		"207"
-				"windows"	"206"
+				"linux"		"210"
+				"windows"	"209"
 			}
 			"CTFGameRules::GetCaptureValueForPlayer"
 			{
-				"linux"		"154"
-				"windows"	"153"
+				"linux"		"158"
+				"windows"	"157"
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
-				"linux"		"420"
-				"windows"	"413"
+				"linux"		"423"
+				"windows"	"416"
 			}
 			"CTFWeaponBase::ApplyOnInjuredAttributes"
 			{
-				"linux"		"421"
-				"windows"	"414"
+				"linux"		"424"
+				"windows"	"415"
 			}
 			"m_bitsDamageType"
 			{
