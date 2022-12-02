@@ -445,6 +445,8 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 	if(entity > 0 && entity <= MaxClients && (channel == SNDCHAN_VOICE || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
 	{
 		int client = entity;
+		/*
+			m_iDisguiseTargetIndex does not exists as of 12/1/2022
 		if(TF2_IsPlayerInCondition(entity, TFCond_Disguised))
 		{
 			for(int i; i < numClients; i++)
@@ -458,7 +460,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 					break;
 				}
 			}
-		}
+		}*/
 		
 		if(Client(client).IsBoss && !Client(entity).Speaking)
 		{

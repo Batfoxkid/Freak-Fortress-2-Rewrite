@@ -1004,6 +1004,8 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 				{
 					int team = GetClientTeam(client);
 					bool show = team == GetClientTeam(aim);
+					/*
+						m_iDisguiseTargetIndex does not exists as of 12/1/2022
 					if(!show && TF2_IsPlayerInCondition(aim, TFCond_Disguised) && GetEntProp(aim, Prop_Send, "m_nDisguiseTeam") == team)
 					{
 						show = true;
@@ -1011,7 +1013,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 						int disguise = GetEntProp(aim, Prop_Send, "m_iDisguiseTargetIndex");
 						if(disguise > 0 && disguise <= MaxClients && IsClientInGame(disguise))
 							aim = disguise;
-					}
+					}*/
 					
 					if(show)
 						target = aim;
@@ -1051,21 +1053,23 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	}
 }
 
-void Gamemode_ConditionAdded(int client, TFCond cond)
+//	m_iDisguiseTargetIndex does not exists as of 12/1/2022
+stock void Gamemode_ConditionAdded(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
-		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
+	
+	//if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
+	//	TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
 }
 
-void Gamemode_ConditionRemoved(int client, TFCond cond)
+stock void Gamemode_ConditionRemoved(int client, TFCond cond)
 {
-	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
-	{
-		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
-		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
-	}
+	//if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
+	//{
+	//	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+	//	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+	//}
 }
-
+/*
 public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
@@ -1094,3 +1098,4 @@ public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 	}
 	return Plugin_Stop;
 }
+*/
