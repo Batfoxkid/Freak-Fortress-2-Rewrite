@@ -60,7 +60,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\x84\x1A\x00\x00\x00\x00\x04\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x57\x8B\xF9\xF7\x87\xB4\x1B\x00\x00\x00\x00\x04\x00"
 			}
 			"CTFPlayer::CanBuild"
 			{
@@ -72,25 +72,25 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x8B\xF1\x80\xBB\xDC\x04\x00\x00\x00"
+				"windows"	"\x55\x8B\xEC\x53\x8B\x5D\x08\x56\x8B\xF1\x80\xBB\x04\x05\x00\x00\x00"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xB0\x19\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x9F\xE0\x1A\x00\x00"
 			}
 			"CTFPlayer::DropAmmoPack"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x8B\xD9\x56\x33\xF6"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x8B\xD9\xC7\x45\xFC\x00\x00\x00\x00"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\x88\x04\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x8B\x75\x08\x57\x8B\xF9\x81\xC6\xB0\x04\x00\x00"
 			}
 			"CTFPlayer::RegenThink"
 			{
@@ -115,13 +115,13 @@
 		{
 			"CBaseEntity::ChangeTeam"
 			{
-				"linux"		"95"
-				"windows"	"94"
+				"linux"		"97"
+				"windows"	"96"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
-				"linux"		"334"
-				"windows"	"333"
+				"linux"		"337"
+				"windows"	"336"
 			}
 			"CEconItemView::IterateAttributes"
 			{
@@ -130,38 +130,38 @@
 			}
 			"CTeamplayRoundBasedRules::RoundRespawn"
 			{
-				"linux"		"227"
-				"windows"	"225"
+				"linux"		"231"
+				"windows"	"229"
 			}
 			"CTeamplayRules::SetWinningTeam"
 			{
-				"linux"		"161"
-				"windows"	"160"
+				"linux"		"165"
+				"windows"	"164"
 			}
 			"CTeam::AddPlayer"
 			{
-				"linux"		"206"
-				"windows"	"205"
+				"linux"		"209"
+				"windows"	"208"
 			}
 			"CTeam::RemovePlayer"
 			{
-				"linux"		"207"
-				"windows"	"206"
+				"linux"		"210"
+				"windows"	"209"
 			}
 			"CTFGameRules::GetCaptureValueForPlayer"
 			{
-				"linux"		"154"
-				"windows"	"153"
+				"linux"		"158"
+				"windows"	"157"
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
-				"linux"		"420"
-				"windows"	"413"
+				"linux"		"423"
+				"windows"	"416"
 			}
 			"CTFWeaponBase::ApplyOnInjuredAttributes"
 			{
-				"linux"		"421"
-				"windows"	"414"
+				"linux"		"424"
+				"windows"	"415"
 			}
 			"m_bitsDamageType"
 			{

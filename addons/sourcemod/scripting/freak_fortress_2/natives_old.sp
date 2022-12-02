@@ -362,6 +362,8 @@ public any NativeOld_SetBossRageDamage(Handle plugin, int params)
 
 public any NativeOld_GetRoundState(Handle plugin, int params)
 {
+	return RoundStatus;
+	/*
 	switch(GameRules_GetRoundState())
 	{
 		case RoundState_Init, RoundState_Pregame, RoundState_StartGame, RoundState_Preround:
@@ -372,6 +374,7 @@ public any NativeOld_GetRoundState(Handle plugin, int params)
 	}
 	
 	return 2;
+	*/
 }
 
 public any NativeOld_GetRageDist(Handle plugin, int params)

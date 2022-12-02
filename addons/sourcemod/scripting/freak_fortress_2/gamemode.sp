@@ -1008,8 +1008,8 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 					{
 						show = true;
 						
-						int disguise = GetEntProp(aim, Prop_Send, "m_iDisguiseTargetIndex");
-						if(disguise > 0 && disguise <= MaxClients && IsClientInGame(disguise))
+						int disguise = GetEntPropEnt(aim, Prop_Send, "m_hDisguiseTarget");
+						if(disguise != -1)
 							aim = disguise;
 					}
 					
@@ -1071,8 +1071,8 @@ public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 	int client = GetClientOfUserId(userid);
 	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
 	{
-		int target = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
-		if(target > 0 && target <= MaxClients && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+		int target = GetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget");
+		if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
 		{
 			bool team = view_as<bool>(GetClientTeam(client) % 2);
 			
