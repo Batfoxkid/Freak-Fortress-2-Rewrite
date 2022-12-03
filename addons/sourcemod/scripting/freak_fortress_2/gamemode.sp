@@ -1071,7 +1071,7 @@ public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 	int client = GetClientOfUserId(userid);
 	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
 	{
-		int target = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
+		int target = GetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget");
 		if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
 		{
 			bool team = view_as<bool>(GetClientTeam(client) % 2);

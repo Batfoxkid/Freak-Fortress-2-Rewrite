@@ -451,7 +451,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 			{
 				if(clients[i] == entity)	// Get the sound from the Spy/enemies to avoid teammates hearing it
 				{
-					client = GetEntProp(entity, Prop_Send, "m_iDisguiseTargetIndex");
+					client = GetEntPropEnt(entity, Prop_Send, "m_hDisguiseTarget");
 					if(client == -1 || view_as<TFClassType>(GetEntProp(entity, Prop_Send, "m_nDisguiseClass")) != TF2_GetPlayerClass(client))
 						client = entity;
 					
