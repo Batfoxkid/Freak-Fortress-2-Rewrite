@@ -445,8 +445,6 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 	if(entity > 0 && entity <= MaxClients && (channel == SNDCHAN_VOICE || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
 	{
 		int client = entity;
-		/*
-			m_iDisguiseTargetIndex does not exists as of 12/1/2022
 		if(TF2_IsPlayerInCondition(entity, TFCond_Disguised))
 		{
 			for(int i; i < numClients; i++)
@@ -454,13 +452,13 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 				if(clients[i] == entity)	// Get the sound from the Spy/enemies to avoid teammates hearing it
 				{
 					client = GetEntProp(entity, Prop_Send, "m_iDisguiseTargetIndex");
-					if(client < 1 || client > MaxClients || view_as<TFClassType>(GetEntProp(entity, Prop_Send, "m_nDisguiseClass")) != TF2_GetPlayerClass(client))
+					if(client == -1 || view_as<TFClassType>(GetEntProp(entity, Prop_Send, "m_nDisguiseClass")) != TF2_GetPlayerClass(client))
 						client = entity;
 					
 					break;
 				}
 			}
-		}*/
+		}
 		
 		if(Client(client).IsBoss && !Client(entity).Speaking)
 		{

@@ -1004,16 +1004,14 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 				{
 					int team = GetClientTeam(client);
 					bool show = team == GetClientTeam(aim);
-					/*
-						m_iDisguiseTargetIndex does not exists as of 12/1/2022
 					if(!show && TF2_IsPlayerInCondition(aim, TFCond_Disguised) && GetEntProp(aim, Prop_Send, "m_nDisguiseTeam") == team)
 					{
 						show = true;
 						
-						int disguise = GetEntProp(aim, Prop_Send, "m_iDisguiseTargetIndex");
-						if(disguise > 0 && disguise <= MaxClients && IsClientInGame(disguise))
+						int disguise = GetEntPropEnt(aim, Prop_Send, "m_hDisguiseTarget");
+						if(disguise != -1)
 							aim = disguise;
-					}*/
+					}
 					
 					if(show)
 						target = aim;
@@ -1053,30 +1051,28 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	}
 }
 
-//	m_iDisguiseTargetIndex does not exists as of 12/1/2022
-stock void Gamemode_ConditionAdded(int client, TFCond cond)
+void Gamemode_ConditionAdded(int client, TFCond cond)
 {
-	
-	//if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
-	//	TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
+		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
 }
 
-stock void Gamemode_ConditionRemoved(int client, TFCond cond)
+void Gamemode_ConditionRemoved(int client, TFCond cond)
 {
-	//if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
-	//{
-	//	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
-	//	SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
-	//}
+	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
+	{
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+	}
 }
-/*
+
 public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
 	{
 		int target = GetEntProp(client, Prop_Send, "m_iDisguiseTargetIndex");
-		if(target > 0 && target <= MaxClients && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+		if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
 		{
 			bool team = view_as<bool>(GetClientTeam(client) % 2);
 			
@@ -1098,4 +1094,3 @@ public Action Gamemode_DisguiseTimer(Handle timer, int userid)
 	}
 	return Plugin_Stop;
 }
-*/
