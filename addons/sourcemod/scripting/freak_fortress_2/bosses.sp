@@ -415,6 +415,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 								}
 								else
 								{
+									strcopy(load.Character, sizeof(load.Character), val.data);
 									LoadList.PushArray(load);
 								}
 							}
