@@ -50,7 +50,6 @@ static ArrayList PackList;
 static ArrayStack LoadList;
 static bool BossesLoaded;
 static bool InLoadProcess;
-static int DownloadTable;
 
 void Bosses_PluginStart()
 {
@@ -300,9 +299,6 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 
 	Music_ClearPlaylist();
 	
-	DownloadTable = FindStringTable("downloadables");
-	bool save = LockStringTables(false);
-	
 	char filepath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, filepath, sizeof(filepath), FILE_CHARACTERS);
 	
@@ -391,7 +387,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 						}
 						case KeyValType_Value:
 						{
-							if(length > val.size)	// "saxton_hale"	""
+							if(strlen(load.Character) > val.size)	// "saxton_hale"	""
 							{
 								if(!StrEqual(load.Character, "hidden"))
 								{
@@ -443,8 +439,6 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		if(Enabled && charset >= 0)
 			SteamWorks_SetGameTitle();
 	}
-
-	LockStringTables(save);
 	
 	if(!InLoadProcess)
 	{
@@ -1154,7 +1148,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									if(FileExists(key, true))
 									{
-										AddToStringTable(DownloadTable, key);
+										AddFileToDownloadsTable(key);
 									}
 									else
 									{
@@ -1172,7 +1166,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 												if(FileExists(buffer, true))
 												{
-													AddToStringTable(DownloadTable, buffer);
+													AddFileToDownloadsTable(buffer);
 												}
 												else
 												{
@@ -1189,7 +1183,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												if(FileExists(buffer, true))
 												{
 													if(b)
-														AddToStringTable(DownloadTable, buffer);
+														AddFileToDownloadsTable(buffer);
 												}
 												else if(b != sizeof(MdlExts)-1)
 												{
@@ -1202,7 +1196,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										{
 											if(FileExists(key, true))
 											{
-												AddToStringTable(DownloadTable, key);
+												AddFileToDownloadsTable(key);
 											}
 											else
 											{
@@ -1214,7 +1208,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										if(FileExists(val.data, true))
 										{
-											AddToStringTable(DownloadTable, val.data);
+											AddFileToDownloadsTable(val.data);
 										}
 										else
 										{
@@ -1256,7 +1250,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										if(FileExists(buffer, true))
 										{
 											if(b)
-												AddToStringTable(DownloadTable, buffer);
+												AddFileToDownloadsTable(buffer);
 										}
 										else if(b != sizeof(MdlExts)-1)
 										{
@@ -1275,7 +1269,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											if(FileExists(buffer, true))
 											{
 												if(b)
-													AddToStringTable(DownloadTable, buffer);
+													AddFileToDownloadsTable(buffer);
 											}
 											else if(b != sizeof(MdlExts)-1)
 											{
@@ -1292,7 +1286,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											if(FileExists(buffer, true))
 											{
 												if(b)
-													AddToStringTable(DownloadTable, buffer);
+													AddFileToDownloadsTable(buffer);
 											}
 											else if(b != sizeof(MdlExts)-1)
 											{
@@ -1335,7 +1329,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 										if(FileExists(buffer, true))
 										{
-											AddToStringTable(DownloadTable, buffer);
+											AddFileToDownloadsTable(buffer);
 										}
 										else
 										{
@@ -1352,7 +1346,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
 											if(FileExists(buffer, true))
 											{
-												AddToStringTable(DownloadTable, buffer);
+												AddFileToDownloadsTable(buffer);
 											}
 											else
 											{
@@ -1367,7 +1361,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
 											if(FileExists(buffer, true))
 											{
-												AddToStringTable(DownloadTable, buffer);
+												AddFileToDownloadsTable(buffer);
 											}
 											else
 											{
