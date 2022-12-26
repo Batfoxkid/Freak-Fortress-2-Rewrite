@@ -1,9 +1,5 @@
 # Environments
 echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
-echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
-git rev-list --count HEAD >> $GITHUB_ENV
-echo 'EOF' >> $GITHUB_ENV
-echo $PLUGIN_VERSION_REVISION
 cp scripts/compile.sh addons/sourcemod/scripting/compile.sh
 cd addons/sourcemod/scripting
 

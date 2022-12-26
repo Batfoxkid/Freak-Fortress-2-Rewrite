@@ -21,6 +21,12 @@ jobs:
         with:
           version: '1.11.x'
       
+      - name: Get GitHub Env
+        run: |
+          echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
+          git rev-list --count HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
       - name: Install Misc
         run: |
           bash scripts/setup.sh
@@ -73,6 +79,12 @@ jobs:
         uses: rumblefrog/setup-sp@master
         with:
           version: '1.11.x'
+      
+      - name: Get GitHub Env
+        run: |
+          echo "PLUGIN_VERSION_REVISION<<EOF" >> $GITHUB_ENV
+          git rev-list --count HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
       
       - name: Install Misc
         run: |
