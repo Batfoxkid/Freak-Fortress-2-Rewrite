@@ -3018,59 +3018,64 @@ static void EnableSubplugins()
 {
 	if(!PluginsEnabled)
 	{
-		PluginsEnabled = true;
-		
-		char path[PLATFORM_MAX_PATH], filename[PLATFORM_MAX_PATH], filepath1[PLATFORM_MAX_PATH], filepath2[PLATFORM_MAX_PATH];
-		BuildPath(Path_SM, path, sizeof(path), "plugins/freaks");
-		
-		FileType filetype;
-		DirectoryListing dir = OpenDirectory(path);
-		if(dir)
+		char folder[128];
+		Cvar[SubpluginFolder].GetString(folder, sizeof(folder));
+		if(folder[0])
 		{
-			while(dir.GetNext(filename, sizeof(filename), filetype))
+			PluginsEnabled = true;
+			
+			char path[PLATFORM_MAX_PATH], filename[PLATFORM_MAX_PATH], filepath1[PLATFORM_MAX_PATH], filepath2[PLATFORM_MAX_PATH];
+			BuildPath(Path_SM, path, sizeof(path), "plugins/%s", folder);
+			
+			FileType filetype;
+			DirectoryListing dir = OpenDirectory(path);
+			if(dir)
 			{
-				if(filetype == FileType_File)
+				while(dir.GetNext(filename, sizeof(filename), filetype))
 				{
-					int pos = strlen(filename) - 4;
-					if(pos > 0)
+					if(filetype == FileType_File)
 					{
-						if(StrEqual(filename[pos], ".smx"))
+						int pos = strlen(filename) - 4;
+						if(pos > 0)
 						{
-							FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
-							
-							if(!IsSubpluginLoaded(filename))
-								InsertServerCommand("sm plugins load freaks/%s", filename);
-							
-							DataPack pack = new DataPack();
-							pack.WriteString(filepath1);
-							RequestFrame(Bosses_RenameSubplugin, pack);
-						}
-						else if(StrEqual(filename[pos], ".ff2"))
-						{
-							FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
-							
-							strcopy(filename[pos], 5, ".smx");
-							FormatEx(filepath2, sizeof(filepath2), "%s/%s", path, filename);
-							
-							if(FileExists(filepath2))
+							if(StrEqual(filename[pos], ".smx"))
 							{
-								DeleteFile(filepath1);
+								FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
+								
+								if(!IsSubpluginLoaded(filename))
+									InsertServerCommand("sm plugins load %s/%s", folder, filename);
+								
+								DataPack pack = new DataPack();
+								pack.WriteString(filepath1);
+								RequestFrame(Bosses_RenameSubplugin, pack);
 							}
-							else
+							else if(StrEqual(filename[pos], ".ff2"))
 							{
-								RenameFile(filepath2, filepath1);
-								InsertServerCommand("sm plugins load freaks/%s", filename);
+								FormatEx(filepath1, sizeof(filepath1), "%s/%s", path, filename);
+								
+								strcopy(filename[pos], 5, ".smx");
+								FormatEx(filepath2, sizeof(filepath2), "%s/%s", path, filename);
+								
+								if(FileExists(filepath2))
+								{
+									DeleteFile(filepath1);
+								}
+								else
+								{
+									RenameFile(filepath2, filepath1);
+									InsertServerCommand("sm plugins load %s/%s", folder, filename);
+								}
+								
+								DataPack pack = new DataPack();
+								pack.WriteString(filepath2);
+								RequestFrame(Bosses_RenameSubplugin, pack);
 							}
-							
-							DataPack pack = new DataPack();
-							pack.WriteString(filepath2);
-							RequestFrame(Bosses_RenameSubplugin, pack);
 						}
 					}
 				}
+				
+				ServerExecute();
 			}
-			
-			ServerExecute();
 		}
 	}
 }
@@ -3105,37 +3110,45 @@ public void Bosses_RenameSubplugin(DataPack pack)
 	int pos = strcopy(buffer2, sizeof(buffer2), buffer1) - 4;
 	strcopy(buffer2[pos], 5, ".ff2");
 	
-	RenameFile(buffer2, buffer1);
+	if(!RenameFile(buffer2, buffer1))
+		LogError("Failed to rename '%s' to '%s'", buffer1, buffer2);
 }
 
 static void DisableSubplugins()
 {
 	if(PluginsEnabled)
 	{
-		PluginsEnabled = false;
-		
-		//TODO: Reverse
-		ArrayList list = new ArrayList(PLATFORM_MAX_PATH);
-		
-		char filename[PLATFORM_MAX_PATH];
-		Handle iter = GetPluginIterator();
-		while(MorePlugins(iter))
+		char folder[128];
+		Cvar[SubpluginFolder].GetString(folder, sizeof(folder));
+		if(folder[0])
 		{
-			Handle plugin = ReadPlugin(iter);
-			GetPluginFilename(plugin, filename, sizeof(filename));
-			if(!StrContains(filename, "freaks\\", false))
-				list.PushString(filename);
+			PluginsEnabled = false;
+
+			StrCat(folder, sizeof(folder), "\\");
+
+			ArrayList list = new ArrayList(PLATFORM_MAX_PATH);
+			
+			char filename[PLATFORM_MAX_PATH];
+
+			Handle iter = GetPluginIterator();
+			while(MorePlugins(iter))
+			{
+				Handle plugin = ReadPlugin(iter);
+				GetPluginFilename(plugin, filename, sizeof(filename));
+				if(!StrContains(filename, folder, false))
+					list.PushString(filename);
+			}
+			delete iter;
+			
+			for(int i = list.Length-1; i >= 0; i--)
+			{
+				list.GetString(i, filename, sizeof(filename));
+				InsertServerCommand("sm plugins unload %s", filename);
+			}
+			
+			delete list;
+			ServerExecute();
 		}
-		delete iter;
-		
-		for(int i = list.Length-1; i >= 0; i--)
-		{
-			list.GetString(i, filename, sizeof(filename));
-			InsertServerCommand("sm plugins unload %s", filename);
-		}
-		
-		delete list;
-		ServerExecute();
 	}
 }
 

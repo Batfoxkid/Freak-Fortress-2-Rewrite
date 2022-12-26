@@ -175,6 +175,8 @@ enum
 	
 	AggressiveOverlay,
 	AggressiveSwap,
+
+	SubpluginFolder,
 	
 	SoundType,
 	BossTriple,
