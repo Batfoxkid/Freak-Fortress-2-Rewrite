@@ -558,8 +558,8 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									TFClassType class = Client(victim).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(victim);
 									if(deadRinger && TF2_IsPlayerInCondition(victim, TFCond_Disguised) && GetClientTeam(attacker) == GetEntProp(victim, Prop_Send, "m_nDisguiseTeam"))
 									{
-										int target = GetEntProp(victim, Prop_Send, "m_iDisguiseTargetIndex");
-										if(target > 0 && target <= MaxClients && target != attacker)
+										int target = GetEntPropEnt(victim, Prop_Send, "m_hDisguiseTarget");
+										if(target != -1 && target != attacker)
 										{
 											if(Client(target).IsBoss)
 											{
