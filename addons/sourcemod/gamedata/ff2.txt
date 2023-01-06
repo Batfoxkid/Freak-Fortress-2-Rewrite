@@ -155,13 +155,13 @@
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
-				"linux"		"423"
-				"windows"	"416"
+				"linux"		"424"
+				"windows"	"417"
 			}
 			"CTFWeaponBase::ApplyOnInjuredAttributes"
 			{
-				"linux"		"424"
-				"windows"	"415"
+				"linux"		"425"
+				"windows"	"418"
 			}
 			"m_bitsDamageType"
 			{
