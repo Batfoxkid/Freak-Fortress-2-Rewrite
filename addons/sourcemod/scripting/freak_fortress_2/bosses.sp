@@ -740,6 +740,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	{
 		int special = BossList.Length;
 		bool clean = !Cvar[Debugging].BoolValue;
+		bool check = Cvar[FileCheck].BoolValue;
 		
 		snap = cfg.Snapshot();
 		
@@ -791,7 +792,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					{
 						if(cfgsub.Get("worldmodel", buffer, sizeof(buffer)) && buffer[0])
 						{
-							if(FileExists(buffer, true))
+							if(!check || FileExists(buffer, true))
 							{
 								cfgsub.SetInt("worldmodel", PrecacheModel(buffer));
 							}
@@ -937,7 +938,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
-									if(!FileExists(key, true))
+									if(check && !FileExists(key, true))
 									{
 										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
 									}
@@ -1041,7 +1042,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
-									if(FileExists(key, true))
+									if(!check || FileExists(key, true))
 									{
 										PrecacheModel(key);
 									}
@@ -1054,7 +1055,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 								{
 									if(length > val.size)	// "models/example.mdl"	"mdl"
 									{
-										if(FileExists(key, true))
+										if(!check || FileExists(key, true))
 										{
 											PrecacheModel(key);
 										}
@@ -1065,7 +1066,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else if(val.data[0])	// "1"	"models/example.mdl"
 									{
-										if(FileExists(val.data, true))
+										if(!check || FileExists(val.data, true))
 										{
 											PrecacheModel(val.data);
 										}
@@ -1103,7 +1104,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							{
 								case KeyValType_Section:
 								{
-									if(FileExists(key, true))
+									if(!check || FileExists(key, true))
 									{
 										AddToStringTable(DownloadTable, key);
 									}
@@ -1121,7 +1122,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											for(int b; b < sizeof(MatExts); b++)
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-												if(FileExists(buffer, true))
+												if(!check || FileExists(buffer, true))
 												{
 													AddToStringTable(DownloadTable, buffer);
 												}
@@ -1137,7 +1138,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											for(int b; b < sizeof(MdlExts); b++)
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-												if(FileExists(buffer, true))
+												if(!check || FileExists(buffer, true))
 												{
 													if(b)
 														AddToStringTable(DownloadTable, buffer);
@@ -1151,7 +1152,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										}
 										else
 										{
-											if(FileExists(key, true))
+											if(!check || FileExists(key, true))
 											{
 												AddToStringTable(DownloadTable, key);
 											}
@@ -1163,7 +1164,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									}
 									else			// "1"	"sound/example.mp3"
 									{
-										if(FileExists(val.data, true))
+										if(!check || FileExists(val.data, true))
 										{
 											AddToStringTable(DownloadTable, val.data);
 										}
@@ -1204,7 +1205,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									for(int b; b < sizeof(MdlExts); b++)
 									{
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-										if(FileExists(buffer, true))
+										if(!check || FileExists(buffer, true))
 										{
 											if(b)
 												AddToStringTable(DownloadTable, buffer);
@@ -1223,7 +1224,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-											if(FileExists(buffer, true))
+											if(!check || FileExists(buffer, true))
 											{
 												if(b)
 													AddToStringTable(DownloadTable, buffer);
@@ -1240,7 +1241,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
-											if(FileExists(buffer, true))
+											if(!check || FileExists(buffer, true))
 											{
 												if(b)
 													AddToStringTable(DownloadTable, buffer);
@@ -1284,7 +1285,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									for(int b; b < sizeof(MatExts); b++)
 									{
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-										if(FileExists(buffer, true))
+										if(!check || FileExists(buffer, true))
 										{
 											AddToStringTable(DownloadTable, buffer);
 										}
@@ -1301,7 +1302,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MatExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
-											if(FileExists(buffer, true))
+											if(!check || FileExists(buffer, true))
 											{
 												AddToStringTable(DownloadTable, buffer);
 											}
@@ -1316,7 +1317,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MatExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MatExts[b]);
-											if(FileExists(buffer, true))
+											if(!check || FileExists(buffer, true))
 											{
 												AddToStringTable(DownloadTable, buffer);
 											}
