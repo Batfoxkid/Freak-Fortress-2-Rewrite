@@ -1205,12 +1205,14 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									for(int b; b < sizeof(MdlExts); b++)
 									{
 										FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-										if(!check || FileExists(buffer, true))
+
+										bool phy = b == sizeof(MdlExts)-1;
+										if((!phy && !check) || FileExists(buffer, true))
 										{
 											if(b)
 												AddToStringTable(DownloadTable, buffer);
 										}
-										else if(b != sizeof(MdlExts)-1)
+										else if(!phy)
 										{
 											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											break;
@@ -1224,12 +1226,14 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
-											if(!check || FileExists(buffer, true))
+
+											bool phy = b == sizeof(MdlExts)-1;
+											if((!phy && !check) || FileExists(buffer, true))
 											{
 												if(b)
 													AddToStringTable(DownloadTable, buffer);
 											}
-											else if(b != sizeof(MdlExts)-1)
+											else if(!phy)
 											{
 												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 												break;
@@ -1241,12 +1245,14 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										for(int b; b < sizeof(MdlExts); b++)
 										{
 											FormatEx(buffer, sizeof(buffer), "%s.%s", val.data, MdlExts[b]);
-											if(!check || FileExists(buffer, true))
+
+											bool phy = b == sizeof(MdlExts)-1;
+											if((!phy && !check) || FileExists(buffer, true))
 											{
 												if(b)
 													AddToStringTable(DownloadTable, buffer);
 											}
-											else if(b != sizeof(MdlExts)-1)
+											else if(!phy)
 											{
 												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 												break;
