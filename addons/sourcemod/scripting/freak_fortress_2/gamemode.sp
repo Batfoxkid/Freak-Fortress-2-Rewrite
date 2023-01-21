@@ -35,6 +35,7 @@ void Gamemode_PluginStart()
 void Gamemode_MapStart()
 {
 	//TODO: If a round as been played before, Waiting for Players will never end - Late loading without players on breaks FF2 currently
+	RoundStatus = -1;
 	Waiting = true;
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -821,10 +822,11 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				
 				if(entity == -1)
 				{
-					entity = FindEntityByClassname(MaxClients+1, "monster_resource");
+					entity = FindEntityByClassname(-1, "monster_resource");
 					if(!maxcombined)
 					{
-						RemoveEntity(entity);
+						//if(entity != -1)
+						//	RemoveEntity(entity);
 					}
 					else
 					{
@@ -866,9 +868,9 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 			}
 			else if(lastCount < 3)
 			{
-				int entity = FindEntityByClassname(MaxClients+1, "monster_resource");
-				if(entity != -1)
-					RemoveEntity(entity);
+			//	int entity = FindEntityByClassname(-1, "monster_resource");
+			//	if(entity != -1)
+			//		RemoveEntity(entity);
 			}
 			
 			if(HudTimer[team])

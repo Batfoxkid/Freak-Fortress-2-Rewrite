@@ -1652,8 +1652,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	}
 	
 	Forward_OnBossCreated(client, Client(client).Cfg, !active);
-	
 	Goomba_BossCreated(Client(client).Cfg);
+	Music_BossCreated(client);
 	
 	if(Client(client).Cfg.GetInt("companion", i))
 	{

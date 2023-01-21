@@ -431,7 +431,6 @@ public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 		return MRES_Ignored;
 	
 	ret.Value += TF2_GetPlayerClass(client) == TFClass_Scout ? 1 : 2;
-
 	return MRES_Override;
 }
 

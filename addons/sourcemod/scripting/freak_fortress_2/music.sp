@@ -49,6 +49,22 @@ void Music_AddSong(int special, const char[] section, const char[] key)
 	Playlist.PushArray(music);
 }
 
+void Music_BossCreated(int boss)
+{
+	SoundEnum sound;
+	sound.Default();
+	Bosses_GetRandomSound(boss, "sound_intromusic", sound);
+	
+	if(sound.Sound[0])
+	{
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(!CurrentTheme[client][0] && IsClientInGame(client))
+				Music_PlaySongToClient(client, sound.Sound, boss, sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+		}
+	}
+}
+
 void Music_RoundStart()
 {
 	for(int i = 1; i <= MaxClients; i++)
