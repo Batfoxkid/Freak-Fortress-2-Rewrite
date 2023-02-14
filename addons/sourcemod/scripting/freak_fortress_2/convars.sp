@@ -117,9 +117,15 @@ static void GenerateConfig()
 			int current, split;
 			do
 			{
-				current += split;
 				split = SplitString(buffer1[current], "\n", buffer2, sizeof(buffer2));
+				if(split == -1)
+				{
+					file.WriteLine("// %s", buffer1[current]);
+					break;
+				}
+				
 				file.WriteLine("// %s", buffer2);
+				current += split;
 			}
 			while(split != -1);
 			

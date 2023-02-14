@@ -487,7 +487,10 @@ public void OnPluginStart()
 			
 			BossData cfg = FF2R_GetBossData(client);
 			if(cfg)
+			{
 				FF2R_OnBossCreated(client, cfg, false);
+				FF2R_OnBossEquipped(client, true);
+			}
 		}
 	}
 }
@@ -813,13 +816,13 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					int button = ability.GetInt("button", 11);
 					if(SpecialCharge[client])
 					{
-						if(button == IN_ATTACK2)
+						if(button == 11)	// IN_ATTACK2 -> IN_RELOAD
 						{
-							button = IN_RELOAD;
+							button = 13;
 						}
-						else if(button == IN_RELOAD)
+						else if(button == 13)	// IN_RELOAD -> IN_ATTACK2
 						{
-							button = IN_ATTACK2;
+							button = 11;
 						}
 					}
 
