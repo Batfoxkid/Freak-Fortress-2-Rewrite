@@ -2774,7 +2774,7 @@ public Action Timer_EnableBuilding(Handle timer, int ref)
 {
 	int entity = EntRefToEntIndex(ref);
 	if(entity != INVALID_ENT_REFERENCE)
-		SetEntProp(entity, Prop_Send, "m_bDisabled", true);
+		SetEntProp(entity, Prop_Send, "m_bDisabled", false);
 	
 	return Plugin_Continue;
 }

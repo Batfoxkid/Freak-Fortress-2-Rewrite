@@ -21,7 +21,7 @@
  * 
  * @return		True if the sound was found, false otherwise
  */
-native void FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
+native bool FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
 
 /**
  * Emits a boss's random sound to a list of clients.
