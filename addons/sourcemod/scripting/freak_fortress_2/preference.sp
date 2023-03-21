@@ -1368,16 +1368,6 @@ void Preference_FinishParty(int client)
 
 int Preference_GetCompanion(int client, int special, int team, bool &disband)
 {
-	if(Enabled && PartyLeader[client])
-	{
-		int player = FindPartyMember(PartyLeader[client], special);
-		if(player && !Client(player).IsBoss)
-		{
-			disband = true;
-			return player;
-		}
-	}
-	
 	int count;
 	int[] players = new int[MaxClients];
 	for(int player = 1; player <= MaxClients; player++)
@@ -1398,8 +1388,18 @@ int Preference_GetCompanion(int client, int special, int team, bool &disband)
 		}
 	}
 	
-	if(!count)
+	if(count < (Enabled ? 2 : 1))	// Prevent arena mode softlock when one-sided
 		return 0;
+	
+	if(Enabled && PartyLeader[client])
+	{
+		int player = FindPartyMember(PartyLeader[client], special);
+		if(player && !Client(player).IsBoss)
+		{
+			disband = true;
+			return player;
+		}
+	}
 	
 	return players[GetURandomInt() % count];
 }

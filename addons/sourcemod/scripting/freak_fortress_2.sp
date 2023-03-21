@@ -207,6 +207,7 @@ enum
 	PreroundTime,
 	//BonusRoundTime,
 	Tournament,
+	WaitingTime,
 	
 	Cvar_MAX
 }
@@ -347,6 +348,7 @@ public void OnConfigsExecuted()
 public void OnMapEnd()
 {
 	Bosses_MapEnd();
+	Gamemode_MapEnd();
 	Preference_MapEnd();
 }
 

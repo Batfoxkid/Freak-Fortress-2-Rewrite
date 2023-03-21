@@ -20,6 +20,7 @@ static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
 static int PointUnlock;
+static Handle BackupTimer;
 static Handle TeamSyncHud[TFTeam_MAX];
 static Handle HudTimer[TFTeam_MAX];
 static bool HasBoss[TFTeam_MAX];
@@ -34,7 +35,6 @@ void Gamemode_PluginStart()
 
 void Gamemode_MapStart()
 {
-	//TODO: If a round as been played before, Waiting for Players will never end - Late loading without players on breaks FF2 currently
 	RoundStatus = -1;
 	Waiting = true;
 	for(int i = 1; i <= MaxClients; i++)
@@ -45,6 +45,11 @@ void Gamemode_MapStart()
 			break;
 		}
 	}
+}
+
+void Gamemode_MapEnd()
+{
+	delete BackupTimer;
 }
 
 void Gamemode_RoundSetup()
@@ -211,11 +216,14 @@ void Gamemode_RoundSetup()
 
 public void TF2_OnWaitingForPlayersStart()
 {
-	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	if(Enabled)
 	{
 		Waiting = false;
 		Cvar[Tournament].BoolValue = false;
 		CreateTimer(4.0, Gamemode_TimerRespawn, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+
+		delete BackupTimer;
+		BackupTimer = CreateTimer(Cvar[WaitingTime].FloatValue + 5.0, Gamemode_BackupWaiting);
 	}
 }
 
@@ -240,20 +248,34 @@ public Action Gamemode_TimerRespawn(Handle timer)
 	return Plugin_Continue;
 }
 
+public Action Gamemode_BackupWaiting(Handle timer)
+{
+	// There is some cases where waiting for players could get stuck and fail to restart the round
+	// Here's the duct tape fix until I can find a way to properly patch it
+	if(GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	{
+		ServerCommand("mp_waitingforplayers_cancel 1");
+		TF2_OnWaitingForPlayersEnd();
+	}
+	
+	BackupTimer = null;
+	return Plugin_Continue;
+}
+
 public Action Gamemode_IntroTimer(Handle timer)
 {
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
 		{
-			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, 2.0))
+			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || (!Bosses_PlaySoundToClient(client, client, "sound_intro", _, _, _, _, _, 2.0) && !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, 2.0)))
 			{
 				int team = GetClientTeam(client);
 				int i;
 				for(; i < MaxClients; i++)
 				{
 					int boss = FindClientOfBossIndex(i);
-					if(boss != -1 && GetClientTeam(boss) != team && Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0))
+					if(boss != -1 && GetClientTeam(boss) != team && (Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, 2.0) || Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0)))
 						break;
 				}
 				
@@ -261,7 +283,10 @@ public Action Gamemode_IntroTimer(Handle timer)
 				{
 					int boss = FindClientOfBossIndex(0);
 					if(boss != -1)
-						Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0);
+					{
+						if(!Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, 2.0))
+							Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0);
+					}
 				}
 			}
 		}

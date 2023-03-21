@@ -61,6 +61,7 @@ void ConVar_PluginStart()
 	Cvar[PreroundTime] = FindConVar("tf_arena_preround_time");
 	//Cvar[BonusRoundTime] = FindConVar("mp_bonusroundtime");
 	Cvar[Tournament] = FindConVar("mp_tournament");
+	Cvar[WaitingTime] = FindConVar("mp_waitingforplayers_time");
 	
 	CvarList = new ArrayList(sizeof(CvarInfo));
 	
