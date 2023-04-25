@@ -184,7 +184,6 @@ enum
 	BossCrits,
 	BossHealing,
 	BossKnockback,
-	BossSapper,
 	
 	BossVsBoss,
 	SpecTeam,

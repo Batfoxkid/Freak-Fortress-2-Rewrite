@@ -43,8 +43,6 @@ static int ChangeTeamPreHook[MAXTF2PLAYERS];
 static int ChangeTeamPostHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
-static bool WasMiniBoss[MAXTF2PLAYERS];
-static bool WasFakeClient[MAXTF2PLAYERS];
 
 static int PrefClass;
 static int EffectClass;
@@ -58,11 +56,8 @@ void DHook_Setup()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
-	CreateDetour(gamedata, "CBaseObject::FindSnapToBuildPos", DHook_FindSnapToBuildPosPre, DHook_FindSnapToBuildPosPost);
 	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
-	CreateDetour(gamedata, "CObjectSapper::ApplyRoboSapperEffects", DHook_ApplyRoboSapperEffectsPre, DHook_ApplyRoboSapperEffectsPost);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
-	CreateDetour(gamedata, "CTFPlayer::CanBuild", DHook_CanBuildPre, DHook_CanBuildPost);
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
@@ -255,44 +250,6 @@ public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public MRESReturn DHook_ApplyRoboSapperEffectsPre(int entity, DHookReturn ret, DHookParam param)
-{
-	int client = param.Get(1);
-	if(Client(client).IsBoss)
-	{
-		WasMiniBoss[client] = view_as<bool>(GetEntProp(client, Prop_Send, "m_bIsMiniBoss"));
-		if(!WasMiniBoss[client])
-			SetEntProp(client, Prop_Send, "m_bIsMiniBoss", true);
-	}
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_ApplyRoboSapperEffectsPost(int entity, DHookReturn ret, DHookParam param)
-{
-	int client = param.Get(1);
-	if(!WasMiniBoss[client] && Client(client).IsBoss)
-		SetEntProp(client, Prop_Send, "m_bIsMiniBoss", false);
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_CanBuildPre()
-{
-	if(Enabled)
-		GameRules_SetProp("m_bPlayingMannVsMachine", true);
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_CanBuildPost()
-{
-	if(Enabled)
-		GameRules_SetProp("m_bPlayingMannVsMachine", false);
-
-	return MRES_Ignored;
-}
-
 public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
 	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
@@ -341,62 +298,6 @@ public MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 {
 	return (Client(client).Minion || Client(client).IsBoss) ? MRES_Supercede : MRES_Ignored;
-}
-
-public MRESReturn DHook_FindSnapToBuildPosPre(int entity)
-{
-	if(Enabled && Cvar[BossSapper].BoolValue)
-	{
-		GameRules_SetProp("m_bPlayingMannVsMachine", true);
-		
-		int client = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
-		for(int target = 1; target <= MaxClients; target++)
-		{
-			if(client != target && IsClientInGame(target))
-			{
-				int flags = GetEntityFlags(target);
-				WasFakeClient[target] = view_as<bool>(flags & FL_FAKECLIENT);
-				
-				if(Client(target).IsBoss)
-				{
-					if(!WasFakeClient[target])
-						SetEntityFlags(target, flags | FL_FAKECLIENT);
-				}
-				else if(WasFakeClient[target])
-				{
-					SetEntityFlags(target, flags & ~FL_FAKECLIENT);
-				}
-			}
-		}
-	}
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_FindSnapToBuildPosPost(int entity)
-{
-	if(Enabled && Cvar[BossSapper].BoolValue)
-	{
-		GameRules_SetProp("m_bPlayingMannVsMachine", false);
-		
-		int client = GetEntPropEnt(entity, Prop_Send, "m_hBuilder");
-		for(int target = 1; target <= MaxClients; target++)
-		{
-			if(client != target && IsClientInGame(target))
-			{
-				if(WasFakeClient[target])
-				{
-					SetEntityFlags(target, GetEntityFlags(target) | FL_FAKECLIENT);
-				}
-				else
-				{
-					SetEntityFlags(target, GetEntityFlags(target) & ~FL_FAKECLIENT);
-				}
-			}
-		}
-	}
-
-	return MRES_Ignored;
 }
 
 public MRESReturn DHook_ForceRespawnPre(int client)
