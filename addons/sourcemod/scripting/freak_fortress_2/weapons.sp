@@ -861,7 +861,9 @@ public void Weapons_SpawnFrame(int ref)
 				cfg.GetArray(key, attributeValue, sizeof(attributeValue));
 
 				if(attributeValue.tag == KeyValType_Value)
-					TF2Attrib_SetByName(entity, key, StringToFloat(attributeValue.data));
+				{
+					TF2Attrib_SetFromStringValue(entity, key, attributeValue.data);
+				}
 			}
 
 			delete snap;
