@@ -2075,8 +2075,8 @@ static void EquipBoss(int client, bool weapons)
 					}
 					else if(!wearable)
 					{
-						//SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
-						//SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+						SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
 					}
 					
 					level = 255;
