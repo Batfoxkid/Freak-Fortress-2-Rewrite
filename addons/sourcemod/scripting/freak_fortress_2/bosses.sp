@@ -1856,7 +1856,14 @@ static void EquipBoss(int client, bool weapons)
 				if(level < 0 || level > 127)
 					level = 101;
 				
-				bool found = (cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
+				TFClassType forceClass;
+				if(cfg.Get("class", buffer, sizeof(buffer)))
+					forceClass = GetClassOfName(buffer);
+				
+				if(forceClass != TFClass_Unknown)
+					TF2_SetPlayerClass(client, forceClass, _, false);
+				
+				bool found = (cfg.GetKeyValType("attributes") == KeyValType_Value && cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
 				
 				if(!wearable && !override)
 				{
@@ -1884,13 +1891,6 @@ static void EquipBoss(int client, bool weapons)
 				{
 					buffer[0] = 0;
 				}
-				
-				TFClassType forceClass;
-				if(cfg.Get("class", buffer, sizeof(buffer)))
-					forceClass = GetClassOfName(buffer);
-				
-				if(forceClass != TFClass_Unknown)
-					TF2_SetPlayerClass(client, forceClass, _, false);
 				
 				static char buffers[40][16];
 				int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
@@ -1960,17 +1960,49 @@ static void EquipBoss(int client, bool weapons)
 					if(forceClass != TFClass_Unknown)
 						TF2_SetPlayerClass(client, class, _, false);
 					
-					for(; attribs < count; attribs += 2)
+					switch(cfg.GetKeyValType("attributes"))
 					{
-						int attrib = StringToInt(buffers[attribs]);
-						if(attrib)
+						case KeyValType_Value:
 						{
-							TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
+							for(; attribs < count; attribs += 2)
+							{
+								int attrib = StringToInt(buffers[attribs]);
+								if(attrib)
+								{
+									TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
+								}
+								else
+								{
+									Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
+									LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+								}
+							}
 						}
-						else
+						case KeyValType_Section:
 						{
-							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
+							ConfigMap cfgAttributes = cfg.GetSection("attributes");
+
+							StringMapSnapshot attributeListSnap = cfgAttributes.Snapshot();
+							int attributeListSnapLength = attributeListSnap.Length;
+
+							PackVal attributeValue;
+
+							for(attribs = 0; attribs < attributeListSnapLength; attribs++)
+							{
+								int length = attributeListSnap.KeyBufferSize(attribs) + 1;
+								char[] key = new char[length];
+
+								attributeListSnap.GetKey(attribs, key, length);
+								
+								cfgAttributes.GetArray(key, attributeValue, sizeof(attributeValue));
+
+								if(attributeValue.tag == KeyValType_Value)
+								{
+									TF2Attrib_SetFromStringValue(entity, key, attributeValue.data);
+								}
+							}
+
+							delete attributeListSnap;
 						}
 					}
 					
@@ -2015,7 +2047,7 @@ static void EquipBoss(int client, bool weapons)
 							}
 						}
 					}
-					
+
 					override = wearable;
 					cfg.GetBool("show", override, false);
 					if(override)
@@ -2043,8 +2075,8 @@ static void EquipBoss(int client, bool weapons)
 					}
 					else if(!wearable)
 					{
-						SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
-						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+						//SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
+						//SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
 					}
 					
 					level = 255;
