@@ -103,10 +103,10 @@ stock int TF2U_GetMaxOverheal(int client)
 	if(Client(client).IsBoss)
 		return Client(client).MaxHealth * Client(client).MaxLives;
 	
-	// 75% overheal from 50%
+	// 100% overheal
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
-		return TF2Util_GetPlayerMaxHealthBoost(client, true) / 8 * 6;
+		return TF2Util_GetPlayerMaxHealthBoost(client, true, true);
 	#endif
 	
 	int maxhealth = SDKCall_GetMaxHealth(client);
