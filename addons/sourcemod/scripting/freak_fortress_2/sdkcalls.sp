@@ -109,11 +109,27 @@ void SDKCall_Setup()
 	delete gamedata;
 }
 
-bool SDKCall_CheckBlockBackstab(int client, int attacker)
+bool SDKCall_CheckBlockBackstab(int client/*, int attacker*/)
 {
+	//TODO: Gamedata doesn't work properly, using classic method
+	int entity = MaxClients + 1;
+	while((entity = FindEntityByClassname(entity, "tf_wearable_*")) != -1)
+	{
+		if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+		{
+			Address attrib = TF2Attrib_GetByDefIndex(entity, 52);
+			if(attrib != Address_Null)
+			{
+				TF2_RemoveWearable(client, entity);
+				return true;
+			}
+		}
+	}
+	
+	/*
 	if(SDKCheckBlockBackstab)
 		return SDKCall(SDKCheckBlockBackstab, client, attacker);
-	
+	*/
 	return false;
 }
 
