@@ -23,7 +23,63 @@ void Configs_MapStart()
 	VotedPack = false;
 }
 
-bool Configs_CheckMap(const char[] mapname)
+bool Configs_MapIsGamemode(const char[] mapname)
+{
+	int enableResult = 1;
+	
+	ConfigMap cfg = new ConfigMap(FILE_MAPS);
+	if(cfg)
+	{	
+		StringMapSnapshot snap = cfg.Snapshot();
+		
+		int entries = snap.Length;
+		if(entries)
+		{
+			enableResult = -1;
+			
+			PackVal val;
+			for(int i; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i)+1;
+				char[] buffer = new char[length];
+				snap.GetKey(i, buffer, length);
+				cfg.GetArray(buffer, val, sizeof(val));
+				if(val.tag != KeyValType_Section)
+					continue;
+				
+				switch(ReplaceString(buffer, length, "*", NULL_STRING))
+				{
+					case 0:	// Exact
+					{
+						if(!StrEqual(mapname, buffer, false))
+							continue;
+					}
+					case 1:	// Prefix
+					{
+						if(StrContains(mapname, buffer, false) != 0)
+							continue;
+					}
+					default:	// Any Match
+					{
+						if(StrContains(mapname, buffer, false) == -1)
+							continue;
+					}
+				}
+				
+				int current = -1;
+				if(val.cfg.GetInt("enable", current) && current > enableResult)
+					enableResult = current;
+			}
+		}
+		
+		delete snap;
+		DeleteCfg(cfg);
+	}
+	
+	return enableResult == 1;
+}
+
+bool Configs_SetMap(const char[] mapname)
 {
 	int enableResult = 1;
 	
@@ -98,64 +154,10 @@ bool Configs_CheckMap(const char[] mapname)
 
 public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
-	if(!VotedPack && Bosses_GetCharsetLength() > 1)
+	if(!VotedPack && Bosses_GetCharsetLength() > 1 && Configs_MapIsGamemode(newValue))
 	{
 		VotedPack = true;
-		
-		ConfigMap cfg = new ConfigMap(FILE_MAPS);
-		if(cfg)
-		{	
-			StringMapSnapshot snap = cfg.Snapshot();
-			
-			int entries = snap.Length;
-			if(entries)
-			{
-				PackVal val;
-				for(int i; i < entries; i++)
-				{
-					int length = snap.KeyBufferSize(i)+1;
-					char[] buffer = new char[length];
-					snap.GetKey(i, buffer, length);
-					cfg.GetArray(buffer, val, sizeof(val));
-					if(val.tag != KeyValType_Section)
-						continue;
-					
-					switch(ReplaceString(buffer, length, "*", NULL_STRING))
-					{
-						case 0:	// Exact
-						{
-							if(!StrEqual(newValue, buffer, false))
-								continue;
-						}
-						case 1:	// Prefix
-						{
-							if(StrContains(newValue, buffer, false) != 0)
-								continue;
-						}
-						default:	// Any Match
-						{
-							if(StrContains(newValue, buffer, false) == -1)
-								continue;
-						}
-					}
-					
-					if(val.cfg.GetInt("enable", length) && length == 1)
-					{
-						// Found
-						CreateTimer(0.1, Configs_PackVote, _, TIMER_FLAG_NO_MAPCHANGE);
-						break;
-					}
-				}
-			}
-			
-			delete snap;
-			
-			DeleteCfg(cfg);
-		}
-		else
-		{
-			RequestFrame(Configs_PackVoteFrame);
-		}
+		RequestFrame(Configs_PackVoteFrame);
 	}
 }
 

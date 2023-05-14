@@ -42,6 +42,81 @@ void Gamemode_PluginEnd()
 	}
 }
 
+void Gamemode_MapInit()
+{
+	char mapname[64];
+	GetCurrentMap(mapname, sizeof(mapname));
+	if(Configs_MapIsGamemode(mapname))
+	{
+		bool addMaster;
+		char buffer[64];
+		char pointName[64] = "_vsh_cpoint";
+
+		int length = EntityLump.Length();
+		for(int i; i < length; i++)
+		{
+			EntityLumpEntry entry = EntityLump.Get(i);
+			
+			int classname = entry.FindKey("classname");
+			if(classname != -1)
+			{
+				int index = entry.FindKey("vscripts");
+				if(index != -1)
+				{
+					entry.Get(index, _, _, buffer, sizeof(buffer));
+					if(StrEqual(buffer, "vssaxtonhale/vsh.nut", false))
+					{
+						entry.Update(index, NULL_STRING, "");
+						PrintToServer("Found VScripts");
+
+						entry.Update(classname, NULL_STRING, "tf_logic_arena");
+
+						entry.Append("OnArenaRoundStart", "vsh_setup*,Open,,0,-1");
+						entry.Append("OnArenaRoundStart", "vsh_setup*,Trigger,,0,-1");
+						entry.Append("OnCapEnabled", "_vsh_cmaster,FireUser1,,0,-1");
+
+						addMaster = true;
+					}
+				}
+				
+				entry.Get(classname, _, _, buffer, sizeof(buffer));
+				if(StrEqual(buffer, "team_control_point", false))
+				{
+					index = entry.FindKey("targetname");
+					if(index == -1)
+					{
+						entry.Append("targetname", pointName);
+					}
+					else
+					{
+						entry.Get(index, _, _, pointName, sizeof(pointName));
+					}
+				}
+			}
+
+			delete entry;
+		}
+
+		if(addMaster)
+		{
+			EntityLumpEntry entry = EntityLump.Get(EntityLump.Append());
+
+			entry.Append("classname", "team_control_point_master");
+			entry.Append("targetname", "_vsh_cmaster");
+			entry.Append("custom_position_x", "-1");
+			entry.Append("custom_position_y", "-1");
+
+			FormatEx(buffer, sizeof(buffer), "%s,SetLocked,0,0,-1", pointName);
+			entry.Append("OnUser1", buffer);
+
+			FormatEx(buffer, sizeof(buffer), "%s,ShowModel,0,0,-1", pointName);
+			entry.Append("OnUser1", buffer);
+
+			delete entry;
+		}
+	}
+}
+
 void Gamemode_MapStart()
 {
 	RoundStatus = -1;

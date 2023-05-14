@@ -318,6 +318,11 @@ public void OnAllPluginsLoaded()
 	Configs_AllPluginsLoaded();
 }
 
+public void OnMapInit()
+{
+	Gamemode_MapInit();
+}
+
 public void OnMapStart()
 {
 	Configs_MapStart();
@@ -329,7 +334,7 @@ public void OnConfigsExecuted()
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
-	if(Configs_CheckMap(mapname))
+	if(Configs_SetMap(mapname))
 	{
 		Charset = Cvar[NextCharset].IntValue;
 	}

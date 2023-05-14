@@ -4,7 +4,7 @@
 
 ## Installation:
 
-**[View Releases](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases)  
+**[View Releases](https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite/releases)**  
 Use `New Install Package` for installing for the first time
 Use `Update Package` to update your current version of Rewrite
 
@@ -27,6 +27,7 @@ Supported:
 - [SM-TFUtils 0.19.0.2+](https://github.com/nosoop/SM-TFUtils)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
+- [Lambda Manager](https://github.com/Batfoxkid/Batfoxkid)
 
 ## Breaking Changes
 
