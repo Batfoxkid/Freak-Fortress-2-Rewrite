@@ -784,7 +784,7 @@
 	"milk limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Healing is limited to {4} health when applied to a boss"
+		"en"		"Milk effect only lasts {4} seconds when applied to a boss"
 	}
 	"hit stale DISPLAY ONLY"
 	{

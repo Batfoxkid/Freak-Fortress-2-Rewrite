@@ -558,11 +558,11 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				
 				if(maximum > 0.0)
 				{
-					Format(buffer1, sizeof(buffer1), "%s%d / %d %s\n", buffer1, amount, maximum, buffer2);
+					Format(buffer1, sizeof(buffer1), "%s%d / %d %s\n", buffer1, RoundToFloor(amount), RoundToFloor(maximum), buffer2);
 				}
 				else
 				{
-					Format(buffer1, sizeof(buffer1), "%s%d %s\n", buffer1, amount, buffer2);
+					Format(buffer1, sizeof(buffer1), "%s%d %s\n", buffer1, RoundToFloor(amount), buffer2);
 				}
 			}
 		}

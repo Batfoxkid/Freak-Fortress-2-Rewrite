@@ -357,6 +357,7 @@ public void OnPluginEnd()
 	ConVar_Disable();
 	Database_PluginEnd();
 	DHook_PluginEnd();
+	Gamemode_PluginEnd();
 	Music_PlaySongToAll();
 }
 

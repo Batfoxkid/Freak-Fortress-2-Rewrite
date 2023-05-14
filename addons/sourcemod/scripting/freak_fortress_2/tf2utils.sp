@@ -101,19 +101,19 @@ stock bool TF2U_GetWearable(int client, int &entity, int &index)
 stock int TF2U_GetMaxOverheal(int client)
 {
 	if(Client(client).IsBoss)
-		return Client(client).MaxHealth * Client(client).MaxLives;
+		return Client(client).MaxHealth * (1 + Client(client).MaxLives - Client(client).Lives);
 	
-	// 100% overheal
+	// 75% overheal from 50%
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
-		return TF2Util_GetPlayerMaxHealthBoost(client, true, true);
+		return RoundToFloor(TF2Util_GetPlayerMaxHealthBoost(client, true, true) / 4.285714) * 5;
 	#endif
 	
 	int maxhealth = SDKCall_GetMaxHealth(client);
-	float maxoverheal = float(SDKCall_GetMaxHealth(client)) * 0.75;
+	float maxoverheal = float(maxhealth) * 0.75;
 	maxoverheal *= Attributes_FindOnPlayer(client, 800, true, 1.0);
 	maxoverheal *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
-	return maxhealth + (RoundFloat(maxoverheal / 5.0) * 5);
+	return maxhealth + (RoundToFloor(maxoverheal / 5.0) * 5);
 }
 
 void TF2U_EquipPlayerWearable(int client, int entity)

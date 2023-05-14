@@ -770,16 +770,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	{
 		Address address = TF2Attrib_GetByDefIndex(client, 252);
 		if(address == Address_Null || TF2Attrib_GetValue(address) == 0.0)
-		{
-			if(AnchorLastAttrib[client] != 1.0)
-			{
-				TF2Attrib_SetByDefIndex(client, 252, AnchorLastAttrib[client]);
-			}
-			else if(address != Address_Null)
-			{
-				TF2Attrib_RemoveByDefIndex(client, 252);
-			}
-		}
+			TF2Attrib_SetByDefIndex(client, 252, AnchorLastAttrib[client]);
 		
 		AnchorLastAttrib[client] = -69.42;
 	}

@@ -161,7 +161,19 @@ static void ConVar_Add(const char[] name, const char[] value, bool enforce = tru
 	if(CvarHooked)
 	{
 		info.cvar.GetString(info.defaul, sizeof(info.defaul));
-		info.cvar.SetString(info.value);
+
+		bool setValue = true;
+		if(!info.enforce)
+		{
+			char buffer[sizeof(info.defaul)];
+			info.cvar.GetDefault(buffer, sizeof(buffer));
+			if(!StrEqual(buffer, info.defaul))
+				setValue = false;
+		}
+
+		if(setValue)
+			info.cvar.SetString(info.value);
+		
 		info.cvar.AddChangeHook(ConVar_OnChanged);
 	}
 
@@ -210,7 +222,18 @@ void ConVar_Enable()
 			info.cvar.GetString(info.defaul, sizeof(info.defaul));
 			CvarList.SetArray(i, info);
 
-			info.cvar.SetString(info.value);
+			bool setValue = true;
+			if(!info.enforce)
+			{
+				char buffer[sizeof(info.defaul)];
+				info.cvar.GetDefault(buffer, sizeof(buffer));
+				if(!StrEqual(buffer, info.defaul))
+					setValue = false;
+			}
+
+			if(setValue)
+				info.cvar.SetString(info.value);
+			
 			info.cvar.AddChangeHook(ConVar_OnChanged);
 		}
 
@@ -248,20 +271,11 @@ public void ConVar_OnChanged(ConVar cvar, const char[] oldValue, const char[] ne
 
 		if(!StrEqual(info.value, newValue))
 		{
+			strcopy(info.defaul, sizeof(info.defaul), newValue);
+			CvarList.SetArray(index, info);
+
 			if(info.enforce)
-			{
-				strcopy(info.defaul, sizeof(info.defaul), newValue);
-				CvarList.SetArray(index, info);
 				info.cvar.SetString(info.value);
-			}
-			else
-			{
-				char buffer[64];
-				cvar.GetName(buffer, sizeof(buffer));
-				Debug("Removed ConVar %s", buffer);
-				info.cvar.RemoveChangeHook(ConVar_OnChanged);
-				CvarList.Erase(index);
-			}
 		}
 	}
 }

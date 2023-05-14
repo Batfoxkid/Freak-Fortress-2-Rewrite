@@ -85,11 +85,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 	{
 		SDKHook(entity, SDKHook_Spawn, SDKHook_TimerSpawn);
 	}
-	else if(Enabled && StrEqual(classname, "obj_attachment_sapper"))
-	{
-		SDKHook(entity, SDKHook_Spawn, SDKHook_SapperSpawn);
-		SDKHook(entity, SDKHook_SpawnPost, SDKHook_SapperSpawnPost);
-	}
 	else
 	{
 		DHook_EntityCreated(entity, classname);
@@ -361,6 +356,8 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
 				
 				TF2_RemoveCondition(victim, TFCond_Zoomed);
+				
+				damage = 0.0;
 				return Plugin_Handled;
 			}
 			
@@ -550,14 +547,4 @@ public Action SDKHook_TimerSpawn(int entity)
 {
 	DispatchKeyValue(entity, "auto_countdown", "0");
 	return Plugin_Continue;
-}
-
-public void SDKHook_SapperSpawn(int entity)
-{
-	GameRules_SetProp("m_bPlayingMannVsMachine", true);
-}
-
-public void SDKHook_SapperSpawnPost(int entity)
-{
-	GameRules_SetProp("m_bPlayingMannVsMachine", false);
 }

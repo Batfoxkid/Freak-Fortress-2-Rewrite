@@ -33,6 +33,15 @@ void Gamemode_PluginStart()
 	}
 }
 
+void Gamemode_PluginEnd()
+{
+	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	{
+		ServerCommand("mp_waitingforplayers_cancel 1");
+		TF2_OnWaitingForPlayersEnd();
+	}
+}
+
 void Gamemode_MapStart()
 {
 	RoundStatus = -1;
@@ -216,7 +225,7 @@ void Gamemode_RoundSetup()
 
 public void TF2_OnWaitingForPlayersStart()
 {
-	if(Enabled)
+	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))	// Yes, m_bInWaitingForPlayers is needed here
 	{
 		Waiting = false;
 		Cvar[Tournament].BoolValue = false;

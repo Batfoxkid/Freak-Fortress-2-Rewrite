@@ -87,22 +87,22 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	
 	if(Attributes_FindOnWeapon(attacker, weapon, 217))	// sanguisuge
 	{
-		int maxoverheal = TF2U_GetMaxOverheal(attacker);	// 250% overheal (from 200% overheal)
+		int maxoverheal = TF2U_GetMaxOverheal(attacker) * 2;	// 250% overheal (from 200% overheal)
 		int health = GetClientHealth(attacker);
-		if(health < maxoverheal * 2)
+		if(health < maxoverheal)
 		{
-			SetEntityHealth(attacker, health + maxoverheal);
-			ApplySelfHealEvent(attacker, maxoverheal);
+			SetEntityHealth(attacker, maxoverheal);
+			ApplySelfHealEvent(attacker, maxoverheal - health);
+			
+			if(TF2_IsPlayerInCondition(attacker, TFCond_OnFire))
+				TF2_RemoveCondition(attacker, TFCond_OnFire);
+			
+			if(TF2_IsPlayerInCondition(attacker, TFCond_Bleeding))
+				TF2_RemoveCondition(attacker, TFCond_Bleeding);
+			
+			if(TF2_IsPlayerInCondition(attacker, TFCond_Plague))
+				TF2_RemoveCondition(attacker, TFCond_Plague);
 		}
-		
-		if(TF2_IsPlayerInCondition(attacker, TFCond_OnFire))
-			TF2_RemoveCondition(attacker, TFCond_OnFire);
-			
-		if(TF2_IsPlayerInCondition(attacker, TFCond_Bleeding))
-			TF2_RemoveCondition(attacker, TFCond_Bleeding);
-			
-		if(TF2_IsPlayerInCondition(attacker, TFCond_Plague))
-			TF2_RemoveCondition(attacker, TFCond_Plague);
 	}
 	
 	float value = Attributes_FindOnPlayer(attacker, 296);	// sapper kills collect crits
