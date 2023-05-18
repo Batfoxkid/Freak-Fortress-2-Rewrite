@@ -639,7 +639,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		if(timescale <= 0.0)
 			timescale = 1.0;
 		
-		float duration = cfg.GetFloat("duration", 7.5) / timescale;
+		float duration = cfg.GetFloat("duration", 7.5) * timescale;
 		
 		char particle[48];
 		if(cfg.GetString("particle", particle, sizeof(particle), GetClientTeam(client) % 2 ? "scout_dodge_blue" : "scout_dodge_red"))

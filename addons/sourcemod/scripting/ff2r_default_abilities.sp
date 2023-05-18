@@ -2543,7 +2543,7 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 	if(timescale <= 0.0)
 		timescale = 1.0;
 	
-	float duration = GetFormula(cfg, "duration", alive, 2.0) / timescale;
+	float duration = GetFormula(cfg, "duration", alive, 2.0) * timescale;
 	
 	char particle[48];
 	if(cfg.GetString("particle", particle, sizeof(particle), team % 2 ? "scout_dodge_blue" : "scout_dodge_red"))
