@@ -27,7 +27,6 @@ Supported:
 - [SM-TFUtils 0.19.0.2+](https://github.com/nosoop/SM-TFUtils)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
-- [Lambda Manager](https://github.com/Batfoxkid/Batfoxkid)
 
 ## Breaking Changes
 
