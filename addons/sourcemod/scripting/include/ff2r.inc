@@ -913,6 +913,7 @@ public void __pl_ff2r_SetNTVOptional()
 	MarkNativeAsOptional("FF2R_EmitBossSound");
 	MarkNativeAsOptional("FF2R_GetClientMinion");
 	MarkNativeAsOptional("FF2R_SetClientMinion");
+	MarkNativeAsOptional("FF2R_GetClientScore");
 	MarkNativeAsOptional("FF2R_GetPluginHandle");
 	MarkNativeAsOptional("FF2R_GetGamemodeType");
 	MarkNativeAsOptional("FF2R_StartLagCompensation");
