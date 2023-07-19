@@ -738,8 +738,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						}
 						else if(AnchorStartTime[client] < (gameTime - ability.GetFloat("basic", 0.5)))
 						{
-							Address address = TF2Attrib_GetByDefIndex(client, 252);
-							AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);
+							if(AnchorLastAttrib[client] == -69.42)
+							{
+								Address address = TF2Attrib_GetByDefIndex(client, 252);
+								AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);
+							}
 							
 							TF2Attrib_SetByDefIndex(client, 252, 0.0);
 							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
