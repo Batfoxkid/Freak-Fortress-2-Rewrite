@@ -35,7 +35,7 @@
 
 #define FAR_FUTURE		100000000.0
 #define MAXENTITIES		2048
-#define MAXTF2PLAYERS	36
+#define MAXTF2PLAYERS	MAXPLAYERS+1
 
 #define TFTeam_Unassigned	0
 #define TFTeam_Spectator	1

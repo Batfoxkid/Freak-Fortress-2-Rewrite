@@ -138,7 +138,7 @@
 
 #define PLUGIN_VERSION	"Custom"
 
-#define MAXTF2PLAYERS	36
+#define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
 
 #define TF2U_LIBRARY	"nosoop_tf2utils"

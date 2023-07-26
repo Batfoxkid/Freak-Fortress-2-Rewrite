@@ -88,7 +88,7 @@
 
 #define ABILITY_NAME	"special_menu_manager"
 
-#define MAXTF2PLAYERS	36
+#define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
 
 #define MAG_MAGIC		0x0001	// Can be blocked by sapper effect
