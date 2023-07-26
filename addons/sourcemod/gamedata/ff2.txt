@@ -48,7 +48,7 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CTFGameStats15ResetRoundStatsEv"
-				"windows"	"\x53\x8B\xD9\x56\x57\xBE\x22\x00\x00\x00"
+				"windows"	"\x53\x8B\xD9\x56\x57\xBE\x66\x00\x00\x00"
 			}
 			"CTFGameStats::IncrementStat"
 			{
