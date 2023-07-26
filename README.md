@@ -30,10 +30,10 @@ Supported:
 
 ## Breaking Changes
 
-- Any plugins or includes that rely on the .ff2 file extension will no longer function correctly.
-- Abilities are no longer activated in a set order.
-- Bosses can not have the multiple abilities with the same name.
-- FF2_GetSpecialKV no longer can modify boss stats.
+- Any plugins or includes that rely on the .ff2 file extension will no longer function correctly
+- Abilities are no longer activated in a set order
+- Bosses can not have the multiple abilities with the same name
+- FF2_GetSpecialKV no longer can modify boss stats
 - Less restrictions on when natives or forwards can be used. (Such as FF2_StartMusic)
 
 ## Credits
