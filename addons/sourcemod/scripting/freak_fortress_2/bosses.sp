@@ -3082,7 +3082,11 @@ static void EnableSubplugins()
 								
 								DataPack pack = new DataPack();
 								pack.WriteString(filepath1);
-								RequestFrame(Bosses_RenameSubplugin, pack);
+
+								if(!StrEqual(folder, "disabled"))
+								{
+									RequestFrame(Bosses_RenameSubplugin, pack);
+								}
 							}
 							else if(StrEqual(filename[pos], ".ff2"))
 							{
@@ -3103,7 +3107,10 @@ static void EnableSubplugins()
 								
 								DataPack pack = new DataPack();
 								pack.WriteString(filepath2);
-								RequestFrame(Bosses_RenameSubplugin, pack);
+								if(!StrEqual(folder, "disabled"))
+								{
+									RequestFrame(Bosses_RenameSubplugin, pack);
+								}
 							}
 						}
 					}
