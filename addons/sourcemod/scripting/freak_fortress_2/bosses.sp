@@ -3087,6 +3087,10 @@ static void EnableSubplugins()
 								{
 									RequestFrame(Bosses_RenameSubplugin, pack);
 								}
+								else
+								{
+									delete pack;
+								}
 							}
 							else if(StrEqual(filename[pos], ".ff2"))
 							{
@@ -3110,6 +3114,10 @@ static void EnableSubplugins()
 								if(!StrEqual(folder, "disabled"))
 								{
 									RequestFrame(Bosses_RenameSubplugin, pack);
+								}
+								else
+								{
+									delete pack;
 								}
 							}
 						}
