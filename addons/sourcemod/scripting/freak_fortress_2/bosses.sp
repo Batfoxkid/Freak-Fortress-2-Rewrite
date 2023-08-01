@@ -3080,9 +3080,12 @@ static void EnableSubplugins()
 								if(!IsSubpluginLoaded(filename))
 									InsertServerCommand("sm plugins load %s/%s", folder, filename);
 								
-								DataPack pack = new DataPack();
-								pack.WriteString(filepath1);
-								RequestFrame(Bosses_RenameSubplugin, pack);
+								if(!StrEqual(folder, "disabled"))
+								{
+									DataPack pack = new DataPack();
+									pack.WriteString(filepath1);
+									RequestFrame(Bosses_RenameSubplugin, pack);
+								}
 							}
 							else if(StrEqual(filename[pos], ".ff2"))
 							{
@@ -3101,9 +3104,12 @@ static void EnableSubplugins()
 									InsertServerCommand("sm plugins load %s/%s", folder, filename);
 								}
 								
-								DataPack pack = new DataPack();
-								pack.WriteString(filepath2);
-								RequestFrame(Bosses_RenameSubplugin, pack);
+								if(!StrEqual(folder, "disabled"))
+								{
+									DataPack pack = new DataPack();
+									pack.WriteString(filepath2);									
+									RequestFrame(Bosses_RenameSubplugin, pack);
+								}
 							}
 						}
 					}
