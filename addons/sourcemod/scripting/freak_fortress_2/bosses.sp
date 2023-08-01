@@ -771,7 +771,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					continue;
 				}
 				
-				static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
+				static const char MdlExts[][] = {"mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
 				static const char MatExts[][] = {"vtf", "vmt"};
 				
 				StringMapSnapshot snapsub = cfgsub.Snapshot();
@@ -1139,9 +1139,8 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
 												if(!check || FileExists(buffer, true))
-												{
-													if(b)
-														AddToStringTable(DownloadTable, buffer);
+												{	
+													AddToStringTable(DownloadTable, buffer);
 												}
 												else if(b != sizeof(MdlExts)-1)
 												{
@@ -1209,8 +1208,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										bool phy = b == sizeof(MdlExts)-1;
 										if((!phy && !check) || FileExists(buffer, true))
 										{
-											if(b)
-												AddToStringTable(DownloadTable, buffer);
+											AddToStringTable(DownloadTable, buffer);
 										}
 										else if(!phy)
 										{
@@ -1230,8 +1228,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											bool phy = b == sizeof(MdlExts)-1;
 											if((!phy && !check) || FileExists(buffer, true))
 											{
-												if(b)
-													AddToStringTable(DownloadTable, buffer);
+												AddToStringTable(DownloadTable, buffer);
 											}
 											else if(!phy)
 											{
@@ -1249,8 +1246,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											bool phy = b == sizeof(MdlExts)-1;
 											if((!phy && !check) || FileExists(buffer, true))
 											{
-												if(b)
-													AddToStringTable(DownloadTable, buffer);
+												AddToStringTable(DownloadTable, buffer);
 											}
 											else if(!phy)
 											{
