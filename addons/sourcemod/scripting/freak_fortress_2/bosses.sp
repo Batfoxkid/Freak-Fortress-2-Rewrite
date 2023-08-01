@@ -771,7 +771,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					continue;
 				}
 				
-				static const char MdlExts[][] = {"sw.vtx", "mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
+				static const char MdlExts[][] = {"mdl", "dx80.vtx", "dx90.vtx", "vvd", "phy"};
 				static const char MatExts[][] = {"vtf", "vmt"};
 				
 				StringMapSnapshot snapsub = cfgsub.Snapshot();
