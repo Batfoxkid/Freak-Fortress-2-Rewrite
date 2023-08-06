@@ -113,6 +113,28 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	if(value != 1.0)
 		damage *= value;
 	
+	if(Attributes_FindOnWeapon(attacker, weapon, 154))	// disguise on backstab
+	{
+		DataPack pack = new DataPack();
+		RequestFrame(Attributes_RedisguiseFrame, pack);
+		pack.WriteCell(GetClientUserId(attacker));
+		
+		if(TF2_IsPlayerInCondition(attacker, TFCond_Disguised))
+		{
+			pack.WriteCell(GetEntProp(attacker, Prop_Send, "m_nDisguiseTeam"));
+			pack.WriteCell(GetEntProp(attacker, Prop_Send, "m_nDisguiseClass"));
+			pack.WriteCell(GetEntPropEnt(attacker, Prop_Send, "m_hDisguiseTarget"));
+			pack.WriteCell(GetEntProp(attacker, Prop_Send, "m_iDisguiseHealth"));
+		}
+		else
+		{
+			pack.WriteCell(GetClientTeam(victim));
+			pack.WriteCell(TF2_GetPlayerClass(victim));
+			pack.WriteCell(victim);
+			pack.WriteCell(GetClientHealth(victim));
+		}
+	}
+	
 	bool silent = view_as<bool>(Attributes_FindOnWeapon(attacker, weapon, 156));	// silent killer
 	
 	if(killfeed)
@@ -159,6 +181,23 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 		event.Cancel();
 	}
 	return silent;
+}
+
+public void Attributes_RedisguiseFrame(DataPack pack)
+{
+	pack.Reset();
+
+	int client = GetClientOfUserId(pack.ReadCell());
+	if(client)
+	{
+		TF2_AddCondition(client, TFCond_Disguised, -1.0);
+		SetEntProp(client, Prop_Send, "m_nDisguiseTeam", pack.ReadCell());
+		SetEntProp(client, Prop_Send, "m_nDisguiseClass", pack.ReadCell());
+		SetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget", pack.ReadCell());
+		SetEntProp(client, Prop_Send, "m_iDisguiseHealth", pack.ReadCell());
+	}
+
+	delete pack;
 }
 
 void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weapon, int &critType)
