@@ -462,7 +462,7 @@ void Weapons_PlayerDeath(int client)
 	HasCritGlow[client] = 0;
 }
 
-stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType, int damagecustom)
+stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int &critType, int damagecustom)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
