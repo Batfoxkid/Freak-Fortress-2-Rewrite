@@ -1074,9 +1074,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		{
 			BossData boss = FF2R_GetBossData(client);
 			AbilityData ability;
-			if(boss && (ability = boss.GetAbility("special_mobility")))
+			if(boss && (ability = boss.GetAbility("special_weighdown")))
 			{
-				WeighdownAirTimeAt[client] = GetGameTime() + ability.GetFloat("airtime", 3.0);
+				WeighdownAirTimeAt[client] = GetGameTime() + ability.GetFloat("delay", 3.0);
 			}
 			else
 			{
@@ -1088,7 +1088,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 		{
 			BossData boss = FF2R_GetBossData(client);
 			AbilityData ability;
-			if(boss && (ability = boss.GetAbility("special_mobility")))
+			if(boss && (ability = boss.GetAbility("special_weighdown")))
 			{
 				WeighdownAirTimeAt[client] = FAR_FUTURE;
 				WeighdownLastGravity[client] = GetEntityGravity(client);
