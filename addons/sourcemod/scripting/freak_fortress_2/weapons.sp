@@ -506,7 +506,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 				kv.GetString("mod attribute hit stale", buffer, sizeof(buffer));
 				if(buffer[0])
 				{
-					char buffers[16][2];
+					char buffers[2][16];
 					ExplodeString(buffer, ";", buffers, sizeof(buffers), sizeof(buffers[]));
 					
 					int attrib = StringToInt(buffers[0]);
