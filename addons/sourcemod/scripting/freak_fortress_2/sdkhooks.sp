@@ -439,7 +439,7 @@ public void SDKHook_SwitchPost(int client, int weapon)
 
 public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if(entity > 0 && entity <= MaxClients && (channel == SNDCHAN_VOICE || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
+	if(entity > 0 && entity <= MaxClients && ((channel == SNDCHAN_VOICE && StrContains(sample, "ambient_mp3", false) == -1) || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
 	{
 		int client = entity;
 		if(TF2_IsPlayerInCondition(entity, TFCond_Disguised))
