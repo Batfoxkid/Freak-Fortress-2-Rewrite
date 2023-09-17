@@ -649,7 +649,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 							{
 								length = snap2.KeyBufferSize(a)+1;
 								char[] key2 = new char[length];
-								snap.GetKey(a, key2, length);
+								snap2.GetKey(a, key2, length);
 								
 								float amount;
 								ConfigData mana = cost.GetSection(key2);
