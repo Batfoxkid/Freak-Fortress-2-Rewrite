@@ -906,10 +906,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												PrecacheScriptSound(buffer);
 											}
-											
-											Format(buffer2, sizeof(buffer2), "slot%s", key);
-											if(!cfgsub.GetInt(buffer2, length))
-												cfgsub.SetInt(buffer2, 0);
 										}
 										
 										if(music)
