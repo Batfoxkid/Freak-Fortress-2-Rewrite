@@ -3080,7 +3080,7 @@ static void EnableSubplugins()
 								if(!IsSubpluginLoaded(filename))
 									InsertServerCommand("sm plugins load %s/%s", folder, filename);
 								
-								if(!StrEqual(folder, "disabled"))
+								if(!StrEqual(folder, "disabled") && !StrEqual(folder, "optional"))
 								{
 									DataPack pack = new DataPack();
 									pack.WriteString(filepath1);
@@ -3104,7 +3104,7 @@ static void EnableSubplugins()
 									InsertServerCommand("sm plugins load %s/%s", folder, filename);
 								}
 								
-								if(!StrEqual(folder, "disabled"))
+								if(!StrEqual(folder, "disabled") && !StrEqual(folder, "optional"))
 								{
 									DataPack pack = new DataPack();
 									pack.WriteString(filepath2);									
