@@ -428,9 +428,9 @@ public bool ShowMenuAll(int client, bool ticked)
 		AbilityData ability = boss.GetAbility(ABILITY_NAME);
 		if(ability)
 		{
-			int var1;
+			int var1 = ability.GetInt("weapon", -1);
 			bool enabled = IsPlayerAlive(client);
-			if(enabled && ability.GetInt("weapon", var1) && var1 >= 0)
+			if(enabled && var1 >= 0)
 			{
 				if(var1 > 9)
 				{
@@ -833,9 +833,9 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 				AbilityData ability = boss.GetAbility(ABILITY_NAME);
 				if(ability)
 				{
-					int var1;
+					int var1 = ability.GetInt("weapon", -1);
 					bool enabled = (!SetupMode[client] && IsPlayerAlive(client));
-					if(enabled && ability.GetInt("weapon", var1) && var1 >= 0)
+					if(enabled && var1 >= 0)
 					{
 						if(var1 > 9)
 						{
