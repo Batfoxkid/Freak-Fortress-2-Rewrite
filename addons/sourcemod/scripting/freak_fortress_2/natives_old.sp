@@ -196,7 +196,7 @@ public any NativeOld_GetName(Handle plugin, int params)
 		return false;
 	
 	int lang = GetNativeCell(5);
-	if(lang < 0 || lang > MaxClients || !IsClientInGame(lang))
+	if(lang < 0 || lang > MaxClients || (lang && !IsClientInGame(lang)))
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", lang);
 	
 	lang = lang ? GetClientLanguage(lang) : GetServerLanguage();
