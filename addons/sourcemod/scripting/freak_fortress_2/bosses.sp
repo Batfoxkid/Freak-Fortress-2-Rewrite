@@ -1631,6 +1631,13 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	}
 	
 	static char buffer[512];
+
+	TFClassType playerClass = TFClass_Scout;
+	if(cfg.Get("class", buffer, sizeof(buffer)))
+		playerClass = GetClassOfName(buffer);
+
+	cfg.SetInt("class", view_as<int>(playerClass));
+
 	bool active = GetRoundStatus() == 1;
 	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
