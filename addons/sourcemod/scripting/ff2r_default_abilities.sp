@@ -1711,6 +1711,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					int entity = CreateEntityByName("prop_physics_override");
 					if(IsValidEntity(entity))
 					{
+						PrecacheModel(model);
 						SetEntityModel(entity, model);
 						SetEntityMoveType(entity, MOVETYPE_VPHYSICS);
 						SetEntProp(entity, Prop_Send, "m_CollisionGroup", 1);
