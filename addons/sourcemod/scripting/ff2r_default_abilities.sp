@@ -2362,8 +2362,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 		}
 		else
 		{
-			SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", -1);
-			SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 0.001);
+			SetEntityRenderMode(entity, RENDER_ENVIRONMENTAL);
 		}
 		
 		level = cfg.GetInt("alpha", 255);
