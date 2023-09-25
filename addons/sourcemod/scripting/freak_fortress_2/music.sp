@@ -383,6 +383,8 @@ public Action Music_Command(int client, int args)
 									Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
 								
 								int time = RoundToFloor(sound.Time);
+								CRemoveTags(sound.Artist, sizeof(sound.Artist));
+								CRemoveTags(sound.Name, sizeof(sound.Name));
 								PrintToServer("#%d %s - %s (%d:%02d)", i, sound.Artist, sound.Name, time / 60, time % 60);
 							}
 						}
@@ -598,6 +600,8 @@ static void PlaylistMenu(int client, int page = 0)
 					Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
 				
 				int time = RoundToFloor(sound.Time);
+				CRemoveTags(sound.Artist, sizeof(sound.Artist));
+				CRemoveTags(sound.Name, sizeof(sound.Name));
 				Format(music.Key, sizeof(music.Key), "%s - %s (%d:%02d)", sound.Artist, sound.Name, time / 60, time % 60);
 				
 				if(music.Special == special1 || music.Special == special2)
@@ -687,6 +691,8 @@ public void Music_DisplayTracks(DataPack pack)
 						Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
 					
 					int time = RoundToFloor(sound.Time);
+					CRemoveTags(sound.Artist, sizeof(sound.Artist));
+					CRemoveTags(sound.Name, sizeof(sound.Name));
 					PrintToConsole(client, "#%d %s - %s (%d:%02d)", index, sound.Artist, sound.Name, time / 60, time % 60);
 				}
 			}
