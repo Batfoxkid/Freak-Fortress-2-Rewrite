@@ -192,7 +192,10 @@ void Gamemode_RoundSetup()
 					int team = TFTeam_Red + (GetTime() % 2);
 					for(int i; i < reds; i++)
 					{
+						SetEntProp(red[i], Prop_Send, "m_lifeState", 2);
 						ChangeClientTeam(red[i], team);
+						SetEntProp(red[i], Prop_Send, "m_lifeState", 0);
+						
 						team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
 					}
 					
@@ -268,7 +271,9 @@ void Gamemode_RoundSetup()
 					team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
 					for(int i; i < count; i++)
 					{
+						SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
 						ChangeClientTeam(players[i], team);
+						SetEntProp(players[i], Prop_Send, "m_lifeState", 0);
 					}
 				}
 				else	// No boss, normal Arena time
@@ -288,7 +293,10 @@ void Gamemode_RoundSetup()
 						int team = TFTeam_Red + (GetTime() % 2);
 						for(int i; i < count; i++)
 						{
+							SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
 							ChangeClientTeam(players[i], team);
+							SetEntProp(players[i], Prop_Send, "m_lifeState", 0);
+							
 							team = team == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
 						}
 					}
