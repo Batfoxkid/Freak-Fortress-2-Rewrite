@@ -2639,6 +2639,11 @@ public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 
 void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int count)
 {
+	if(!IsPlayerAlive(client))
+	{
+		return;
+	}
+	
 	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	float damage = GetFormula(cfg, "damage", alive, 180.0);
 	float distance = GetFormula(cfg, "distance", alive, 350.0);
