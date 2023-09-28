@@ -265,18 +265,21 @@
 	
 	"special_mobility"
 	{
-		"slot"			"1"						// Charge slot (Only used for sound_ability)
-		"options"		"1"						// Mobility flags (1=Super Jump, 2=Teleport)
-		"button"		"11"					// Button type (11=M2, 13=Reload, 25=M3)
-		"charge"		"1.5"					// Time to fully charge
-		"cooldown"		"5.0"					// Cooldown after use
-		"delay"			"5.0"					// Delay before first use
-		"upward"		"750 + (n * 3.25)"		// Super Jump upward velocity set (n=0.0 ~ 100.0)
-		"forward"		"1.0 + (n * 0.000275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
-		"emergency"		"2000.0"				// Super Jump upward velocity added when touching a hazard
-		"stun"			"2.0"					// Teleport stun duration
+		"slot"				"1"						// Charge slot (Only used for sound_ability)
+		"options"			"1"						// Mobility flags (1=Super Jump, 2=Teleport)
+		"button"			"11"					// Button type (11=M2, 13=Reload, 25=M3)
+		"charge"			"1.5"					// Time to fully charge
+		"cooldown"			"5.0"					// Cooldown after use
+		"delay"				"5.0"					// Delay before first use
+		"upward"			"750 + (n * 3.25)"		// Super Jump upward velocity set (n=0.0 ~ 100.0)
+		"forward"			"1.0 + (n * 0.000275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
+		"emergency"			"2000.0"				// Super Jump upward velocity added when touching a hazard
+		"stun"				"2.0"					// Teleport stun duration
+		"flags"				"97"					// Teleport stun flags
+		"slowdown"			"1.0"					// Teleport sutn slowdown
+		"reset on attack"	"false"					// Reset charge on attack
 		
-		"plugin_name"	"ff2r_default_abilities"
+		"plugin_name"		"ff2r_default_abilities"
 	}
 	
 	"sound_ability"
@@ -819,8 +822,18 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							button = 11;
 						}
 					}
-
-					if(buttons & (1 << button))
+					
+					if(((buttons & IN_ATTACK) || (button != 11 && (buttons & IN_ATTACK2))) && ability.GetBool("reset on attack", false))
+					{
+						if(timeIn)
+						{
+							timeIn = 0.0;
+							ability.SetFloat("delay", 0.0);
+							
+							hud = true;
+						}
+					}
+					else if(buttons & (1 << button))
 					{
 						if(!timeIn)
 						{
@@ -887,8 +900,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							if(target != -1)
 							{
 								float stun = ability.GetFloat("stun", 2.0);
+								int flags = ability.GetInt("flags", TF_STUNFLAGS_LOSERSTATE);
+								float slowdown = ability.GetFloat("slowdown", 1.0);
 								
-								TF2_StunPlayer(client, stun, 1.0, TF_STUNFLAGS_LOSERSTATE);
+								TF2_StunPlayer(client, stun, slowdown, flags);
 								
 								DataPack pack;
 								CreateDataTimer(stun, Timer_RestoreCollision, pack, TIMER_FLAG_NO_MAPCHANGE);
