@@ -252,7 +252,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 									{
 										length = snap2.KeyBufferSize(a)+1;
 										char[] key2 = new char[length];
-										snap.GetKey(a, key2, length);
+										snap2.GetKey(a, key2, length);
 										
 										ConfigData mana = cost.GetSection(key2);
 										if(mana)
