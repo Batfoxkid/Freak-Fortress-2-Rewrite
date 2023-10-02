@@ -167,11 +167,11 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 			if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
 			{
 				FormatEx(buffer, sizeof(buffer), "%t", "Back");
-				menu.AddItem(buffer, buffer);
+				menu.AddItem(NULL_STRING, buffer);
 			}
 			else
 			{
-				menu.AddItem(buffer, buffer, ITEMDRAW_SPACER);
+				menu.AddItem(NULL_STRING, buffer, ITEMDRAW_SPACER);
 			}
 			
 			menu.Display(client, time);
@@ -206,15 +206,15 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 		if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", "Back");
-			menu.AddItem(buffer1, buffer2);
+			menu.AddItem(NULL_STRING, buffer2);
 		}
 		else
 		{
-			menu.AddItem(buffer1, buffer1, ITEMDRAW_SPACER);
+			menu.AddItem(NULL_STRING, buffer1, ITEMDRAW_SPACER);
 		}
 		
 		FormatEx(buffer2, sizeof(buffer2), "%t", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
-		menu.AddItem(buffer1, buffer2);
+		menu.AddItem(NULL_STRING, buffer2);
 		
 		menu.Pagination = 0;
 		menu.ExitButton = true;
@@ -252,11 +252,18 @@ public int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 				{
 					char buffer[12];
 					menu.GetItem(choice, buffer, sizeof(buffer));
-					int entity = EntRefToEntIndex(StringToInt(buffer));
-					if(entity != INVALID_ENT_REFERENCE)
-						Weapons_ShowChanges(client, entity);
-					
-					Weapons_ChangeMenu(client);
+					if(buffer[0])
+					{
+						int entity = EntRefToEntIndex(StringToInt(buffer));
+						if(entity != INVALID_ENT_REFERENCE)
+							Weapons_ShowChanges(client, entity);
+						
+						Weapons_ChangeMenu(client);
+					}
+					else
+					{
+						Menu_MainMenu(client);
+					}
 				}
 			}
 		}
