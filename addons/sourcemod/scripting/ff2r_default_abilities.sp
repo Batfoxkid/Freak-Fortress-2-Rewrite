@@ -1873,7 +1873,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 		float soloduration = GetFormula(cfg, "solo", alive, duration);
 		
 		char particle[48];
-		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
+		cfg.GetString("particle", particle, sizeof(particle));
 		
 		FF2R_StartLagCompensation(client);
 		
@@ -1993,7 +1993,7 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 		float soloduration = GetFormula(cfg, "solo", alive, duration);
 		
 		char particle[48];
-		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
+		cfg.GetString("particle", particle, sizeof(particle));
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
