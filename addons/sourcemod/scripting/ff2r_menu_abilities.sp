@@ -37,7 +37,7 @@
 				"name"		"RAGE"	// Name, can use "name_en", etc. If left blank, section name is used instead
 				"delay"		"10.0"	// Initial cooldown
 				"cooldown"	"30.0"	// Cooldown on use
-				global cooldown"	"30.0"	// Like 'cooldown', but applies to all spells
+				"global cooldown"	"30.0"	// Like 'cooldown', but applies to all spells
 				"low"		"8"		// Lowest ability slot to activate. If left blank, "high" is used
 				"high"		"8"		// Highest ability slot to activate. If left blank, "low" is used
 				"flags"		"0x0001"// Casting flags
