@@ -1670,7 +1670,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					int index = -1;
 					StringMapSnapshot snap = ability.Snapshot();
 					
-					int length = snap.Length;
+					int length = snap.Length - 1;
 					if(length > 0)
 					{
 						int entry = GetURandomInt() % length;
