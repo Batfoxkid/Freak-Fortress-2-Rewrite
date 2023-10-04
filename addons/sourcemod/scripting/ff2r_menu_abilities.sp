@@ -991,7 +991,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 												ConfigData cfg = ability.GetSection("spells");
 												if(cfg)
 												{
-													SortedSnapshot snap = CreateSortedSnapshot(cfg);
+													StringMapSnapshot snap = cfg.Snapshot();
 
 													int entries = snap.Length;
 													for(int i; i < entries; i++)
@@ -1008,6 +1008,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 																spell2.SetFloat("delay", gameTime + globalCooldown);
 														}
 													}
+													delete snap;
 												}
 											}
 										}
