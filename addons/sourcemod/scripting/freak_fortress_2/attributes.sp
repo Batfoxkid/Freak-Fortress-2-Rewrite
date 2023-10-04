@@ -707,19 +707,24 @@ float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = fa
 	
 	if(entity != -1)
 	{
-		if(Attributes_GetByDefIndex(entity, index, value))
+		char classname[18];
+		GetEntityClassname(entity, classname, sizeof(classname));
+		if(!StrContains(classname, "tf_w") || StrEqual(classname, "tf_powerup_bottle"))
 		{
-			if(!found)
+			if(Attributes_GetByDefIndex(entity, index, value))
 			{
-				total = value;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
+				if(!found)
+				{
+					total = value;
+				}
+				else if(multi)
+				{
+					total *= value;
+				}
+				else
+				{
+					total += value;
+				}
 			}
 		}
 	}

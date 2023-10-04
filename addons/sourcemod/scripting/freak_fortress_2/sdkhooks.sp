@@ -357,6 +357,13 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				
 				TF2_RemoveCondition(victim, TFCond_Zoomed);
 				
+				int entity = -1;
+				while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
+				{
+					if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == victim && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+						TF2_RemoveWearable(victim, entity);
+				}
+				
 				damage = 0.0;
 				return Plugin_Handled;
 			}

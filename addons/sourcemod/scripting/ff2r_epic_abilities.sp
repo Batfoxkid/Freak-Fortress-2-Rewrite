@@ -17,13 +17,13 @@
 				"cooldown"	"30.0"				// Cooldown on use
 				"cost"		"100.0"				// RAGE cost to use
 				"consume"	"true"				// Consumes RAGE on use
-				"flags"		"0x0003"			// Casting flags
-				// 0x0001: Magic (Sapper effect prevents casting)
-				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
-				// 0x0004: Summon (Requires a dead summonable player to cast)
-				// 0x0008: Partner (Requires a teammate boss alive to cast)
-				// 0x0010: Last Life (Requires a single life left to cast)
-				// 0x0020: Grounded (Requires being on the ground to cast)
+				"flags"		"3"			// Casting flags
+				// 1: Magic (Sapper effect prevents casting)
+				// 2: Mind (Stun effects DOESN'T prevent casting)
+				// 4: Summon (Requires a dead summonable player to cast)
+				// 8: Partner (Requires a teammate boss alive to cast)
+				// 16: Last Life (Requires a single life left to cast)
+				// 32: Grounded (Requires being on the ground to cast)
 				
 				"cast_low"	"8"	// Lowest ability slot to activate on cast. If left blank, "cast_high" is used
 				"cast_high"	"8"	// Highest ability slot to activate on cast. If left blank, "cast_low" is used

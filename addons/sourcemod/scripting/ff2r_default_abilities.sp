@@ -913,6 +913,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 								SetEntityCollisionGroup(client, 2);
 								
 								GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos1);
+								TF2_AddCondition(target, TFCond_UberchargedHidden, 0.2, client);
 								
 								SetEntProp(client, Prop_Send, "m_bDucked", true);
 								SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
@@ -2459,18 +2460,8 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			{
 				for(int target = 1; target <= MaxClients; target++)
 				{
-					if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target))
+					if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) > view_as<int>(TFTeam_Spectator))
 						continue;
-					
-					if(GetClientTeam(target) > view_as<int>(TFTeam_Spectator))
-					{
-						if(IsPlayerAlive(target))
-							continue;
-					}
-					else if(SpecTeam || !IsPlayerAlive(target))
-					{
-						continue;
-					}
 					
 					// Any dead players
 					victim[victims++] = target;

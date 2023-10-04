@@ -5,10 +5,10 @@
 		"tickrate"	"0.1"		// Menu tick rate
 		"weapon"	"-1"		// Weapon slot (0-9) or weapon index (10+)
 		"limit"		"-1"		// Max amount of spells to choose from at once
-		"refresh"	"0x0000"	// When to refresh spell list if limit is enabled
-		// 0x0001: On Kill
-		// 0x0002: On Spell Cast
-		// 0x0004: On Rage (Uses "slot")
+		"refresh"	"0"	// When to refresh spell list if limit is enabled
+		// 1: On Kill
+		// 2: On Spell Cast
+		// 4: On Rage (Uses "slot")
 		
 		"manas"
 		{
@@ -39,14 +39,14 @@
 				"cooldown"	"30.0"	// Cooldown on use
 				"low"		"8"		// Lowest ability slot to activate. If left blank, "high" is used
 				"high"		"8"		// Highest ability slot to activate. If left blank, "low" is used
-				"flags"		"0x0001"// Casting flags
-				// 0x0001: Magic (Sapper effect prevents casting)
-				// 0x0002: Mind (Stun effects DOESN'T prevent casting)
-				// 0x0004: Summon (Requires a dead summonable player to cast)
-				// 0x0008: Partner (Requires a teammate boss alive to cast)
-				// 0x0010: Last Life (Requires a single life left to cast)
-				// 0x0020: Grounded (Requires being on the ground to cast)
-				// 0x0040: Priority (Will always appear when "limit" is on)
+				"flags"		"1"		// Casting flags
+				// 1: Magic (Sapper effect prevents casting)
+				// 2: Mind (Stun effects DOESN'T prevent casting)
+				// 4: Summon (Requires a dead summonable player to cast)
+				// 8: Partner (Requires a teammate boss alive to cast)
+				// 16: Last Life (Requires a single life left to cast)
+				// 32: Grounded (Requires being on the ground to cast)
+				// 64: Priority (Will always appear when "limit" is on)
 				
 				"cost"	// Contains two different methods
 				{
