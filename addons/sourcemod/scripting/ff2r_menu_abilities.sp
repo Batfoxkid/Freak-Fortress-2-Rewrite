@@ -37,6 +37,7 @@
 				"name"		"RAGE"	// Name, can use "name_en", etc. If left blank, section name is used instead
 				"delay"		"10.0"	// Initial cooldown
 				"cooldown"	"30.0"	// Cooldown on use
+				"global cooldown"	"30.0"	// Like 'cooldown', but applies to all spells
 				"low"		"8"		// Lowest ability slot to activate. If left blank, "high" is used
 				"high"		"8"		// Highest ability slot to activate. If left blank, "low" is used
 				"flags"		"0x0001"// Casting flags
@@ -985,6 +986,30 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 												
 												if(ability.GetInt("refresh") & RAN_ONUSE)
 													RefreshSpells(client, boss, ability);
+
+												float globalCooldown = spell.GetFloat("global cooldown");
+												ConfigData cfg = ability.GetSection("spells");
+												if(cfg)
+												{
+													StringMapSnapshot snap = cfg.Snapshot();
+
+													int entries = snap.Length;
+													for(int i; i < entries; i++)
+													{
+														int length = snap.KeyBufferSize(i)+1;
+														char[] key = new char[length];
+														snap.GetKey(i, key, length);
+
+														ConfigData spell2 = cfg.GetSection(key);
+
+														if(spell2)
+														{
+															if(spell2.GetFloat("delay") < gameTime + globalCooldown)
+																spell2.SetFloat("delay", gameTime + globalCooldown);
+														}
+													}
+													delete snap;
+												}
 											}
 										}
 									}
