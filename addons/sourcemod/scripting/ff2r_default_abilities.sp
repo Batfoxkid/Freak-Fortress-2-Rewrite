@@ -2460,7 +2460,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			{
 				for(int target = 1; target <= MaxClients; target++)
 				{
-					if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) > view_as<int>(TFTeam_Spectator))
+					if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) <= view_as<int>(TFTeam_Spectator))
 						continue;
 					
 					// Any dead players
