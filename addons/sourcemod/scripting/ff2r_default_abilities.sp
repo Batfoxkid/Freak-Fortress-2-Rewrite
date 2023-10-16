@@ -2445,7 +2445,15 @@ public Action Timer_RestoreWeapon(Handle timer, DataPack data)
 	int client = EntRefToEntIndex(data.ReadCell());
 	int slot = data.ReadCell();
 	if(client == -1) return Plugin_Continue;
-	if(weapon != -1) TF2_RemoveWeaponSlot(client, slot);
+	if(weapon != -1)
+	{
+		if(HasEntProp(weapon, Prop_Send, "m_iWeaponState")) //Reset minigun-like weapons
+		{
+			SetEntProp(weapon, Prop_Send, "m_iWeaponState", 0);
+			TF2_RemoveCondition(client, TFCond_Slowed);
+		}
+		TF2_RemoveWeaponSlot(client, slot);
+	}
 
 	static char classname[36];
 	BossData boss = new BossData(client);
@@ -2471,6 +2479,14 @@ public Action Timer_RestoreWeapon(Handle timer, DataPack data)
 			}
 		}
 		delete snap;
+	}
+	if(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == -1)
+	{
+		for(int i = 2; i >= 0; i--)
+		{
+			int wep = GetPlayerWeaponSlot(client, i);
+			if(IsValidEntity(wep)) SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", wep);
+		}
 	}
 
 	return Plugin_Continue;
