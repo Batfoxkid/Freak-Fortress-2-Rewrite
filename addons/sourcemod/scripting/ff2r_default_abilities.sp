@@ -117,6 +117,7 @@
 		"blue"			"255"							// Weapon blue
 		"class"			""								// Override class setup
 		"force switch"	"false"							// Always force weapon switch
+		"duration"		"-1.0"							// Duration for which weapon stays, default value -1.0 keeps it forever
 		
 		"plugin_name"	"ff2r_default_abilities"
 	}
@@ -403,6 +404,20 @@ bool NoAbilities[MAXTF2PLAYERS];
 ConVar CvarCheats;
 ConVar CvarFriendlyFire;
 ConVar CvarTimeScale;
+
+enum SectionType
+{
+	Section_Unknown = 0,
+	Section_Ability,	// ability | Ability Name
+	Section_Map,		// map_
+	Section_Weapon,		// weapon | wearable | tf_ | saxxy
+	Section_Sound,		// sound_ | catch_
+	Section_ModCache,	// mod_precache
+	Section_Precache,	// precache
+	Section_Download,	// download
+	Section_Model,		// mod_download
+	Section_Material	// mat_download
+};
 
 public Plugin myinfo =
 {
@@ -2184,9 +2199,10 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	GetClassWeaponClassname(class, classname, sizeof(classname));
 	bool wearable = StrContains(classname, "tf_weap") != 0;
 	
+	int slot;
 	if(!wearable)
 	{
-		int slot = cfg.GetInt("weapon slot", -99);
+		slot = cfg.GetInt("weapon slot", -99);
 		if(slot == -99)
 			slot = TF2_GetClassnameSlot(classname);
 		
@@ -2406,11 +2422,58 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 				FakeClientCommand(client, "use %s", classname);
 			}
 		}
+		float duration = cfg.GetFloat("duration", -1.0);
+		if(duration >= 0.0)
+		{
+			DataPack data;
+			CreateDataTimer(duration, Timer_RestoreWeapon, data, TIMER_FLAG_NO_MAPCHANGE);
+			data.WriteCell(EntIndexToEntRef(entity));
+			data.WriteCell(EntIndexToEntRef(client));
+			data.WriteCell(slot);
+		}
 	}
 	else if(forceClass != TFClass_Unknown)
 	{
 		TF2_SetPlayerClass(client, class, _, false);
 	}
+}
+
+public Action Timer_RestoreWeapon(Handle timer, DataPack data)
+{
+	data.Reset();
+	int weapon = EntRefToEntIndex(data.ReadCell());
+	int client = EntRefToEntIndex(data.ReadCell());
+	int slot = data.ReadCell();
+	if(client == -1) return Plugin_Continue;
+	if(weapon != -1) TF2_RemoveWeaponSlot(client, slot);
+
+	static char classname[36];
+	BossData boss = new BossData(client);
+	if(boss)
+	{
+		StringMapSnapshot snap = boss.Snapshot();
+
+		int entries = snap.Length;
+		if(entries)
+		{
+			for(int i = 0; i < entries; i++)
+			{
+				snap.GetKey(i, classname, sizeof(classname));
+				if(GetSectionType(classname) == Section_Weapon && TF2_GetClassnameSlot(classname, true) == slot && !StrEqual(classname, "tf_wearable"))
+				{
+					ConfigData cfg = boss.GetSection(classname);
+					if(!cfg) continue;
+
+					cfg.SetString("classname", classname);
+					Rage_NewWeapon(client, cfg, "rage_new_weapon");
+					break;
+				}
+			}
+		}
+		delete snap;
+	}
+
+	return Plugin_Continue;
 }
 
 void Rage_CloneAttack(int client, ConfigData cfg)
@@ -3839,3 +3902,33 @@ public bool TraceRay_DontHitSelf(int entity, int mask, any data)
 {
 	return (entity != data);
 }
+
+SectionType GetSectionType(const char[] buffer)
+{
+	if(!StrContains(buffer, "sound_") || !StrContains(buffer, "catch_"))
+		return Section_Sound;
+
+	if(StrEqual(buffer, "precache"))
+		return Section_Precache;
+
+	if(StrEqual(buffer, "mod_download"))
+		return Section_Model;
+
+	if(StrEqual(buffer, "mod_precache"))
+		return Section_ModCache;
+
+	if(StrEqual(buffer, "mat_download"))
+		return Section_Material;
+
+	if(StrEqual(buffer, "download"))
+		return Section_Download;
+
+	if(!StrContains(buffer, "map_"))
+		return Section_Map;
+
+	if(!StrContains(buffer, "weapon") || !StrContains(buffer, "wearable") || !StrContains(buffer, "tf_") || StrEqual(buffer, "saxxy"))
+		return Section_Weapon;
+
+	return Section_Ability;
+}
+
