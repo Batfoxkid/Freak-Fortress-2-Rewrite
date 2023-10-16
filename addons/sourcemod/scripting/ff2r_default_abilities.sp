@@ -2452,7 +2452,7 @@ public Action Timer_RestoreWeapon(Handle timer, DataPack data)
 			SetEntProp(weapon, Prop_Send, "m_iWeaponState", 0);
 			TF2_RemoveCondition(client, TFCond_Slowed);
 		}
-		RemoveEntity(weapon);
+		TF2_RemoveItem(client, weapon);
 	}
 
 	static char classname[36];
@@ -3946,5 +3946,19 @@ SectionType GetSectionType(const char[] buffer)
 		return Section_Weapon;
 
 	return Section_Ability;
+}
+
+void TF2_RemoveItem(int client, int weapon)
+{
+	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearableViewModel");
+	if(entity != -1)
+		TF2_RemoveWearable(client, entity);
+
+	RemovePlayerItem(client, weapon);
+	RemoveEntity(weapon);
 }
 
