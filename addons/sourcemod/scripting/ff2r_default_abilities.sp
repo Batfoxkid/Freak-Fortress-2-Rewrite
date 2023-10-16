@@ -2452,7 +2452,7 @@ public Action Timer_RestoreWeapon(Handle timer, DataPack data)
 			SetEntProp(weapon, Prop_Send, "m_iWeaponState", 0);
 			TF2_RemoveCondition(client, TFCond_Slowed);
 		}
-		TF2_RemoveWeaponSlot(client, slot);
+		RemoveEntity(weapon);
 	}
 
 	static char classname[36];
