@@ -539,7 +539,7 @@ void Gamemode_CheckPointUnlock(int alive, bool notice)
 			}
 		}
 		
-		SetArenaCapEnableTime(0.0);
+		GameRules_SetPropFloat("m_flCapturePointEnableTime", GetGameTime());
 		SetControlPoint(true);
 		PointUnlock = 0;
 	}
