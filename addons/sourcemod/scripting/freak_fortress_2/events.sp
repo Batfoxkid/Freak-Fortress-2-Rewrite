@@ -63,11 +63,11 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 			if((spec || team > TFTeam_Spectator) && ((!alive && team > TFTeam_Spectator) || IsPlayerAlive(i)))
 			{
 				PlayersAlive[team]++;
-				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && IsPlayerAlive(i) && Client(i).Cfg.GetSection("sound_lastman"))
 				{
 					bluBoss = i;
 				}
-				else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && Client(i).Cfg.GetSection("sound_lastman"))
+				else if(team != TFTeam_Blue && !redBoss && Client(i).IsBoss && IsPlayerAlive(i) && Client(i).Cfg.GetSection("sound_lastman"))
 				{
 					redBoss = i;
 				}

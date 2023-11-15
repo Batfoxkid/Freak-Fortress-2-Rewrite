@@ -356,10 +356,5 @@ public Action Command_EurekaTeleport(int client, const char[] command, int args)
 
 static bool IsEmptyServer()
 {
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
-			return false;
-	}
-	return true;
+	return GameRules_GetRoundState() < RoundState_StartGame;
 }

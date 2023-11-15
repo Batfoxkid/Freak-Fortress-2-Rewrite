@@ -445,7 +445,7 @@ public bool ShowMenuAll(int client, bool ticked)
 				}
 			}
 			
-			if(ViewingMenu[client] || (enabled && GetClientMenu(client) == MenuSource_None))
+			if(enabled && (ViewingMenu[client] || GetClientMenu(client) == MenuSource_None))
 				ShowMenu(client, client, boss, ability, enabled, ticked);
 			
 			int team1 = GetClientTeam(client);
@@ -594,7 +594,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 			{
 				if(FF2R_GetBossData(i))
 				{
-					if(GetClientTeam(i) == team)
+					if(IsPlayerAlive(i) && GetClientTeam(i) == team)
 						allies++;
 				}
 				else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
@@ -884,7 +884,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 											{
 												if(FF2R_GetBossData(i))
 												{
-													if(GetClientTeam(i) == team)
+													if(IsPlayerAlive(i) && GetClientTeam(i) == team)
 														allies++;
 												}
 												else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
@@ -1039,7 +1039,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 			{
 				if(FF2R_GetBossData(i))
 				{
-					if(GetClientTeam(i) == team)
+					if(IsPlayerAlive(i) && GetClientTeam(i) == team)
 						allies++;
 				}
 			}

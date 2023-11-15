@@ -2097,8 +2097,12 @@ static void EquipBoss(int client, bool weapons)
 					
 					if(!wearable && !value)
 					{
-						value = true;
-						SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+						level = TF2_GetClassnameSlot(classname);
+						if(level >= TFWeaponSlot_Primary && level <= TFWeaponSlot_Melee)
+						{
+							value = true;
+							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+						}
 					}
 				}
 				else if(forceClass != TFClass_Unknown)
