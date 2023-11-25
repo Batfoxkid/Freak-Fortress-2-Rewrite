@@ -985,9 +985,19 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 			}
 			else if(lastCount < 3)
 			{
-			//	int entity = FindEntityByClassname(-1, "monster_resource");
-			//	if(entity != -1)
-			//		RemoveEntity(entity);
+				int entity = MaxClients + 1;
+				while((entity = FindEntityByClassname(entity, "eyeball_boss")) != -1)
+				{
+					if(GetEntProp(entity, Prop_Send, "m_iTeamNum") > TFTeam_Blue)
+						break;
+				}
+				
+				if(entity == -1)
+				{
+					entity = FindEntityByClassname(-1, "monster_resource");
+					if(entity != -1)
+						SetEntProp(entity, Prop_Send, "m_iBossHealthPercentageByte", 0, 2);
+				}
 			}
 			
 			if(HudTimer[team])
