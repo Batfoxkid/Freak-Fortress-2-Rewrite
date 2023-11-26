@@ -2226,13 +2226,13 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	bool wearable = StrContains(classname, "tf_weap") != 0;
 
 	float lifetime = cfg.GetFloat("lifetime");
+
+	int slot = wearable ? TFWeaponSlot_Item2 : cfg.GetInt("weapon slot", -99);
+	if(slot == -99)
+		slot = TF2_GetClassnameSlot(classname);
 	
 	if(!wearable && lifetime <= 0.0)
 	{
-		int slot = cfg.GetInt("weapon slot", -99);
-		if(slot == -99)
-			slot = TF2_GetClassnameSlot(classname);
-		
 		if(slot >= 0 && slot < 6)
 			TF2_RemoveWeaponSlot(client, slot);
 	}
@@ -2440,6 +2440,47 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 		
 		if(!wearable)
 		{
+			if(lifetime > 0.0)
+			{
+				// Sets this weapon as the main weapon to switch to in this slot
+				// Swaps weapons in m_hMyWeapons to do this
+				
+				int lowestSlot = -1;
+				int lowestEnt = -1;
+				int currentSlot = -1;
+
+				static int length;
+				if(!length)
+					length = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+				
+				char classname2[36];
+				for(int i; i < length; i++)
+				{
+					int other = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
+					if(other == entity)
+					{
+						currentSlot = i;
+
+						if(lowestSlot != -1)
+							break;
+					}
+					else if(lowestSlot == -1 && other != -1 && GetEntityClassname(other, classname2, sizeof(classname2)) && TF2_GetClassnameSlot(classname2) == slot)
+					{
+						lowestSlot = i;
+						lowestEnt = other;
+
+						if(currentSlot != -1)
+							break;
+					}
+				}
+
+				if(lowestSlot != -1 && currentSlot != -1)
+				{
+					SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", lowestEnt, currentSlot);
+					SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", entity, lowestSlot);
+				}
+			}
+
 			if(cfg.GetBool("force switch"))
 			{
 				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
@@ -2481,7 +2522,22 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 			else
 			{
 				if(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == entity)
-					ClientCommand(client, "lastinv");
+				{
+					static int length;
+					if(!length)
+						length = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+					
+					char classname[36];
+					for(int i; i < length; i++)
+					{
+						int other = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
+						if(other != entity && GetEntityClassname(other, classname, sizeof(classname)))
+						{
+							FakeClientCommand(client, "use %s", classname);
+							break;
+						}
+					}
+				}
 				
 				TF2_RemoveItem(client, entity);
 			}
