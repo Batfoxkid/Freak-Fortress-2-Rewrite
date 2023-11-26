@@ -796,13 +796,13 @@ public void Weapons_SpawnFrame(int ref)
 	{
 		char classname[36];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!StrContains(classname, "tf_wearable"))
+		if(StrContains(classname, "tf_weapon"))
 		{
-			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
+			DHook_HookStripWeapon(entity);
 		}
 		else
 		{
-			DHook_HookStripWeapon(entity);
+			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
 		}
 	}
 	
