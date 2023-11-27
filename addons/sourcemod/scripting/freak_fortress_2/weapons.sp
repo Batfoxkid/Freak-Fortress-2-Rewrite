@@ -793,7 +793,18 @@ public void Weapons_SpawnFrame(int ref)
 	
 	bool found;
 	if(cfg.GetBool("strip", found, false) && found)
-		DHook_HookStripWeapon(entity);
+	{
+		char classname[36];
+		GetEntityClassname(entity, classname, sizeof(classname));
+		if(!StrContains(classname, "tf_weapon"))
+		{
+			DHook_HookStripWeapon(entity);
+		}
+		else
+		{
+			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
+		}
+	}
 	
 	int current;
 	
