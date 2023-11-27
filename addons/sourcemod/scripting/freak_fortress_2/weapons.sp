@@ -796,7 +796,7 @@ public void Weapons_SpawnFrame(int ref)
 	{
 		char classname[36];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(StrContains(classname, "tf_weapon"))
+		if(!StrContains(classname, "tf_weapon"))
 		{
 			DHook_HookStripWeapon(entity);
 		}
