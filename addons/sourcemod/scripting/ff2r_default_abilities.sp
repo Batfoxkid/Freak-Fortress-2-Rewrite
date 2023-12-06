@@ -2526,19 +2526,30 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 					static int length;
 					if(!length)
 						length = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
-					
-					char classname[36];
+
 					for(int i; i < length; i++)
 					{
 						int other = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
-						if(other != entity && GetEntityClassname(other, classname, sizeof(classname)))
+						if(other != entity)
 						{
-							FakeClientCommand(client, "use %s", classname);
+							if(HasEntProp(entity, Prop_Send, "m_iWeaponState")) //Reset minigun-like weapons
+							{
+								SetEntProp(entity, Prop_Send, "m_iWeaponState", 0);
+								TF2_RemoveCondition(client, TFCond_Slowed);
+							}
+
+							#if defined __nosoop_tf2_utils_included
+							if(TF2ULoaded)
+							{
+								TF2Util_SetPlayerActiveWeapon(client, other);
+							}
+							#endif
+							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", other);
 							break;
 						}
 					}
 				}
-				
+
 				TF2_RemoveItem(client, entity);
 			}
 		}
