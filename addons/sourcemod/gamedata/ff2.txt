@@ -173,6 +173,11 @@
 				"linux"		"3512"
 				"windows"	"3512"
 			}
+			"CTFPlayer::m_iBlastJumpState"
+			{
+				"linux"		"8584"
+				"windows"	"8584"
+			}
 		}
 		"Functions"
 		{

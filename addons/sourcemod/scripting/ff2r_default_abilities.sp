@@ -354,6 +354,8 @@
 #define TF2U_LIBRARY	"nosoop_tf2utils"
 #define TCA_LIBRARY		"tf2custattr"
 
+#define TF_PLAYER_ENEMY_BLASTED_ME (1 << 2)
+
 #if defined __nosoop_tf2_utils_included
 bool TF2ULoaded;
 #endif
@@ -366,6 +368,9 @@ Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
 Handle SDKSetSpeed;
 Handle SyncHud;
+
+int BlastJumpStateOffset = -1;
+
 int PlayersAlive[4];
 bool SpecTeam;
 
@@ -463,6 +468,10 @@ public void OnPluginStart()
 	SDKSetSpeed = EndPrepSDKCall();
 	if(!SDKSetSpeed)
 		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	
+	BlastJumpStateOffset = gamedata.GetOffset("CTFPlayer::m_iBlastJumpState");
+	if(BlastJumpStateOffset == -1)
+		LogError("[Gamedata] Could not find CTFPlayer::m_iBlastJumpState");
 	
 	delete gamedata;
 	
@@ -981,9 +990,6 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							float velocity[3];
 							GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
 							
-							SetEntProp(client, Prop_Send, "m_bJumping", true);
-							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
-							
 							int power = RoundToFloor(charge);
 							if(power > 100)
 								power = 100;
@@ -999,6 +1005,12 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							velocity[2] = ParseFormula(buffer, power);
 							
 							TeleportEntity(client, _, _, velocity);
+							
+							SetEntProp(client, Prop_Send, "m_bJumping", true);
+							if (BlastJumpStateOffset != -1) {
+								SetEntData(client, BlastJumpStateOffset, TF_PLAYER_ENEMY_BLASTED_ME);
+							}
+							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
 								FF2R_EmitBossSoundToAll("sound_ability", client, buffer, client, _, SNDLEVEL_TRAFFIC);
