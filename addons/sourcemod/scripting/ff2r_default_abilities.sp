@@ -4,6 +4,7 @@
 		"slot"				"0"			// Ability slot
 		"amount"			"n/3 + 1"	// Amount of clones to summon
 		"die on boss death"	"true"		// If clones die when the boss dies
+		"allow bosses"	"false"		//Allow bosses to become minions (in the process the boss becomes normal player)
 		
 		"character"
 		{
@@ -2579,6 +2580,8 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
 		
 		int owner = cfg.GetBool("die on boss death", true) ? client : -1;
+		bool allowBosses = cfg.GetBool("allow bosses", false);
+
 		ConfigData minion = cfg.GetSection("character");
 		
 		int victims;
@@ -2587,9 +2590,17 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		{
 			for(int target = 1; target <= MaxClients; target++)
 			{
-				if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) != team)
+				if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) != team)
 					continue;
-				
+
+				if(FF2R_GetBossData(target))
+				{
+					if(!allowBosses)
+						continue;
+					else
+						FF2R_CreateBoss(target, null);
+				}
+
 				// Same team dead players
 				victim[victims++] = target;
 			}
@@ -2602,9 +2613,17 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		{
 			for(int target = 1; target <= MaxClients; target++)
 			{
-				if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) == team)
+				if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) == team)
 					continue;
-				
+
+				if(FF2R_GetBossData(target))
+				{
+					if(!allowBosses)
+						continue;
+					else
+						FF2R_CreateBoss(target, null);
+				}
+
 				// Same team alive players
 				victim[victims++] = target;
 			}
@@ -2616,9 +2635,17 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			{
 				for(int target = 1; target <= MaxClients; target++)
 				{
-					if(client == target || !IsClientInGame(target) || FF2R_GetBossData(target) || IsPlayerAlive(target) || GetClientTeam(target) <= view_as<int>(TFTeam_Spectator))
+					if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) <= view_as<int>(TFTeam_Spectator))
 						continue;
-					
+
+					if(FF2R_GetBossData(target))
+					{
+						if(!allowBosses)
+							continue;
+						else
+							FF2R_CreateBoss(target, null);
+					}
+
 					// Any dead players
 					victim[victims++] = target;
 				}
