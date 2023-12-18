@@ -171,7 +171,7 @@ void ForwardOld_OnSpecialSelected(int boss, int &special, bool preset)
 	{
 		if(name[0])
 		{
-			special2 = Bosses_GetByName(name, false);
+			special2 = Bosses_GetByName(name, true);
 			if(special2 != -1)
 				special = special2;
 		}
