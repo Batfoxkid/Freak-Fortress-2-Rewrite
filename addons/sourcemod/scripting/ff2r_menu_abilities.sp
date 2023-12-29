@@ -515,12 +515,12 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 						{
 							amount = maximum;
 						}
+						SetBossCharge(boss, key, amount);
 					}
 					else
 					{
 						amount = GetBossCharge(boss, key);
 					}
-					SetBossCharge(boss, key, amount);
 					
 					float rolling = mana.GetFloat("rolling");
 					if(rolling > 0.0)
