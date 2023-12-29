@@ -520,6 +520,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 					{
 						amount = GetBossCharge(boss, key);
 					}
+					SetBossCharge(boss, key, amount);
 					
 					float rolling = mana.GetFloat("rolling");
 					if(rolling > 0.0)
