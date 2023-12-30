@@ -515,6 +515,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 						{
 							amount = maximum;
 						}
+						SetBossCharge(boss, key, amount);
 					}
 					else
 					{
