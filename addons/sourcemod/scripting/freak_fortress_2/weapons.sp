@@ -500,7 +500,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 				Gamemode_SetClientGlow(victim, value);
 			}
 			
-			if(critType != 2)
+			if(critType != 2 && !(damagetype & DMG_CRIT))
 				critType = kv.GetNum("mod crit type on bosses", critType);
 			
 			value = kv.GetFloat("multi boss rage", 1.0);
