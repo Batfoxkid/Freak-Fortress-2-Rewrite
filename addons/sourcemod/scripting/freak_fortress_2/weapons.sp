@@ -7,7 +7,7 @@
 	void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 	void Weapons_ShowChanges(int client, int entity)
 	void Weapons_PlayerDeath(int client)
-	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType)
+	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType, int damagetype)
 	void Weapons_OnHitBoss(int attacker, int weapon, int newWeaponDamage, int lastWeaponDamage)
 	void Weapons_OnAirblastBoss(int attacker)
 	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
@@ -469,7 +469,7 @@ void Weapons_PlayerDeath(int client)
 	HasCritGlow[client] = 0;
 }
 
-stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int &critType, int damagecustom)
+stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int &critType, int damagecustom, int damagetype)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
