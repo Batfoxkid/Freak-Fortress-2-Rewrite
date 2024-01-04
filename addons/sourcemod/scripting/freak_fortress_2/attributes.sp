@@ -228,7 +228,7 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 		}
 	}
 	
-	if(!critType && ((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attributes_FindOnWeapon(attacker, weapon, 621)) ||	// rocketjump attackrate bonus
+	if((!critType && !(damagetype & DMG_CRIT)) && ((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attributes_FindOnWeapon(attacker, weapon, 621)) ||	// rocketjump attackrate bonus
 	   (TF2_IsPlayerInCondition(attacker, TFCond_DisguiseRemoved) && Attributes_FindOnWeapon(attacker, weapon, 410)))) 	// damage bonus while disguised
 	{
 		critType = 1;
