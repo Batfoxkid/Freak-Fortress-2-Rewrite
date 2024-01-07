@@ -1378,19 +1378,17 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
 		bool blind = cfg.GetBool("blind");
 		bool muffle = cfg.GetBool("muffle");
-		
-		int flags = GetCommandFlags("r_screenoverlay");
-		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-		
+
 		int victims;
 		int[] victim = new int[MaxClients - 1];
+		SetVariantString(file);
 		for(int target = 1; target <= MaxClients; target++)
 		{
 			if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 			{
 				delete OverlayTimer[target];
-				
-				ClientCommand(target, "r_screenoverlay \"%s\"", file);
+
+				AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
 				OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
 				
 				if(blind)
@@ -1399,9 +1397,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				OverlayMuffled[target] = muffle;
 			}
 		}
-		
-		SetCommandFlags("r_screenoverlay", flags);
-		
+
 		if(victims)
 		{
 			BfWrite msg = view_as<BfWrite>(StartMessage("Fade", victim, victims));
@@ -2171,8 +2167,6 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	
 	int team = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
 	
-	int flags = GetCommandFlags("r_screenoverlay");
-	SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
 	
 	float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
 	bool more = cfg.GetInt("count", 12) > phase;
@@ -2181,13 +2175,18 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	
 	int victims;
 	int[] victim = new int[MaxClients - 1];
+
+	char temp[128];
+	FormatEx(temp, sizeof(temp), "%s%d", file, phase);
+	SetVariantString(temp);
 	for(int target = 1; target <= MaxClients; target++)
 	{
 		if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 		{
 			delete OverlayTimer[target];
+
+			AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
 			
-			ClientCommand(target, "r_screenoverlay \"%s%d\"", file, phase);
 			OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
 			
 			victim[victims++] = target;
@@ -2196,7 +2195,6 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 		}
 	}
 	
-	SetCommandFlags("r_screenoverlay", flags);
 	
 	if(victims)
 	{
@@ -2974,12 +2972,8 @@ public Action Timer_RemoveOverlay(Handle timer, int client)
 	
 	if(IsClientInGame(client))
 	{
-		int flags = GetCommandFlags("r_screenoverlay");
-		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-		
-		ClientCommand(client, "r_screenoverlay off");
-		
-		SetCommandFlags("r_screenoverlay", flags);
+		SetVariantString("");
+		AcceptEntityInput(client, "SetScriptOverlayMaterial", client, client);
 	}
 	return Plugin_Continue;
 }

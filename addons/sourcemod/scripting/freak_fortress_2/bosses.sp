@@ -3016,20 +3016,16 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	if(sound.Overlay[0])
 	{
 		sound.Duration += GetEngineTime();
-		
-		int cflags = GetCommandFlags("r_screenoverlay");
-		SetCommandFlags("r_screenoverlay", cflags & ~FCVAR_CHEAT);
-		
+		SetVariantString(sound.Overlay);
+
 		for(int i; i < numClients; i++)
 		{
 			if(clients[i] != boss)
 			{
 				Client(clients[i]).OverlayFor = sound.Duration;
-				ClientCommand(clients[i], "r_screenoverlay \"%s\"", sound.Overlay);
+				AcceptEntityInput(clients[i], "SetScriptOverlayMaterial", clients[i], clients[i]);
 			}
 		}
-		
-		SetCommandFlags("r_screenoverlay", cflags);
 	}
 	return true;
 }
