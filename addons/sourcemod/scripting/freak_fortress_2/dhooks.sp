@@ -61,7 +61,6 @@ void DHook_Setup()
 	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
-	CreateDetour(gamedata, "CTFWeaponBuilder::StartBuilding", DHook_StartBuildingPre, DHook_StartBuildingPost);
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
@@ -451,22 +450,6 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 		SetEntProp(param.Get(2), Prop_Send, "m_iClass", EffectClass);
 		EffectClass = -1;
 	}
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_StartBuildingPre(int entity)
-{
-	if(Enabled)
-		GameRules_SetProp("m_bPlayingMannVsMachine", true);
-
-	return MRES_Ignored;
-}
-
-public MRESReturn DHook_StartBuildingPost(int entity)
-{
-	if(Enabled)
-		GameRules_SetProp("m_bPlayingMannVsMachine", false);
 
 	return MRES_Ignored;
 }

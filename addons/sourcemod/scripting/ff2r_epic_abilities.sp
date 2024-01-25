@@ -546,6 +546,9 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			}
 		}
 	}
+
+	if(HookedWeaponSwap[client])
+		OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
 }
 
 public void FF2R_OnBossRemoved(int client)
@@ -735,7 +738,8 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				SetEntProp(weapon, Prop_Send, "m_iClip1", durability / 10);
 			}
 			
-			if(weapon != GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
+			int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			if(weapon != active)
 			{
 				weapon = EquipRazorback(client);
 				if(weapon != -1)
@@ -763,6 +767,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 			SetHealthTo[client] = 0;
 		}
 	}
+
+	if(HookedWeaponSwap[client])
+		OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
 }
 
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
@@ -1033,7 +1040,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									
 									int cost = RoundToCeil(cfg.GetFloat("cost"));
 									if(cost > 0)
-										Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
+										Format(val.data, sizeof(val.data), "%s (%d$)", val.data, cost);
 								}
 								else
 								{
@@ -1081,7 +1088,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 											float fcost = cfg.GetFloat("cost");
 											int cost = RoundToCeil(fcost);
 											if(cost > 0)
-												Format(val.data, sizeof(val.data), "%s (%d%%)", val.data, cost);
+												Format(val.data, sizeof(val.data), "%s (%d$)", val.data, cost);
 											
 											if(button[i] == 0 && GetBossCharge(boss, "0") >= fcost)
 												blocked = false;
@@ -1263,6 +1270,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						SetHudTextParams(-1.0, 0.68 - (boss.GetInt("lives") > 1 ? 0.05 : 0.0), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
 					}
 					
+					ReplaceString(buffer, sizeof(buffer), "$", "%");
 					ShowSyncHudText(client, SyncHud, buffer);
 				}
 			}
@@ -1309,11 +1317,7 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 			{
 				entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 				if(entity != -1)
-				{
-					char buffer[36];
-					if(GetEntityClassname(entity, buffer, sizeof(buffer)))
-						FakeClientCommand(victim, "use %s", buffer);
-				}
+					SetPlayerActiveWeapon(victim, entity);
 			}
 		}
 		
@@ -1666,8 +1670,7 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 			EquipPlayerWeapon(client, entity);
 			SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
 			
-			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
-			OnWeaponSwitch(client, entity);
+			SetPlayerActiveWeapon(client, entity);
 		}
 		else
 		{
@@ -1997,8 +2000,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						}
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
-						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-							FakeClientCommand(victim, "use %s", classname);
+						if(index != -1)
+							SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2022,8 +2025,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						TF2_StunPlayer(attacker, 20.0, 0.2, TF_STUNFLAG_NOSOUNDOREFFECT|TF_STUNFLAG_SLOWDOWN);
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
-						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-							FakeClientCommand(victim, "use %s", classname);
+						if(index != -1)
+							SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2092,8 +2095,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
-						if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-							FakeClientCommand(victim, "use %s", classname);
+						if(index != -1)
+							SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						
@@ -2275,8 +2278,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						else
 						{
 							index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
-							if(index != -1 && GetEntityClassname(index, classname, sizeof(classname)))
-								FakeClientCommand(victim, "use %s", classname);
+							if(index != -1)
+								SetPlayerActiveWeapon(victim, index);
 						}
 						
 						IntToString(view_as<int>(TF2_GetPlayerClass(victim)), classname, sizeof(classname));
@@ -2419,11 +2422,7 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 						
 						entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(entity != -1)
-						{
-							char buffer[36];
-							if(GetEntityClassname(entity, buffer, sizeof(buffer)))
-								FakeClientCommand(victim, "use %s", buffer);
-						}
+							SetPlayerActiveWeapon(victim, entity);
 					}
 					
 					entity = EntRefToEntIndex(ability.GetInt("wearableref", INVALID_ENT_REFERENCE));
@@ -2921,6 +2920,22 @@ void EquipWearable(int client, int entity)
 	else
 	{
 		RemoveEntity(entity);
+	}
+}
+
+void SetPlayerActiveWeapon(int client, int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(TF2ULoaded)
+	{
+		TF2Util_SetPlayerActiveWeapon(client, entity);
+	}
+	else
+	#endif
+	{
+		char buffer[36];
+		GetEntityClassname(entity, buffer, sizeof(buffer));
+		ClientCommand(client, "use %s", buffer);
 	}
 }
 

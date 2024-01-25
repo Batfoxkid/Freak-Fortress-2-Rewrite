@@ -663,12 +663,16 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
+	int teamColor[4], winColor[4];
+	winColor = TeamColors[winner];
+
 	bool spec = Cvar[SpecTeam].BoolValue;
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		if(HasBoss[i] && bosses[i])
 		{
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
+			teamColor = TeamColors[i];
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, teamColor, winColor, 2, 0.1, 0.1);
 			for(int a; a < total; a++)
 			{
 				if(!Client(clients[a]).NoHud)
@@ -695,7 +699,8 @@ void Gamemode_RoundEnd(int winteam)
 		}
 		else if(Enabled && MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
 		{
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, TeamColors[i], TeamColors[winner], 2, 0.1, 0.1);
+			teamColor = TeamColors[i];
+			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, teamColor, winColor, 2, 0.1, 0.1);
 			for(int a; a < total; a++)
 			{
 				if(!Client(clients[a]).NoHud)
@@ -862,6 +867,9 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 			{
 				if(count > 1)
 				{
+					int color[4];
+					color = TeamColors[team];
+
 					float x = (team == TFTeam_Red || team == TFTeam_Spectator) ? 0.53 : 0.43;
 					float y = team <= TFTeam_Spectator ? 0.18 : 0.12;
 					for(int i; i < total; i++)
@@ -871,11 +879,11 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 						
 						if(IsPlayerAlive(clients[i]))
 						{
-							SetHudTextParamsEx(x, y, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
+							SetHudTextParamsEx(x, y, 3.0, color, color, 0, 0.35, 0.0, 0.1);
 						}
 						else
 						{
-							SetHudTextParamsEx(x, y+0.1, 3.0, TeamColors[team], TeamColors[team], 0, 0.35, 0.0, 0.1);
+							SetHudTextParamsEx(x, y+0.1, 3.0, color, color, 0, 0.35, 0.0, 0.1);
 						}
 						
 						if(bosses > 1)

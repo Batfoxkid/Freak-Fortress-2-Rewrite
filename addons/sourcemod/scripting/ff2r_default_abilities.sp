@@ -428,6 +428,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
 	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
 	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
+	MarkNativeAsOptional("TF2Util_SetPlayerActiveWeapon");
 	#endif
 	
 	#if defined __tf_custom_attributes_included
@@ -2500,7 +2501,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			}
 			else
 			{
-				FakeClientCommand(client, "use %s", classname);
+				SetPlayerActiveWeapon(client, entity);
 			}
 		}
 
@@ -2551,12 +2552,7 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 								TF2_RemoveCondition(client, TFCond_Slowed);
 							}
 
-							#if defined __nosoop_tf2_utils_included
-							if(TF2ULoaded)
-							{
-								TF2Util_SetPlayerActiveWeapon(client, other);
-							}
-							#endif
+							SetPlayerActiveWeapon(client, entity);
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", other);
 							break;
 						}
@@ -3400,6 +3396,22 @@ void EquipPlayerWearable(int client, int entity)
 	#endif
 	{
 		SDKCall_EquipWearable(client, entity);
+	}
+}
+
+void SetPlayerActiveWeapon(int client, int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(TF2ULoaded)
+	{
+		TF2Util_SetPlayerActiveWeapon(client, entity);
+	}
+	else
+	#endif
+	{
+		char buffer[36];
+		GetEntityClassname(entity, buffer, sizeof(buffer));
+		ClientCommand(client, "use %s", buffer);
 	}
 }
 

@@ -2101,7 +2101,7 @@ static void EquipBoss(int client, bool weapons)
 						if(level >= TFWeaponSlot_Primary && level <= TFWeaponSlot_Melee)
 						{
 							value = true;
-							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+							TF2U_SetPlayerActiveWeapon(client, entity);
 						}
 					}
 				}
