@@ -2550,7 +2550,7 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 								TF2_RemoveCondition(client, TFCond_Slowed);
 							}
 
-							SetPlayerActiveWeapon(client, entity);
+							SetPlayerActiveWeapon(client, other);
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", other);
 							break;
 						}
