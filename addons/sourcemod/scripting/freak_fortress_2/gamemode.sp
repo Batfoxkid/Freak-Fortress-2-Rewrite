@@ -1180,11 +1180,9 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	if(Client(client).OverlayFor && Client(client).OverlayFor < time)
 	{
 		Client(client).OverlayFor = 0.0;
-		
-		int flags = GetCommandFlags("r_screenoverlay");
-		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
-		ClientCommand(client, "r_screenoverlay off");
-		SetCommandFlags("r_screenoverlay", flags);
+
+		SetVariantString("");
+		AcceptEntityInput(client, "SetScriptOverlayMaterial", client, client);
 	}
 }
 
