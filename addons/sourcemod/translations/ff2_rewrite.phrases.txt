@@ -619,7 +619,7 @@
 	"Boss Rage"
 	{
 		"#format"	"{1:d}"
-		"en"		"{1}%% RAGE"
+		"en"		"{1}$ RAGE"
 	}
 	"Boss Wall Jump"
 	{

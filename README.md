@@ -23,7 +23,7 @@ Recommended:
 Supported:
 
 - [SteamWorks](https://github.com/ExperimentFailed/SteamWorks)
-- [SM-TFUtils 0.19.0.2+](https://github.com/nosoop/SM-TFUtils)
+- [SM-TFUtils](https://github.com/nosoop/SM-TFUtils)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
 
