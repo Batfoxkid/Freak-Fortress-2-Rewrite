@@ -474,6 +474,7 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
+		char buffer[36];
 		KeyValues kv = TF2CustAttr_GetAttributeKeyValues(weapon);
 		if(kv)
 		{
@@ -507,7 +508,6 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 			if(value != 1.0)
 				Client(victim).RageDebuff *= value;
 			
-			char buffer[36];
 			if(damagecustom != TF_CUSTOM_BURNING && damagecustom != TF_CUSTOM_BURNING_FLARE && damagecustom != TF_CUSTOM_BURNING_ARROW)
 			{
 				kv.GetString("mod attribute hit stale", buffer, sizeof(buffer));
@@ -524,25 +524,6 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 						float initial = 1.0;
 						Attributes_GetByDefIndex(weapon, attrib, initial);
 						TF2Attrib_SetByDefIndex(weapon, attrib, initial + StringToFloat(buffers[1]));
-					}
-				}
-			}
-			
-			if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
-			{
-				int slot = TF2_GetClassnameSlot(buffer);
-				if(slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee)
-				{
-					int entity, i;
-					while(TF2_GetItem(attacker, entity, i))
-					{
-						if(entity == weapon)
-							continue;
-						
-						static const char AttribName[][] = { "primary damage vs bosses", "secondary damage vs bosses", "melee damage vs bosses" };
-						value = TF2CustAttr_GetFloat(entity, AttribName[slot], 1.0);
-						if(value != 1.0)
-							damage *= value;
 					}
 				}
 			}
@@ -580,6 +561,25 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 		}
 		
 		delete kv;
+		
+		if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
+		{
+			int slot = TF2_GetClassnameSlot(buffer);
+			if(slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee)
+			{
+				int entity, i;
+				while(TF2_GetItem(attacker, entity, i))
+				{
+					if(entity == weapon)
+						continue;
+						
+					static const char AttribName[][] = { "primary damage vs bosses", "secondary damage vs bosses", "melee damage vs bosses" };
+					float value = TF2CustAttr_GetFloat(entity, AttribName[slot], 1.0);
+					if(value != 1.0)
+						damage *= value;
+				}
+			}
+		}
 	}
 	#endif
 }
