@@ -110,15 +110,14 @@ void GetClassWeaponClassname(TFClassType class, char[] name, int length)
 	{ 
 		switch(class)
 		{
-			case TFClass_Scout:	strcopy(name, length, "tf_weapon_bat");
-			case TFClass_Pyro:	strcopy(name, length, "tf_weapon_fireaxe");
-			case TFClass_DemoMan:	strcopy(name, length, "tf_weapon_bottle");
-			case TFClass_Heavy:	strcopy(name, length, "tf_weapon_fists");
-			case TFClass_Engineer:	strcopy(name, length, "tf_weapon_wrench");
-			case TFClass_Medic:	strcopy(name, length, "tf_weapon_bonesaw");
-			case TFClass_Sniper:	strcopy(name, length, "tf_weapon_club");
-			case TFClass_Spy:	strcopy(name, length, "tf_weapon_knife");
-			default:		strcopy(name, length, "tf_weapon_shovel");
+			case TFClass_Scout:			strcopy(name, length, "tf_weapon_bat");
+			case TFClass_Pyro, TFClass_Heavy:	strcopy(name, length, "tf_weapon_fireaxe");
+			case TFClass_DemoMan:			strcopy(name, length, "tf_weapon_bottle");
+			case TFClass_Engineer:			strcopy(name, length, "tf_weapon_wrench");
+			case TFClass_Medic:			strcopy(name, length, "tf_weapon_bonesaw");
+			case TFClass_Sniper:			strcopy(name, length, "tf_weapon_club");
+			case TFClass_Spy:			strcopy(name, length, "tf_weapon_knife");
+			default:				strcopy(name, length, "tf_weapon_shovel");
 		}
 	}
 	else if(StrEqual(name, "tf_weapon_shotgun"))
