@@ -241,6 +241,7 @@
 	"special_democharge"
 	{
 		"slot"			"0"		// Charge slot
+		"button"		"13"	// Button type (11=M2, 13=Reload, 25=M3)
 		"minimum"		"10.0"	// Minimum charge amount
 		"maximum"		"90.0"	// Maximum charge amount
 		"rage"			"1.0"	// Charge to drain if within minimum and maximum
