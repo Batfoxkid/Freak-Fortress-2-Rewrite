@@ -241,6 +241,7 @@
 	"special_democharge"
 	{
 		"slot"			"0"		// Charge slot
+		"button"		"13"	// Button type (11=M2, 13=Reload, 25=M3)
 		"minimum"		"10.0"	// Minimum charge amount
 		"maximum"		"90.0"	// Maximum charge amount
 		"rage"			"1.0"	// Charge to drain if within minimum and maximum
@@ -396,6 +397,7 @@ char MatrixName[MAXTF2PLAYERS][64];
 MoveType LastMoveType[MAXTF2PLAYERS];
 
 bool SpecialCharge[MAXTF2PLAYERS];
+int SpecialChargeButton[MAXTF2PLAYERS];
 
 bool MobilityEnabled[MAXTF2PLAYERS];
 
@@ -440,6 +442,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
+	if(!TranslationPhraseExists("Boss Demo Charge 13"))
+		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	GameData gamedata = new GameData("sm-tf2.games");
 	
@@ -589,22 +593,23 @@ public void OnClientDisconnect(int client)
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3])
 {
 	bool changed;
-	if(SpecialCharge[client])
+	if(SpecialCharge[client] && SpecialChargeButton[client] > 11)
 	{
+		int button = (1 << SpecialChargeButton[client]);
 		bool attack2 = view_as<bool>(buttons & IN_ATTACK2);
-		bool reload = view_as<bool>(buttons & IN_RELOAD);
+		bool pressed = view_as<bool>(buttons & button);
 		
-		if(!(attack2 && reload))
+		if(!(attack2 && pressed))
 		{
 			if(attack2)
 			{
 				buttons &= ~IN_ATTACK2;
-				buttons |= IN_RELOAD;
+				buttons |= button;
 				changed = true;
 			}
-			else if(reload)
+			else if(pressed)
 			{
-				buttons &= ~IN_RELOAD;
+				buttons &= ~button;
 				buttons |= IN_ATTACK2;
 				changed = true;
 			}
@@ -1277,17 +1282,41 @@ public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 	if(!BossTimers[client])
 		BossTimers[client] = new ArrayList();
 	
-	AbilityData ability = cfg.GetAbility("special_democharge");
-	if(ability.IsMyPlugin())
-		SpecialCharge[client] = true;
-	
 	if(!setup || FF2R_GetGamemodeType() != 2)
 	{
+		AbilityData ability;
 		if(!AnchorStartTime[client])
 		{
 			ability = cfg.GetAbility("special_anchor");
 			if(ability.IsMyPlugin())
 				AnchorStartTime[client] = 1.0;
+		}
+		
+		if(!SpecialCharge[client])
+		{
+			ability = cfg.GetAbility("special_democharge");
+			if(ability.IsMyPlugin())
+			{
+				SpecialCharge[client] = true;
+				SpecialChargeButton[client] = ability.GetInt("button", 13);
+				char buffer[24];
+				switch(SpecialChargeButton[client]) {
+					case 11:
+						buffer = "Boss Demo Charge 11";
+					
+					case 25:
+						buffer = "Boss Demo Charge 25";
+					
+					default:
+					{
+						buffer = "Boss Demo Charge 13";
+						SpecialChargeButton[client] = 13;
+					}
+				}
+				
+				PrintCenterText(client, "%t", buffer);
+				PrintToChat(client, "%t", buffer);
+			}
 		}
 		
 		if(!MobilityEnabled[client])
