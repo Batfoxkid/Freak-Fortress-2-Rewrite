@@ -661,6 +661,18 @@
 	{
 		"en"		"M3"
 	}
+	"Boss Demo Charge 11"
+	{
+		"en"		"Demo Charge - Secondary Attack"
+	}
+	"Boss Demo Charge 13"
+	{
+		"en"		"Demo Charge - Reload"
+	}
+	"Boss Demo Charge 25"
+	{
+		"en"		"Demo Charge - Special Attack"
+	}
 	
 	"Weapon Menu"
 	{
