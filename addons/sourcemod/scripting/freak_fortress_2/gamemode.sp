@@ -120,15 +120,7 @@ void Gamemode_MapInit()
 void Gamemode_MapStart()
 {
 	RoundStatus = -1;
-	Waiting = true;
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientInGame(i))
-		{
-			Waiting = false;
-			break;
-		}
-	}
+	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
 }
 
 void Gamemode_MapEnd()
