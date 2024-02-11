@@ -154,7 +154,7 @@ bool Configs_SetMap(const char[] mapname)
 
 public void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
-	if(!VotedPack && Bosses_GetCharsetLength() > 1 && Configs_MapIsGamemode(newValue))
+	if(!VotedPack && Cvar[PackVotes].BoolValue && Bosses_GetCharsetLength() > 1 && Configs_MapIsGamemode(newValue))
 	{
 		VotedPack = true;
 		RequestFrame(Configs_PackVoteFrame);
