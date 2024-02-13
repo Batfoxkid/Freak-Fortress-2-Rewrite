@@ -595,6 +595,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				}
 				
 				FirstBlood = false;
+				Bosses_UseSlot(attacker, 4, 4);
 			}
 			
 			if(!deadRinger)
