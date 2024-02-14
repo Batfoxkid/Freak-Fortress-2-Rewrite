@@ -592,6 +592,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					}
 					
 					Client(attacker).LastKillTime = engineTime;
+					Bosses_UseSlot(attacker, 4, 4);
 				}
 				
 				FirstBlood = false;
