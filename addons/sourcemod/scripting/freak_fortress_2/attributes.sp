@@ -272,7 +272,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			position[2] += 20.0;
 			
 			float velocity[3];
-			velocity[2] = 50.0;
+			velocity[2] = 75.0;
 			
 			int team = GetClientTeam(attacker);  
 			for(int i; i < amount; i++)
@@ -283,11 +283,10 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 					DispatchKeyValue(entity, "OnPlayerTouch", "!self,Kill,,0,-1");
 					DispatchSpawn(entity);
 					SetEntProp(entity, Prop_Send, "m_iTeamNum", team);
-					SetEntityMoveType(entity, MOVETYPE_VPHYSICS);
-					velocity[0] = GetRandomFloat(-10.0, 10.0);
-					velocity[1] = GetRandomFloat(-10.0, 10.0);
-					TeleportEntity(entity, position, _, velocity);
-					SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", attacker);
+					TeleportEntity(entity, position);
+					velocity[0] = GetRandomFloat(-75.0, 75.0);
+					velocity[1] = GetRandomFloat(-75.0, 75.0);
+					SDKCall_DropSingleInstance(entity, velocity, attacker, 0.1);
 				}
 			}
 		}
