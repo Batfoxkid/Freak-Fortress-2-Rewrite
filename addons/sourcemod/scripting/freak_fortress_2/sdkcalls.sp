@@ -6,6 +6,7 @@
 	bool SDKCall_CheckBlockBackstab(int client, int attacker)
 	void SDKCall_SetSpeed(int client)
 	void SDKCall_ChangeClientTeam(int client, int newTeam)
+	void SDKCall_DropSingleInstance(int entity, const float velocity[3], int thrower, float throwerTouchDelay, float resetTime = 0.0)
 */
 
 #pragma semicolon 1
@@ -21,6 +22,7 @@ static Handle SDKTeamRemovePlayer;
 static Handle SDKIncrementStat;
 static Handle SDKCheckBlockBackstab;
 static Handle SDKSetSpeed;
+static Handle SDKDropSingleInstance;
 
 void SDKCall_Setup()
 {
@@ -105,6 +107,16 @@ void SDKCall_Setup()
 	SDKSetSpeed = EndPrepSDKCall();
 	if(!SDKSetSpeed)
 		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	
+	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPowerup::DropSingleInstance");
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+	SDKDropSingleInstance = EndPrepSDKCall();
+	if(!SDKDropSingleInstance)
+		LogError("[Gamedata] Could not find CTFPowerup::DropSingleInstance");
 	
 	delete gamedata;
 }
@@ -226,5 +238,12 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 		{
 			TF2Attrib_SetByDefIndex(client, 406, 4.0);
 		}
+	}
+}
+
+void SDKCall_DropSingleInstance(int entity, const float velocity[3], int thrower, float throwerTouchDelay, float resetTime = 0.0) {
+	if(SDKDropSingleInstance)
+	{
+		SDKCall(SDKDropSingleInstance, entity, velocity, thrower, throwerTouchDelay, resetTime);
 	}
 }
