@@ -6,6 +6,7 @@
 		"die on boss death"	"true"		// If clones die when the boss dies
 		"allow bosses"	"false"		//Allow bosses to become minions (in the process the boss becomes normal player)
 		"rival"		"false"		//Whether players will spawn on ally or rival team
+		"move to spawn"		"false"	//Whether player should be moved to spawnroom
 		
 		"character"
 		{
@@ -2606,6 +2607,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		int owner = cfg.GetBool("die on boss death", true) ? client : -1;
 		bool allowBosses = cfg.GetBool("allow bosses", false);
 		bool rival = cfg.GetBool("rival", false);
+		bool teleToSpawn = cfg.GetBool("move to spawn", false);
 
 		ConfigData minion = cfg.GetSection("character");
 		
@@ -2631,7 +2633,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			}
 			
 			if(victims)
-				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival);
+				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 		}
 		
 		if(amount)
@@ -2654,7 +2656,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			}
 			
 			if(victims)
-				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival);
+				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 			
 			if(amount)
 			{
@@ -2676,13 +2678,13 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 				}
 				
 				if(victims)
-					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival);
+					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 			}
 		}
 	}
 }
 
-void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int owner, int team, const float pos[3], bool rivalTeam)
+void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int owner, int team, const float pos[3], bool rivalTeam, bool teleToSpawn)
 {
 	if(amount > cap)
 	{
@@ -2717,7 +2719,7 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		TF2_RespawnPlayer(clients[i]);
 		SetEntProp(clients[i], Prop_Send, "m_bDucked", true);
 		SetEntityFlags(clients[i], GetEntityFlags(clients[i]) | FL_DUCKING);
-		TeleportEntity(clients[i], pos, _, vel);
+		if(!teleToSpawn) TeleportEntity(clients[i], pos, _, vel);
 		
 		// Lessen the strength cap between active and AFK players
 		CloneIdle[clients[i]] = true;
