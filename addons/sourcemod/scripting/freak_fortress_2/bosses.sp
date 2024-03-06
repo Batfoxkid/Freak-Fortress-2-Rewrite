@@ -21,7 +21,7 @@
 	void Bosses_Remove(int client)
 	int Bosses_GetBossTeam()
 	void Bosses_PlayerRunCmd(int client, int buttons)
-	void Bosses_UseSlot(int client, int low, int high)
+	void Bosses_UseSlot(int client, int low, int high, ConfigMap info)
 	void Bosses_UseAbility(int client, const char[] plugin = NULL_STRING, const char[] ability, int slot, int buttonmode = 0)
 	int Bosses_GetArgInt(int client, const char[] ability, const char[] argument, int &value, int base = 10)
 	int Bosses_GetArgFloat(int client, const char[] ability, const char[] argument, float &value)
@@ -2366,7 +2366,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 	}
 }
 
-void Bosses_UseSlot(int client, int low, int high)
+void Bosses_UseSlot(int client, int low, int high, ConfigMap info = null)
 {
 	char buffer[12];
 	for(int slot = low; slot<=high; slot++)
@@ -2374,7 +2374,7 @@ void Bosses_UseSlot(int client, int low, int high)
 		if(slot < 1 || slot > 3)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
-			
+
 			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && Cvar[SoundType].BoolValue)
 			{
 				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
@@ -2385,9 +2385,9 @@ void Bosses_UseSlot(int client, int low, int high)
 			}
 		}
 	}
-	
+
 	StringMapSnapshot snap = Client(client).Cfg.Snapshot();
-	
+
 	int entries = snap.Length;
 	if(entries)
 	{
@@ -2400,21 +2400,30 @@ void Bosses_UseSlot(int client, int low, int high)
 			Client(client).Cfg.GetArray(ability, val, sizeof(val));
 			if(val.tag != KeyValType_Section || GetSectionType(ability) != Section_Ability)
 				continue;
-			
+
 			ConfigMap cfg = val.cfg;
 			if(!cfg)
 				continue;
-			
+
 			int slot;
 			if(!cfg.GetInt("slot", slot))
 				cfg.GetInt("arg0", slot);
-			
+
 			if(slot < low || slot > high)
 				continue;
-			
+
 			int button;
 			cfg.GetInt("buttonmode", button);
-			
+
+			if(info)
+			{
+				PackVal val2;
+				val2.tag = KeyValType_Section;
+				val2.cfg = view_as<ConfigMap>(info);
+				val2.size = sizeof(val2.cfg);
+				cfg.SetArray("Arguments", val2, sizeof(val2));
+			}
+
 			if(cfg.GetVal("plugin_name", val) && val.tag == KeyValType_Value)
 			{
 				UseAbility(client, cfg, val.data, ability, slot, button);
@@ -2423,9 +2432,13 @@ void Bosses_UseSlot(int client, int low, int high)
 			{
 				UseAbility(client, cfg, NULL_STRING, ability, slot, button);
 			}
+			if(info)
+			{
+				cfg.Remove("Arguments");
+			}
 		}
 	}
-	
+
 	delete snap;
 }
 

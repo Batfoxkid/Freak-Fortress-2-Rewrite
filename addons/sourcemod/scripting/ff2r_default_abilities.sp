@@ -2598,19 +2598,47 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 void Rage_CloneAttack(int client, ConfigData cfg)
 {
 	int team = GetClientTeam(client);
+
+	float pos[3];
+	GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
+
+	int owner = cfg.GetBool("die on boss death", true) ? client : -1;
+	bool rival = cfg.GetBool("rival", false);
+	bool allowBosses = cfg.GetBool("allow bosses", false);
+	bool teleToSpawn = cfg.GetBool("move to spawn", false);
+
+	ConfigData minion = cfg.GetSection("character");
+
+	ConfigData args = cfg.GetSection("Arguments");
+	if(args)
+	{
+		ConfigData playerList = args.GetSection("players");
+		if(!playerList)
+		{
+			LogError("[Boss] Error: Arguments passed to rage_cloneattack without 'players' subsection!");
+			return;
+		}
+		int victims;
+		int[] victim = new int[MaxClients - 1];
+
+		for(;;)
+		{
+			int temp;
+			if(!playerList.GetIntKeyInt(victims, temp)) break;
+			victim[victims] = EntRefToEntIndex(temp);
+			victims++;
+		}
+
+		int dummy = victims;
+		if(victims)
+			SpawnCloneList(victim, victims, dummy, minion, owner, team, pos, rival, teleToSpawn);
+
+		return;
+	}
+
 	int amount = RoundToCeil(GetFormula(cfg, "amount", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team), 1.0));
 	if(amount > 0)
 	{
-		float pos[3];
-		GetEntPropVector(client, Prop_Send, "m_vecOrigin", pos);
-		
-		int owner = cfg.GetBool("die on boss death", true) ? client : -1;
-		bool allowBosses = cfg.GetBool("allow bosses", false);
-		bool rival = cfg.GetBool("rival", false);
-		bool teleToSpawn = cfg.GetBool("move to spawn", false);
-
-		ConfigData minion = cfg.GetSection("character");
-		
 		int victims;
 		int[] victim = new int[MaxClients - 1];
 		if(!SpecTeam && team <= view_as<int>(TFTeam_Spectator))
@@ -2631,11 +2659,11 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 				// Same team dead players
 				victim[victims++] = target;
 			}
-			
+
 			if(victims)
 				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 		}
-		
+
 		if(amount)
 		{
 			for(int target = 1; target <= MaxClients; target++)
@@ -2654,10 +2682,10 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 				// Same team alive players
 				victim[victims++] = target;
 			}
-			
+
 			if(victims)
 				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
-			
+
 			if(amount)
 			{
 				for(int target = 1; target <= MaxClients; target++)
@@ -2676,7 +2704,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 					// Any dead players
 					victim[victims++] = target;
 				}
-				
+
 				if(victims)
 					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 			}

@@ -104,13 +104,17 @@ public any Native_DoBossSlot(Handle plugin, int params)
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !Client(client).Cfg)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not a boss", client);
-	
+
 	int low = GetNativeCell(2);
 	int high = GetNativeCell(3);
 	if(high < low)
 		high = low;
-	
-	Bosses_UseSlot(client, low, high);
+
+	ConfigMap info = null;
+	if(params > 3)
+		info = view_as<ConfigMap>(GetNativeCell(4));
+
+	Bosses_UseSlot(client, low, high, info);
 	return 0;
 }
 
