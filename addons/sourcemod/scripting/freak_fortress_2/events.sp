@@ -537,7 +537,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			int attacker = GetClientOfUserId(event.GetInt("attacker"));
 			if(attacker)
 			{
-				if(Client(attacker).IsBoss)
+				if(Client(attacker).IsBoss && attacker != victim)
 				{
 					float engineTime = GetEngineTime();
 					
