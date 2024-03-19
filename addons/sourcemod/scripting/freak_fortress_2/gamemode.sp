@@ -1,6 +1,9 @@
 /*
 	void Gamemode_PluginStart()
+	void Gamemode_PluginEnd()
+	void Gamemode_MapInit()
 	void Gamemode_MapStart()
+	void Gamemode_MapEnd()
 	void Gamemode_RoundSetup()
 	void Gamemode_RoundStart()
 	void Gamemode_CheckPointUnlock(int alive, bool notice)
@@ -120,15 +123,7 @@ void Gamemode_MapInit()
 void Gamemode_MapStart()
 {
 	RoundStatus = -1;
-	Waiting = true;
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientInGame(i))
-		{
-			Waiting = false;
-			break;
-		}
-	}
+	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
 }
 
 void Gamemode_MapEnd()

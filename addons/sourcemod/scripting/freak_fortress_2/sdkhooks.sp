@@ -433,7 +433,7 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 	if(Client(victim).IsBoss)
 	{
 		if(victim != attacker && attacker > 0 && attacker <= MaxClients && !IsInvuln(victim) && !Client(attacker).IsBoss)
-			Attributes_OnHitBoss(attacker, victim, inflictor, damage, weapon, damagecustom);
+			Attributes_OnHitBoss(attacker, victim, inflictor, damage, damagetype, weapon, damagecustom);
 		
 		Bosses_SetSpeed(victim);
 	}

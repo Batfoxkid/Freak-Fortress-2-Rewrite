@@ -235,7 +235,7 @@ void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weap
 	}
 }
 
-void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
+void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage, int damagetype, int weapon, int damagecustom)
 {
 	if(weapon != -1 && !HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 		weapon = -1;
@@ -272,7 +272,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			position[2] += 20.0;
 			
 			float velocity[3];
-			velocity[2] = 50.0;
+			velocity[2] = 75.0;
 			
 			int team = GetClientTeam(attacker);  
 			for(int i; i < amount; i++)
@@ -283,11 +283,10 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 					DispatchKeyValue(entity, "OnPlayerTouch", "!self,Kill,,0,-1");
 					DispatchSpawn(entity);
 					SetEntProp(entity, Prop_Send, "m_iTeamNum", team);
-					SetEntityMoveType(entity, MOVETYPE_VPHYSICS);
-					velocity[0] = GetRandomFloat(-10.0, 10.0);
-					velocity[1] = GetRandomFloat(-10.0, 10.0);
-					TeleportEntity(entity, position, _, velocity);
-					SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", attacker);
+					TeleportEntity(entity, position);
+					velocity[0] = GetRandomFloat(-75.0, 75.0);
+					velocity[1] = GetRandomFloat(-75.0, 75.0);
+					SDKCall_DropSingleInstance(entity, velocity, attacker, 0.1);
 				}
 			}
 		}
@@ -320,6 +319,19 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			CreateDataTimer(0.5, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE);
 			pack.WriteCell(GetClientUserId(attacker));
 			pack.WriteFloat(fdamage / 2.0);
+		}
+	}
+	
+	if(damagetype & DMG_CLUB)
+	{
+		value = Attributes_FindOnPlayer(attacker, 2034);
+		if(value)	// kill refills meter
+		{
+			float charge = GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter") + value;
+			if(charge > 100.0)
+				charge = 100.0;
+			
+			SetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter", charge);
 		}
 	}
 	
@@ -589,35 +601,6 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 				
 				event.Cancel();
 			}
-		}
-		else if(damagecustom != TF_CUSTOM_BACKSTAB && damagecustom != TF_CUSTOM_TELEFRAG && DamageGoal(2250, Client(attacker).GetDamage(slot), lastWeaponDamage))
-		{
-			int total;
-			for(int i; i < 4; i++)
-			{
-				total += GetEntProp(attacker, Prop_Send, "m_nStreaks", _, i);
-			}
-			
-			Event event = CreateEvent("player_death", true);
-			
-			event.SetInt("userid", GetClientUserId(victim));
-			event.SetInt("attacker", GetClientUserId(attacker));
-			event.SetInt("inflictor_entindex", inflictor);
-			event.SetInt("weaponid", weapon);
-			event.SetInt("kill_streak_total", total);
-			event.SetInt("kill_streak_wep", 0);
-			event.SetInt("crit_type", 0);
-			event.SetString("weapon_logclassname", "ff2_killstreak");
-			
-			if(weapon != -1)
-			{
-				char buffer[32];
-				if(TFED_GetItemDefinitionString(GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"), "item_iconname", buffer, sizeof(buffer)))
-					event.SetString("weapon", buffer);
-			}
-			
-			event.FireToClient(attacker);
-			event.Cancel();
 		}
 	}
 }
