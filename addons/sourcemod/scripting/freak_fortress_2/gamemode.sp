@@ -445,6 +445,15 @@ void Gamemode_RoundStart()
 	int[] merc = new int[MaxClients];
 	int[] boss = new int[MaxClients];
 	int mercs, bosses;
+
+	bool bvb = Cvar[BossVsBoss].BoolValue;
+	int mercTeam = TFTeam_Red;
+	if(!bvb)
+	{
+		int client = FindClientOfBossIndex(0);
+		if(client != -1)
+			mercTeam = GetClientTeam(client) == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+	}
 	
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -460,7 +469,17 @@ void Gamemode_RoundStart()
 				
 				if(enabled && IsPlayerAlive(client))
 				{
-					TF2_RegeneratePlayer(client);
+					if(!bvb && IsFakeClient(client) && GetClientTeam(client) != mercTeam)
+					{
+						SetEntProp(client, Prop_Send, "m_lifeState", 2);
+						ChangeClientTeam(client, mercTeam);
+						SetEntProp(client, Prop_Send, "m_lifeState", 0);
+					}
+					else
+					{
+						TF2_RegeneratePlayer(client);
+						TF2_RefillMaxAmmo(client);
+					}
 					
 					int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))

@@ -1,6 +1,5 @@
 # Environments
 echo "SCRIPTS_PATH=addons/sourcemod/scripting" >> $GITHUB_ENV
-cp scripts/compile.sh addons/sourcemod/scripting/compile.sh
 cd addons/sourcemod/scripting
 
 # Set Version

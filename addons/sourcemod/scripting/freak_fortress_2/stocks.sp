@@ -652,6 +652,16 @@ int DamageGoal(int goal, int current, int last)
 	return (current / goal) - (last / goal);
 }
 
+void TF2_RefillMaxAmmo(int client)
+{
+	for(int i; i < 4 /* 7 */; i++)
+	{
+		int ammo = SDKCall_GetMaxAmmo(client, i);
+		if(ammo >= 0)
+			SetEntProp(client, Prop_Data, "m_iAmmo", ammo, _, i);
+	}
+}
+
 bool TF2_GetItem(int client, int &weapon, int &pos)
 {
 	//TODO: Find out if we need to check m_bDisguiseWeapon

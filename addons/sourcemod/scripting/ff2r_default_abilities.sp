@@ -277,11 +277,13 @@
 		"cooldown"			"5.0"					// Cooldown after use
 		"delay"				"5.0"					// Delay before first use
 		"upward"			"750 + (n * 3.25)"		// Super Jump upward velocity set (n=0.0 ~ 100.0)
-		"forward"			"1.0 + (n * 0.000275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
+		"forward"			"1.0 + (n * 0.00275)"	// Super Jump forward velocity multi (n=0.0 ~ 100.0)
 		"emergency"			"2000.0"				// Super Jump upward velocity added when touching a hazard
 		"stun"				"2.0"					// Teleport stun duration
 		"flags"				"97"					// Teleport stun flags
 		"slowdown"			"1.0"					// Teleport stun slowdown
+		"sound"				"false"					// Teleport stun sound
+		"particle"			""						// Teleport stun particle effect
 		"reset on attack"	"false"					// Reset charge on attack
 		"targets"			"3"						// Teleport targets (1=Teammates, 2=Enemies)
 		
@@ -949,34 +951,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							if(target != -1)
 							{
-								float stun = ability.GetFloat("stun", 2.0);
-								
-								if(stun > 0.0)
-								{
-									int flags = ability.GetInt("flags", TF_STUNFLAGS_LOSERSTATE);
-									float slowdown = ability.GetFloat("slowdown", 1.0);
-
-									if(slowdown > 0.0)
-										TF2_RemoveCondition(client, TFCond_MegaHeal);
-									
-									TF2_StunPlayer(client, stun, slowdown, flags);
-									SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + stun);
-
-									TF2_AddCondition(target, TFCond_UberchargedHidden, 0.2, client);
-
-									DataPack pack;
-									CreateDataTimer(stun, Timer_RestoreCollision, pack, TIMER_FLAG_NO_MAPCHANGE);
-									pack.WriteCell(GetClientUserId(client));
-									pack.WriteCell(GetEntProp(client, Prop_Send, "m_CollisionGroup"));
-
-									SetEntityCollisionGroup(client, 2);
-								}
-								
-								GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos1);
-								
-								SetEntProp(client, Prop_Send, "m_bDucked", true);
-								SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-								TeleportEntity(client, pos1, _, view_as<float>({0.0, 0.0, 0.0}));
+								Rage_TeleportToTarget(client, target, ability);
 								
 								char buffer[8];
 								if(ability.GetString("slot", buffer, sizeof(buffer)))
@@ -1005,20 +980,24 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							static char buffer[512];
 							
-							ability.GetString("forward", buffer, sizeof(buffer), "750 + (n * 3.25)");
+							ability.GetString("forward", buffer, sizeof(buffer), "1.0 + (n * 0.00275)");
 							float velo = ParseFormula(buffer, power);
 							velocity[0] *= velo;
 							velocity[1] *= velo;
 							
-							ability.GetString("upward", buffer, sizeof(buffer), "1.0 + (n * 0.000275)");
+							ability.GetString("upward", buffer, sizeof(buffer), "750 + (n * 3.25)");
 							velocity[2] = ParseFormula(buffer, power);
+
+							if(emergency)
+								velocity[2] += ability.GetFloat("emergency", 2000.0);
 							
 							TeleportEntity(client, _, _, velocity);
 							
 							SetEntProp(client, Prop_Send, "m_bJumping", true);
-							if (BlastJumpStateOffset != -1) {
+
+							if(BlastJumpStateOffset != -1)
 								SetEntData(client, BlastJumpStateOffset, TF_PLAYER_ENEMY_BLASTED_ME);
-							}
+							
 							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
@@ -1074,9 +1053,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							button = ability.GetInt("button", 11);
 							SetHudTextParams(-1.0, 0.88, 0.1, 255, 255, 255, 255);
 							
+							float charge = ability.GetFloat("charge", 1.5);
+
 							if(timeIn)
 							{
-								float charge = ability.GetFloat("charge", 1.5);
 								if(emergency || jump || charge < 999.9)
 								{
 									if(charge < 0.001)
@@ -1106,7 +1086,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 									}
 								}
 							}
-							else if(button >= 0 && (jump || ability.GetFloat("charge", 1.5) < 999.9))
+							else if(button >= 0 && (jump || charge < 999.9))
 							{
 								char help[32];
 								FormatEx(help, sizeof(help), "Boss Mobility %d", button);
@@ -1500,24 +1480,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		
 		if(victims)
 		{
-			int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team1);
-			float stun = GetFormula(cfg, "stun", alive, 2.0);
-			if(stun > 0.0)
-			{
-				SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + stun);
-				TF2_StunPlayer(client, stun, GetFormula(cfg, "slowdown", alive, 0.0), cfg.GetInt("flags", TF_STUNFLAGS_LOSERSTATE), cfg.GetBool("sound") ? client : 0);
-				
-				char particle[48];
-				if(cfg.GetString("particle", particle, sizeof(particle)))
-					AttachParticle(client, particle, stun);
-			}
-			
-			float pos[3];
-			GetEntPropVector(victim[GetRandomInt(0, victims-1)], Prop_Send, "m_vecOrigin", pos);
-			
-			SetEntProp(client, Prop_Send, "m_bDucked", true);
-			SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-			TeleportEntity(client, pos);
+			Rage_TeleportToTarget(client, victim[GetRandomInt(0, victims-1)], cfg);
 		}
 	}
 	else if(!StrContains(ability, "rage_tradespam", false))
@@ -2719,7 +2682,9 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		TF2_RespawnPlayer(clients[i]);
 		SetEntProp(clients[i], Prop_Send, "m_bDucked", true);
 		SetEntityFlags(clients[i], GetEntityFlags(clients[i]) | FL_DUCKING);
-		if(!teleToSpawn) TeleportEntity(clients[i], pos, _, vel);
+
+		if(!teleToSpawn)
+			TeleportEntity(clients[i], pos, _, vel);
 		
 		// Lessen the strength cap between active and AFK players
 		CloneIdle[clients[i]] = true;
@@ -2986,6 +2951,45 @@ public Action Timer_PickupDelay(Handle timer, int ref)
 public Action Hook_PickupDelay(int entity, int client)
 {
 	return Plugin_Handled;
+}
+
+void Rage_TeleportToTarget(int client, int target, ConfigData cfg)
+{
+	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+	float stun = GetFormula(cfg, "stun", alive, 2.0);
+	
+	if(stun > 0.0)
+	{
+		int flags = cfg.GetInt("flags", TF_STUNFLAGS_LOSERSTATE);
+		float slowdown = GetFormula(cfg, "slowdown", alive, 1.0);
+		bool sound = cfg.GetBool("sound");
+
+		if(slowdown > 0.0)
+			TF2_RemoveCondition(client, TFCond_MegaHeal);
+		
+		TF2_StunPlayer(client, stun, slowdown, flags, sound ? client : 0);
+		SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + stun);
+
+		TF2_AddCondition(target, TFCond_UberchargedHidden, 0.2, client);
+
+		char particle[48];
+		if(cfg.GetString("particle", particle, sizeof(particle)))
+			AttachParticle(client, particle, stun);
+
+		DataPack pack;
+		CreateDataTimer(stun, Timer_RestoreCollision, pack, TIMER_FLAG_NO_MAPCHANGE);
+		pack.WriteCell(GetClientUserId(client));
+		pack.WriteCell(GetEntProp(client, Prop_Send, "m_CollisionGroup"));
+
+		SetEntityCollisionGroup(client, 2);
+	}
+	
+	float pos[3];
+	GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
+	
+	SetEntProp(client, Prop_Send, "m_bDucked", true);
+	SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
+	TeleportEntity(client, pos, _, view_as<float>({0.0, 0.0, 0.0}));
 }
 
 public Action Timer_EnableBuilding(Handle timer, int ref)

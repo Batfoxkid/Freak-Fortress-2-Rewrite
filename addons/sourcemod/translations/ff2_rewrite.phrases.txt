@@ -766,12 +766,12 @@
 	"primary ammo from damage"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Gains ammo for every {3} damage dealt to a boss"
+		"en"		"Gains ammo for every {4} damage dealt to a boss"
 	}
 	"secondary ammo from damage"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Gains ammo for every {3} damage dealt to a boss"
+		"en"		"Gains ammo for every {4} damage dealt to a boss"
 	}
 	"multi boss rage"
 	{

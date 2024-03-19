@@ -768,8 +768,8 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 		}
 	}
 
-	if(HookedWeaponSwap[client])
-		OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
+	if(HookedWeaponSwap[client])	// Delayed due to wacky conflicts
+		CreateTimer(0.2, Timer_WeaponSwitch, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
@@ -1334,6 +1334,15 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 		CheckRazorbackHooks();
 		CheckWeaponSwapHooks(victim);
 	}
+	return Plugin_Continue;
+}
+
+public Action Timer_WeaponSwitch(Handle handle, int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client && HookedWeaponSwap[client])
+		OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
+	
 	return Plugin_Continue;
 }
 
@@ -1910,7 +1919,6 @@ void TimescaleSound(int client, float current, float newvalue)
 public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && RazorbackDeployed[victim] == INVALID_ENT_REFERENCE &&
-	  ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH) || hitgroup == HITGROUP_LEFTARM || hitgroup == HITGROUP_RIGHTARM) &&
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
 		Debug("Attempted Steal");
@@ -1969,7 +1977,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 							AcceptEntityInput(index, "kill");
 						}
 						
-						damagetype |= DMG_ALWAYSGIB;
+						damagetype |= DMG_BLAST;
 						return Plugin_Changed;
 					}
 				}
@@ -2022,7 +2030,6 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						TF2_RemoveItem(victim, weapon);
 						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
 						TF2_AddCondition(attacker, TFCond_DisguisedAsDispenser, 20.0);
-						TF2_StunPlayer(attacker, 20.0, 0.2, TF_STUNFLAG_NOSOUNDOREFFECT|TF_STUNFLAG_SLOWDOWN);
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
@@ -2271,7 +2278,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								
 								EquipPlayerWeapon(victim, index);
 								
-								if(StrContains(classname, "tf_weapon_fists"))
+								if(StrContains(classname, "tf_weapon_fists") == -1)
 									TF2Attrib_SetByDefIndex(index, 138, 0.5);
 							}
 						}
@@ -2302,8 +2309,8 @@ void StealFromBoss(int victim, int attacker)
 {
 	TF2_StunPlayer(victim, 0.4, 0.5, TF_STUNFLAG_SLOWDOWN, attacker);
 	
-	ApplyHealEvent(attacker, attacker, 600 * StealNext[attacker]);
-	SetHealthTo[attacker] = GetClientHealth(attacker) + (600 * StealNext[attacker]);
+	ApplyHealEvent(attacker, attacker, 1000 * StealNext[attacker]);
+	SetHealthTo[attacker] = GetClientHealth(attacker) + (1000 * StealNext[attacker]);
 	StealNext[attacker] = 0;
 	
 	TF2_RegeneratePlayer(attacker);

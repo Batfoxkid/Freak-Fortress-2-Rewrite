@@ -197,6 +197,7 @@ enum
 	PlayerGlow,
 	BossSewer,
 	Telefrags,
+	StreakDamage,
 	
 	PrefBlacklist,
 	PrefToggle,

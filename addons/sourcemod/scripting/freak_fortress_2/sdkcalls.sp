@@ -21,6 +21,7 @@ static Handle SDKTeamAddPlayer;
 static Handle SDKTeamRemovePlayer;
 static Handle SDKIncrementStat;
 static Handle SDKCheckBlockBackstab;
+static Handle SDKGetMaxAmmo;
 static Handle SDKSetSpeed;
 static Handle SDKDropSingleInstance;
 
@@ -103,6 +104,15 @@ void SDKCall_Setup()
 		LogError("[Gamedata] Could not find CTFPlayer::CheckBlockBackstab");
 	
 	StartPrepSDKCall(SDKCall_Entity);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+	SDKGetMaxAmmo = EndPrepSDKCall();
+	if(!SDKGetMaxAmmo)
+		LogError("[Gamedata] Could not find CTFPlayer::GetMaxAmmo");
+
+	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
 	SDKSetSpeed = EndPrepSDKCall();
 	if(!SDKSetSpeed)
@@ -151,6 +161,11 @@ void SDKCall_FinishLagCompensation(int client)
 		
 		SDKCall(SDKFinishLagCompensation, value, client);
 	}
+}
+
+int SDKCall_GetMaxAmmo(int client, int type, int class = -1)
+{
+	return SDKGetMaxAmmo ? SDKCall(SDKGetMaxAmmo, client, type, class) : -1;
 }
 
 int SDKCall_GetMaxHealth(int client)

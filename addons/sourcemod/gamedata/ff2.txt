@@ -86,6 +86,12 @@
 				"linux"		"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x53\x8B\xD9\xC7\x45\xFC\x00\x00\x00\x00"
 			}
+			"CTFPlayer::GetMaxAmmo"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
+				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x56\x57\x8B\xF9\x83\xF8\xFF\x75\x2A\xFF\xB7\x2A\x2A\x2A\x2A\xEB\x01\x50\xE8"
+			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"library"	"server"

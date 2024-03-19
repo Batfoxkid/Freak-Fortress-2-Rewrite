@@ -275,36 +275,60 @@ void Weapons_ShowChanges(int client, int entity)
 {
 	if(!WeaponCfg)
 		return;
-
-	ConfigMap cfg = FindWeaponSection(entity);
+	
+	char cwx[64];
+	ConfigMap cfg = FindWeaponSection(entity, cwx);
 
 	if(!cfg)
 		return;
 
-	int itemDefIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-
 	char localizedWeaponName[64];
-	GetEntityClassname(entity, localizedWeaponName, sizeof(localizedWeaponName));
-
-	if(!TF2ED_GetLocalizedItemName(itemDefIndex, localizedWeaponName, sizeof(localizedWeaponName), localizedWeaponName))
-		return;
 
 	SetGlobalTransTarget(client);
 	
 	bool found;
 	char buffer2[64];
-	
-	if(cfg.GetBool("strip", found, false) && found)
+
+	#if defined __cwx_included
+	if(cwx[0])
 	{
-		Format(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%%s3 (%t):", "Weapon Stripped");
-		CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
-		PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+		KeyValues kv = CWX_GetItemExtData(cwx, "name");
+		if(!kv)
+			return;
+		
+		kv.GetString(NULL_STRING, localizedWeaponName, sizeof(localizedWeaponName));
+		
+		if(cfg.GetBool("strip", found, false) && found)
+		{
+			CPrintToChat(client, "%t%s: (%t):", "Prefix", localizedWeaponName, "Weapon Stripped");
+		}
+		else
+		{
+			CPrintToChat(client, "%t%s:", "Prefix", localizedWeaponName);
+		}
 	}
 	else
+	#endif
 	{
-		strcopy(buffer2, sizeof(buffer2), "{olive}[FF2] {default}%s3:");
-		CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
-		PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+		int itemDefIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+
+		GetEntityClassname(entity, localizedWeaponName, sizeof(localizedWeaponName));
+
+		if(!TF2ED_GetLocalizedItemName(itemDefIndex, localizedWeaponName, sizeof(localizedWeaponName), localizedWeaponName))
+			return;
+
+		if(cfg.GetBool("strip", found, false) && found)
+		{
+			Format(buffer2, sizeof(buffer2), "%t%%s3 (%t):", "Prefix", "Weapon Stripped");
+			CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
+			PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+		}
+		else
+		{
+			Format(buffer2, sizeof(buffer2), "%t%%s3:", "Prefix");
+			CReplaceColorCodes(buffer2, client, _, sizeof(buffer2));
+			PrintSayText2(client, client, true, buffer2, _, _, localizedWeaponName);
+		}
 	}
 
 	char value[16];
@@ -893,19 +917,21 @@ public void Weapons_SpawnFrame(int ref)
 		Weapons_ApplyCustomAttributes(entity, cfg);
 }
 
-static ConfigMap FindWeaponSection(int entity)
+static ConfigMap FindWeaponSection(int entity, char cwx[64] = "")
 {
 	char buffer1[64];
 	
 	#if defined __cwx_included
-	if(CWXLoaded && CWX_GetItemUIDFromEntity(entity, buffer1, sizeof(buffer1)) && CWX_IsItemUIDValid(buffer1))
+	if(CWXLoaded && CWX_GetItemUIDFromEntity(entity, cwx, sizeof(cwx)) && CWX_IsItemUIDValid(cwx))
 	{
-		Format(buffer1, sizeof(buffer1), "CWX.%s", buffer1);
+		Format(buffer1, sizeof(buffer1), "CWX.%s", cwx);
 		ConfigMap cfg = WeaponCfg.GetSection(buffer1);
 		if(cfg)
 			return cfg;
 	}
 	#endif
+	
+	cwx[0] = 0;
 	
 	ConfigMap cfg = WeaponCfg.GetSection("Indexes");
 	if(cfg)

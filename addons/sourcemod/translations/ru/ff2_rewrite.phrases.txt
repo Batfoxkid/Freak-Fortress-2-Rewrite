@@ -11,42 +11,34 @@
 	
 	"Boss Spawned As"
 	{
-		"#format"	"{1:N},{2:s},{3:d}"
 		"ru"		"{teamcolor}{1} {default}стал {olive}{2} {default}с {olive}{3} {default}ОЗ."
 	}
 	"Boss Spawned As Lives"
 	{
-		"#format"	"{1:N},{2:s},{3:d},{4:d}"
 		"ru"		"{teamcolor}{1} {default}стал {olive}{2} {default}с {olive}{3} (x{4}) {default}ОЗ."
 	}
 	"You Dealt Damage Hud"
 	{
-		"#format"	"{1:d},{2:d},{3:d}"
 		"ru"		"Ты нанёс {1} урона, вылечил на {2} ОЗ, и помог на {3} очков."
 	}
 	"Top Damage Hud"
 	{
-		"#format"	"{1:s},{2:d},{3:s},{4:d},{5:s},{6:d}"
 		"ru"		"1-й: {1} - {2}\n2-й: {3} - {4}\n3-й: {5} - {6}"
 	}
 	"Boss Had Health Left"
 	{
-		"#format"	"{1:s},{2:N},{3:d},{4:d}"
 		"ru"		"У {olive}{1} {default}({teamcolor}{2}{default}) осталось {olive}{3} {default}/ {olive}{4} {default}ОЗ."
 	}
 	"Boss Had Health Left Hud"
 	{
-		"#format"	"{1:s},{2:N},{3:d},{4:d}"
 		"ru"		"У {1} ({2}) осталось {3} / {4} ОЗ."
 	}
 	"Team Had Health Left Hud"
 	{
-		"#format"	"{1:t},{2:d},{3:d}"
 		"ru"		"У {1} осталось {2} / {3} ОЗ."
 	}
 	"Team Had Players Left Hud"
 	{
-		"#format"	"{1:t},{2:d},{3:d}"
 		"ru"		"У {1} осталось {2} / {3} игроков в живых."
 	}
 	"Team 0"
@@ -71,27 +63,22 @@
 	}
 	"Lost Life"
 	{
-		"#format"	"{1:s}"
 		"ru"		"У {1} осталась 1 жизнь!"
 	}
 	"Lost Lives"
 	{
-		"#format"	"{1:s},{2:d}"
 		"ru"		"У {1} осталось {2} жизни!"
 	}
 	"Boss Lives Left"
 	{
-		"#format"	"{1:d},{2:d}"
 		"ru"		"Жизни: {1} / {2}"
 	}
 	"Boss Rage Charge"
 	{
-		"#format"	"{1:d}"
 		"ru"		"ЯРОСТЬ не готова. {1}%%"
 	}
 	"Boss Rage Ready"
 	{
-		"#format"	"{1:d}"
 		"ru"		"ЯРОСТЬ готова! {1}%%"
 	}
 	"Boss Rage Medic"
@@ -100,27 +87,22 @@
 	}
 	"Boss Mobility Time"
 	{
-		"#format"	"{1:.1f}"
 		"ru"		"Маневренность не готова. {1}с"
 	}
 	"Boss Mobility Charge"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Маневренность не готова. {1}%%"
 	}
 	"Boss Jump Time"
 	{
-		"#format"	"{1:.1f}"
 		"ru"		"Супер прыжок не готов. {1}с"
 	}
 	"Boss Jump Charge"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Супер прыжок не готов. {1}%%"
 	}
 	"Boss Jump Ready"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Супер Прыжок готов. {1}%%"
 	}
 	"Boss Jump Look"
@@ -129,17 +111,14 @@
 	}
 	"Boss Tele Time"
 	{
-		"#format"	"{1:.1f}"
 		"ru"		"Телепорт не готов. {1}с"
 	}
 	"Boss Tele Charge"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Телепорт не готов. {1}%%"
 	}
 	"Boss Tele Ready"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Телепорт готов. {1}%%"
 	}
 	"Boss Tele Look"
@@ -188,12 +167,10 @@
 	}
 	"Current Stats Hud"
 	{
-		"#format"	"{1:d},{2:d},{3:d}"
 		"ru"	    "Урон: {1} | Лечение: {2} | Помощь: {3}"
 	}
 	"Viewing Stats Hud"
 	{
-		"#format"	"{1:N},{2:d},{3:d},{4:d}"
 		"ru"		"{1} - Урон: {2} | Лечение: {3} | Помощь: {4}"
 	}
 	
@@ -207,7 +184,6 @@
 	}
 	"Next Pack Voted"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Следующим паком боссов будет {olive}{1}"
 	}
 	
@@ -255,7 +231,6 @@
 	}
 	"Reset Queue Points"
 	{
-		"#format"	"{1:d}"
 		"ru"		"Очков очереди - {1}"
 	}
 	"Reset Queue Points Confirm"
@@ -274,12 +249,10 @@
 	
 	"Add Points To"
 	{
-		"#format"	"{1:d},{2:t}"
 		"ru"		"Выдано {1} очков очереди {2}."
 	}
 	"Remove Points From"
 	{
-		"#format"	"{1:d},{2:t}"
 		"ru"		"Забрано {1} очков очереди у {2}."
 	}
 	
@@ -289,12 +262,10 @@
 	}
 	"Created Boss On"
 	{
-		"#format"	"{1:t}"
 		"ru"		"{1} превращен в босса."
 	}
 	"Set Charge On"
 	{
-		"#format"	"{1:t}"
 		"ru"		"Изменено количество ЯРОСТИ у {1}."
 	}
 	
@@ -312,12 +283,10 @@
 	}
 	"Boss Overriden"
 	{
-		"#format"	"{1:s}"
 		"ru"		"{1} будет выбран в следующем раунде"
 	}
 	"Boss No Access"
 	{
-		"#format"	"{1:s}"
 		"ru"		"У тебя нет доступа чтобы выбрать {1}"
 	}
 	"No Boss Overriden"
@@ -371,27 +340,22 @@
 	}
 	"Boss Whitelist"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Добавить {1} в белый список"
 	}
 	"Boss Blacklist"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Добавить {1} в чёрный список"
 	}
 	"Boss Party"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Создать команду для игры {1}"
 	}
 	"Boss Party Menu"
 	{
-		"#format"	"{1:s}"
 		"ru"		"FF2 Boss Party\n {1}\n "
 	}
 	"Boss Party Invited"
 	{
-		"#format"	"{1:N},{2:s}"
 		"ru"		"{1} предложил вам присоединиться к его группе чтобы сыграть за {2}\n "
 	}
 	"Boss Party Accept"
@@ -412,62 +376,50 @@
 	}
 	"Boss Party Blank"
 	{
-		"#format"	"{1:s}"
 		"ru"		"{1}: ???"
 	}
 	"Boss Party Member"
 	{
-		"#format"	"{1:s},{2:N}"
 		"ru"		"{1}: {2}"
 	}
 	"Boss Party Invite"
 	{
-		"#format"	"{1:s}"
 		"ru"		"{1}: ??? (Пригласить)"
 	}
 	"Boss Party Kick"
 	{
-		"#format"	"{1:s},{2:N}"
 		"ru"		"{1}: {2} (Выгнать)"
 	}
 	"Boss Party Pending"
 	{
-		"#format"	"{1:s},{2:N}"
 		"ru"		"{1}: {2} (Ожидание)"
 	}
 	"Party You Kicked"
 	{
-		"#format"	"{1:s}"
 		"ru"		"{red}Ты был выгнан из команды как {olive}{1}{red}."
 	}
 	"Party You Left"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Ты вышел из группы как {olive}{1}{default}."
 	}
 	"Party Member Invited"
 	{
-		"#format"	"{1:N},{2:s}"
 		"ru"		"{olive}{1} {red}предложил тебе сыграть в команде за {olive}{2}{red}. Напиши {olive}/ff2boss {red}чтобы принять приглашение."
 	}
 	"Party Member Joined"
 	{
-		"#format"	"{1:N},{2:s}"
 		"ru"		"{olive}{1} {red}присоединился к группе как {olive}{2}{red}."
 	}
 	"Party Member Kicked"
 	{
-		"#format"	"{1:N},{2:s}"
 		"ru"		"{olive}{1} {red}был выгнан из группы как {olive}{2}{red}."
 	}
 	"Party Member Left"
 	{
-		"#format"	"{1:N},{2:s}"
 		"ru"		"{olive}{1} {red}вышел из группы как {olive}{2}{red}."
 	}
 	"Party Leader Left"
 	{
-		"#format"	"{1:N},{2:s},{3:N}"
 		"ru"		"{olive}{1} {red}вышел из группы как {olive}{2}{red}. {olive}{2} {red}теперь лидер группы."
 	}
 	"Legacy Boss Menu Command"
@@ -476,23 +428,19 @@
 	}
 	"Boss Whitelisted"
 	{
-		"#format"	"{1:s}"
 		"ru"		"В белом списке {1}"
 	}
 	"Boss Blacklisted"
 	{
-		"#format"	"{1:s}"
 		"ru"		"В чёрном списке {1}"
 	}
 	"Boss Blacklist Full"
 	{
-		"#format"	"{1:d}"
 		"ru"		"В чёрном списке находится {1} боссов."
 	}
 	
 	"Now Playing"
 	{
-		"#format"	"{1:s},{2:s}"
 		"ru"		"Сейчас играет: {blue}{1}{default} - {orange}{2}{default}"
 	}
 	"Unknown Song"
@@ -509,7 +457,6 @@
 	}
 	"Music Unknown Arg"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Неизвестный аргумент '{1}'\nДоступные аргумент: 'on', 'off', 'next', 'shuffle', 'list', '#<song id>'"
 	}
 	"Music Menu"
@@ -518,7 +465,6 @@
 	}
 	"Music Boss Pack"
 	{
-		"#format"	"{1:s}"
 		"ru"		"Плейлист: {1}\n "
 	}
 	"Music Enable"
@@ -573,7 +519,6 @@
 	
 	"Boss Solo Rage"
 	{
-		"#format"	"{1:s}"
 		"ru"		"{teamcolor}{1}{default} использовал ярость на одного!"
 	}
 	"Boss Solo Rage Success"
@@ -603,22 +548,18 @@
 	}
 	"Boss HP"
 	{
-		"#format"	"{1:d},{2:d}"
 		"ru"		"{1} / {2} ОЗ"
 	}
 	"Boss Lives"
 	{
-		"#format"	"{1:d},{2:d}"
 		"ru"		"{1} / {2} Жизней"
 	}
 	"Ability Delay"
 	{
-		"#format"	"{1:.1f}"
 		"ru"		"{1}с"
 	}
 	"Boss Rage"
 	{
-		"#format"	"{1:d}"
 		"ru"		"{1}$ ЯРОСТЬ"
 	}
 	"Boss Wall Jump"
@@ -720,122 +661,98 @@
 	}
 	"custom DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"{4}"
 	}
 	"damage vs bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"+{1}%% урона против боссов"
 	}
 	"primary damage vs bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"+{1}%% урона от основного оружия против боссов"
 	}
 	"secondary damage vs bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"+{1}%% урона от дополнительного оружия против боссов"
 	}
 	"melee damage vs bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"+{1}%% урона от ближнего оружия против боссов"
 	}
 	"mid-air damage vs bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"+{1}%% урона против боссов во время прыжка от взрыва"
 	}
 	"mod crit type glow"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"100%% критическое попадание"
 	}
 	"mod crit type on bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"100%% критическое попадание против боссов"
 	}
 	"charge outlines bosses"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Урон подсвечивает босса в зависимости от кол-ва заряда винтовки"
 	}
 	"primary ammo from damage"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"ru"		"Получает боеприпасы за каждые {3} урона нанесённые боссу"
+		"ru"		"Получает боеприпасы за каждые {4} урона нанесённые боссу"
 	}
 	"secondary ammo from damage"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"ru"		"Получает боеприпасы за каждые {3} урона нанесённые боссу"
+		"ru"		"Получает боеприпасы за каждые {4} урона нанесённые боссу"
 	}
 	"multi boss rage"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Уменьшает кол-во ярости полученное боссом от {2}%%"
 	}
 	"backstab damage percent"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Удар в спину забирает {2}%% от максимального здоровья босса"
 	}
 	"mod airblast stale"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Успешное отталкивание босса сжатым воздухом увеличивает время его отката"
 	}
 	"nailgun custom slow"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"При попадании: Вызывает нарастающее замедление у цели"
 	}
 	"milk limit DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Эффект зломолока длится {4} секунд(ы) после попадания по боссу"
 	}
 	"hit stale DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Успешное попадание по боссу увеличивает время перезарядки"
 	}
 	"sentry death DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"При смерти: турель эффектно взрывается"
 	}
 	"jarate limit DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Эффект банкате ограничен {4} уроном при попадании по боссу"
 	}
 	"boost limit DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Успешные попадания по боссу уменьшают усиления со временем"
 	}
 	"teleport no spawn DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Невозможно телепортироваться на спавн"
 	}
 	"vaccinator DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Сопротивление влияет на ближние удары босса"
 	}
 	"cloak on hit DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Отключает невидимость на {4} секунд при попадании по боссу"
 	}
 	"cloak and dagger no DISPLAY ONLY"
 	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"ru"		"Тип невидимости: Нормальный."
 	}
 }

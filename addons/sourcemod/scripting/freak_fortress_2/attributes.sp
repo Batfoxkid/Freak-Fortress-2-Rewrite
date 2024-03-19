@@ -547,7 +547,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
 	}
 	
-	int amount = DamageGoal(450, Client(attacker).GetDamage(slot), lastWeaponDamage);
+	int amount = DamageGoal(Cvar[StreakDamage].IntValue, Client(attacker).GetDamage(slot), lastWeaponDamage);
 	if(amount)
 	{
 		if(slot == TFWeaponSlot_Building)
