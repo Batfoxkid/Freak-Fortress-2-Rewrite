@@ -1,1 +1,841 @@
-
+"Phrases"
+{
+	"Prefix"
+	{
+		"ru"		"{olive}[FF2]{default} "
+	}
+	"Available Commands"
+	{
+		"ru"		"ff2 - Главное меню\nff2boss - Список боссов\nff2queue - Посмотреть очередь на босса\nff2music - Настройки музыки\nff2voice - Переключить звуки боссов\nff2weapons - Посмотреть изменения оружия\nff2hud - Переключить отображение стат. раунда\nff2modifier - Список модификаторов"
+	}
+	
+	"Boss Spawned As"
+	{
+		"#format"	"{1:N},{2:s},{3:d}"
+		"ru"		"{teamcolor}{1} {default}стал {olive}{2} {default}с {olive}{3} {default}ОЗ."
+	}
+	"Boss Spawned As Lives"
+	{
+		"#format"	"{1:N},{2:s},{3:d},{4:d}"
+		"ru"		"{teamcolor}{1} {default}стал {olive}{2} {default}с {olive}{3} (x{4}) {default}ОЗ."
+	}
+	"You Dealt Damage Hud"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"ru"		"Ты нанёс {1} урона, вылечил на {2} ОЗ, и помог на {3} очков."
+	}
+	"Top Damage Hud"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:d},{5:s},{6:d}"
+		"ru"		"1-й: {1} - {2}\n2-й: {3} - {4}\n3-й: {5} - {6}"
+	}
+	"Boss Had Health Left"
+	{
+		"#format"	"{1:s},{2:N},{3:d},{4:d}"
+		"ru"		"У {olive}{1} {default}({teamcolor}{2}{default}) осталось {olive}{3} {default}/ {olive}{4} {default}ОЗ."
+	}
+	"Boss Had Health Left Hud"
+	{
+		"#format"	"{1:s},{2:N},{3:d},{4:d}"
+		"ru"		"У {1} ({2}) осталось {3} / {4} ОЗ."
+	}
+	"Team Had Health Left Hud"
+	{
+		"#format"	"{1:t},{2:d},{3:d}"
+		"ru"		"У {1} осталось {2} / {3} ОЗ."
+	}
+	"Team Had Players Left Hud"
+	{
+		"#format"	"{1:t},{2:d},{3:d}"
+		"ru"		"У {1} осталось {2} / {3} игроков в живых."
+	}
+	"Team 0"
+	{
+		"ru"		"жёлтой команды"
+	}
+	"Team 1"
+	{
+		"ru"		"зеленой команды"
+	}
+	"Team 2"
+	{
+		"ru"		"красной команды"
+	}
+	"Team 3"
+	{
+		"ru"		"синей команды"
+	}
+	"Point Unlocked"
+	{
+		"ru"		"Контрольная точка разблокирована"
+	}
+	"Lost Life"
+	{
+		"#format"	"{1:s}"
+		"ru"		"У {1} осталась 1 жизнь!"
+	}
+	"Lost Lives"
+	{
+		"#format"	"{1:s},{2:d}"
+		"ru"		"У {1} осталось {2} жизни!"
+	}
+	"Boss Lives Left"
+	{
+		"#format"	"{1:d},{2:d}"
+		"ru"		"Жизни: {1} / {2}"
+	}
+	"Boss Rage Charge"
+	{
+		"#format"	"{1:d}"
+		"ru"		"ЯРОСТЬ не готова. {1}%%"
+	}
+	"Boss Rage Ready"
+	{
+		"#format"	"{1:d}"
+		"ru"		"ЯРОСТЬ готова! {1}%%"
+	}
+	"Boss Rage Medic"
+	{
+		"ru"		" | Позови медика"
+	}
+	"Boss Mobility Time"
+	{
+		"#format"	"{1:.1f}"
+		"ru"		"Маневренность не готова. {1}с"
+	}
+	"Boss Mobility Charge"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Маневренность не готова. {1}%%"
+	}
+	"Boss Jump Time"
+	{
+		"#format"	"{1:.1f}"
+		"ru"		"Супер прыжок не готов. {1}с"
+	}
+	"Boss Jump Charge"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Супер прыжок не готов. {1}%%"
+	}
+	"Boss Jump Ready"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Супер Прыжок готов. {1}%%"
+	}
+	"Boss Jump Look"
+	{
+		"ru"		" | Посмотри наверх и отпусти"
+	}
+	"Boss Tele Time"
+	{
+		"#format"	"{1:.1f}"
+		"ru"		"Телепорт не готов. {1}с"
+	}
+	"Boss Tele Charge"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Телепорт не готов. {1}%%"
+	}
+	"Boss Tele Ready"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Телепорт готов. {1}%%"
+	}
+	"Boss Tele Look"
+	{
+		"ru"		" | Посмотри на цель и отпусти"
+	}
+	"Boss Mobility 0"
+	{
+		"ru"		" | Удерживай ЛКМ"
+	}
+	"Boss Mobility 1"
+	{
+		"ru"		" | Удерживай прыжок"
+	}
+	"Boss Mobility 2"
+	{
+		"ru"		" | Удерживай приседание"
+	}
+	"Boss Mobility 3"
+	{
+		"ru"		" | Двигайся вперёд"
+	}
+	"Boss Mobility 4"
+	{
+		"ru"		" | Двигайся назад"
+	}
+	"Boss Mobility 9"
+	{
+		"ru"		" | Двигайся влево"
+	}
+	"Boss Mobility 10"
+	{
+		"ru"		" | Двигайся вправо"
+	}
+	"Boss Mobility 11"
+	{
+		"ru"		" | Удерживай ПКМ"
+	}
+	"Boss Mobility 13"
+	{
+		"ru"		" | Удерживай перезарядку"
+	}
+	"Boss Mobility 25"
+	{
+		"ru"		" | Удерживай СКМ"
+	}
+	"Current Stats Hud"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"ru"	    "Урон: {1} | Лечение: {2} | Помощь: {3}"
+	}
+	"Viewing Stats Hud"
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d}"
+		"ru"		"{1} - Урон: {2} | Лечение: {3} | Помощь: {4}"
+	}
+	
+	"Preference Updated"
+	{
+		"ru"		"Твои настройки и очки очереди были обновлены."
+	}
+	"Next Pack Vote"
+	{
+		"ru"		"Пак Боссов для Freak Fortress 2:\n "
+	}
+	"Next Pack Voted"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Следующим паком боссов будет {olive}{1}"
+	}
+	
+	"Command Selection"
+	{
+		"ru"		"Список боссов (/ff2boss)"
+	}
+	"Command Queue"
+	{
+		"ru"		"Посмотреть очередь на босса (/ff2queue)"
+	}
+	"Command Music"
+	{
+		"ru"		"Настройки музыки (/ff2music)"
+	}
+	"Command Voice"
+	{
+		"ru"		"Вкл/Выкл звуки боссов (/ff2voice)"
+	}
+	"Command Weapon"
+	{
+		"ru"		"Изменения хар-тик оружия (/ff2weapons)"
+	}
+	"Command Hud"
+	{
+		"ru"		"Вкл/Выкл стат. раунда (/ff2hud)"
+	}
+	"Command Difficulty"
+	{
+		"ru"		"Список модификаторов (/ff2modifier)"
+	}
+	
+	"Boss Voices Disabled"
+	{
+		"ru"		"Звуки боссов теперь выключены."
+	}
+	"Boss Voices Enabled"
+	{
+		"ru"		"Звуки боссов теперь включены."
+	}
+	
+	"Queue Menu"
+	{
+		"ru"		"FF2 Очередь на босса\n "
+	}
+	"Reset Queue Points"
+	{
+		"#format"	"{1:d}"
+		"ru"		"Очков очереди - {1}"
+	}
+	"Reset Queue Points Confirm"
+	{
+    	"ru"	    "Сбросить очки очереди?\n "
+	}
+	
+	"Damage Hud Disabled"
+	{
+		"ru"		"HUD статистика раунда теперь отключена."
+	}
+	"Damage Hud Enabled"
+	{
+		"ru"		"HUD статистика раунда теперь включена."
+	}
+	
+	"Add Points To"
+	{
+		"#format"	"{1:d},{2:t}"
+		"ru"		"Выдано {1} очков очереди {2}."
+	}
+	"Remove Points From"
+	{
+		"#format"	"{1:d},{2:t}"
+		"ru"		"Забрано {1} очков очереди у {2}."
+	}
+	
+	"Target must be boss"
+	{
+		"ru"		"Эта команда может быть использована только на боссах."
+	}
+	"Created Boss On"
+	{
+		"#format"	"{1:t}"
+		"ru"		"{1} превращен в босса."
+	}
+	"Set Charge On"
+	{
+		"#format"	"{1:t}"
+		"ru"		"Изменено количество ЯРОСТИ у {1}."
+	}
+	
+	"Boss Override Command"
+	{
+		"ru"		"Заменить следующего босса\n "
+	}
+	"No Override"
+	{
+		"ru"		"Без замены"
+	}
+	"Boss Not Found"
+	{
+		"ru"		"Босс не найден"
+	}
+	"Boss Overriden"
+	{
+		"#format"	"{1:s}"
+		"ru"		"{1} будет выбран в следующем раунде"
+	}
+	"Boss No Access"
+	{
+		"#format"	"{1:s}"
+		"ru"		"У тебя нет доступа чтобы выбрать {1}"
+	}
+	"No Boss Overriden"
+	{
+		"ru"		"Изменение босса отключено"
+	}
+	"No Description"
+	{
+		"ru"		"Нет описания"
+	}
+	
+	"Boss Selection Command"
+	{
+		"ru"		"FF2 Список боссов\n "
+	}
+	"Clear Whitelist"
+	{
+		"ru"		"Очистить белый список"
+	}
+	"Clear Blacklist"
+	{
+		"ru"		"Очистить чёрный список"
+	}
+	"Clear All"
+	{
+		"ru"		"Очистить все"
+	}
+	"Disable Playing Boss"
+	{
+		"ru"		"Отключить игру за босса"
+	}
+	"Disable Playing Boss All"
+	{
+		"ru"		"Отключить игру за всех боссов"
+	}
+	"Enable Playing Boss"
+	{
+		"ru"		"Включить игру за босса"
+	}
+	"Enable Playing Boss All"
+	{
+		"ru"		"Включить игру за всех боссов"
+	}
+	"Boss No View"
+	{
+		"ru"		"У вас нет доступа к этому боссу или его не существует."
+	}
+	"Charset No View"
+	{
+		"ru"		"У вас нет доступа к этому паку или его не существует."
+	}
+	"Boss Whitelist"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Добавить {1} в белый список"
+	}
+	"Boss Blacklist"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Добавить {1} в чёрный список"
+	}
+	"Boss Party"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Создать команду для игры {1}"
+	}
+	"Boss Party Menu"
+	{
+		"#format"	"{1:s}"
+		"ru"		"FF2 Boss Party\n {1}\n "
+	}
+	"Boss Party Invited"
+	{
+		"#format"	"{1:N},{2:s}"
+		"ru"		"{1} предложил вам присоединиться к его группе чтобы сыграть за {2}\n "
+	}
+	"Boss Party Accept"
+	{
+		"ru"		"Принять"
+	}
+	"Boss Party Decline"
+	{
+		"ru"		"Отклонить"
+	}
+	"Boss Party Block"
+	{
+		"ru"		"Заблокировать (Используй мьют в меню TF2)"
+	}
+	"Boss Party Leave"
+	{
+		"ru"		"Покинуть группу"
+	}
+	"Boss Party Blank"
+	{
+		"#format"	"{1:s}"
+		"ru"		"{1}: ???"
+	}
+	"Boss Party Member"
+	{
+		"#format"	"{1:s},{2:N}"
+		"ru"		"{1}: {2}"
+	}
+	"Boss Party Invite"
+	{
+		"#format"	"{1:s}"
+		"ru"		"{1}: ??? (Пригласить)"
+	}
+	"Boss Party Kick"
+	{
+		"#format"	"{1:s},{2:N}"
+		"ru"		"{1}: {2} (Выгнать)"
+	}
+	"Boss Party Pending"
+	{
+		"#format"	"{1:s},{2:N}"
+		"ru"		"{1}: {2} (Ожидание)"
+	}
+	"Party You Kicked"
+	{
+		"#format"	"{1:s}"
+		"ru"		"{red}Ты был выгнан из команды как {olive}{1}{red}."
+	}
+	"Party You Left"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Ты вышел из группы как {olive}{1}{default}."
+	}
+	"Party Member Invited"
+	{
+		"#format"	"{1:N},{2:s}"
+		"ru"		"{olive}{1} {red}предложил тебе сыграть в команде за {olive}{2}{red}. Напиши {olive}/ff2boss {red}чтобы принять приглашение."
+	}
+	"Party Member Joined"
+	{
+		"#format"	"{1:N},{2:s}"
+		"ru"		"{olive}{1} {red}присоединился к группе как {olive}{2}{red}."
+	}
+	"Party Member Kicked"
+	{
+		"#format"	"{1:N},{2:s}"
+		"ru"		"{olive}{1} {red}был выгнан из группы как {olive}{2}{red}."
+	}
+	"Party Member Left"
+	{
+		"#format"	"{1:N},{2:s}"
+		"ru"		"{olive}{1} {red}вышел из группы как {olive}{2}{red}."
+	}
+	"Party Leader Left"
+	{
+		"#format"	"{1:N},{2:s},{3:N}"
+		"ru"		"{olive}{1} {red}вышел из группы как {olive}{2}{red}. {olive}{2} {red}теперь лидер группы."
+	}
+	"Legacy Boss Menu Command"
+	{
+		"ru"		"Эта команда будет убрана в ближайшем будущем, вместо этого используй команду /ff2boss."
+	}
+	"Boss Whitelisted"
+	{
+		"#format"	"{1:s}"
+		"ru"		"В белом списке {1}"
+	}
+	"Boss Blacklisted"
+	{
+		"#format"	"{1:s}"
+		"ru"		"В чёрном списке {1}"
+	}
+	"Boss Blacklist Full"
+	{
+		"#format"	"{1:d}"
+		"ru"		"В чёрном списке находится {1} боссов."
+	}
+	
+	"Now Playing"
+	{
+		"#format"	"{1:s},{2:s}"
+		"ru"		"Сейчас играет: {blue}{1}{default} - {orange}{2}{default}"
+	}
+	"Unknown Song"
+	{
+		"ru"		"Неизвестная песня"
+	}
+	"Unknown Artist"
+	{
+		"ru"		"Неизвестный исполнитель"
+	}
+	"Music Disabled"
+	{
+		"ru"		"Музыка босса выключена."
+	}
+	"Music Unknown Arg"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Неизвестный аргумент '{1}'\nДоступные аргумент: 'on', 'off', 'next', 'shuffle', 'list', '#<song id>'"
+	}
+	"Music Menu"
+	{
+		"ru"		"FF2 Настройки музыки\n "
+	}
+	"Music Boss Pack"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Плейлист: {1}\n "
+	}
+	"Music Enable"
+	{
+		"ru"		"Включить музыку босса"
+	}
+	"Music Disable"
+	{
+		"ru"		"Выключить музыку босса"
+	}
+	"Music Random"
+	{
+		"ru"		"Музыка случайного босса"
+	}
+	"Music Skip"
+	{
+		"ru"		"Включить следующий трек"
+	}
+	"Music Shuffle"
+	{
+		"ru"		"Включить случайный трек"
+	}
+	"Music List"
+	{
+		"ru"		"Посмотреть плейлист"
+	}
+	
+	"Difficulty Menu"
+	{
+		"ru"		"FF2 Модификаторы боссов\n "
+	}
+	"Disable Special Rounds"
+	{
+		"ru"		"Выключить случайные модификаторы"
+	}
+	"Enable Special Rounds"
+	{
+		"ru"		"Включить случайные модификаторы"
+	}
+	"Disabled Special Rounds"
+	{
+		"ru"		"Случайные модификаторы выключены"
+	}
+	"Enabled Special Rounds"
+	{
+		"ru"		"Случайные модификаторы включены"
+	}
+	"Unknown Difficulty"
+	{
+		"ru"		"Такой сложности не существует"
+	}
+	
+	"Boss Solo Rage"
+	{
+		"#format"	"{1:s}"
+		"ru"		"{teamcolor}{1}{default} использовал ярость на одного!"
+	}
+	"Boss Solo Rage Success"
+	{
+		"ru"		"{blue}Это супер эффективно!"
+	}
+	"Boss Solo Rage Failure"
+	{
+		"ru"		"{red}Это не очень эффективно..."
+	}
+	
+	"Rage Needs Summon"
+	{
+		"ru"		"Для призыва нужен мёртвый игрок"
+	}
+	"Rage Needs Partner"
+	{
+		"ru"		"Нужен союзник"
+	}
+	"Rage Needs One Life"
+	{
+		"ru"		"Последней жизни"
+	}
+	"Rage Needs Ground"
+	{
+		"ru"		"Земле"
+	}
+	"Boss HP"
+	{
+		"#format"	"{1:d},{2:d}"
+		"ru"		"{1} / {2} ОЗ"
+	}
+	"Boss Lives"
+	{
+		"#format"	"{1:d},{2:d}"
+		"ru"		"{1} / {2} Жизней"
+	}
+	"Ability Delay"
+	{
+		"#format"	"{1:.1f}"
+		"ru"		"{1}с"
+	}
+	"Boss Rage"
+	{
+		"#format"	"{1:d}"
+		"ru"		"{1}$ ЯРОСТЬ"
+	}
+	"Boss Wall Jump"
+	{
+		"ru"		"Прыжки от стен - Прыгай, когда находишься рядом со стеной"
+	}
+	"Boss Weapon Pickups"
+	{
+		"ru"		"Подбор оружия - Подбирай огнестрельное оружие чтобы использовать в сражении"
+	}
+	"Button E"
+	{
+		"ru"		"Позови Медика"
+	}
+	"Button 11"
+	{
+		"ru"		"Правая кнопка мыши"
+	}
+	"Button 13"
+	{
+		"ru"		"Перезарядка"
+	}
+	"Button 25"
+	{
+		"ru"		"Особая атака"
+	}
+	"Short E"
+	{
+		"ru"		"E"
+	}
+	"Short 11"
+	{
+		"ru"		"ПКМ"
+	}
+	"Short 13"
+	{
+		"ru"		"R"
+	}
+	"Short 25"
+	{
+		"ru"		"СКМ"
+	}
+	"Boss Demo Charge 11"
+	{
+		"ru"		"Рывок - ПКМ"
+	}
+	"Boss Demo Charge 13"
+	{
+		"ru"		"Рывок - Перезарядка"
+	}
+	"Boss Demo Charge 25"
+	{
+		"ru"		"Рывок - Особая атака"
+	}
+	
+	"Weapon Menu"
+	{
+		"ru"		"FF2 Изменения оружия\n "
+	}
+	"Disable Weapon Changes"
+	{
+		"ru"		"Выкл. выпад. меню"
+	}
+	"Enable Weapon Changes"
+	{
+		"ru"		"Вкл. выпад. меню"
+	}
+	"Weapon Stripped"
+	{
+		"ru"		"Удаленные атрибуты"
+	}
+	"Primary"
+	{
+		"ru"		"Основное"
+	}
+	"Secondary"
+	{
+		"ru"		"Дополнительное"
+	}
+	"Melee"
+	{
+		"ru"		"Ближнее"
+	}
+	"PDA"
+	{
+		"ru"		"КПК"
+	}
+	"Utility"
+	{
+		"ru"		"Утилиты"
+	}
+	"Building"
+	{
+		"ru"		"Постройки"
+	}
+	"Action"
+	{
+		"ru"		"Действия"
+	}
+	"custom DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"{4}"
+	}
+	"damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"+{1}%% урона против боссов"
+	}
+	"primary damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"+{1}%% урона от основного оружия против боссов"
+	}
+	"secondary damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"+{1}%% урона от дополнительного оружия против боссов"
+	}
+	"melee damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"+{1}%% урона от ближнего оружия против боссов"
+	}
+	"mid-air damage vs bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"+{1}%% урона против боссов во время прыжка от взрыва"
+	}
+	"mod crit type glow"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"100%% критическое попадание"
+	}
+	"mod crit type on bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"100%% критическое попадание против боссов"
+	}
+	"charge outlines bosses"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Урон подсвечивает босса в зависимости от кол-ва заряда винтовки"
+	}
+	"primary ammo from damage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Получает боеприпасы за каждые {3} урона нанесённые боссу"
+	}
+	"secondary ammo from damage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Получает боеприпасы за каждые {3} урона нанесённые боссу"
+	}
+	"multi boss rage"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Уменьшает кол-во ярости полученное боссом от {2}%%"
+	}
+	"backstab damage percent"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Удар в спину забирает {2}%% от максимального здоровья босса"
+	}
+	"mod airblast stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Успешное отталкивание босса сжатым воздухом увеличивает время его отката"
+	}
+	"nailgun custom slow"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"При попадании: Вызывает нарастающее замедление у цели"
+	}
+	"milk limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Эффект зломолока длится {4} секунд(ы) после попадания по боссу"
+	}
+	"hit stale DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Успешное попадание по боссу увеличивает время перезарядки"
+	}
+	"sentry death DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"При смерти: турель эффектно взрывается"
+	}
+	"jarate limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Эффект банкате ограничен {4} уроном при попадании по боссу"
+	}
+	"boost limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Успешные попадания по боссу уменьшают усиления со временем"
+	}
+	"teleport no spawn DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Невозможно телепортироваться на спавн"
+	}
+	"vaccinator DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Сопротивление влияет на ближние удары босса"
+	}
+	"cloak on hit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Отключает невидимость на {4} секунд при попадании по боссу"
+	}
+	"cloak and dagger no DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"ru"		"Тип невидимости: Нормальный."
+	}
+}
