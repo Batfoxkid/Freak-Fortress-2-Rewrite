@@ -16,12 +16,13 @@
  * @param boss	Boss's client index
  * @param low	Low ability slot
  * @param high	High ability slot
+ * @param info	Arguments to pass
  * 
  * @error		Invalid client index or client is not a boss
  * 
  * @return		True if the sound was found, false otherwise
  */
-native bool FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
+native bool FF2R_DoBossSlot(int boss, int low, int high = -2147483647, ConfigMap info = null);
 
 /**
  * Emits a boss's random sound to a list of clients.
