@@ -344,7 +344,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					if(debuff != 1.0)
 						Client(victim).RageDebuff = 1.0;
 					
-					rage += (damage * 100.0 * debuff / rage);
+					rage = (damage * 100.0 * debuff / rage);
 					if(rage > maxrage)
 						rage = maxrage;
 					
