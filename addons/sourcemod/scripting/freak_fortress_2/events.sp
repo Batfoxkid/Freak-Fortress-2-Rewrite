@@ -333,10 +333,10 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		if(Client(victim).IsBoss)
 		{
-			float rage = Client(victim).RageDamage;
-			if(rage > 0.0)
+			float ragedmg = Client(victim).RageDamage;
+			if(ragedmg > 0.0)
 			{
-				rage = Client(victim).GetCharge(0);
+				float rage = Client(victim).GetCharge(0);
 				float maxrage = Client(victim).RageMax;
 				if(rage < maxrage)
 				{
@@ -344,7 +344,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					if(debuff != 1.0)
 						Client(victim).RageDebuff = 1.0;
 					
-					rage = (damage * 100.0 * debuff / rage);
+					rage += (damage * 100.0 * debuff / ragedmg);
 					if(rage > maxrage)
 						rage = maxrage;
 					
