@@ -334,18 +334,22 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		if(Client(victim).IsBoss)
 		{
 			float rage = Client(victim).RageDamage;
-			float maxrage = Client(victim).RageMax;
-			if(rage > 0.0 && rage < maxrage)
+			if(rage > 0.0)
 			{
-				float debuff = Client(victim).RageDebuff;
-				if(debuff != 1.0)
-					Client(victim).RageDebuff = 1.0;
-				
-				rage = Client(victim).GetCharge(0) + (damage * 100.0 * debuff / rage);
-				if(rage > maxrage)
-					rage = maxrage;
-				
-				Client(victim).SetCharge(0, rage);
+				rage = Client(victim).GetCharge(0);
+				float maxrage = Client(victim).RageMax;
+				if(rage < maxrage)
+				{
+					float debuff = Client(victim).RageDebuff;
+					if(debuff != 1.0)
+						Client(victim).RageDebuff = 1.0;
+					
+					rage += (damage * 100.0 * debuff / rage);
+					if(rage > maxrage)
+						rage = maxrage;
+					
+					Client(victim).SetCharge(0, rage);
+				}
 			}
 			
 			if(event.GetBool("minicrit") && event.GetBool("allseecrit"))

@@ -1195,7 +1195,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	{
 		Client(client).OverlayFor = 0.0;
 
-		SetVariantString("");
+		SetVariantString(NULL_STRING);
 		AcceptEntityInput(client, "SetScriptOverlayMaterial", client, client);
 	}
 }
