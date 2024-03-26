@@ -70,6 +70,9 @@ SectionType GetSectionType(const char[] buffer)
 	if(StrEqual(buffer, "download"))
 		return Section_Download;
 
+	if(!StrContains(buffer, "filenet"))
+		return Section_FileNet;
+
 	if(!StrContains(buffer, "map_"))
 		return Section_Map;
 

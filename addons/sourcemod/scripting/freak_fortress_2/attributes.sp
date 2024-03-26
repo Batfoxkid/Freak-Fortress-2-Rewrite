@@ -21,7 +21,7 @@ void Attributes_PluginStart()
 	HookUserMessage(GetUserMessageId("PlayerJarated"), Attributes_OnJarateBoss);
 }
 
-public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
+static Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	int attacker = bf.ReadByte();
 	int victim = bf.ReadByte();
@@ -63,7 +63,7 @@ public Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 	return Plugin_Continue;
 }
 
-public void ReapplyMilk(DataPack pack)
+static void ReapplyMilk(DataPack pack)
 {
 	pack.Reset();
 	
@@ -183,7 +183,7 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	return silent;
 }
 
-public void Attributes_RedisguiseFrame(DataPack pack)
+static void Attributes_RedisguiseFrame(DataPack pack)
 {
 	pack.Reset();
 
@@ -756,7 +756,7 @@ bool Attributes_GetByDefIndex(int entity, int index, float &value)
 	return false;
 }
 
-public Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
+static Action Attributes_BoostDrainStack(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
