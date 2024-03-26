@@ -110,7 +110,7 @@ void FileNet_AddFileToDownloads(const char[] raw)
 			}
 		}
 
-		//return;
+		return;
 	}
 	#endif
 
