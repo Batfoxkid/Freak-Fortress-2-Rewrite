@@ -73,7 +73,7 @@ void FileNet_MapEnd()
 	#endif
 }
 
-void FileNet_ClientPutInServer(int client)
+stock void FileNet_ClientPutInServer(int client)
 {
 	#if defined _filenetwork_included
 	FileNet_ClientDisconnect(client);
@@ -81,7 +81,7 @@ void FileNet_ClientPutInServer(int client)
 	#endif
 }
 
-void FileNet_ClientDisconnect(int client)
+stock void FileNet_ClientDisconnect(int client)
 {
 	#if defined _filenetwork_included
 	StartedQueue[client] = false;
