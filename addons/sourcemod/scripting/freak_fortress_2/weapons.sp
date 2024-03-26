@@ -90,7 +90,7 @@ stock void Weapons_LibraryRemoved(const char[] name)
 	#endif
 }
 
-public Action Weapons_DebugRefresh(int client, int args)
+static Action Weapons_DebugRefresh(int client, int args)
 {
 	TF2_RemoveAllItems(client);
 	
@@ -104,7 +104,7 @@ public Action Weapons_DebugRefresh(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Weapons_DebugReload(int client, int args)
+static Action Weapons_DebugReload(int client, int args)
 {
 	if(Weapons_ConfigsExecuted(true))
 	{
@@ -121,7 +121,7 @@ public Action Weapons_DebugReload(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Weapons_ChangeMenuCmd(int client, int args)
+static Action Weapons_ChangeMenuCmd(int client, int args)
 {
 	if(client)
 	{
@@ -222,7 +222,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 	}
 }
 
-public int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int choice)
+static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -682,7 +682,7 @@ void Weapons_OnInventoryApplication(int userid)
 	RequestFrame(Weapons_OnInventoryApplicationFrame, userid);
 }
 
-public void Weapons_OnInventoryApplicationFrame(int userid)
+static void Weapons_OnInventoryApplicationFrame(int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client)
@@ -789,12 +789,12 @@ void Weapons_EntityCreated(int entity, const char[] classname)
 		SDKHook(entity, SDKHook_SpawnPost, Weapons_Spawn);
 }
 
-public void Weapons_Spawn(int entity)
+static void Weapons_Spawn(int entity)
 {
 	RequestFrame(Weapons_SpawnFrame, EntIndexToEntRef(entity));
 }
 
-public void Weapons_SpawnFrame(int ref)
+static void Weapons_SpawnFrame(int ref)
 {
 	if(!WeaponCfg)
 		return;

@@ -126,7 +126,8 @@ enum SectionType
 	Section_Precache,	// precache
 	Section_Download,	// download
 	Section_Model,		// mod_download
-	Section_Material	// mat_download
+	Section_Material,	// mat_download
+	Section_FileNet		// filenetwork
 };
 
 enum struct SoundEnum
@@ -138,6 +139,7 @@ enum struct SoundEnum
 	
 	char Overlay[PLATFORM_MAX_PATH];
 	float Duration;
+	int OverlayFileNet;
 	
 	int Entity;
 	int Channel;
@@ -145,6 +147,8 @@ enum struct SoundEnum
 	int Flags;
 	float Volume;
 	int Pitch;
+
+	int FileNet;
 	
 	void Default()
 	{
@@ -236,6 +240,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/dhooks.sp"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/events.sp"
+#include "freak_fortress_2/filenetwork.sp"
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/forwards.sp"
 #include "freak_fortress_2/forwards_old.sp"
@@ -297,6 +302,7 @@ public void OnPluginStart()
 	Database_PluginStart();
 	DHook_Setup();
 	Events_PluginStart();
+	FileNet_PluginStart();
 	Gamemode_PluginStart();
 	Menu_PluginStart();
 	Music_PluginStart();
@@ -354,6 +360,7 @@ public void OnConfigsExecuted()
 public void OnMapEnd()
 {
 	Bosses_MapEnd();
+	FileNet_MapEnd();
 	Gamemode_MapEnd();
 	Preference_MapEnd();
 }
@@ -370,6 +377,7 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
+	FileNet_LibraryAdded(name);
 	SDKHook_LibraryAdded(name);
 	SteamWorks_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
@@ -379,6 +387,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnLibraryRemoved(const char[] name)
 {
+	FileNet_LibraryRemoved(name);
 	SDKHook_LibraryRemoved(name);
 	SteamWorks_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
@@ -389,6 +398,7 @@ public void OnLibraryRemoved(const char[] name)
 public void OnClientPutInServer(int client)
 {
 	DHook_HookClient(client);
+	FileNet_ClientPutInServer(client);
 	SDKHook_HookClient(client);
 }
 
@@ -402,6 +412,7 @@ public void OnClientDisconnect(int client)
 	Bosses_ClientDisconnect(client);
 	Database_ClientDisconnect(client);
 	Events_CheckAlivePlayers(client);
+	FileNet_ClientDisconnect(client);
 	Preference_ClientDisconnect(client);
 	
 	Client(client).ResetByAll();

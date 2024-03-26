@@ -97,7 +97,7 @@ public void OnEntityDestroyed(int entity)
 	DHook_EntityDestoryed();
 }
 
-public Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+static Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	CritType crit = (damagetype & DMG_CRIT) ? CritType_Crit : CritType_None;
 	return TF2_OnTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, crit);
@@ -428,7 +428,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 	return Plugin_Continue;
 }
 
-public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
+static void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
 {
 	if(Client(victim).IsBoss)
 	{
@@ -439,12 +439,12 @@ public void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 	}
 }
 
-public void SDKHook_SwitchPost(int client, int weapon)
+static void SDKHook_SwitchPost(int client, int weapon)
 {
 	Weapons_OnWeaponSwitch(client, weapon);
 }
 
-public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
 	if(entity > 0 && entity <= MaxClients && ((channel == SNDCHAN_VOICE && StrContains(sample, "ambient_mp3", false) == -1) || (channel == SNDCHAN_STATIC && !StrContains(sample, "vo", false))))
 	{
@@ -534,7 +534,7 @@ public Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 	return Plugin_Continue;
 }
 
-public Action SDKHook_HealthTouch(int entity, int client)
+static Action SDKHook_HealthTouch(int entity, int client)
 {
 	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && (Client(client).Pickups != 1 && Client(client).Pickups < 3))))
 		return Plugin_Handled;
@@ -542,7 +542,7 @@ public Action SDKHook_HealthTouch(int entity, int client)
 	return Plugin_Continue;
 }
 
-public Action SDKHook_AmmoTouch(int entity, int client)
+static Action SDKHook_AmmoTouch(int entity, int client)
 {
 	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && Client(client).Pickups < 2)))
 		return Plugin_Handled;
@@ -550,7 +550,7 @@ public Action SDKHook_AmmoTouch(int entity, int client)
 	return Plugin_Continue;
 }
 
-public Action SDKHook_TimerSpawn(int entity)
+static Action SDKHook_TimerSpawn(int entity)
 {
 	DispatchKeyValue(entity, "auto_countdown", "0");
 	return Plugin_Continue;

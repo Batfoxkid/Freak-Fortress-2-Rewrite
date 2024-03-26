@@ -52,7 +52,7 @@ void Bosses_PluginStart()
 	RegServerCmd("ff2_unloadsubplugins", Bosses_DebugUnloadCmd, "Unloads freak subplugins");
 }
 
-public Action Bosses_DebugCacheCmd(int args)
+static Action Bosses_DebugCacheCmd(int args)
 {
 	if(args)
 	{
@@ -85,19 +85,19 @@ public Action Bosses_DebugCacheCmd(int args)
 	return Plugin_Handled;
 }
 
-public Action Bosses_DebugLoadCmd(int args)
+static Action Bosses_DebugLoadCmd(int args)
 {
 	EnableSubplugins();
 	return Plugin_Handled;
 }
 
-public Action Bosses_DebugUnloadCmd(int args)
+static Action Bosses_DebugUnloadCmd(int args)
 {
 	DisableSubplugins();
 	return Plugin_Handled;
 }
 
-public Action Bosses_ReloadCharsetCmd(int client, int args)
+static Action Bosses_ReloadCharsetCmd(int client, int args)
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
@@ -105,7 +105,7 @@ public Action Bosses_ReloadCharsetCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Bosses_MakeBossCmd(int client, int args)
+static Action Bosses_MakeBossCmd(int client, int args)
 {
 	if(args && args < 4)
 	{
@@ -192,7 +192,7 @@ public Action Bosses_MakeBossCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Bosses_SetChargeCmd(int client, int args)
+static Action Bosses_SetChargeCmd(int client, int args)
 {
 	if(args && args < 4)
 	{
@@ -1135,7 +1135,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
 												if(!check || FileExists(buffer, true))
-												{	
+												{
 													AddToStringTable(DownloadTable, buffer);
 												}
 												else if(b != sizeof(MdlExts)-1)
@@ -1323,6 +1323,103 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
 											}
+										}
+									}
+								}
+							}
+						}
+						
+						if(clean)
+						{
+							DeleteCfg(cfgsub);
+							cfg.Remove(section);
+						}
+					}
+					case Section_FileNet:
+					{
+						for(int a; a < entriessub; a++)
+						{
+							length = snapsub.KeyBufferSize(a)+1;
+							char[] key = new char[length];
+							snapsub.GetKey(a, key, length);
+							cfgsub.GetArray(key, val, sizeof(val));
+							
+							if(!key[0] || !IsNotExtraArg(key))
+							{
+								LogError("[Boss] '%s' has bad file '%s' in '%s'", character, key, section);
+								continue;
+							}
+							
+							switch(val.tag)
+							{
+								case KeyValType_Section:
+								{
+									if(!check || FileExists(key, true))
+									{
+										FileNet_AddFileToDownloads(key);
+									}
+									else
+									{
+										LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+									}
+								}
+								case KeyValType_Value:
+								{
+									if(length > val.size)	// "models/example"	"mdl"
+									{
+										if(val.data[1] == 'a')	// mat, material
+										{
+											for(int b; b < sizeof(MatExts); b++)
+											{
+												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MatExts[b]);
+												if(!check || FileExists(buffer, true))
+												{
+													FileNet_AddFileToDownloads(buffer);
+												}
+												else
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+												}
+											}
+											continue;
+										}
+										else if(val.data[1] == 'd' || val.data[1] == 'o')	// mdl, model
+										{
+											for(int b; b < sizeof(MdlExts); b++)
+											{
+												FormatEx(buffer, sizeof(buffer), "%s.%s", key, MdlExts[b]);
+												if(!check || FileExists(buffer, true))
+												{
+													FileNet_AddFileToDownloads(buffer);
+												}
+												else if(b != sizeof(MdlExts)-1)
+												{
+													LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+													break;
+												}
+											}
+										}
+										else
+										{
+											if(!check || FileExists(key, true))
+											{
+												FileNet_AddFileToDownloads(key);
+											}
+											else
+											{
+												LogError("[Boss] '%s' is missing file '%s' in '%s'", character, key, section);
+											}
+										}
+									}
+									else			// "1"	"sound/example.mp3"
+									{
+										if(!check || FileExists(val.data, true))
+										{
+											FileNet_AddFileToDownloads(val.data);
+										}
+										else
+										{
+											LogError("[Boss] '%s' is missing file '%s' in '%s'", character, val.data, section);
 										}
 									}
 								}
@@ -1730,7 +1827,7 @@ void Bosses_Equip(int client)
 	CreateTimer(0.1, Bosses_EquipTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Bosses_EquipTimer(Handle timer, int userid)
+static Action Bosses_EquipTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client && Client(client).IsBoss)
@@ -2580,7 +2677,7 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 	Forward_OnAbilityPost(client, ability, cfg);
 }
 
-public Action Bosses_UseBossCharge(Handle timer, DataPack data)
+static Action Bosses_UseBossCharge(Handle timer, DataPack data)
 {
 	data.Reset();
 	int client = data.ReadCell();
@@ -2782,7 +2879,21 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 						}
 						
 						if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
+						{
 							cfgsub.GetFloat("duration", sound.Duration);
+							
+							if(!cfgsub.GetInt("__overlayfn", sound.OverlayFileNet))
+							{
+								sound.OverlayFileNet = FileNet_FileProgress(sound.Overlay);
+								cfgsub.SetInt("__overlayfn", sound.OverlayFileNet);
+							}
+						}
+						
+						if(!cfgsub.GetInt("__filenet", sound.FileNet))
+						{
+							sound.FileNet = FileNet_SoundProgress(sound.Sound);
+							cfgsub.SetInt("__filenet", sound.FileNet);
+						}
 					}
 					case KeyValType_Value:
 					{
@@ -2797,6 +2908,8 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							{
 								size = strcopy(sound.Sound, sizeof(sound.Sound), key);
 							}
+
+							sound.FileNet = FileNet_SoundProgress(sound.Sound);
 						}
 						else	// "1"	"example.mp3"
 						{
@@ -2807,6 +2920,8 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							{
 								Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
 								cfg.GetFloat(sound.Sound, sound.Duration);
+								
+								sound.OverlayFileNet = FileNet_FileProgress(sound.Overlay);
 							}
 							
 							Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
@@ -2838,6 +2953,8 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 								if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
 							}
+
+							sound.FileNet = FileNet_SoundProgress(sound.Sound);
 						}
 					}
 				}
@@ -2900,7 +3017,21 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 				}
 				
 				if(cfgsub.Get("overlay", sound.Overlay, sizeof(sound.Overlay)))
+				{
 					cfgsub.GetFloat("duration", sound.Duration);
+
+					if(!cfgsub.GetInt("__overlayfn", sound.OverlayFileNet))
+					{
+						sound.OverlayFileNet = FileNet_FileProgress(sound.Overlay);
+						cfgsub.SetInt("__overlayfn", sound.OverlayFileNet);
+					}
+				}
+				
+				if(!cfgsub.GetInt("__filenet", sound.FileNet))
+				{
+					sound.FileNet = FileNet_SoundProgress(sound.Sound);
+					cfgsub.SetInt("__filenet", sound.FileNet);
+				}
 			}
 			case KeyValType_Value:
 			{
@@ -2915,6 +3046,8 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 					{
 						size = strcopy(sound.Sound, sizeof(sound.Sound), key);
 					}
+
+					sound.FileNet = FileNet_SoundProgress(sound.Sound);
 				}
 				else	// "1"	"example.mp3"
 				{
@@ -2925,6 +3058,8 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 					{
 						Format(sound.Sound, sizeof(sound.Sound), "%s_overlay_time", key);
 						cfg.GetFloat(sound.Sound, sound.Duration);
+						
+						sound.OverlayFileNet = FileNet_FileProgress(sound.Overlay);
 					}
 					
 					Format(sound.Sound, sizeof(sound.Sound), "time%s", key);
@@ -2956,6 +3091,8 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
 					}
+
+					sound.FileNet = FileNet_SoundProgress(sound.Sound);
 				}
 			}
 		}
@@ -2982,7 +3119,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 	
 	if(sound.Time > 0)
 	{
-		Music_PlaySong(clients, numClients, sound.Sound, GetClientUserId(boss), sound.Name, sound.Artist, sound.Time, sound.Volume, sound.Pitch);
+		Music_PlaySong(clients, numClients, sound, GetClientUserId(boss));
 	}
 	else
 	{
@@ -2991,7 +3128,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 		
 		for(int i; i < numClients; i++)
 		{
-			if(!Client(clients[i]).NoVoice)
+			if(!Client(clients[i]).NoVoice && FileNet_HasFile(clients[i], sound.FileNet))
 				clients2[amount++] = clients[i];
 		}
 		
@@ -3020,7 +3157,7 @@ bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[
 
 		for(int i; i < numClients; i++)
 		{
-			if(clients[i] != boss)
+			if(clients[i] != boss && FileNet_HasFile(clients[i], sound.OverlayFileNet))
 			{
 				Client(clients[i]).OverlayFor = sound.Duration;
 				AcceptEntityInput(clients[i], "SetScriptOverlayMaterial", clients[i], clients[i]);
@@ -3141,7 +3278,7 @@ static bool IsSubpluginLoaded(const char[] name)
 	return false;
 }
 
-public void Bosses_RenameSubplugin(DataPack pack)
+static void Bosses_RenameSubplugin(DataPack pack)
 {
 	pack.Reset();
 	

@@ -37,7 +37,7 @@ bool Menu_BackButton(int client)
 	return InMainMenu[client];
 }
 
-public Action Menu_MainMenuCmd(int client, int args)
+static Action Menu_MainMenuCmd(int client, int args)
 {
 	if(!client)
 	{
@@ -129,7 +129,7 @@ void Menu_MainMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
+static int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -177,7 +177,7 @@ public int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 	return 0;
 }
 
-public Action Menu_VoiceToggle(int client, int args)
+static Action Menu_VoiceToggle(int client, int args)
 {
 	if(client)
 	{
@@ -191,7 +191,7 @@ public Action Menu_VoiceToggle(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Menu_QueueMenuCmd(int client, int args)
+static Action Menu_QueueMenuCmd(int client, int args)
 {
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
@@ -257,7 +257,7 @@ static void QueueMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Menu_QueueMenuH(Menu menu, MenuAction action, int client, int choice)
+static int Menu_QueueMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -304,7 +304,7 @@ static void ResetQueueMenu(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
+static int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -323,7 +323,7 @@ public int ResetQueueMenuH(Menu menu, MenuAction action, int client, int choice)
 	return 0;
 }
 
-public Action Menu_HudToggle(int client, int args)
+static Action Menu_HudToggle(int client, int args)
 {
 	if(client)
 	{
@@ -337,7 +337,7 @@ public Action Menu_HudToggle(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action Menu_AddPointsCmd(int client, int args)
+static Action Menu_AddPointsCmd(int client, int args)
 {
 	if(args == 2)
 	{
@@ -402,7 +402,7 @@ static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 	}
 }
 
-public int Menu_AddPointsTargetH(Menu menu, MenuAction action, int client, int choice)
+static int Menu_AddPointsTargetH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -420,7 +420,7 @@ public int Menu_AddPointsTargetH(Menu menu, MenuAction action, int client, int c
 	return 0;
 }
 
-public int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int choice)
+static int Menu_AddPointsActionH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{

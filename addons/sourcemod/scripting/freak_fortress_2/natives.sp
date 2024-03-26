@@ -23,11 +23,12 @@ void Native_PluginLoad()
 	CreateNative("FF2R_UpdateBossAttributes", Native_UpdateBossAttributes);
 	CreateNative("FF2R_GetClientHud", Native_GetClientHud);
 	CreateNative("FF2R_SetClientHud", Native_SetClientHud);
+	CreateNative("FF2R_ClientHasFile", Native_ClientHasFile);
 	
 	RegPluginLibrary("ff2r");
 }
 
-public any Native_GetBossData(Handle plugin, int params)
+static any Native_GetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
@@ -36,7 +37,7 @@ public any Native_GetBossData(Handle plugin, int params)
 	return Client(client).Cfg;
 }
 
-public any Native_SetBossData(Handle plugin, int params)
+static any Native_SetBossData(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -73,7 +74,7 @@ public any Native_SetBossData(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_EmitBossSound(Handle plugin, int params)
+static any Native_EmitBossSound(Handle plugin, int params)
 {
 	int boss = GetNativeCell(4);
 	if(boss < 1 || boss > MaxClients || !Client(boss).Cfg)
@@ -99,7 +100,7 @@ public any Native_EmitBossSound(Handle plugin, int params)
 	return Bosses_PlaySound(boss, clients, amount, sample, required, GetNativeCell(6), GetNativeCell(7), GetNativeCell(8), GetNativeCell(9), GetNativeCell(10), GetNativeCell(11), GetNativeCell(12), origin, dir, GetNativeCell(15), GetNativeCell(16));
 }
 
-public any Native_DoBossSlot(Handle plugin, int params)
+static any Native_DoBossSlot(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !Client(client).Cfg)
@@ -114,12 +115,12 @@ public any Native_DoBossSlot(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_GetSpecialData(Handle plugin, int params)
+static any Native_GetSpecialData(Handle plugin, int params)
 {
 	return Bosses_GetConfig(GetNativeCell(1));
 }
 
-public any Native_CreateBoss(Handle plugin, int params)
+static any Native_CreateBoss(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -139,7 +140,7 @@ public any Native_CreateBoss(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_GetClientMinion(Handle plugin, int params)
+static any Native_GetClientMinion(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
@@ -148,7 +149,7 @@ public any Native_GetClientMinion(Handle plugin, int params)
 	return Client(client).Minion;
 }
 
-public any Native_SetClientMinion(Handle plugin, int params)
+static any Native_SetClientMinion(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -158,7 +159,7 @@ public any Native_SetClientMinion(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_GetClientScore(Handle plugin, int params)
+static any Native_GetClientScore(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
@@ -170,17 +171,17 @@ public any Native_GetClientScore(Handle plugin, int params)
 	return Client(client).TotalDamage + Client(client).Healing + Client(client).TotalAssist;
 }
 
-public any Native_GetPluginHandle(Handle plugin, int params)
+static any Native_GetPluginHandle(Handle plugin, int params)
 {
 	return ThisPlugin;
 }
 
-public any Native_GetGamemodeType(Handle plugin, int params)
+static any Native_GetGamemodeType(Handle plugin, int params)
 {
 	return Enabled ? 2 : (Charset != -1 ? 1 : 0);
 }
 
-public any Native_StartLagCompensation(Handle plugin, int params)
+static any Native_StartLagCompensation(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -190,7 +191,7 @@ public any Native_StartLagCompensation(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_FinishLagCompensation(Handle plugin, int params)
+static any Native_FinishLagCompensation(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -200,7 +201,7 @@ public any Native_FinishLagCompensation(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_UpdateBossAttributes(Handle plugin, int params)
+static any Native_UpdateBossAttributes(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !Client(client).Cfg)
@@ -212,7 +213,7 @@ public any Native_UpdateBossAttributes(Handle plugin, int params)
 	return 0;
 }
 
-public any Native_GetClientHud(Handle plugin, int params)
+static any Native_GetClientHud(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 0 || client >= MAXTF2PLAYERS)
@@ -221,7 +222,7 @@ public any Native_GetClientHud(Handle plugin, int params)
 	return !Client(client).NoHud;
 }
 
-public any Native_SetClientHud(Handle plugin, int params)
+static any Native_SetClientHud(Handle plugin, int params)
 {
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
@@ -229,4 +230,25 @@ public any Native_SetClientHud(Handle plugin, int params)
 	
 	Client(client).NoHud = !GetNativeCell(2);
 	return 0;
+}
+
+static any Native_ClientHasFile(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if(client != 0 && (client < 1 || client > MaxClients || !IsClientInGame(client)))
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
+	
+	int length;
+	GetNativeStringLength(2, length);
+	char[] file = new char[++length];
+	GetNativeString(2, file, length);
+
+	int table = FindStringTable("downloadables");
+	if(table != INVALID_STRING_TABLE)
+	{
+		if(FindStringIndex(table, file) != INVALID_STRING_INDEX)
+			return true;
+	}
+
+	return FileNet_HasFile(client, FileNet_FileProgress(file));
 }

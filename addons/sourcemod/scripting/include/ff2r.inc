@@ -165,6 +165,18 @@ native bool FF2R_GetClientHud(int client);
 native void FF2R_SetClientHud(int client, bool status);
 
 /**
+ * Sets if the client can see HUDs
+ * 
+ * @param client	Client index, 0 to only check for download table
+ * @param file		Filepath of file
+ * 
+ * @error		Invalid client index or client is not in game
+ * 
+ * @return		True if on the download table or client has the file through late downloads, false otherwise
+ */
+native bool FF2R_ClientHasFile(int client, const char[] file);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted

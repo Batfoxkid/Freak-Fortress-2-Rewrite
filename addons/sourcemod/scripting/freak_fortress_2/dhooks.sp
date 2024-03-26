@@ -158,7 +158,7 @@ void DHook_EntityDestoryed()
 	RequestFrame(DHook_EntityDestoryedFrame);
 }
 
-public void DHook_EntityDestoryedFrame()
+static void DHook_EntityDestoryedFrame()
 {
 	int length = RawEntityHooks.Length;
 	if(length)
@@ -238,7 +238,7 @@ Address DHook_GetLagCompensationManager()
 	return CLagCompensationManager;
 }
 
-public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
+static void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
 	
@@ -249,7 +249,7 @@ public void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
+static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
 	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
 	{
@@ -276,12 +276,12 @@ public MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
+static MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 {
 	return MRES_Supercede;
 }
 
-public MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
+static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 {
 	if(param.Get(1) % 2)
 	{
@@ -294,12 +294,12 @@ public MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
+static MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 {
 	return (Client(client).Minion || Client(client).IsBoss) ? MRES_Supercede : MRES_Ignored;
 }
 
-public MRESReturn DHook_ForceRespawnPre(int client)
+static MRESReturn DHook_ForceRespawnPre(int client)
 {
 	PrefClass = 0;
 	if(Client(client).IsBoss)
@@ -316,7 +316,7 @@ public MRESReturn DHook_ForceRespawnPre(int client)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ForceRespawnPost(int client)
+static MRESReturn DHook_ForceRespawnPost(int client)
 {
 	if(PrefClass)
 		SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", PrefClass);
@@ -324,7 +324,7 @@ public MRESReturn DHook_ForceRespawnPost(int client)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
+static MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 {
 	int client = param.Get(1);
 	if(!Client(client).IsBoss || Attributes_FindOnPlayer(client, 68))
@@ -334,7 +334,7 @@ public MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 	return MRES_Override;
 }
 
-public MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
+static MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
 {
 	if(Client(client).IsBoss && TF2_GetPlayerClass(client) == TFClass_Medic)
 		TF2_SetPlayerClass(client, TFClass_Unknown, _, false);
@@ -342,7 +342,7 @@ public MRESReturn DHook_RegenThinkPre(int client, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
+static MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 {
 	if(Client(client).IsBoss && TF2_GetPlayerClass(client) == TFClass_Unknown)
 		TF2_SetPlayerClass(client, TFClass_Medic, _, false);
@@ -350,25 +350,25 @@ public MRESReturn DHook_RegenThinkPost(int client, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ResetRoundStats(Address address)
+static MRESReturn DHook_ResetRoundStats(Address address)
 {
 	CTFGameStats = address;
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_RoundRespawn()
+static MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_StartLagCompensation(Address address)
+static MRESReturn DHook_StartLagCompensation(Address address)
 {
 	CLagCompensationManager = address;
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_SetWinningTeam(DHookParam param)
+static MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
 	if(Enabled && RoundStatus == 1 && Cvar[SpecTeam].BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
 	{
@@ -404,7 +404,7 @@ public MRESReturn DHook_SetWinningTeam(DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
+static MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 {
 	if(DamageTypeOffset != -1 && !param.IsNull(2) && Client(param.Get(2)).IsBoss)
 	{
@@ -420,7 +420,7 @@ public MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
+static MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 {
 	if(KnifeWasChanged != -1)
 	{
@@ -431,7 +431,7 @@ public MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ApplyPostHitPre(int entity, DHookParam param)
+static MRESReturn DHook_ApplyPostHitPre(int entity, DHookParam param)
 {
 	int client = param.Get(2);
 	if(Client(client).IsBoss)
@@ -443,7 +443,7 @@ public MRESReturn DHook_ApplyPostHitPre(int entity, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
+static MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 {
 	if(EffectClass != -1)
 	{
@@ -454,13 +454,13 @@ public MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 	return MRES_Ignored;
 }
 
-public MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
+static MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
     return MRES_Ignored;
 }
 
-public MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
+static MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
 {
     StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
     return MRES_Ignored;
