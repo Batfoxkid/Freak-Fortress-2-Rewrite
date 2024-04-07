@@ -320,7 +320,7 @@ public void TF2_OnWaitingForPlayersEnd()
 		Cvar[MovementFreeze].BoolValue = true;
 }
 
-public Action Gamemode_TimerRespawn(Handle timer)
+static Action Gamemode_TimerRespawn(Handle timer)
 {
 	if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		return Plugin_Stop;
@@ -335,7 +335,7 @@ public Action Gamemode_TimerRespawn(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action Gamemode_BackupWaiting(Handle timer)
+static Action Gamemode_BackupWaiting(Handle timer)
 {
 	// There is some cases where waiting for players could get stuck and fail to restart the round
 	// Here's the duct tape fix until I can find a way to properly patch it
@@ -349,7 +349,7 @@ public Action Gamemode_BackupWaiting(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action Gamemode_IntroTimer(Handle timer)
+static Action Gamemode_IntroTimer(Handle timer)
 {
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -381,7 +381,7 @@ public Action Gamemode_IntroTimer(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action Gamemode_SetControlPoint(Handle timer)
+static Action Gamemode_SetControlPoint(Handle timer)
 {
 	Events_CheckAlivePlayers();
 	
@@ -1088,7 +1088,7 @@ static int SetTeamBasedHealthBar(int health1, int team1)
 	return health2;
 }
 
-public Action Gamemode_UpdateHudTimer(Handle timer, int team)
+static Action Gamemode_UpdateHudTimer(Handle timer, int team)
 {
 	HudTimer[team] = null;
 	Gamemode_UpdateHUD(team);
@@ -1215,7 +1215,7 @@ void Gamemode_ConditionRemoved(int client, TFCond cond)
 	}
 }
 
-public Action Gamemode_DisguiseTimer(Handle timer, int userid)
+static Action Gamemode_DisguiseTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))

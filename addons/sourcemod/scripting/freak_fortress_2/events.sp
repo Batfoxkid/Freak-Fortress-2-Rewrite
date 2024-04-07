@@ -141,19 +141,19 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		Gamemode_CheckPointUnlock(total, !LastMann);
 }
 
-public void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
+static void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	FirstBlood = true;
 	LastMann = false;
 	Gamemode_RoundStart();
 }
 
-public void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
+static void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	Gamemode_RoundEnd(event.GetInt("team"));
 }
 
-public Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)
+static Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
 	{
@@ -165,7 +165,7 @@ public Action Events_BroadcastAudio(Event event, const char[] name, bool dontBro
 	return Plugin_Continue;
 }
 
-public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBroadcast)
+static Action Events_ObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!event.GetInt("weaponid"))
 	{
@@ -180,7 +180,7 @@ public Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 	return Plugin_Continue;
 }
 
-public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
+static Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
 	TFObjectType type = view_as<TFObjectType>(event.GetInt("objecttype"));
 	if(Enabled && type == TFObject_Teleporter)
@@ -210,7 +210,7 @@ public Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 	return Plugin_Continue;
 }
 
-public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+static void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(client && Cvar[DisguiseModels].BoolValue)
@@ -222,7 +222,7 @@ public void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcas
 	Events_CheckAlivePlayers();
 }
 
-public Action Events_InventoryApplication(Event event, const char[] name, bool dontBroadcast)
+static Action Events_InventoryApplication(Event event, const char[] name, bool dontBroadcast)
 {
 	int userid = event.GetInt("userid");
 	int client = GetClientOfUserId(userid);
@@ -285,7 +285,7 @@ public Action Events_InventoryApplication(Event event, const char[] name, bool d
 	return Plugin_Continue;
 }
 
-public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadcast)
+static void Events_PlayerHealed(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Cvar[RefreshDmg].BoolValue)
 	{
@@ -299,7 +299,7 @@ public void Events_PlayerHealed(Event event, const char[] name, bool dontBroadca
 	}
 }
 
-public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
+static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
 	bool changed;
 	int victim = GetClientOfUserId(event.GetInt("userid"));
@@ -466,7 +466,7 @@ public Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
-public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || RoundStatus == 1)
 	{
@@ -627,7 +627,7 @@ public void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
-public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)
+static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
 	{
@@ -732,7 +732,7 @@ public Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 	return Plugin_Continue;
 }
 
-public void Events_RPSTaunt(Event event, const char[] name, bool dontBroadcast)
+static void Events_RPSTaunt(Event event, const char[] name, bool dontBroadcast)
 {
 	int victim = event.GetInt("loser");
 	if(Client(victim).IsBoss)

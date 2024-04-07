@@ -23,6 +23,7 @@ Recommended:
 Supported:
 
 - [SteamWorks](https://github.com/ExperimentFailed/SteamWorks)
+- [File Network](https://github.com/Batfoxkid/File-Network)
 - [SM-TFUtils](https://github.com/nosoop/SM-TFUtils)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)

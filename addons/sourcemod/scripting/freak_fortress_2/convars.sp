@@ -49,7 +49,7 @@ void ConVar_PluginStart()
 	Cvar[SubpluginFolder] = CreateConVar("ff2_plugin_subplugins", "freaks", "Folder to load/unload when bosses are at play relative to the plugins folder.");
 	Cvar[FileCheck] = CreateConVar("ff2_plugin_checkfiles", "1", "If to check and warn about missing files from bosses. (Disabling this can help load times.)", _, true, 0.0, true, 1.0);
 	Cvar[PackVotes] = CreateConVar("ff2_plugin_packvotes", "1", "If to host a boss pack vote when the next map is set.", _, true, 0.0, true, 1.0);
-	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill.", _, true, 0.0, true, 1.0);
+	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill.", _, true, 1.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
@@ -182,18 +182,6 @@ static void ConVar_Add(const char[] name, const char[] value, bool enforce = tru
 	CvarList.PushArray(info);
 }
 
-public void ConVar_OnlyChangeOnEmpty(ConVar cvar, const char[] oldValue, const char[] newValue)
-{
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client))
-		{
-			cvar.SetString(oldValue);
-			break;
-		}
-	}
-}
-
 stock void ConVar_Remove(const char[] name)
 {
 	ConVar cvar = FindConVar(name);
@@ -263,7 +251,7 @@ void ConVar_Disable()
 	}
 }
 
-public void ConVar_OnChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+static void ConVar_OnChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
 	int index = CvarList.FindValue(cvar, CvarInfo::cvar);
 	if(index != -1)
