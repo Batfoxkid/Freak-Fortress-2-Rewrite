@@ -490,6 +490,7 @@
 	"Music List"
 	{
 		"ru"		"Посмотреть плейлист"
+	}
 	"Music Downloading"
 	{
 		"ru"		"Скачивание"
