@@ -491,6 +491,10 @@
 	{
 		"ru"		"Посмотреть плейлист"
 	}
+	"Music Downloading"
+	{
+		"ru"		"Скачивание"
+	}
 	
 	"Difficulty Menu"
 	{
