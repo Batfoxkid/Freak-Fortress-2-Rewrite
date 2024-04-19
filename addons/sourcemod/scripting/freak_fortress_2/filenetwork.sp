@@ -77,7 +77,8 @@ stock void FileNet_ClientPutInServer(int client)
 {
 	#if defined _filenetwork_included
 	FileNet_ClientDisconnect(client);
-	SendNextFile(client);
+	if(!IsFakeClient(client))
+		SendNextFile(client);
 	#endif
 }
 
