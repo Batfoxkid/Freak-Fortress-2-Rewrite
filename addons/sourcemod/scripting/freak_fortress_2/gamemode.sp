@@ -947,7 +947,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 			}
 			
 			float refresh = Cvar[RefreshTime].FloatValue;
-			if(setting == 1 || nobar)
+			if(setting == 2 || nobar)
 			{
 			}
 			else if(count < 3)
