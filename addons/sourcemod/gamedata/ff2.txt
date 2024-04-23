@@ -9,47 +9,60 @@
 				// "Trying to start a new lag compensation "
 				"library"	"server"
 				"linux"		"@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
+				"linux64"	"@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x57\x8B\xF9\x89\x7D\xE4"
+				"windows64"	"\x40\x55\x57\x41\x55\x48\x81\xEC\xA0\x00\x00\x00"
 			}
 			"CLagCompensationManager::FinishLagCompensation"
 			{
 				// "FinishLagCompensation"
 				"library"	"server"
 				"linux"		"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
+				"linux64"	"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x40\x8B\x15\x2A\x2A\x2A\x2A\x53\x56\x33\xF6\x8B\xD9"
+				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xC0\x00\x00\x00"
 			}
 			"CTFDroppedWeapon::Create"
 			{
 				// "tf_dropped_weapon" Single Large Function
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon6CreateEP9CTFPlayerRK6VectorRK6QAnglePKcPK13CEconItemView"
+				"linux64"	"@_ZN16CTFDroppedWeapon6CreateEP9CTFPlayerRK6VectorRK6QAnglePKcPK13CEconItemView"
 				"windows"	"\x55\x8B\xEC\x51\xA1\x2A\x2A\x2A\x2A\x80\xB8\x72\x0C\x00\x00\x00"
+				"windows64"	"\x4C\x89\x4C\x24\x20\x41\x54\x41\x55\x41\x57\x48\x83\xEC\x40"
 			}
 			"CTFDroppedWeapon::InitDroppedWeapon"
 			{
 				// "ChargeLevelDegradeThink" Called by 3 Funcs
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
+				"linux64"	"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x30\x56\x57\x8B\xF9\x8B\x4D\x08"
+				"windows64"	"\x48\x8B\xC4\x48\x89\x58\x08\x48\x89\x70\x10\x48\x89\x78\x18\x55\x41\x56\x41\x57\x48\x8D\x68\xA9"
 			}
 			"CTFDroppedWeapon::InitPickedUpWeapon"
 			{
 				// "ChargeLevelDegradeThink" Called only by CTFPlayer::PickupWeaponFromOther
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
+				"linux64"	"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\xD9\xEE\x53"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x41\x56\x41\x57\x48\x83\xEC\x40\x4C\x8B\xFA"
 			}
 			"CTFGameStats::ResetRoundStats"
 			{
 				// "stats_resetround"
 				"library"	"server"
 				"linux"		"@_ZN12CTFGameStats15ResetRoundStatsEv"
+				"linux64"	"@_ZN12CTFGameStats15ResetRoundStatsEv"
 				"windows"	"\x53\x8B\xD9\x56\xBE\x66\x00\x00\x00"
+				"windows64"	"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x33\xC9\x44\x8B\xC1"
 			}
 			"CTFGameStats::IncrementStat"
 			{
 				"library"	"server"
 				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
+				"linux64"	"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
 			}
 			"CTFPlayer::CanAirDash"
@@ -57,59 +70,78 @@
 				// "set_scout_doublejump_disabled"
 				"library"	"server"
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
+				"linux64"	"@_ZNK9CTFPlayer10CanAirDashEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x57\x8B\xF9\x8B\x87\xB4\x1B\x00\x00"
+				"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xD4\x1E\x00\x00"
 			}
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
+				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
 				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x08\x53\x56\x57\x80\xB8\x04\x05\x00\x00\x00"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x56\x57\x41\x56\x48\x83\xEC\x20\x80\xBA\x54\x06\x00\x00\x00"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
 				// "set_blockbackstab_once"
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
+				"linux64"	"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x8F\xE0\x1A\x00\x00"
+				"windows64"	"\x40\x55\x41\x55\x41\x57\x48\x81\xEC\xA0\x00\x00\x00"
 			}
 			"CTFPlayer::DropAmmoPack"
 			{
 				// "models/items/ammopack_medium.mdl"
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
+				"linux64"	"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x2C\x53\x56\x8B\xF1\xC7\x45\xFC\x00\x00\x00\x00"
+				"windows64"	"\x48\x89\x5C\x24\x08\x44\x88\x4C\x24\x20"
 			}
 			"CTFPlayer::GetMaxAmmo"
 			{
+				// "mult_maxammo_primary"
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10GetMaxAmmoEii"
+				"linux64"	"@_ZN9CTFPlayer10GetMaxAmmoEii"
 				"windows"	"\x55\x8B\xEC\x8B\x45\x0C\x53\x8B\xD9"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x30\x48\x63\xFA"
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
+				"linux64"	"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\x7D\x08\x8B\xF1\x81\xC7\xB0\x04\x00\x00"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x57\x41\x56\x41\x57\x48\x81\xEC\x80\x00\x00\x00"
 			}
 			"CTFPlayer::RegenThink"
 			{
 				// "add_health_regen"
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer10RegenThinkEv"
+				"linux64"	"@_ZN9CTFPlayer10RegenThinkEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x7C\x56\x8B\xF1"
+				"windows64"	"\x40\x53\x48\x81\xEC\x30\x01\x00\x00\x48\x8B\x01"
 			}
 			"CTFPlayer::TeamFortress_SetSpeed"
 			{
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
+				"linux64"	"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x28\xA1\x2A\x2A\x2A\x2A\x56"
+				"windows64"	"\x40\x55\x48\x83\xEC\x60\x48\x8B\x05\x13\x3D\x7A\x00"
 			}
 			"CTFPowerup::DropSingleInstance"
 			{
 				// "PowerupRemoveThink"
 				"library"	"server"
 				"linux"		"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
+				"linux64"	"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
 				"windows"	"\x55\x8B\xEC\x51\x53\x56\x57\x6A\x01\x6A\x05"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x48\x8B\xDA"
 			}
 		}
 		"Offsets"
@@ -117,52 +149,72 @@
 			"CBaseEntity::ChangeTeam"
 			{
 				"linux"		"97"
+				"linux64"	"97"
 				"windows"	"96"
+				"windows64"	"96"
 			}
 			"CBasePlayer::ForceRespawn"
 			{
 				"linux"		"337"
+				"linux64"	"337"
 				"windows"	"336"
+				"windows64"	"336"
 			}
 			"CEconItemView::IterateAttributes"
 			{
 				"linux"		"19"
+				"linux64"	"19"
 				"windows"	"18"
+				"windows64"	"18"
 			}
 			"CTeamplayRoundBasedRules::RoundRespawn"
 			{
 				"linux"		"231"
+				"linux64"	"231"
 				"windows"	"229"
+				"windows64"	"229"
 			}
 			"CTeamplayRules::SetWinningTeam"
 			{
 				"linux"		"165"
+				"linux64"	"165"
 				"windows"	"164"
+				"windows64"	"164"
 			}
 			"CTeam::AddPlayer"
 			{
 				"linux"		"209"
+				"linux64"	"209"
 				"windows"	"208"
+				"windows64"	"208"
 			}
 			"CTeam::RemovePlayer"
 			{
 				"linux"		"210"
+				"linux64"	"210"
 				"windows"	"209"
+				"windows64"	"209"
 			}
 			"CTFGameRules::GetCaptureValueForPlayer"
 			{
 				"linux"		"158"
+				"linux64"	"158"
 				"windows"	"157"
+				"windows64"	"157"
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
 				"linux"		"424"
+				"linux64"	"424"
 				"windows"	"417"
+				"windows64"	"417"
 			}
 			"CTFWeaponBase::ApplyOnInjuredAttributes"
 			{
 				"linux"		"425"
+				"linux64"	"425"
 				"windows"	"418"
+				"windows64"	"418"
 			}
 			"m_bitsDamageType"
 			{
