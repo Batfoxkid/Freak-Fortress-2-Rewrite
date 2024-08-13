@@ -2591,7 +2591,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 						FF2R_CreateBoss(target, null);
 				}
 
-				// Same team dead players
+				// 1st: Same team dead players
 				victim[victims++] = target;
 			}
 			
@@ -2601,9 +2601,10 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		
 		if(amount)
 		{
+			victims = 0;
 			for(int target = 1; target <= MaxClients; target++)
 			{
-				if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) == team)
+				if(client == target || !IsClientInGame(target) || !IsPlayerAlive(target) || GetClientTeam(target) != team)
 					continue;
 
 				if(FF2R_GetBossData(target))
@@ -2614,7 +2615,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 						FF2R_CreateBoss(target, null);
 				}
 
-				// Same team alive players
+				// 2nd: Same team alive players
 				victim[victims++] = target;
 			}
 			
@@ -2623,6 +2624,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			
 			if(amount)
 			{
+				victims = 0;
 				for(int target = 1; target <= MaxClients; target++)
 				{
 					if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) <= view_as<int>(TFTeam_Spectator))
@@ -2636,7 +2638,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 							FF2R_CreateBoss(target, null);
 					}
 
-					// Any dead players
+					// 3rd: Any non-spec dead players
 					victim[victims++] = target;
 				}
 				

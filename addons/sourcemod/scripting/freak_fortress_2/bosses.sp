@@ -831,7 +831,12 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										ConfigMap cfgsound = val.cfg;
 										if(cfgsound)
-											music = view_as<bool>(cfgsound.GetInt("time", length2));
+										{
+											length2 = 0;
+											cfgsound.GetInt("time", length2);
+											if(length2)
+												music = true;
+										}
 									}
 									
 									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
@@ -1576,6 +1581,14 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int tea
 	if(enabled && (!cfg.GetBool("enabled", blocked) || !blocked))
 		return false;
 	
+	if(playing)
+	{
+		// Don't select duo bosses at random
+		int duo = -1;
+		if(cfg.GetInt("companion", duo) && duo != -1)
+			return false;
+	}
+	
 	cfg.GetBool("preview", preview, false);
 	
 	static char buffer1[512];
@@ -1680,6 +1693,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 			}
 		}
 	}
+
+	ConfigMap copy = cfg.Clone(ThisPlugin);
 	
 	if(Client(client).Cfg)
 	{
@@ -1690,7 +1705,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	
 	EnableSubplugins();
 	
-	Client(client).Cfg = cfg.Clone(ThisPlugin);
+	Client(client).Cfg = copy;
 	
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);

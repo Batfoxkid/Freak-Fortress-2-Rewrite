@@ -471,9 +471,7 @@ void Gamemode_RoundStart()
 				{
 					if(!bvb && IsFakeClient(client) && GetClientTeam(client) != mercTeam)
 					{
-						SetEntProp(client, Prop_Send, "m_lifeState", 2);
 						ChangeClientTeam(client, mercTeam);
-						SetEntProp(client, Prop_Send, "m_lifeState", 0);
 					}
 					else
 					{
