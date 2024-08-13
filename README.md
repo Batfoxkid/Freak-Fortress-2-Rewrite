@@ -10,8 +10,8 @@ Use `Update Package` to update your current version of Rewrite
 
 Required:
 
-- [SourceMod 1.11+](https://www.sourcemod.net/downloads.php)
-- [TF2Attributes 1.7.0+](https://github.com/FlaminSarge/tf2attributes)
+- [SourceMod](https://www.sourcemod.net/downloads.php)
+- [TF2Attributes](https://github.com/FlaminSarge/tf2attributes)
 - [TF2Items](https://github.com/nosoop/SMExt-TF2Items)
 
 Recommended:
