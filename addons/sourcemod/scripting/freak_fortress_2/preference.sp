@@ -1506,12 +1506,14 @@ static Action Preference_ForceBossCmd(int client, int args)
 		{
 			special = Bosses_GetByName(name, false, _, lang);
 		}
+
+		bool rcon = !client || CheckCommandAccess(client, "sm_rcon", ADMFLAG_RCON);
 		
 		if(special == -1)
 		{
 			FReplyToCommand(client, "%t", "Boss Not Found");
 		}
-		else if(!client || Bosses_CanAccessBoss(client, special, true))
+		else if(rcon || Bosses_CanAccessBoss(client, special, false) || Bosses_CanAccessBoss(client, special, true))
 		{
 			BossOverride = special;
 			Bosses_GetBossName(special, name, sizeof(name), lang);
@@ -1553,9 +1555,10 @@ static void ForceBossMenu(int client, int item)
 	char num[12];
 	int lang = GetClientLanguage(client);
 	int length = Bosses_GetConfigLength();
+	bool rcon = CheckCommandAccess(client, "sm_rcon", ADMFLAG_RCON);
 	for(int i; i < length; i++)
 	{
-		if(Bosses_CanAccessBoss(client, i, true))
+		if(rcon || Bosses_CanAccessBoss(client, i, false) || Bosses_CanAccessBoss(client, i, true))
 		{
 			IntToString(i, num, sizeof(num));
 			Bosses_GetBossName(i, name, sizeof(name), lang);

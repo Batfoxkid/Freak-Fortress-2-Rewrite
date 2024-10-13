@@ -306,6 +306,8 @@ void Weapons_ShowChanges(int client, int entity)
 		{
 			CPrintToChat(client, "%t%s:", "Prefix", localizedWeaponName);
 		}
+
+		delete kv;
 	}
 	else
 	#endif
@@ -582,9 +584,9 @@ stock void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int wea
 					}
 				}
 			}
+
+			delete kv;
 		}
-		
-		delete kv;
 		
 		if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
 		{
@@ -634,6 +636,8 @@ stock void Weapons_OnHitBoss(int attacker, int newPlayerDamage, int lastPlayerDa
 					if(value)
 						SetEntProp(attacker, Prop_Data, "m_iAmmo", GetEntProp(attacker, Prop_Data, "m_iAmmo", _, 2) + value, _, 2);
 				}
+
+				delete kv;
 			}
 		}
 	}

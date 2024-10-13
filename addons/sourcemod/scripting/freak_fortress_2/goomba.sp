@@ -63,5 +63,11 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		JumpPower *= 1.5;
 		return Plugin_Changed;
 	}
+	else if(Client(attacker).IsBoss)
+	{
+		JumpPower = 0.0;
+		return Plugin_Changed;
+	}
+
 	return Plugin_Continue;
 }
