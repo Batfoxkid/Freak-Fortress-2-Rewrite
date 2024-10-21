@@ -65,7 +65,7 @@ void SDKHook_HookClient(int client)
 	if(!OTDLoaded)
 		SDKHook(client, SDKHook_OnTakeDamage, SDKHook_TakeDamage);
 	
-	SDKHook(client, SDKHook_OnTakeDamagePost, SDKHook_TakeDamagePost);
+	SDKHook(client, SDKHook_OnTakeDamageAlivePost, SDKHook_TakeDamagePost);
 	SDKHook(client, SDKHook_WeaponSwitchPost, SDKHook_SwitchPost);
 }
 

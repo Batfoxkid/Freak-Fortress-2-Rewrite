@@ -168,7 +168,7 @@ static any Native_GetClientScore(Handle plugin, int params)
 	SetNativeCellRef(2, Client(client).TotalDamage);
 	SetNativeCellRef(3, Client(client).Healing);
 	SetNativeCellRef(4, Client(client).Assist);
-	return Client(client).TotalDamage + Client(client).Healing + Client(client).TotalAssist;
+	return Client(client).TotalDamage + Client(client).TotalAssist;
 }
 
 static any Native_GetPluginHandle(Handle plugin, int params)

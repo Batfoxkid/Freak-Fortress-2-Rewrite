@@ -2670,12 +2670,12 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		if(rivalTeam)
 			team = (team == 2) ? 3 : 2;
 		
+		FF2R_SetClientMinion(clients[i], true);
+		
 		if(cfg)
 			FF2R_CreateBoss(clients[i], cfg, team);
 		
 		CloneOwner[clients[i]] = owner;
-		
-		FF2R_SetClientMinion(clients[i], true);
 		
 		vel[0] = GetRandomFloat(-500.0, 500.0);
 		vel[1] = GetRandomFloat(-500.0, 500.0);

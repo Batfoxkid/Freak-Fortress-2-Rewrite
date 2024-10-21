@@ -312,7 +312,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		{
 			CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 			pack.WriteCell(GetClientUserId(attacker));
-			pack.WriteFloat(fdamage / 1000.0);
+			pack.WriteFloat(fdamage / 1000.0 * Weapons_GetCustAttrFloat(weapon, "boost on damage drain multi", 1.0));
 		}
 		else
 		{
