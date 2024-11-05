@@ -962,8 +962,8 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 					entity = FindEntityByClassname(-1, "monster_resource");
 					if(!maxcombined)
 					{
-						//if(entity != -1)
-						//	RemoveEntity(entity);
+						if(entity != -1)
+							SetEntProp(entity, Prop_Send, "m_iBossHealthPercentageByte", 0, 2);
 					}
 					else
 					{
@@ -996,7 +996,13 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 						{
 							amount = combined * 255 / maxcombined;
 							if(!amount)
+							{
 								amount = 1;
+							}
+							else if(amount > 255)
+							{
+								amount = 255;
+							}
 						}
 						
 						SetEntProp(entity, Prop_Send, "m_iBossHealthPercentageByte", amount, 2);

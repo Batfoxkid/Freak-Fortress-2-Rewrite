@@ -664,7 +664,7 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 			{
 				if(!Client(clients[i]).IsBoss)
 				{
-					int damage = Client(clients[i]).TotalDamage + Client(clients[i]).Healing + Client(clients[i]).TotalAssist;
+					int damage = Client(clients[i]).TotalDamage + Client(clients[i]).TotalAssist;
 					if(damage > dmg[0])
 					{
 						top[2] = top[1];

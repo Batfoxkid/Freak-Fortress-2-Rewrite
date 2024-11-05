@@ -681,6 +681,16 @@ stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &
 	#endif
 }
 
+float Weapons_GetCustAttrFloat(int weapon, const char[] name, float defaul = 1.0)
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded)
+		return TF2CustAttr_GetFloat(weapon, name, defaul);
+	#endif
+	
+	return defaul;
+}
+
 void Weapons_OnInventoryApplication(int userid)
 {
 	RequestFrame(Weapons_OnInventoryApplicationFrame, userid);
@@ -822,13 +832,13 @@ static void Weapons_SpawnFrame(int ref)
 	bool found;
 	if(cfg.GetBool("strip", found, false) && found)
 	{
-		char classname[36];
+		/*char classname[36];
 		GetEntityClassname(entity, classname, sizeof(classname));
 		if(!StrContains(classname, "tf_weapon"))
 		{
 			DHook_HookStripWeapon(entity);
 		}
-		else
+		else*/
 		{
 			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
 		}

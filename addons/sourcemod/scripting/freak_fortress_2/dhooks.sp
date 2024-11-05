@@ -30,14 +30,10 @@ static DynamicHook SetWinningTeam;
 static DynamicHook GetCaptureValue;
 static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
-static DynamicHook HookItemIterateAttribute;
-
 static ArrayList RawEntityHooks;
 static Address CTFGameStats;
 static Address CLagCompensationManager;
 static int DamageTypeOffset = -1;
-static int m_bOnlyIterateItemViewAttributes;
-static int m_Item;
 
 static int ChangeTeamPreHook[MAXTF2PLAYERS];
 static int ChangeTeamPostHook[MAXTF2PLAYERS];
@@ -69,10 +65,6 @@ void DHook_Setup()
 	GetCaptureValue = CreateHook(gamedata, "CTFGameRules::GetCaptureValueForPlayer");
 	ApplyOnInjured = CreateHook(gamedata, "CTFWeaponBase::ApplyOnInjuredAttributes");
 	ApplyPostHit = CreateHook(gamedata, "CTFWeaponBase::ApplyPostHitEffects");
-	HookItemIterateAttribute = CreateHook(gamedata, "CEconItemView::IterateAttributes");
-
-	m_Item = FindSendPropInfo("CEconEntity", "m_Item");
-	FindSendPropInfo("CEconEntity", "m_bOnlyIterateItemViewAttributes", _, _, m_bOnlyIterateItemViewAttributes);
 	
 	delete gamedata;
 	
@@ -179,22 +171,6 @@ static void DHook_EntityDestoryedFrame()
 				length--;
 			}
 		}
-	}
-}
-
-void DHook_HookStripWeapon(int entity)
-{
-	if(m_Item > 0 && m_bOnlyIterateItemViewAttributes > 0)
-	{
-		Address pCEconItemView = GetEntityAddress(entity) + view_as<Address>(m_Item);
-		
-		RawHooks raw;
-		
-		raw.Ref = EntIndexToEntRef(entity);
-		raw.Pre = HookItemIterateAttribute.HookRaw(Hook_Pre, pCEconItemView, DHook_IterateAttributesPre);
-		raw.Post = HookItemIterateAttribute.HookRaw(Hook_Post, pCEconItemView, DHook_IterateAttributesPost);
-		
-		RawEntityHooks.PushArray(raw);
 	}
 }
 
@@ -453,15 +429,3 @@ static MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 
 	return MRES_Ignored;
 }
-
-static MRESReturn DHook_IterateAttributesPre(Address pThis, DHookParam hParams)
-{
-    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), true, NumberType_Int8);
-    return MRES_Ignored;
-}
-
-static MRESReturn DHook_IterateAttributesPost(Address pThis, DHookParam hParams)
-{
-    StoreToAddress(pThis + view_as<Address>(m_bOnlyIterateItemViewAttributes), false, NumberType_Int8);
-    return MRES_Ignored;
-} 
