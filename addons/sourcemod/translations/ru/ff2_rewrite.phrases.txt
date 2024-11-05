@@ -205,7 +205,7 @@
 	}
 	"Command Weapon"
 	{
-		"ru"		"Изменения оружий (/ff2weapons)"
+		"ru"		"Изменения оружия (/ff2weapons)"
 	}
 	"Command Hud"
 	{
