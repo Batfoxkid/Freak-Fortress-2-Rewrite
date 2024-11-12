@@ -633,6 +633,10 @@
 	{
 		"en"		"Weapon Pickups - Pickup non-melee weapons to use them in combat"
 	}
+	"Boss AMS Description"
+	{
+		"en"		"AMS - Press inspect key to see ability's description"
+	}
 	"Button E"
 	{
 		"en"		"Call for Medic"
