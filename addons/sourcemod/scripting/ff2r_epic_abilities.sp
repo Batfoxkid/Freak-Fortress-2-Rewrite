@@ -260,7 +260,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Boss Weapon Pickups"))
+	if(!TranslationPhraseExists("Boss AMS Description"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	GameData gamedata = new GameData("sm-tf2.games");
@@ -469,6 +469,9 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			if(ability.IsMyPlugin())
 			{
 				HasAbility[client] = -1;
+				
+				PrintCenterText(client, "%t", "Boss AMS Description");
+				PrintToChat(client, "%t", "Boss AMS Description");
 				
 				bool medic;
 				int buttons;
