@@ -1,18 +1,3 @@
-/*
-	void DHook_Setup()
-	void DHook_MapStart()
-	void DHook_HookClient(int client)
-	void DHook_HookBoss(int client)
-	void DHook_EntityCreated(int entity, const char[] classname)
-	void DHook_EntityDestoryed()
-	void DHook_HookStripWeapon()
-	void DHook_PluginEnd()
-	void DHook_UnhookClient(int client)
-	void DHook_UnhookBoss(int client)
-	Address DHook_GetGameStats()
-	Address DHook_GetLagCompensationManager()
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

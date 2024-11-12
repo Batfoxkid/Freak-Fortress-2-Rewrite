@@ -1,13 +1,3 @@
-/*
-	void TF2U_PluginLoad()
-	void TF2U_PluginStart()
-	void TF2U_LibraryAdded(const char[] name)
-	void TF2U_LibraryRemoved(const char[] name)
-	bool TF2U_GetWearable(int client, int &entity, int &index)
-	int TF2U_GetMaxOverheal(int client)
-	void TF2U_EquipPlayerWearable(int client, int entity)
-*/
-
 #tryinclude <tf2utils>
 
 #pragma semicolon 1

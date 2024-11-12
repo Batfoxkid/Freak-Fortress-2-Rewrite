@@ -1,10 +1,3 @@
-/*
-	void SDKHook_PluginStart()
-	void SDKHook_LibraryAdded(const char[] name)
-	void SDKHook_LibraryRemoved(const char[] name)
-	void SDKHook_HookClient(int client)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

@@ -1,21 +1,3 @@
-/*
-	void Gamemode_PluginStart()
-	void Gamemode_PluginEnd()
-	void Gamemode_MapInit()
-	void Gamemode_MapStart()
-	void Gamemode_MapEnd()
-	void Gamemode_RoundSetup()
-	void Gamemode_RoundStart()
-	void Gamemode_CheckPointUnlock(int alive, bool notice)
-	void Gamemode_OverrideWinner(int team = -1)
-	void Gamemode_RoundEnd(int winteam)
-	void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
-	void Gamemode_SetClientGlow(int client, float duration)void Gamemode_SetClientGlow(int client, float duration)
-	void Gamemode_PlayerRunCmd(int client)
-	void Gamemode_ConditionAdded(int client, TFCond cond)
-	void Gamemode_ConditionRemoved(int client, TFCond cond)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

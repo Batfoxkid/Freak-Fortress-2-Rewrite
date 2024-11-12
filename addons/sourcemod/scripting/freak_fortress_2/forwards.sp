@@ -1,17 +1,3 @@
-/*
-	void Forward_PluginLoad()
-	void Forward_OnBossCreated(int client, ConfigMap cfg)
-	void Forward_OnBossRemoved(int client)
-	bool Forward_OnAbilityPre(int client, const char[] ability, ConfigMap cfg, bool &result)
-	void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
-	void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
-	Action Forward_OnAliveChange()
-	Action Forward_OnBossPrecache(ConfigMap cfg, bool &precache)
-	void Forward_OnBossPrecached(ConfigMap cfg, bool precache, int index)
-	Action Forward_OnPickupDroppedWeapon(int client, int weapon)
-	void Forward_OnBossEquipped(int client, bool weapons)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

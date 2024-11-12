@@ -1,14 +1,3 @@
-/*
-	void SDKCall_Setup()
-	void SDKCall_EquipWearable(int client, int entity)
-	int SDKCall_GetMaxHealth(int client)
-	void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
-	bool SDKCall_CheckBlockBackstab(int client, int attacker)
-	void SDKCall_SetSpeed(int client)
-	void SDKCall_ChangeClientTeam(int client, int newTeam)
-	void SDKCall_DropSingleInstance(int entity, const float velocity[3], int thrower, float throwerTouchDelay, float resetTime = 0.0)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

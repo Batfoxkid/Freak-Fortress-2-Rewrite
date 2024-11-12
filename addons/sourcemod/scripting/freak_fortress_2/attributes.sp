@@ -1,13 +1,3 @@
-/*
-	void Attributes_PluginStart()
-	bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weapon, bool killfeed)
-	void Attributes_OnHitBossPre(int attacker, int victim, int &damagetype, int weapon)
-	void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage, int weapon, int damagecustom)
-	float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
-	float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = false, float defaul = 0.0)
-	bool Attributes_GetByDefIndex(int entity, int index, float &value)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 
@@ -304,21 +294,28 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		
 		SetEntPropFloat(attacker, Prop_Send, "m_flRageMeter", rage);
 	}
-	
-	if(Attributes_FindOnPlayer(attacker, 418) > 0.0)	// boost on damage
+
+	int i;
+	int entity = -1;
+	while(TF2_GetItem(attacker, entity, i))
 	{
-		DataPack pack = new DataPack();
-		if(Enabled)
+		if(Attributes_GetByDefIndex(entity, 418, value) && value > 0.0)	// boost on damage
 		{
-			CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
-			pack.WriteCell(GetClientUserId(attacker));
-			pack.WriteFloat(fdamage / 1000.0 * Weapons_GetCustAttrFloat(weapon, "boost on damage drain multi", 1.0));
-		}
-		else
-		{
-			CreateDataTimer(0.5, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE);
-			pack.WriteCell(GetClientUserId(attacker));
-			pack.WriteFloat(fdamage / 2.0);
+			DataPack pack;
+			if(Enabled)
+			{
+				CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+				pack.WriteCell(GetClientUserId(attacker));
+				pack.WriteFloat(fdamage / 1000.0 * Weapons_GetCustAttrFloat(entity, "boost on damage drain multi", 1.0));
+			}
+			else
+			{
+				CreateDataTimer(0.5, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE);
+				pack.WriteCell(GetClientUserId(attacker));
+				pack.WriteFloat(fdamage / 2.0);
+			}
+
+			break;
 		}
 	}
 	
@@ -339,7 +336,6 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 	{
 		if(Attributes_FindOnWeapon(attacker, weapon, 30))	// fists have radial buff
 		{
-			int entity;
 			int team = GetClientTeam(attacker);
 			float pos1[3], pos2[3];
 			GetClientAbsOrigin(attacker, pos1);
@@ -371,7 +367,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 						Client(attacker).Assist += 50;
 						Client(attacker).RefreshAt = 0.0;
 						
-						int i;
+						i = 0;
 						while(TF2_GetItem(target, entity, i))
 						{
 							SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
@@ -566,7 +562,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			SetEntProp(attacker, Prop_Send, "m_nStreaks", streak, _, slot);
 			
 			int total = streak;
-			for(int i; i < 4; i++)
+			for(i = 0; i < 4; i++)
 			{
 				if(i != slot)
 					total += GetEntProp(attacker, Prop_Send, "m_nStreaks", _, i);
@@ -593,7 +589,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 				}
 				
 				int team = GetClientTeam(attacker);
-				for(int i = 1; i <= MaxClients; i++)
+				for(i = 1; i <= MaxClients; i++)
 				{
 					if(i == attacker || (IsClientInGame(i) && !IsFakeClient(i) && GetClientTeam(i)==team))
 						event.FireToClient(i);
@@ -715,7 +711,7 @@ float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = fa
 	return total;
 }
 
-bool Attributes_GetByDefIndex(int entity, int index, float &value)
+bool Attributes_GetByDefIndex(int entity, int index, float &value = 0.0)
 {
 	Address attrib = TF2Attrib_GetByDefIndex(entity, index);
 	if(attrib != Address_Null)

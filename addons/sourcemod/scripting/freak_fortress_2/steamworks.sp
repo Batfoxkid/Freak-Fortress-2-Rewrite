@@ -1,10 +1,3 @@
-/*
-	void SteamWorks_PluginStart()
-	void SteamWorks_LibraryAdded(const char[] name)
-	void SteamWorks_LibraryRemoved(const char[] name)
-	void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
-*/
-
 #tryinclude <SteamWorks> 
 
 #pragma semicolon 1

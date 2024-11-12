@@ -1,10 +1,3 @@
-/*
-	void Menu_PluginStart()
-	void Menu_Command(int client)
-	bool Menu_BackButton(int client)
-	void Menu_MainMenu(int client)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

@@ -1,9 +1,3 @@
-/*
-	void Configs_AllPluginsLoaded()
-	void Configs_MapStart()
-	bool Configs_CheckMap(const char[] mapname)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

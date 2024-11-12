@@ -1,18 +1,3 @@
-/*
-	void ForwardOld_Setup()
-	bool ForwardOld_PreAbility(int client, const char[] plugin, const char[] ability, int slot)
-	void ForwardOld_OnAbility(int client, const char[] plugin, const char[] ability)
-	bool ForwardOld_OnMusic(char[] path, float &time, char[] name, char[] artist, int client)
-	Action ForwardOld_OnTriggerHurt(int client, int entity, float &damage)
-	bool ForwardOld_OnSpecialSelected(int client, int &special, char name[64], bool preset)
-	bool ForwardOld_OnAddQueuePoints(int[] points, int size)
-	bool ForwardOld_OnLoadCharacterSet(int &charset, char name[64])
-	bool ForwardOld_OnLoseLife(int client)
-	void ForwardOld_OnAlivePlayersChanged(int red, int blu)
-	Action ForwardOld_OnBackstabbed(int client, int attacker)
-	bool ForwardOld_OnMusicPerBoss(int client)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 
