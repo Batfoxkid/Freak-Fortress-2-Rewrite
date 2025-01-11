@@ -53,6 +53,11 @@ void SDKHook_LibraryRemoved(const char[] name)
 	}
 }
 
+void SDKHook_PrintStatus()
+{
+	PrintToServer("'%s' is %sloaded", OTD_LIBRARY, OTDLoaded ? "" : "not ");
+}
+
 void SDKHook_HookClient(int client)
 {
 	if(!OTDLoaded)
@@ -129,7 +134,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			if(IsInvuln(victim))
 				return Plugin_Continue;
 			
-			Weapons_OnHitBossPre(attacker, victim, damage, weapon, view_as<int>(critType), damagecustom, damagetype);
+			CustomAttrib_OnHitBossPre(attacker, victim, damage, damagetype, weapon, damagecustom, view_as<int>(critType));
 			
 			switch(damagecustom)
 			{
@@ -189,7 +194,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					}
 					
 					float stale, time;
-					Weapons_OnBackstabBoss(victim, damage, weapon, time, stale);
+					CustomAttrib_OnBackstabBoss(victim, damage, weapon, time, stale);
 					
 					float multi = 0.666667;
 					if(!Client(attacker).IsBoss)
@@ -294,10 +299,6 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					damage *= 3.0;
 				}
 			}
-			else
-			{
-				Attributes_OnHitBossPre(attacker, victim, damagetype, weapon, view_as<int>(critType));
-			}
 			
 			return Plugin_Changed;
 		}
@@ -368,7 +369,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				changed = true;
 			}
 			
-			if(!Attributes_FindOnWeapon(attacker, weapon, 797))
+			if(!Attrib_FindOnWeapon(attacker, weapon, "dmg pierces resists absorbs"))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
 				{
@@ -392,9 +393,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 							damagetype &= ~DMG_CRIT;
 							changed = true;
 						}
-						
-						// TODO: Figure out if uber and passive of the same type is or can be applied at the same time
-						if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
+						else if(TF2_IsPlayerInCondition(victim, cond + view_as<TFCond>(3)))
 						{
 							// Passive Variant
 							damage *= 0.9;
@@ -402,14 +401,6 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						}
 					}
 				}
-			}
-			
-			if(melee && critType == CritType_Crit && GetEntProp(victim, Prop_Send, "m_bFeignDeathReady") && !TF2_IsCritBoosted(attacker))
-			{
-				// Make random crits less brutal for Dead Ringers
-				critType = CritType_None;	//TODO: See if tf_ontakedamage needs an manual mini-crit boost check
-				damagetype &= ~DMG_CRIT;
-				changed = true;
 			}
 			
 			if(changed && critType == CritType_None && (damagetype & DMG_CRIT))
@@ -434,7 +425,7 @@ static void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 
 static void SDKHook_SwitchPost(int client, int weapon)
 {
-	Weapons_OnWeaponSwitch(client, weapon);
+	CustomAttrib_OnWeaponSwitch(client, weapon);
 }
 
 static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)

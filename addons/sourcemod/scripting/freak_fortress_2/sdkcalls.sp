@@ -236,18 +236,17 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 	{
 		if(newTeam % 2)
 		{
-			TF2Attrib_RemoveByDefIndex(client, 406);
+			Attrib_Remove(client, "vision opt in flags");
 		}
 		else
 		{
-			TF2Attrib_SetByDefIndex(client, 406, 4.0);
+			Attrib_Set(client, "vision opt in flags", 4.0);
 		}
 	}
 }
 
-void SDKCall_DropSingleInstance(int entity, const float velocity[3], int thrower, float throwerTouchDelay, float resetTime = 0.0) {
+void SDKCall_DropSingleInstance(int entity, const float velocity[3], int thrower, float throwerTouchDelay, float resetTime = 0.0)
+{
 	if(SDKDropSingleInstance)
-	{
 		SDKCall(SDKDropSingleInstance, entity, velocity, thrower, throwerTouchDelay, resetTime);
-	}
 }

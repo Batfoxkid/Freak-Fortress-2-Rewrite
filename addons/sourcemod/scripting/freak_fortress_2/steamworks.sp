@@ -36,6 +36,15 @@ stock void SteamWorks_LibraryRemoved(const char[] name)
 	#endif
 }
 
+void SteamWorks_PrintStatus()
+{
+	#if defined _SteamWorks_Included
+	PrintToServer("'%s' is %sloaded", STEAMWORKS_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", STEAMWORKS_LIBRARY);
+	#endif
+}
+
 stock void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
 {
 	#if defined _SteamWorks_Included

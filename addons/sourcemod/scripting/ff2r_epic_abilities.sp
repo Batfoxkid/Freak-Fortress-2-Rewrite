@@ -126,22 +126,16 @@
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <ff2r>
-#include <tf2attributes>
-#include <tf_econ_data>
+#undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
-#tryinclude <tf2utils>
 
 #pragma semicolon 1
 #pragma newdecls required
-
-#include "freak_fortress_2/formula_parser.sp"
 
 #define PLUGIN_VERSION	"Custom"
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
-
-#define TF2U_LIBRARY	"nosoop_tf2utils"
 
 #define	HITGROUP_GENERIC	0
 #define	HITGROUP_HEAD		1
@@ -185,10 +179,6 @@ enum
 	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
 	EF_MAX_BITS = 10
 };
-
-#if defined __nosoop_tf2_utils_included
-bool TF2ULoaded;
-#endif
 
 Handle SDKCanAirDash;
 Handle SDKCreate;
@@ -239,6 +229,12 @@ float WallSpeedMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallJumpMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
 
+#include "freak_fortress_2/econdata.sp"
+#include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/tf2attributes.sp"
+#include "freak_fortress_2/tf2utils.sp"
+#include "freak_fortress_2/vscript.sp"
+
 public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Epic Abilities",
@@ -248,13 +244,12 @@ public Plugin myinfo =
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
-#if defined __nosoop_tf2_utils_included
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
+	TF2U_PluginLoad();
+	TFED_PluginLoad();
 	return APLRes_Success;
 }
-#endif
 
 public void OnPluginStart()
 {
@@ -338,9 +333,10 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	#if defined __nosoop_tf2_utils_included
-	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
-	#endif
+	Attrib_PluginStart();
+	TF2U_PluginStart();
+	TFED_PluginStart();
+	VScript_PluginStart();
 	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
@@ -778,19 +774,22 @@ public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 	return CanPickup[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
 }
 
-#if defined __nosoop_tf2_utils_included
+
 public void OnLibraryAdded(const char[] name)
 {
-	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = true;
+	Attrib_LibraryAdded(name);
+	TF2U_LibraryAdded(name);
+	TFED_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = false;
+	Attrib_LibraryRemoved(name);
+	TF2U_LibraryRemoved(name);
+	TFED_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 }
-#endif
 
 public void OnClientPutInServer(int client)
 {
@@ -1317,7 +1316,7 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 			{
 				entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 				if(entity != -1)
-					SetPlayerActiveWeapon(victim, entity);
+					TF2U_SetPlayerActiveWeapon(victim, entity);
 			}
 		}
 		
@@ -1417,7 +1416,7 @@ public void OnWeaponSwitch(int client, int weapon)
 							SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 							
 							ability.SetInt("tpref", EntIndexToEntRef(entity));
-							EquipWearable(client, entity);
+							TF2U_EquipPlayerWearable(client, entity);
 							
 							SetEntProp(entity, Prop_Send, "m_fEffects", 0);
 							
@@ -1492,7 +1491,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 					
 					BodyRef[client] = EntIndexToEntRef(entity);
-					EquipWearable(client, entity);
+					TF2U_EquipPlayerWearable(client, entity);
 					
 					SetEntityRenderFx(client, RENDERFX_FADE_FAST);
 					
@@ -1519,7 +1518,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					SDKHook(entity, SDKHook_SetTransmit, FirstPersonTransmit);
 					
 					HandRef[client] = EntIndexToEntRef(entity);
-					EquipWearable(client, entity);
+					TF2U_EquipPlayerWearable(client, entity);
 				}
 			}
 			
@@ -1539,7 +1538,7 @@ public void OnWeaponSwitch(int client, int weapon)
 				SDKHook(entity, SDKHook_SetTransmit, FirstPersonTransmit);
 				
 				WeapRef[client] = EntIndexToEntRef(entity);
-				EquipWearable(client, entity);
+				TF2U_EquipPlayerWearable(client, entity);
 				
 				entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
 				if(entity != -1)
@@ -1679,7 +1678,7 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 			EquipPlayerWeapon(client, entity);
 			SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
 			
-			SetPlayerActiveWeapon(client, entity);
+			TF2U_SetPlayerActiveWeapon(client, entity);
 		}
 		else
 		{
@@ -2009,7 +2008,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2033,7 +2032,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2103,7 +2102,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						
@@ -2286,7 +2285,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						{
 							index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 							if(index != -1)
-								SetPlayerActiveWeapon(victim, index);
+								TF2U_SetPlayerActiveWeapon(victim, index);
 						}
 						
 						IntToString(view_as<int>(TF2_GetPlayerClass(victim)), classname, sizeof(classname));
@@ -2384,7 +2383,7 @@ int EquipRazorback(int client)
 		SetEntProp(wearable, Prop_Send, "m_bValidatedAttachedEntity", true);
 		SetEntProp(wearable, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 		
-		EquipWearable(client, wearable);
+		TF2U_EquipPlayerWearable(client, wearable);
 	}
 	return wearable;
 }
@@ -2429,7 +2428,7 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 						
 						entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(entity != -1)
-							SetPlayerActiveWeapon(victim, entity);
+							TF2U_SetPlayerActiveWeapon(victim, entity);
 					}
 					
 					entity = EntRefToEntIndex(ability.GetInt("wearableref", INVALID_ENT_REFERENCE));
@@ -2910,16 +2909,8 @@ void ApplyHealEvent(int patient, int healer, int amount)
 	event.Fire();
 }
 
-void EquipWearable(int client, int entity)
+void SDKCall_EquipWearable(int client, int entity)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
-	{
-		TF2Util_EquipPlayerWearable(client, entity);
-		return;
-	}
-	#endif
-	
 	if(SDKEquipWearable)
 	{
 		SDKCall(SDKEquipWearable, client, entity);
@@ -2930,20 +2921,31 @@ void EquipWearable(int client, int entity)
 	}
 }
 
-void SetPlayerActiveWeapon(int client, int entity)
+stock int SDKCall_GetMaxHealth(int client)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
+	return 0;
+}
+
+bool TF2_GetItem(int client, int &weapon, int &pos)
+{
+	//TODO: Find out if we need to check m_bDisguiseWeapon
+	
+	static int maxWeapons;
+	if(!maxWeapons)
+		maxWeapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+	
+	if(pos < 0)
+		pos = 0;
+	
+	while(pos < maxWeapons)
 	{
-		TF2Util_SetPlayerActiveWeapon(client, entity);
+		weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", pos);
+		pos++;
+		
+		if(weapon != -1)
+			return true;
 	}
-	else
-	#endif
-	{
-		char buffer[36];
-		GetEntityClassname(entity, buffer, sizeof(buffer));
-		ClientCommand(client, "use %s", buffer);
-	}
+	return false;
 }
 
 public bool Trace_WorldOnly(int entity, int contentsMask)

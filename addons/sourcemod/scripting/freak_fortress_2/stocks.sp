@@ -108,6 +108,18 @@ int TotalPlayersAlive()
 	return amount;
 }
 
+int TotalPlayersAliveEnemy(int team)
+{
+	int amount;
+	for(int i = Cvar[SpecTeam].BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
+	{
+		if(i != team)
+			amount += PlayersAlive[i];
+	}
+	
+	return amount;
+}
+
 int GetKillsOfWeaponRank(int rank = -1, int index = 0)
 {
 	switch(rank)
@@ -616,6 +628,9 @@ void ApplySelfHealEvent(int entindex, int amount)
 
 int DamageGoal(int goal, int current, int last)
 {
+	if(!goal)
+		return 0;
+	
 	return (current / goal) - (last / goal);
 }
 

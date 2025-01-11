@@ -48,6 +48,15 @@ stock void FileNet_LibraryRemoved(const char[] name)
 	#endif
 }
 
+void FileNet_PrintStatus()
+{
+	#if defined _filenetwork_included
+	PrintToServer("'%s' is %sloaded", FILENET_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", FILENET_LIBRARY);
+	#endif
+}
+
 void FileNet_MapEnd()
 {
 	#if defined _filenetwork_included

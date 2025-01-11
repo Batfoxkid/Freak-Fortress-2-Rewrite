@@ -16,6 +16,7 @@ void TFED_PluginLoad()
 	MarkNativeAsOptional("TF2Econ_GetLocalizedItemName");
 	MarkNativeAsOptional("TF2Econ_GetAttributeDefinitionString");
 	MarkNativeAsOptional("TF2Econ_TranslateAttributeNameToDefinitionIndex");
+	MarkNativeAsOptional("TF2Econ_GetAttributeName");
 	#endif
 }
 
@@ -39,6 +40,24 @@ stock void TFED_LibraryRemoved(const char[] name)
 	#if defined __tf_econ_data_included
 	if(Loaded && StrEqual(name, TFED_LIBRARY))
 		Loaded = false;
+	#endif
+}
+
+stock bool TFED_Loaded()
+{
+	#if defined __tf_econ_data_included
+	return Loaded;
+	#else
+	return false;
+	#endif
+}
+
+stock void TFED_PrintStatus()
+{
+	#if defined __tf_econ_data_included
+	PrintToServer("'%s' is %sloaded", TFED_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", TFED_LIBRARY);
 	#endif
 }
 
@@ -92,4 +111,15 @@ stock int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] key)
 	#endif
 	
 	return -1;
+}
+
+stock bool TF2ED_GetAttributeName(int attrdef, char[] buffer, int maxlen)
+{
+	#if defined __tf_econ_data_included
+	if(Loaded)
+		return TF2Econ_GetAttributeName(attrdef, buffer, maxlen);
+	#endif
+	
+	buffer[0] = 0;
+	return false;
 }

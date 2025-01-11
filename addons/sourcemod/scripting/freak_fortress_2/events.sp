@@ -168,7 +168,7 @@ static Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 		{
 			int attacker = GetClientOfUserId(event.GetInt("userid"));
 			if(attacker)
-				Weapons_OnAirblastBoss(attacker);
+				CustomAttrib_OnAirblastBoss(attacker);
 		}
 	}
 	return Plugin_Continue;
@@ -274,7 +274,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		
-		Weapons_OnInventoryApplication(userid);
+		CustomAttrib_OnInventoryApplication(userid);
 	}
 	return Plugin_Continue;
 }
@@ -475,7 +475,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					Client(victim).OverlayFor = 1.0;
 				
 				Events_CheckAlivePlayers(victim);
-				Weapons_PlayerDeath(victim);
+				CustomAttrib_PlayerDeath(victim);
 				
 				int entity, i;
 				while(TF2_GetItem(victim, entity, i))
