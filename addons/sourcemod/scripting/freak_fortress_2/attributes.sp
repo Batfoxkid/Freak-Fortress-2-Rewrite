@@ -464,7 +464,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			int maxoverheal = TF2U_GetMaxOverheal(attacker);
 			if(health < maxoverheal)
 			{
-				int healing = RoundFloat(float(maxhealth) * value / 100.0);
+				int healing = RoundFloat(float(maxhealth) * value / 200.0);
 				
 				if(health + healing > maxoverheal)
 				{

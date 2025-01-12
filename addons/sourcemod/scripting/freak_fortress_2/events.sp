@@ -21,6 +21,7 @@ void Events_PluginStart()
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
@@ -168,7 +169,7 @@ static Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 		{
 			int attacker = GetClientOfUserId(event.GetInt("userid"));
 			if(attacker)
-				CustomAttrib_OnAirblastBoss(attacker);
+				CustomAttrib_OnAirblastBoss(victim, attacker);
 		}
 	}
 	return Plugin_Continue;
@@ -622,6 +623,13 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			}
 		}
 	}
+}
+
+static void Events_UberDeployed(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client)
+		CustomAttrib_OnUberDeployed(client);
 }
 
 static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)

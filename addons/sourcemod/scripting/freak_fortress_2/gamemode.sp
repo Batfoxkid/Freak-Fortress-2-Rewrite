@@ -463,7 +463,7 @@ void Gamemode_RoundStart()
 					
 					int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 0.0);
+						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max"));
 				}
 			}
 		}

@@ -687,6 +687,11 @@
 	{
 		"en"		"FF2 Weapon Changes\n "
 	}
+	"Weapon Menu Variant"
+	{
+		"#format"	"{1:s}"
+		"en"		"FF2 Weapon Changes\nVariant: {1} "
+	}
 	"Disable Weapon Changes"
 	{
 		"en"		"Disable Pop-Up Menu"
@@ -797,10 +802,25 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Successive airblasts on a boss increases airblast cooldown"
 	}
-	"nailgun custom slow"
+	"mod airblast rage"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"On Hit: Causes a stackable slowness on target"
+		"en"		"Airblasting a boss gives {4}%% RAGE"
+	}
+	"mod fire rate hit stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss decreases fire rate by {3}%%"
+	}
+	"mod reload time hit stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss increases reload time by {3}%%"
+	}
+	"mod stun on hit"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Stuns boss for {4} seconds"
 	}
 	"milk limit DISPLAY ONLY"
 	{
@@ -840,11 +860,41 @@
 	"cloak on hit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Disables cloaking for {4} seconds when hitting a boss"
+		"en"		"Disables cloaking for {4} seconds when backstabbing a boss"
 	}
 	"cloak and dagger no DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Cloak Type: Normal."
+	}
+	"laugh is slow DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Slows targets by 50%% on hit instead of laughing"
+	}
+	"caber boss crit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"100%% critical hit vs bosses on detonation"
+	}
+	"start with uber DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Start the round with full organ count"
+	}
+	"mark limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Mark-for-Death effect is limited to {4} damage when applied to a boss"
+	}
+	"mark limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Mark-for-Death effect is limited to {4} damage when applied to a boss"
+	}
+	"health drop on damage DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"A small health pack is dropped every {4} damage dealt to a boss"
 	}
 }

@@ -891,6 +891,32 @@ void ScreenShake(const float pos[3], float amplitude, float frequency, float dur
 	}
 }
 
+void ImportValuesIntoConfigMap(ConfigMap from, ConfigMap to)
+{
+	StringMapSnapshot snap = from.Snapshot();
+
+	int entries = snap.Length;
+	if(entries)
+	{
+		PackVal val;
+
+		for(int i = 0; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i) + 1;
+
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+
+			from.GetArray(key, val, sizeof(val));
+
+			if(!val.cfg)
+				to.SetArray(key, val, sizeof(val));
+		}
+	}
+
+	delete snap;
+}
+
 void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();

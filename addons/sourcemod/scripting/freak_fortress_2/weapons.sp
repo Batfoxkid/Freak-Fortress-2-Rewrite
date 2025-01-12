@@ -4,13 +4,13 @@
 #pragma newdecls required
 
 #define CWX_LIBRARY		"cwx"
-#define FILE_WEAPONS	"data/freak_fortress_2/weapons.cfg"
+#define FILE_WEAPONS	"data/freak_fortress_2/loadout.cfg"
 
 #if defined __cwx_included
 static bool Loaded;
 #endif
 
-static ConfigMap WeaponCfg;
+static ArrayList LoadoutList;
 
 void Weapons_PluginStart()
 {
@@ -93,32 +93,83 @@ static Action Weapons_ChangeMenuCmd(int client, int args)
 
 bool Weapons_ConfigsExecuted(bool force = false)
 {
-	ConfigMap cfg;
+	if(LoadoutList)
+	{
+		int length = LoadoutList.Length;
+		for(int i; i < length; i++)
+		{
+			DeleteCfg(LoadoutList.Get(i));
+		}
+
+		delete LoadoutList;
+	}
+
 	if(Enabled || force)
 	{
-		cfg = new ConfigMap(FILE_WEAPONS);
+		ConfigMap cfg = new ConfigMap(FILE_WEAPONS);
 		if(!cfg)
 			return false;
+
+		StringMapSnapshot snap = cfg.Snapshot();
+
+		int entries = snap.Length;
+		if(entries)
+		{
+			char buffer[PLATFORM_MAX_PATH];
+
+			LoadoutList = new ArrayList();
+
+			PackVal val;
+			for(int i = 0; i < entries; i++)
+			{
+				int length = snap.KeyBufferSize(i) + 1;
+
+				char[] key = new char[length];
+				snap.GetKey(i, key, length);
+
+				cfg.GetArray(key, val, sizeof(val));
+
+				if(val.tag == KeyValType_Section && val.cfg)
+				{
+					FormatEx(buffer, sizeof(buffer), "data/freak_fortress/%s.cfg", key);
+					ConfigMap loadout = new ConfigMap(buffer);
+					if(loadout)
+					{
+						loadout.Set("key", key);
+						loadout.Set("name", key);
+						ImportValuesIntoConfigMap(val.cfg, loadout);
+
+						int pos = LoadoutList.Push(loadout);
+						
+						if(LoadoutList.Length > 1)
+						{
+							bool defaul;
+							if(val.cfg.GetBool("default", defaul, false) && defaul)
+							{
+								LoadoutList.SwapAt(0, pos);
+							}
+						}
+					}
+				}
+			}
+
+			if(!LoadoutList.Length)
+				delete LoadoutList;
+		}
+
+		delete snap;
+		DeleteCfg(cfg);
 	}
-	
-	if(WeaponCfg)
-	{
-		DeleteCfg(WeaponCfg);
-		WeaponCfg = null;
-	}
-	
-	if(Enabled || force)
-		WeaponCfg = cfg;
 	
 	return true;
 }
 
 bool Weapons_ConfigEnabled()
 {
-	return WeaponCfg && (Attrib_Loaded() || VScript_Loaded());
+	return LoadoutList && (Attrib_Loaded() || VScript_Loaded());
 }
 
-void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
+void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 {
 	if(Client(client).IsBoss)
 	{
@@ -147,17 +198,75 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 		SetGlobalTransTarget(client);
 		
 		Menu menu = new Menu(Weapons_ChangeMenuH);
-		menu.SetTitle("%t", "Weapon Menu");
+		
+		char buffer1[32], buffer2[32], loadout[32];
+		Client(client).GetLoadout(loadout, sizeof(loadout));
+		int loadouts = LoadoutList.Length;
+
+		if(loadouts > 1)
+		{
+			ConfigMap cfg = FindMatchingLoadout(loadout);
+			
+			int lang = GetClientLanguage(client);
+			if(lang != -1)
+			{
+				GetLanguageInfo(lang, buffer1, sizeof(buffer1));
+				Format(buffer1, sizeof(buffer1), "name_%s", buffer1);
+				if(!cfg.Get(buffer1, buffer2, sizeof(buffer2)))
+					cfg.Get("name", buffer2, sizeof(buffer2));
+			}
+			else
+			{
+				cfg.Get("name", buffer2, sizeof(buffer2));
+			}
+
+			menu.SetTitle("%t", "Weapon Menu Variant", buffer2);
+		}
+		else
+		{
+			menu.SetTitle("%t", "Weapon Menu");
+		}
 		
 		static const char SlotNames[][] = { "Primary", "Secondary", "Melee", "PDA", "Utility", "Building", "Action" };
-		
-		char buffer1[12], buffer2[32];
 		for(int i; i < sizeof(SlotNames); i++)
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", SlotNames[i]);
 			
 			int entity = GetPlayerWeaponSlot(client, i);
-			if(entity != -1 && FindWeaponSection(entity))
+			if(entity == -1)
+			{
+				switch(i)
+				{
+					case TFWeaponSlot_Primary:
+					{
+						int index;
+						while((TF2U_GetWearable(client, entity, index)))
+						{
+							int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+							switch(defindex)
+							{
+								case 405, 608:
+									break;
+							}
+						}
+					}
+					case TFWeaponSlot_Secondary:
+					{
+						int index;
+						while((TF2U_GetWearable(client, entity, index)))
+						{
+							int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+							switch(defindex)
+							{
+								case 133, 444, 131, 406, 1099, 1144, 57, 231, 642:
+									break;
+							}
+						}
+					}
+				}
+			}
+			
+			if(entity != -1 && FindWeaponSection(entity, loadout))
 			{
 				IntToString(EntIndexToEntRef(entity), buffer1, sizeof(buffer1));
 				menu.AddItem(buffer1, buffer2);
@@ -168,22 +277,56 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 			}
 		}
 		
-		if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
+		if(loadouts > 1)
 		{
-			FormatEx(buffer2, sizeof(buffer2), "%t", "Back");
+			FormatEx(buffer2, sizeof(buffer2), "%t\n ", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
 			menu.AddItem(NULL_STRING, buffer2);
+
+			for(int i; i < loadouts; i++)
+			{
+				ConfigMap cfg = LoadoutList.Get(i);
+				
+				int lang = GetClientLanguage(client);
+				if(lang != -1)
+				{
+					GetLanguageInfo(lang, buffer1, sizeof(buffer1));
+					Format(buffer1, sizeof(buffer1), "name_%s", buffer1);
+					if(!cfg.Get(buffer1, buffer2, sizeof(buffer2)))
+						cfg.Get("name", buffer2, sizeof(buffer2));
+				}
+				else
+				{
+					cfg.Get("name", buffer2, sizeof(buffer2));
+				}
+
+				cfg.Get("key", buffer1, sizeof(buffer1));
+				
+				menu.AddItem(buffer1, buffer2, StrEqual(buffer1, loadout) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+			}
+
+			menu.ExitBackButton = (time == MENU_TIME_FOREVER && Menu_BackButton(client));
+			menu.ExitButton = true;
+			menu.DisplayAt(client, page / 7 * 7, time);
 		}
 		else
 		{
-			menu.AddItem(NULL_STRING, buffer1, ITEMDRAW_SPACER);
+			if(time == MENU_TIME_FOREVER && Menu_BackButton(client))
+			{
+				FormatEx(buffer2, sizeof(buffer2), "%t", "Back");
+				menu.AddItem(NULL_STRING, buffer2);
+			}
+			else
+			{
+				menu.AddItem(NULL_STRING, buffer1, ITEMDRAW_SPACER);
+			}
+			
+			FormatEx(buffer2, sizeof(buffer2), "%t", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
+			menu.AddItem(NULL_STRING, buffer2);
+			
+			menu.Pagination = 0;
+			menu.ExitButton = true;
+			menu.Display(client, time);
 		}
-		
-		FormatEx(buffer2, sizeof(buffer2), "%t", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
-		menu.AddItem(NULL_STRING, buffer2);
-		
-		menu.Pagination = 0;
-		menu.ExitButton = true;
-		menu.Display(client, time);
 	}
 }
 
@@ -202,34 +345,40 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 		}
 		case MenuAction_Select:
 		{
-			switch(choice)
+			char buffer[32];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			if(buffer[0])
 			{
-				case 7:
-				{
-					Menu_MainMenu(client);
-				}
-				case 8:
+				if(StrEqual(buffer, "__nochanges"))
 				{
 					Client(client).NoChanges = !Client(client).NoChanges;
-					Weapons_ChangeMenu(client);
+					Weapons_ChangeMenu(client, _, choice);
 				}
-				default:
+				else if(choice < 7)
 				{
-					char buffer[12];
-					menu.GetItem(choice, buffer, sizeof(buffer));
-					if(buffer[0])
+					int entity = EntRefToEntIndex(StringToInt(buffer));
+					if(entity != INVALID_ENT_REFERENCE)
+						Weapons_ShowChanges(client, entity);
+					
+					Weapons_ChangeMenu(client, _, choice);
+				}
+				else
+				{
+					Client(client).SetLoadout(buffer);
+
+					if(Enabled && RoundStatus < 1)
 					{
-						int entity = EntRefToEntIndex(StringToInt(buffer));
-						if(entity != INVALID_ENT_REFERENCE)
-							Weapons_ShowChanges(client, entity);
-						
-						Weapons_ChangeMenu(client);
+						TF2_RespawnPlayer(client);
 					}
 					else
 					{
-						Menu_MainMenu(client);
+						Weapons_ChangeMenu(client, _, choice);
 					}
 				}
+			}
+			else
+			{
+				Menu_MainMenu(client);
 			}
 		}
 	}
@@ -241,8 +390,9 @@ void Weapons_ShowChanges(int client, int entity)
 	if(!Weapons_ConfigEnabled())
 		return;
 	
-	char cwx[64];
-	ConfigMap cfg = FindWeaponSection(entity, cwx);
+	char cwx[64], loadout[32];
+	Client(client).GetLoadout(loadout, sizeof(loadout));
+	ConfigMap cfg = FindWeaponSection(entity, loadout, cwx);
 
 	if(!cfg)
 		return;
@@ -419,7 +569,7 @@ static void PrintThisAttrib(int client, int attrib, char value[16], char type[64
 					FormatValue(value, buffer2, sizeof(buffer2), "value_is_percentage");
 					FormatValue(value, key, length, "value_is_inverted_percentage");
 					FormatValue(value, type, sizeof(type), "value_is_additive_percentage");
-					PrintToChat(client, "%t", desc, buffer2, desc, type, value);
+					PrintToChat(client, "%t", desc, buffer2, key, type, value);
 				}
 			}
 			else if(TF2ED_GetAttributeDefinitionString(attrib, "description_string", desc, sizeof(desc)))
@@ -501,24 +651,15 @@ static void Weapons_SpawnFrame(int ref)
 	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).Minion)
 		return;
 	
-	ConfigMap cfg = FindWeaponSection(entity);
+	char loadout[32];
+	Client(client).GetLoadout(loadout, sizeof(loadout));
+	ConfigMap cfg = FindWeaponSection(entity, loadout);
 	if(!cfg)
 		return;
 	
 	bool found;
 	if(cfg.GetBool("strip", found, false) && found)
-	{
-		/*char classname[36];
-		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!StrContains(classname, "tf_weapon"))
-		{
-			DHook_HookStripWeapon(entity);
-		}
-		else*/
-		{
-			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
-		}
-	}
+		SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
 	
 	int current;
 	
@@ -616,15 +757,32 @@ static void Weapons_SpawnFrame(int ref)
 		CustomAttrib_ApplyFromCfg(entity, cfg);
 }
 
-static ConfigMap FindWeaponSection(int entity, char cwx[64] = "")
+static ConfigMap FindMatchingLoadout(const char[] loadou)
+{
+	char buffer[64];
+
+	ConfigMap cfg;
+	for(int i = LoadoutList.Length - 1; i >= 0; i--)
+	{
+		cfg = LoadoutList.Get(i);
+		if(cfg.Get("name", buffer, sizeof(buffer)) && StrEqual(buffer, loadou))
+			break;
+	}
+
+	return cfg;
+}
+
+static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64] = "")
 {
 	char buffer1[64];
+
+	ConfigMap loadout = FindMatchingLoadout(loadou);
 	
 	#if defined __cwx_included
 	if(Loaded && CWX_GetItemUIDFromEntity(entity, cwx, sizeof(cwx)) && CWX_IsItemUIDValid(cwx))
 	{
 		Format(buffer1, sizeof(buffer1), "CWX.%s", cwx);
-		ConfigMap cfg = WeaponCfg.GetSection(buffer1);
+		ConfigMap cfg = loadout.GetSection(buffer1);
 		if(cfg)
 			return cfg;
 	}
@@ -632,7 +790,7 @@ static ConfigMap FindWeaponSection(int entity, char cwx[64] = "")
 	
 	cwx[0] = 0;
 	
-	ConfigMap cfg = WeaponCfg.GetSection("Indexes");
+	ConfigMap cfg = loadout.GetSection("Indexes");
 	if(cfg)
 	{
 		StringMapSnapshot snap = cfg.Snapshot();
@@ -684,7 +842,7 @@ static ConfigMap FindWeaponSection(int entity, char cwx[64] = "")
 	
 	GetEntityClassname(entity, buffer1, sizeof(buffer1));
 	Format(buffer1, sizeof(buffer1), "Classnames.%s", buffer1);
-	cfg = WeaponCfg.GetSection(buffer1);
+	cfg = loadout.GetSection(buffer1);
 	if(cfg)
 		return cfg;
 	

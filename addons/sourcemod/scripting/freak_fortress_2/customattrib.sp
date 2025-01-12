@@ -416,6 +416,88 @@ static void AddAttributes()
 	attrib.SetDescriptionFormat("additive");
 	attrib.SetCustom("description_ff2_string", "mod airblast stale");
 	attrib.Register();
+
+	attrib.SetName("mod airblast rage");
+	attrib.SetClass("ff2.mod_airblast_boss_rage");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "mod airblast rage");
+	attrib.Register();
+
+	attrib.SetName("mod stun on hit");
+	attrib.SetClass("ff2.mod_stun_on_hit");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "mod stun on hit");
+	attrib.Register();
+
+	attrib.SetName("milk limit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_1");
+	attrib.SetCustom("description_ff2_string", "milk limit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("hit stale DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_2");
+	attrib.SetCustom("description_ff2_string", "hit stale DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("sentry death DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_3");
+	attrib.SetCustom("description_ff2_string", "sentry death DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("jarate limit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_4");
+	attrib.SetCustom("description_ff2_string", "jarate limit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("boost limit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_5");
+	attrib.SetCustom("description_ff2_string", "boost limit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("teleport no spawn DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_6");
+	attrib.SetCustom("description_ff2_string", "teleport no spawn DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("vaccinator DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_7");
+	attrib.SetCustom("description_ff2_string", "vaccinator DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("cloak on hit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_8");
+	attrib.SetCustom("description_ff2_string", "cloak on hit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("cloak and dagger no DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_9");
+	attrib.SetCustom("description_ff2_string", "cloak and dagger no DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("laugh is slow DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_10");
+	attrib.SetCustom("description_ff2_string", "laugh is slow DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("caber boss crit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_11");
+	attrib.SetCustom("description_ff2_string", "caber boss crit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("start with uber DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_12");
+	attrib.SetCustom("description_ff2_string", "start with uber DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("mark limit DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_13");
+	attrib.SetCustom("description_ff2_string", "mark limit DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("health drop on damage DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_14");
+	attrib.SetCustom("description_ff2_string", "health drop on damage DISPLAY ONLY");
+	attrib.Register();
 	
 	delete attrib;
 }
@@ -614,19 +696,39 @@ void CustomAttrib_OnHitBossPost(int attacker, int newPlayerDamage, int lastPlaye
 	}
 }
 
-void CustomAttrib_OnAirblastBoss(int attacker)
+void CustomAttrib_OnAirblastBoss(int victim, int attacker)
 {
 	int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
 	if(weapon != -1)
 	{
-		float stale;
-		if(CustomAttrib_Get(weapon, "mod airblast stale"))
+		float value;
+		if(CustomAttrib_Get(weapon, "mod airblast stale", value))
 		{
 			SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 			
 			float initial = 1.0;
 			Attrib_Get(weapon, "mult airblast refire time", initial);
-			Attrib_Set(weapon, "mult airblast refire time", initial + stale);
+			Attrib_Set(weapon, "mult airblast refire time", initial + value);
+		}
+
+		if(CustomAttrib_Get(weapon, "mod airblast rage", value))
+		{
+			if(Client(victim).RageDamage > 0.0)
+			{
+				float rage = Client(victim).GetCharge(0);
+				float maxrage = Client(victim).RageMax;
+				if(rage < maxrage)
+				{
+					rage += value;
+					if(rage > maxrage)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						rage = maxrage;
+					}
+					
+					Client(victim).SetCharge(0, rage);
+				}
+			}
 		}
 	}
 }
@@ -692,4 +794,51 @@ void CustomAttrib_OnWeaponSwitch(int client, int weapon)
 			}
 		}
 	}
+}
+
+void CustomAttrib_OnUberDeployed(int client)
+{
+	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+	if(weapon != -1)
+	{
+		char classname[36];
+		GetEntityClassname(weapon, classname, sizeof(classname));
+		if(StrEqual(classname, "tf_weapon_medigun"))
+		{
+			if(CustomAttrib_Get(weapon, "medigun charge adds crit boost"))
+			{
+				CreateTimer(0.4, UberTimer, EntIndexToEntRef(weapon), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+			}
+		}
+	}
+}
+
+static Action UberTimer(Handle timer, int ref)
+{
+	int weapon = EntRefToEntIndex(ref);
+	if(weapon != -1)
+	{
+		int client = GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity");
+		if(client != -1 && IsPlayerAlive(client))
+		{
+			if(GetEntPropFloat(weapon, Prop_Send, "m_flChargeLevel") > 0.05)
+			{
+				if(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == weapon)
+				{
+					TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
+
+					if(GetEntProp(weapon, Prop_Send, "m_bHealing"))
+					{
+						int target = GetEntPropEnt(weapon, Prop_Send, "m_hHealingTarget");
+						if(target != -1)
+							TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
+					}
+				}
+
+				return Plugin_Continue;
+			}
+		}
+	}
+	
+	return Plugin_Stop;
 }
