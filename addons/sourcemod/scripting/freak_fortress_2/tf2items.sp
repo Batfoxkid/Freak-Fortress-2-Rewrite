@@ -327,8 +327,8 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 			}
 			else if(index == 735 || StrEqual(classname2, "tf_weapon_sapper"))
 			{
-				SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
-				SetEntProp(entity, Prop_Data, "m_iSubType", 3);
+				SetEntProp(entity, Prop_Send, "m_iObjectType", TFObject_Sapper);
+				SetEntProp(entity, Prop_Data, "m_iSubType", TFObject_Sapper);
 				
 				for(level = 0; level < 4; level++)
 				{

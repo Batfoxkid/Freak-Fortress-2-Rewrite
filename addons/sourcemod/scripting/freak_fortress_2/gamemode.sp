@@ -1127,7 +1127,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	float time = GetEngineTime();
 	if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).NoHud && !Client(client).NoDmgHud && !(buttons & IN_SCORE))
 	{
-		if(Client(client).RefreshAt < time)
+		if(Client(client).SapperCooldownFor < time && Client(client).RefreshAt < time)
 		{
 			Client(client).RefreshAt = time + 0.2;
 			

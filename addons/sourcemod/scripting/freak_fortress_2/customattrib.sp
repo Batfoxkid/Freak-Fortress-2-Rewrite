@@ -453,13 +453,13 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 					EmitGameSoundToClient(victim, "TFPlayer.DoubleDonk", attacker);
 					EmitGameSoundToClient(attacker, "TFPlayer.DoubleDonk", victim);
 					
-					if(Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_marketed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_marketed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, 2.0);
 					}
 				}
 				
@@ -557,13 +557,13 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 					damagetype |= DMG_CRIT;
 					critType = 2;
 					
-					if(Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
 					}
 				}
 			}

@@ -340,7 +340,10 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					
 					rage += (damage * 100.0 * debuff / ragedmg);
 					if(rage > maxrage)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						rage = maxrage;
+					}
 					
 					Client(victim).SetCharge(0, rage);
 				}
@@ -425,7 +428,7 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						}
 						
 						IntToString(lives, buffer, sizeof(buffer));
-						if(Cvar[SoundType].BoolValue)
+						if(!MultiBosses())
 						{
 							if(!Bosses_PlaySoundToAll(victim, "sound_lifeloss", buffer, _, _, _, _, 2.0))
 							{
@@ -515,7 +518,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				
 				if(event.GetInt("customkill") != TF_CUSTOM_TELEFRAG)
 				{
-					if(!Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
 						if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 							Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);

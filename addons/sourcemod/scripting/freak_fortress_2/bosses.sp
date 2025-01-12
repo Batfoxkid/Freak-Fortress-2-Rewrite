@@ -2088,66 +2088,108 @@ int Bosses_GetBossTeam()
 
 void Bosses_PlayerRunCmd(int client, int buttons)
 {
-	if((!Enabled || RoundStatus == 1) && Client(client).IsBoss && IsPlayerAlive(client))
+	if((!Enabled || RoundStatus == 1) && IsPlayerAlive(client))
 	{
 		float time = GetGameTime();
-		if(Client(client).PassiveAt <= time)
+
+		if(Client(client).HoldingButton & IN_ATTACK)
 		{
-			Client(client).PassiveAt = time + 0.2;
-			Bosses_UseSlot(client, 1, 3);
+			if(!(buttons & IN_ATTACK))
+				Client(client).HoldingButton &= ~IN_ATTACK;
+		}
+		else if(buttons & IN_ATTACK)
+		{
+			Client(client).HoldingButton |= IN_ATTACK;
+
+			if(Client(client).SapperCooldownFor < time)
+			{
+				int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+				if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_iObjectType") && GetEntProp(weapon, Prop_Send, "m_iObjectType") == view_as<int>(TFObject_Sapper))
+				{
+					int target = GetClientAimTarget(client, true);
+					if(target != -1)
+					{
+						if(Client(target).IsBoss && (GetClientTeam(client) != GetClientTeam(target) || Cvar[FriendlyFire].BoolValue))
+						{
+							TF2_AddCondition(target, TFCond_Sapped, 4.0);
+							Client(client).SapperCooldownFor = time + 15.0;
+						}
+					}
+				}
+			}
 		}
 		
-		if(!Client(client).NoHud && !(buttons & IN_SCORE))
+		if(Client(client).IsBoss)
 		{
-			time = GetEngineTime();
-			if(Client(client).RefreshAt < time)
+			if(Client(client).PassiveAt <= time)
 			{
-				Client(client).RefreshAt = time + 0.2;
-				
-				SetGlobalTransTarget(client);
-				
-				static char buffer[256];
-				int maxlives = Client(client).MaxLives;
-				if(maxlives > 1)
+				Client(client).PassiveAt = time + 0.2;
+				Bosses_UseSlot(client, 1, 3);
+			}
+			
+			if(!Client(client).NoHud && !(buttons & IN_SCORE))
+			{
+				time = GetEngineTime();
+				if(Client(client).RefreshAt < time)
 				{
-					Format(buffer, sizeof(buffer), "%t", "Boss Lives Left", Client(client).Lives, maxlives);
-				}
-				else
-				{
-					buffer[0] = ' ';
-					buffer[1] = 0;
-				}
-				
-				float ragedamage = Client(client).RageDamage;
-				if(ragedamage >= 0.0 && ragedamage < 99999.0)
-				{
-					float rage = Client(client).GetCharge(0);
-					float ragemin = Client(client).RageMin;
-					if(rage >= ragemin)
+					Client(client).RefreshAt = time + 0.2;
+					
+					SetGlobalTransTarget(client);
+					
+					static char buffer[256];
+					int maxlives = Client(client).MaxLives;
+					if(maxlives > 1)
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
-						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
+						Format(buffer, sizeof(buffer), "%t", "Boss Lives Left", Client(client).Lives, maxlives);
 					}
 					else
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
-						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+						buffer[0] = ' ';
+						buffer[1] = 0;
 					}
 					
-					if(rage < ragemin || Client(client).RageMode == 2)
+					float ragedamage = Client(client).RageDamage;
+					if(ragedamage >= 0.0 && ragedamage < 99999.0)
 					{
+						float rage = Client(client).GetCharge(0);
+						float ragemin = Client(client).RageMin;
+						if(rage >= ragemin)
+						{
+							SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
+							Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
+						}
+						else
+						{
+							SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
+							Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+						}
+						
+						if(rage < ragemin || Client(client).RageMode == 2)
+						{
+							ShowSyncHudText(client, PlayerHud, buffer);
+						}
+						else
+						{
+							ShowSyncHudText(client, PlayerHud, "%s%t", buffer, "Boss Rage Medic");
+						}
+					}
+					else if(buffer[1])
+					{
+						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
 						ShowSyncHudText(client, PlayerHud, buffer);
 					}
-					else
-					{
-						ShowSyncHudText(client, PlayerHud, "%s%t", buffer, "Boss Rage Medic");
-					}
 				}
-				else if(buffer[1])
-				{
-					SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
-					ShowSyncHudText(client, PlayerHud, buffer);
-				}
+			}
+		}
+		else if(Client(client).SapperCooldownFor > time && !Client(client).NoHud && !(buttons & IN_SCORE))
+		{
+			float engineTime = GetEngineTime();
+			if(Client(client).RefreshAt < engineTime)
+			{
+				Client(client).RefreshAt = engineTime + 0.2;
+				
+				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+				ShowSyncHudText(client, PlayerHud, "%t", "Sapper Cooldown", 100 - RoundToCeil((Client(client).SapperCooldownFor - time) / 0.15));
 			}
 		}
 	}
@@ -2162,7 +2204,7 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && Cvar[SoundType].BoolValue)
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && !MultiBosses())
 			{
 				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
 			}

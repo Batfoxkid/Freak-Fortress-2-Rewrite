@@ -201,7 +201,13 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		{
 			slot = TF2_GetClassnameSlot(classname);
 			if(slot > TFWeaponSlot_Grenade)
+			{
 				slot = TFWeaponSlot_Grenade;
+			}
+			else if(slot == -1)
+			{
+				slot = TFWeaponSlot_Building;
+			}
 		}
 	}
 	

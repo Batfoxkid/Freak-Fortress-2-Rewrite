@@ -182,7 +182,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 						
-						if(Cvar[SoundType].BoolValue)
+						if(!MultiBosses())
 						{
 							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, 2.0))
 								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, 2.0);
@@ -237,7 +237,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					damagetype |= DMG_CRIT;
 					critType = CritType_Crit;
 					
-					int assister;
+					int assister = -1;
 					int entity = GetEntPropEnt(attacker, Prop_Send, "m_hGroundEntity");
 					if(entity > MaxClients)
 					{
@@ -276,13 +276,13 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					event.Cancel();
 					
-					if(Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
 					}
 					return Plugin_Changed;
 				}
@@ -366,6 +366,13 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			{
 				// The thing everyone hates but can't remove
 				damage *= 3.0;
+				changed = true;
+			}
+
+			if(TF2_IsPlayerInCondition(attacker, TFCond_Sapped))
+			{
+				// 25% less damage while being sapped
+				damage *= 0.75;
 				changed = true;
 			}
 			
@@ -498,7 +505,7 @@ static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 				strcopy(sample, sizeof(sample), sound.Sound);
 				
 				Client(entity).Speaking = true;
-				for(int i = 1; i < count; i++)
+				for(int i; i < count; i++)
 				{
 					EmitSound(clients, numClients, sample, entity, channel, level, flags, volume, pitch);
 				}

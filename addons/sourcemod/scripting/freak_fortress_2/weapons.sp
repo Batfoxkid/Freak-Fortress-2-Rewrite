@@ -160,11 +160,11 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
 			if(entity != -1 && FindWeaponSection(entity))
 			{
 				IntToString(EntIndexToEntRef(entity), buffer1, sizeof(buffer1));
-				menu.AddItem(buffer1, SlotNames[i]);
+				menu.AddItem(buffer1, buffer2);
 			}
 			else
 			{
-				menu.AddItem(buffer1, SlotNames[i], ITEMDRAW_DISABLED);
+				menu.AddItem(buffer1, buffer2, ITEMDRAW_DISABLED);
 			}
 		}
 		

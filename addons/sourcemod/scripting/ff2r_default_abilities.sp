@@ -188,14 +188,6 @@
 	}
 	
 	
-	"model_projectile_replace"
-	{
-		"tf_projectile_pipe"	"models/player/saxton_hale/w_easteregg.mdl"
-		
-		"plugin_name"			"ff2r_default_abilities"
-	}
-	
-	
 	"spawn_many_objects_on_death"
 	{
 		"model"			"models/player/saxton_hale/w_easteregg.mdl"	// Pickup model
@@ -265,6 +257,18 @@
 		"duration"			"120.0"												// Prop lifetime
 		
 		"plugin_name"		"ff2r_default_abilities"
+	}
+	
+	
+	"special_projectile_model"
+	{
+		"tf_projectile_pipe"
+		{
+			"model"	"models/player/saxton_hale/w_easteregg.mdl"
+			"scale"	"1.0"
+		}
+		
+		"plugin_name"			"ff2r_default_abilities"
 	}
 	
 	
@@ -1849,13 +1853,32 @@ public void Hook_ProjectileSpawned(int entity)
 		BossData boss = FF2R_GetBossData(client);
 		if(boss)
 		{
-			AbilityData ability = boss.GetAbility("model_projectile_replace");
+			AbilityData ability = boss.GetAbility("special_projectile_model");
 			if(ability.IsMyPlugin())
 			{
-				char buffer[128];
+				char buffer[64];
 				GetEntityClassname(entity, buffer, sizeof(buffer));
-				if(ability.GetString(buffer, buffer, sizeof(buffer)))
-					SetEntityModel(entity, buffer);
+				ConfigData cfg = ability.GetSection(buffer);
+				if(cfg)
+				{
+					if(ability.GetString("model", buffer, sizeof(buffer)))
+						SetEntityModel(entity, buffer);
+					
+					float scale = ability.GetFloat("scale", 1.0);
+					if(scale != 1.0 && scale > 0.0)
+						SetEntPropFloat(client, Prop_Send, "m_flModelScale", GetEntPropFloat(client, Prop_Send, "m_flModelScale") * scale);
+				}
+			}
+			else
+			{
+				ability = boss.GetAbility("model_projectile_replace");
+				if(ability.IsMyPlugin())
+				{
+					char buffer[64];
+					GetEntityClassname(entity, buffer, sizeof(buffer));
+					if(ability.GetString(buffer, buffer, sizeof(buffer)))
+						SetEntityModel(entity, buffer);
+				}
 			}
 		}
 	}
@@ -2431,6 +2454,9 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 	
 	cap -= amount;
 	
+	if(rivalTeam)
+		team = (team == 2) ? 3 : 2;
+	
 	float vel[3];
 	for(int i; i < amount; i++)
 	{
@@ -2438,9 +2464,6 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		
 		if(IsPlayerAlive(clients[i]))
 			ForcePlayerSuicide(clients[i]);
-
-		if(rivalTeam)
-			team = (team == 2) ? 3 : 2;
 		
 		FF2R_SetClientMinion(clients[i], true);
 		

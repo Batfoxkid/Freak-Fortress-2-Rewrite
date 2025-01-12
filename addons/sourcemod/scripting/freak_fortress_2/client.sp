@@ -15,6 +15,8 @@ static bool Glowing[MAXTF2PLAYERS];
 static float GlowFor[MAXTF2PLAYERS];
 static float OverlayFor[MAXTF2PLAYERS];
 static float RefreshAt[MAXTF2PLAYERS];
+static int HoldingButton[MAXTF2PLAYERS];
+static float SapperCooldownFor[MAXTF2PLAYERS];
 static int Damage[MAXTF2PLAYERS][6];
 static int TotalDamage[MAXTF2PLAYERS];
 static int Assist[MAXTF2PLAYERS];
@@ -198,6 +200,30 @@ methodmap Client
 		public set(float time)
 		{
 			RefreshAt[view_as<int>(this)] = time;
+		}
+	}
+	
+	property int HoldingButton
+	{
+		public get()
+		{
+			return HoldingButton[view_as<int>(this)];
+		}
+		public set(int value)
+		{
+			HoldingButton[view_as<int>(this)] = value;
+		}
+	}
+	
+	property float SapperCooldownFor
+	{
+		public get()
+		{
+			return SapperCooldownFor[view_as<int>(this)];
+		}
+		public set(float time)
+		{
+			SapperCooldownFor[view_as<int>(this)] = time;
 		}
 	}
 	

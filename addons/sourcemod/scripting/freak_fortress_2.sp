@@ -182,7 +182,6 @@ enum
 	PackVotes,
 	SubpluginFolder,
 	
-	SoundType,
 	BossTriple,
 	BossCrits,
 	BossHealing,
@@ -209,7 +208,6 @@ enum
 	FriendlyFire,
 	MovementFreeze,
 	PreroundTime,
-	//BonusRoundTime,
 	Tournament,
 	WaitingTime,
 	
@@ -294,7 +292,7 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
-	if(!TranslationPhraseExists("Difficulty Menu"))
+	if(!TranslationPhraseExists("Sapper Cooldown"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	PlayerHud = CreateHudSynchronizer();
@@ -440,6 +438,7 @@ public void OnClientDisconnect(int client)
 	Database_ClientDisconnect(client);
 	Events_CheckAlivePlayers(client);
 	FileNet_ClientDisconnect(client);
+	Music_ClientDisconnect(client);
 	Preference_ClientDisconnect(client);
 	
 	Client(client).ResetByAll();

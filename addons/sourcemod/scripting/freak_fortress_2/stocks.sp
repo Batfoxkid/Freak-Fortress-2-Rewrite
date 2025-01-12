@@ -62,6 +62,24 @@ int FindClientOfBossIndex(int boss = 0)
 	return -1;
 }
 
+bool MultiBosses()
+{
+	bool found;
+
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(Client(client).IsBoss)
+		{
+			if(found)
+				return true;
+			
+			found = true;
+		}
+	}
+	
+	return false;
+}
+
 TFClassType GetClassOfName(const char[] buffer)
 {
 	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
