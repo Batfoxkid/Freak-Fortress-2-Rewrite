@@ -211,6 +211,7 @@ ConVar CvarMaxUnlag;
 bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
+bool PressedInspectKey[MAXTF2PLAYERS];
 
 Handle TimescaleTimer;
 float DodgeFor[MAXTF2PLAYERS];
@@ -259,7 +260,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Boss Weapon Pickups"))
+	if(!TranslationPhraseExists("Boss AMS Description"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	GameData gamedata = new GameData("sm-tf2.games");
@@ -469,6 +470,9 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			{
 				HasAbility[client] = -1;
 				
+				PrintCenterText(client, "%t", "Boss AMS Description");
+				PrintToChat(client, "%t", "Boss AMS Description");
+				
 				bool medic;
 				int buttons;
 				if(ability.GetInt("slot") == 0)
@@ -559,6 +563,7 @@ public void FF2R_OnBossRemoved(int client)
 	WallLagComped[client] = false;
 	ClassSwap[client] = TFClass_Unknown;
 	StealNext[client] = 0;
+	PressedInspectKey[client] = false;
 	
 	if(DodgeFor[client])
 		DodgeFor[client] = 1.0;
@@ -811,6 +816,22 @@ public void OnClientDisconnect(int client)
 	WeapRef[client] = INVALID_ENT_REFERENCE;
 }
 
+public Action OnClientCommandKeyValues(int client, KeyValues kv) {
+	if (!HasAbility[client] || !IsPlayerAlive(client)) {
+		return Plugin_Continue;
+	}
+	
+	char command[64];
+	kv.GetSectionName(command, sizeof(command));
+	if (strcmp(command, "+inspect_server") == 0) {
+		PressedInspectKey[client] = true;
+	} else if (strcmp(command, "-inspect_server") == 0) {
+		PressedInspectKey[client] = false;
+	}
+	
+	return Plugin_Continue;
+}
+
 public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if(DodgeFor[client])
@@ -962,19 +983,19 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 			{
 				if(!hud)
 				{
-					static bool wasDucking[MAXTF2PLAYERS];
-					if(buttons & IN_DUCK)
+					static bool wasInspect[MAXTF2PLAYERS];
+					if(PressedInspectKey[client])
 					{
-						if(!wasDucking[client])
+						if(!wasInspect[client])
 						{
 							hud = true;
-							wasDucking[client] = true;
+							wasInspect[client] = true;
 						}
 					}
-					else if(!wasDucking[client])
+					else if(!wasInspect[client])
 					{
 						hud = true;
-						wasDucking[client] = false;
+						wasInspect[client] = false;
 					}
 				}
 				
@@ -1013,7 +1034,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							if(val.tag == KeyValType_Section && val.cfg)
 							{
 								ConfigData cfg = view_as<ConfigData>(val.cfg);
-								if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
+								if(!PressedInspectKey[client] || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
 								{
 									if(!GetBossNameCfg(cfg, val.data, sizeof(val.data), lang))
 										strcopy(val.data, sizeof(val.data), key);
@@ -1021,7 +1042,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 								
 								bool blocked = true;
 								
-								if(buttons & IN_DUCK)
+								if(PressedInspectKey[client])
 								{
 									switch(button[i])
 									{
@@ -1139,7 +1160,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						if(val.tag == KeyValType_Section && val.cfg)
 						{
 							ConfigData cfg = view_as<ConfigData>(val.cfg);
-							if(!(buttons & IN_DUCK) || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
+							if(!PressedInspectKey[client] || !GetBossNameCfg(cfg, val.data, sizeof(val.data), lang, "desc"))
 							{
 								if(!GetBossNameCfg(cfg, val.data, sizeof(val.data), lang))
 									strcopy(val.data, sizeof(val.data), key);
@@ -1148,7 +1169,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 							GetButtons(ability, true, count, button);
 							
 							bool blocked = true;
-							if((buttons & IN_DUCK) && count)
+							if((PressedInspectKey[client]) && count)
 							{
 								switch(button[0])
 								{
