@@ -747,11 +747,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						{
 							if(AnchorLastAttrib[client] == -69.42)
 							{
-								Address address = TF2Attrib_GetByDefIndex(client, 252);
-								AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);
+								AnchorLastAttrib[client] = 1.0;
+								Attrib_Get(client, "damage force reduction", AnchorLastAttrib[client]);
 							}
 							
-							TF2Attrib_SetByDefIndex(client, 252, 0.0);
+							Attrib_Set(client, "damage force reduction", 0.0);
 							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
 							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
@@ -778,9 +778,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	
 	if(AnchorLastAttrib[client] != -69.42 && AnchorStartTime[client] <= 1.0)
 	{
-		Address address = TF2Attrib_GetByDefIndex(client, 252);
-		if(address == Address_Null || TF2Attrib_GetValue(address) == 0.0)
-			TF2Attrib_SetByDefIndex(client, 252, AnchorLastAttrib[client]);
+		float value;
+		if(!Attrib_Get(client, "damage force reduction", value) || !value)
+			Attrib_Set(client, "damage force reduction", AnchorLastAttrib[client]);
 		
 		AnchorLastAttrib[client] = -69.42;
 	}
@@ -1534,13 +1534,12 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			}
 			else
 			{
-				float hp = float(SDKCall_GetMaxHealth(client) * (lives - 1));
+				float hp;
+				Attrib_Get(client, "max health additive bonus", hp);
 				
-				Address attrib = TF2Attrib_GetByDefIndex(client, 26);
-				if(attrib != Address_Null)
-					hp += TF2Attrib_GetValue(attrib);
+				hp += float(SDKCall_GetMaxHealth(client) * (lives - 1));
 				
-				TF2Attrib_SetByDefIndex(client, 26, hp);
+				Attrib_Set(client, "max health additive bonus", hp);
 			}
 			
 			SetEntityHealth(client, GetClientHealth(client) * lives);
@@ -1558,13 +1557,12 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 		}
 		else
 		{
-			float hp = float(SDKCall_GetMaxHealth(client)) * (multi - 1.0);
+			float hp;
+			Attrib_Get(client, "max health additive bonus", hp);
 			
-			Address attrib = TF2Attrib_GetByDefIndex(client, 26);
-			if(attrib != Address_Null)
-				hp += TF2Attrib_GetValue(attrib);
+			hp += float(SDKCall_GetMaxHealth(client)) * (multi - 1.0);
 			
-			TF2Attrib_SetByDefIndex(client, 26, hp);
+			Attrib_Set(client, "max health additive bonus", hp);
 		}
 		
 		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));
@@ -1839,7 +1837,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 public Action Hook_SetTransmit(int client, int target)
 {
-	if(client != target && target > 0 && target <= MaxClients && OverlayMuffled[target])
+	if(client != target && target > 0 && target <= MaxClients && OverlayMuffled[target] && IsPlayerAlive(target))
 		return Plugin_Stop;
 	
 	return Plugin_Continue;
@@ -2881,16 +2879,16 @@ float GetPlayerStunMulti(int client)
 	multi = 1.15 - (multi * 0.001);
 	
 	// Ranged damage attributes
-	multi *= Attributes_FindOnPlayer(client, 60, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 61, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 64, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 65, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 66, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 67, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 412, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 492, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 516, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 1001, true, 1.0);
+	multi *= Attrib_FindOnPlayer(client, "dmg taken from fire reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from fire increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken increased", true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from fire reduced set bonus", true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from bullets increased", true) *
+			 Attrib_FindOnPlayer(client, "CARD: dmg taken from bullets reduced", true);
 	
 	// Mark-for-Death = x1.35
 	if(TF2_IsPlayerInCondition(client, TFCond_MarkedForDeath) ||
@@ -2900,12 +2898,12 @@ float GetPlayerStunMulti(int client)
 	
 	// Ranged damage attributes
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	multi *= Attributes_FindOnWeapon(client, active, 205, true, 1.0) *
-			 Attributes_FindOnWeapon(client, active, 852, true, 1.0);
+	multi *= Attrib_FindOnWeapon(client, active, "dmg from ranged reduced", true) *
+			 Attrib_FindOnWeapon(client, active, "dmg taken from fire reduced on active", true) *
+			 Attrib_FindOnWeapon(client, active, "mult_dmgtaken_active", true);
 	
-	if(TF2_IsPlayerInCondition(client, TFCond_Slowed) &&
-	   health < SDKCall_GetMaxHealth(client) / 2)
-		multi *= Attributes_FindOnWeapon(client, active, 738, true, 1.0);
+	if(TF2_IsPlayerInCondition(client, TFCond_Slowed) && health < SDKCall_GetMaxHealth(client) / 2)
+		multi *= Attrib_FindOnWeapon(client, active, "spunup_damage_resistance", true);
 	
 	return multi;
 }
@@ -3023,197 +3021,6 @@ void ConstrainDistance(const float[] startPoint, float[] endPoint, float distanc
 	endPoint[0] = ((endPoint[0] - startPoint[0]) * constrainFactor) + startPoint[0];
 	endPoint[1] = ((endPoint[1] - startPoint[1]) * constrainFactor) + startPoint[1];
 	endPoint[2] = ((endPoint[2] - startPoint[2]) * constrainFactor) + startPoint[2];
-}
-
-float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
-{
-	float total = defaul;
-	bool found = Attributes_GetByDefIndex(client, index, total);
-	
-	int i;
-	int entity;
-	float value;
-	while(TF2_GetWearable(client, entity, i))
-	{
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	while(TF2_GetItem(client, entity, i))
-	{
-		if(index != 128 && active != entity && Attributes_GetByDefIndex(entity, 128, value) && value)
-			continue;
-		
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	return total;
-}
-
-float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = false, float defaul = 0.0)
-{
-	float total = defaul;
-	bool found = Attributes_GetByDefIndex(client, index, total);
-	
-	int i;
-	int wear;
-	float value;
-	while(TF2_GetWearable(client, wear, i))
-	{
-		if(Attributes_GetByDefIndex(wear, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	if(entity != -1)
-	{
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	return total;
-}
-
-bool Attributes_GetByDefIndex(int entity, int index, float &value)
-{
-	Address attrib = TF2Attrib_GetByDefIndex(entity, index);
-	if(attrib != Address_Null)
-	{
-		value = TF2Attrib_GetValue(attrib);
-		return true;
-	}
-	
-	if(entity <= MaxClients)
-		return false;
-	
-	static int indexes[20];
-	static float values[20];
-	int count = TF2Attrib_GetSOCAttribs(entity, indexes, values, 20);
-	for(int i; i < count; i++)
-	{
-		if(indexes[i] == index)
-		{
-			value = values[i];
-			return true;
-		}
-	}
-	
-	if(!GetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", 1))
-	{
-		count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
-		for(int i; i < count; i++)
-		{
-			if(indexes[i] == index)
-			{
-				value = values[i];
-				return true;
-			}
-		}
-	}
-	
-	return false;
-}
-
-bool TF2_GetWearable(int client, int &entity, int &index)
-{
-	/*#if defined __nosoop_tf2_utils_included
-	if(Loaded)
-	{
-		int length = TF2Util_GetPlayerWearableCount(client);
-		while(index < length)
-		{
-			entity = TF2Util_GetPlayerWearable(client, index++);
-			if(entity != -1)
-				return true;
-		}
-	}
-	else
-	#endif*/
-	{
-		if(index >= -1 && index <= MaxClients)
-			index = MaxClients + 1;
-		
-		if(index > -2)
-		{
-			while((index = FindEntityByClassname(index, "tf_wear*")) != -1)
-			{
-				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client)
-				{
-					entity = index;
-					return true;
-				}
-			}
-			
-			index = -(MaxClients + 1);
-		}
-		
-		entity = -index;
-		while((entity = FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
-		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
-			{
-				index = -entity;
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 bool TF2_GetItem(int client, int &weapon, int &pos)

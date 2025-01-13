@@ -723,9 +723,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				
 				EquipPlayerWeapon(client, weapon);
 				
-				TF2Attrib_SetByDefIndex(weapon, 128, 1.0);
-				TF2Attrib_SetByDefIndex(weapon, 303, -1.0);
-				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
+				Attrib_Set(weapon, "provide on active", 1.0);
+				Attrib_Set(weapon, "mod max primary clip override", -1.0);
+				Attrib_Set(weapon, "no_attack", 1.0);
 				
 				RazorbackRef[client] = EntIndexToEntRef(weapon);
 				
@@ -773,7 +773,6 @@ public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 	Debug("FF2R_OnPickupDroppedWeapon::%N", client);
 	return CanPickup[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
 }
-
 
 public void OnLibraryAdded(const char[] name)
 {
@@ -847,8 +846,8 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	{
 		if(GetEntityFlags(client) & FL_ONGROUND)
 		{
-			JumperAttribRestore(client, 107, WallSpeedMulti[client]);
-			JumperAttribRestore(client, 443, WallJumpMulti[client]);
+			JumperAttribRestore(client, "move speed bonus", WallSpeedMulti[client]);
+			JumperAttribRestore(client, "major increased jump height", WallJumpMulti[client]);
 			WallStale[client] = 0;
 		}
 	}
@@ -859,7 +858,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		if(value < 1.0)
 			value = 1.0;
 		
-		JumperAttribApply(client, 610, WallAirMulti[client], value);
+		JumperAttribApply(client, "increased air control", WallAirMulti[client], value);
 	}
 	
 	if(HasAbility[client] && IsPlayerAlive(client))
@@ -1682,6 +1681,7 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 		}
 		else
 		{
+			RegenerateSupply(client);
 			ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
 		}
 		
@@ -2000,10 +2000,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						while((index = FindEntityByClassname(index, "obj_*")) != -1)
 						{
 							if(GetEntPropEnt(index, Prop_Send, "m_hBuilder") == victim)
-							{
-								SetEntPropEnt(index, Prop_Send, "m_hBuilder", -1);
 								SetEntProp(index, Prop_Send, "m_bDisabled", true);
-							}
 						}
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
@@ -2106,8 +2103,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						
-						ApplyHealEvent(attacker, attacker, 600);
-						SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
+						ApplyHealEvent(attacker, attacker, 1000);
+						SetEntityHealth(attacker, GetClientHealth(attacker) + 1000);
 						return Plugin_Handled;
 					}
 				}
@@ -2198,12 +2195,9 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					}
 					
 					float value = 1.0;
-					Address attrib = TF2Attrib_GetByDefIndex(weapon, 2);
-					if(attrib != Address_Null)
-						value = TF2Attrib_GetValue(attrib);
-					
-					TF2Attrib_SetByDefIndex(weapon, 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
-					TF2Attrib_SetByDefIndex(weapon, 28, 0.1);
+					Attrib_Get(weapon, "damage bonus", value);
+					Attrib_Set(weapon, "damage bonus", value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
+					Attrib_Set(weapon, "crit mod disabled hidden", 0.1);
 					
 					int entity = CreateEntityByName("item_ammopack_medium");
 					if(entity != -1)
@@ -2259,6 +2253,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								SetEntProp(index, Prop_Send, "m_bValidatedAttachedEntity", true);
 								
 								EquipPlayerWeapon(victim, index);
+
+								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
 						}
 						else if(TF2_GetClassnameSlot(classname) == TFWeaponSlot_Melee)
@@ -2278,7 +2274,9 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								EquipPlayerWeapon(victim, index);
 								
 								if(StrContains(classname, "tf_weapon_fists") == -1)
-									TF2Attrib_SetByDefIndex(index, 138, 0.5);
+									Attrib_Set(index, "dmg penalty vs players", 0.5);
+								
+								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
 						}
 						else
@@ -2313,6 +2311,12 @@ void StealFromBoss(int victim, int attacker)
 	StealNext[attacker] = 0;
 	
 	TF2_RegeneratePlayer(attacker);
+}
+
+void RegenerateSupply(int client)
+{
+	SetHealthTo[client] = GetClientHealth(client);
+	TF2_RegeneratePlayer(client);
 }
 
 int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float ang[3])
@@ -2523,11 +2527,11 @@ bool JumperTestJump(int client, bool success)
 							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
 						}
 						
-						JumperAttribApply(client, 610, WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
+						JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
 					}
 					
-					JumperAttribApply(client, 107, WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
-					JumperAttribApply(client, 443, WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
+					JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
+					JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
 				}
 				
 				delete trace;
@@ -2539,11 +2543,11 @@ bool JumperTestJump(int client, bool success)
 		
 		if(!jumped)
 		{
-			JumperAttribApply(client, 107, WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
-			JumperAttribApply(client, 443, WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
+			JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
+			JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
 			
 			if(!WallInLagComp)
-				JumperAttribApply(client, 610, WallAirMulti[client], ability.GetFloat("double_air", 1.0));
+				JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("double_air", 1.0));
 		}
 		else if(!WallInLagComp)
 		{
@@ -2557,52 +2561,48 @@ bool JumperTestJump(int client, bool success)
 	return false;
 }
 
-void JumperAttribApply(int client, int index, float &current, float multi)
+void JumperAttribApply(int client, const char[] name, float &current, float multi)
 {
 	if(multi != current)
 	{
 		float value = 1.0;
-		Address attrib = TF2Attrib_GetByDefIndex(client, index);
-		if(attrib != Address_Null)
-			value = TF2Attrib_GetValue(attrib);
+		bool found = Attrib_Get(client, name, value);
 		
 		value *= multi / current;
 		if(value > 1.01 || value < 0.99)
 		{
-			TF2Attrib_SetByDefIndex(client, index, value);
+			Attrib_Set(client, name, value);
 		}
-		else if(attrib != Address_Null)
+		else if(found)
 		{
-			TF2Attrib_RemoveByDefIndex(client, index);
+			Attrib_Remove(client, name);
 		}
 		
 		current = multi;
-		if(index == 107)
+		if(StrEqual(name, "move speed bonus"))
 			SDKCall(SDKSetSpeed, client);
 	}
 }
 
-void JumperAttribRestore(int client, int index, float &current)
+void JumperAttribRestore(int client, const char[] name, float &current)
 {
 	if(current != 1.0)
 	{
 		float value = 1.0;
-		Address attrib = TF2Attrib_GetByDefIndex(client, index);
-		if(attrib != Address_Null)
-			value = TF2Attrib_GetValue(attrib);
+		bool found = Attrib_Get(client, name, value);
 		
 		value /= current;
 		if(value > 1.01 || value < 0.99)
 		{
-			TF2Attrib_SetByDefIndex(client, index, value);
+			Attrib_Set(client, name, value);
 		}
-		else if(attrib != Address_Null)
+		else if(found)
 		{
-			TF2Attrib_RemoveByDefIndex(client, index);
+			Attrib_Remove(client, name);
 		}
 		
 		current = 1.0;
-		if(index == 107)
+		if(StrEqual(name, "move speed bonus"))
 			SDKCall(SDKSetSpeed, client);
 	}
 }

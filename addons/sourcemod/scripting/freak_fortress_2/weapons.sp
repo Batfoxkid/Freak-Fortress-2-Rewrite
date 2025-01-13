@@ -321,7 +321,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 			}
 			
 			FormatEx(buffer2, sizeof(buffer2), "%t", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
-			menu.AddItem(NULL_STRING, buffer2);
+			menu.AddItem("__nochanges", buffer2);
 			
 			menu.Pagination = 0;
 			menu.ExitButton = true;
@@ -366,8 +366,9 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 				{
 					Client(client).SetLoadout(buffer);
 
-					if(Enabled && RoundStatus < 1)
+					if(Enabled && RoundStatus < 1 && !Client(client).IsBoss && !Client(client).Minion)
 					{
+						TF2_RemoveAllItems(client);
 						TF2_RespawnPlayer(client);
 					}
 					else

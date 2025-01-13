@@ -402,13 +402,13 @@ static void AddAttributes()
 	attrib.SetName("backstab stale restore");
 	attrib.SetClass("ff2.stale_boss_stab_time");
 	attrib.SetDescriptionFormat("additive");
-	attrib.SetCustom("description_ff2_string", "backstab stale restore");
+	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
 
 	attrib.SetName("backstab stale multi");
 	attrib.SetClass("ff2.stale_boss_stab_damage");
 	attrib.SetDescriptionFormat("additive");
-	attrib.SetCustom("description_ff2_string", "backstab stale multi");
+	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
 
 	attrib.SetName("mod airblast stale");
@@ -423,10 +423,22 @@ static void AddAttributes()
 	attrib.SetCustom("description_ff2_string", "mod airblast rage");
 	attrib.Register();
 
-	attrib.SetName("mod stun on hit");
+	attrib.SetName("mod stun boss on hit");
 	attrib.SetClass("ff2.mod_stun_on_hit");
 	attrib.SetDescriptionFormat("additive");
-	attrib.SetCustom("description_ff2_string", "mod stun on hit");
+	attrib.SetCustom("description_ff2_string", "mod stun boss on hit");
+	attrib.Register();
+
+	attrib.SetName("mod rage loss on hit");
+	attrib.SetClass("ff2.mod_rage_on_hit");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "mod rage loss on hit");
+	attrib.Register();
+
+	attrib.SetName("jarate is rage loss");
+	attrib.SetClass("ff2.jarate_rage");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "jarate is rage loss");
 	attrib.Register();
 
 	attrib.SetName("milk limit DISPLAY ONLY");
@@ -498,6 +510,16 @@ static void AddAttributes()
 	attrib.SetClass("ff2.displayonly_14");
 	attrib.SetCustom("description_ff2_string", "health drop on damage DISPLAY ONLY");
 	attrib.Register();
+
+	attrib.SetName("resist effects stuns DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_15");
+	attrib.SetCustom("description_ff2_string", "resist effects stuns DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("kill effects boss hits DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_16");
+	attrib.SetCustom("description_ff2_string", "kill effects boss hits DISPLAY ONLY");
+	attrib.Register();
 	
 	delete attrib;
 }
@@ -520,7 +542,7 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 	
 	if(damagecustom == TF_CUSTOM_BURNING || damagecustom == TF_CUSTOM_BLEEDING || damagecustom == TF_CUSTOM_BURNING_FLARE || damagecustom == TF_CUSTOM_BURNING_ARROW)
 		return;
-	
+
 	if(TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping))
 	{
 		value = CustomAttrib_FindOnWeapon(attacker, weapon, "mid-air damage vs bosses", true);
@@ -551,6 +573,14 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 			}
 		}
 	}
+	
+	value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod stun boss on hit");
+	if(value)
+		TF2_StunPlayer(victim, value, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, attacker);
+	
+	value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod rage loss on hit");
+	if(value)
+		ApplyRage(victim, attacker, -value);
 	
 	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
@@ -712,24 +742,7 @@ void CustomAttrib_OnAirblastBoss(int victim, int attacker)
 		}
 
 		if(CustomAttrib_Get(weapon, "mod airblast rage", value))
-		{
-			if(Client(victim).RageDamage > 0.0)
-			{
-				float rage = Client(victim).GetCharge(0);
-				float maxrage = Client(victim).RageMax;
-				if(rage < maxrage)
-				{
-					rage += value;
-					if(rage > maxrage)
-					{
-						Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
-						rage = maxrage;
-					}
-					
-					Client(victim).SetCharge(0, rage);
-				}
-			}
-		}
+			ApplyRage(victim, attacker, value);
 	}
 }
 
@@ -743,6 +756,16 @@ void CustomAttrib_OnBackstabBoss(int victim, float &damage, int weapon, float &t
 		
 		CustomAttrib_Get(weapon, "backstab stale restore", time);
 		CustomAttrib_Get(weapon, "backstab stale multi", multi);
+	}
+}
+
+void CustomAttrib_OnJarateBoss(int victim, int attacker, int weapon, float &jarate)
+{
+	float value;
+	if(CustomAttrib_Get(weapon, "jarate is rage loss", value))
+	{
+		ApplyRage(victim, attacker, value);
+		jarate = 0.0;
 	}
 }
 
@@ -841,4 +864,31 @@ static Action UberTimer(Handle timer, int ref)
 	}
 	
 	return Plugin_Stop;
+}
+
+static void ApplyRage(int victim, int attacker, float amount)
+{
+	if(Client(victim).RageDamage > 0.0)
+	{
+		float rage = Client(victim).GetCharge(0);
+		float maxrage = Client(victim).RageMax;
+		if(rage < maxrage)
+		{
+			rage += amount;
+			if(rage > maxrage)
+			{
+				Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				rage = maxrage;
+			}
+			else if(rage < 0.0)
+			{
+				rage = 0.0;
+			}
+			
+			Client(victim).SetCharge(0, rage);
+
+			rage = amount / 100.0 * Client(victim).RageDamage;
+			Client(attacker).Assist += GetClientTeam(victim) == GetClientTeam(attacker) ? rage : -rage;
+		}
+	}
 }

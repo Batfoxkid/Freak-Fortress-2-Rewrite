@@ -1991,12 +1991,23 @@ void Bosses_SetSpeed(int client)
 			}
 		}
 		
-		Attrib_Set(client, "major move speed bonus", speed/defaul);
+		Attrib_Set(client, "major move speed bonus", speed / defaul);
 		SDKCall_SetSpeed(client);
 	}
 	else
 	{
 		Attrib_Set(client, "major move speed bonus", 1.0);
+	}
+}
+
+void Bosses_OnConditonAdded(int client, TFCond cond)
+{
+	if(cond == TFCond_Jarated && Client(client).IsBoss)
+	{
+		int flags = GetCommandFlags("r_screenoverlay");
+		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
+		ClientCommand(client, "r_screenoverlay \"\"");
+		SetCommandFlags("r_screenoverlay", flags);
 	}
 }
 

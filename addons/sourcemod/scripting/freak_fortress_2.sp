@@ -463,6 +463,7 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 
 public void TF2_OnConditionAdded(int client, TFCond cond)
 {
+	Bosses_OnConditonAdded(client, cond);
 	Gamemode_ConditionAdded(client, cond);
 }
 

@@ -34,11 +34,18 @@ static Action Attributes_OnJarateBoss(UserMsg msg_id, BfRead bf, const int[] pla
 			{
 				if(StrEqual(classname, "tf_weapon_jar"))
 				{
-					if(JarateDamage[victim] < 0.0)
-						JarateDamage[victim] = 0.0;
-					
-					JarateDamage[victim] += 1500.0;
-					JarateApplyer[victim] = attacker;
+					float duration = 1500.0;
+
+					CustomAttrib_OnJarateBoss(victim, attacker, weapon, duration);
+
+					if(duration > 0.0)
+					{
+						if(JarateDamage[victim] < 0.0)
+							JarateDamage[victim] = 0.0;
+						
+						JarateDamage[victim] += 1500.0;
+						JarateApplyer[victim] = attacker;
+					}
 				}
 				else if(StrEqual(classname, "tf_weapon_jar_milk"))
 				{
@@ -275,10 +282,12 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			{
 				value = 1.0;
 				CustomAttrib_Get(entity, "boost on damage drain multi", value);
-				
-				CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
-				pack.WriteCell(GetClientUserId(attacker));
-				pack.WriteFloat(fdamage / 1000.0 * value);
+				if(value)
+				{
+					CreateDataTimer(0.1, Attributes_BoostDrainStack, pack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+					pack.WriteCell(GetClientUserId(attacker));
+					pack.WriteFloat(fdamage / 1000.0 * value);
+				}
 			}
 			else
 			{
@@ -336,7 +345,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 							}
 						}
 						
-						Client(attacker).Assist += 50;
+						Client(attacker).Assist += 100;
 						Client(attacker).RefreshAt = 0.0;
 						
 						i = 0;

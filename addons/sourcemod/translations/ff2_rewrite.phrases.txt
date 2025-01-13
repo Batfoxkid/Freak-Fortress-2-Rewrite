@@ -817,10 +817,20 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Successive hits on a boss increases reload time by {3}%%"
 	}
-	"mod stun on hit"
+	"mod stun boss on hit"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Stuns boss for {4} seconds"
+	}
+	"mod rage loss on hit"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Drain {4}%% RAGE from a boss on hit"
+	}
+	"jarate is rage loss"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Jarate effect instead drains {4}%% RAGE from a boss"
 	}
 	"milk limit DISPLAY ONLY"
 	{
@@ -840,7 +850,7 @@
 	"jarate limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Jarate effect is limited to {4} damage when applied to a boss"
+		"en"		"Jarate effect only boosts the next {4} damage dealt to a boss"
 	}
 	"boost limit DISPLAY ONLY"
 	{
@@ -885,16 +895,26 @@
 	"mark limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Mark-for-Death effect is limited to {4} damage when applied to a boss"
-	}
-	"mark limit DISPLAY ONLY"
-	{
-		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Mark-for-Death effect is limited to {4} damage when applied to a boss"
+		"en"		"Mark-for-Death effect only boosts the next {4} damage dealt to a boss"
 	}
 	"health drop on damage DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"A small health pack is dropped every {4} damage dealt to a boss"
+	}
+	"resist effects stuns DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Ranged resistances effect boss stun duration (x{4})"
+	}
+	"kill effects boss hits DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"On kill effects trigger when hitting a boss"
+	}
+	"backstabs DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Backstabs deal a large amount of damage to a boss"
 	}
 }
