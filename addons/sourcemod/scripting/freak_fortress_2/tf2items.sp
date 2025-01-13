@@ -30,7 +30,7 @@ void TF2Items_PluginStart()
 	#endif
 }
 
-stock void TF2Items_LibraryAdded(const char[] name)
+public void TF2Items_LibraryAdded(const char[] name)
 {
 	#if defined _tf2items_included
 	if(!Loaded && StrEqual(name, TF2ITEMS_LIBRARY))
@@ -38,7 +38,7 @@ stock void TF2Items_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void TF2Items_LibraryRemoved(const char[] name)
+public void TF2Items_LibraryRemoved(const char[] name)
 {
 	#if defined _tf2items_included
 	if(Loaded && StrEqual(name, TF2ITEMS_LIBRARY))

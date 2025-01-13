@@ -16,7 +16,7 @@ void VScript_PluginStart()
 	#endif
 }
 
-stock void VScript_LibraryAdded(const char[] name)
+public void VScript_LibraryAdded(const char[] name)
 {
 	#if defined _vscript_included
 	if(!Loaded && StrEqual(name, VSCRIPT_LIBRARY))
@@ -24,7 +24,7 @@ stock void VScript_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void VScript_LibraryRemoved(const char[] name)
+public void VScript_LibraryRemoved(const char[] name)
 {
 	#if defined _vscript_included
 	if(Loaded && StrEqual(name, VSCRIPT_LIBRARY))
@@ -65,7 +65,7 @@ stock any VScript_RunScriptFunction(int entity, const char[] name)
 	}
 	#endif
 
-	ThrowError("VScript library is not loaded");
+	ThrowError("VScript library is not loaded", entity, name);
 	return 0;
 }
 
@@ -86,6 +86,6 @@ stock float VScript_GetAttribute(int entity, const char[] name, float defaul = 0
 	}
 	#endif
 
-	ThrowError("VScript library is not loaded");
+	ThrowError("VScript library is not loaded", entity, name, defaul);
 	return 0.0;
 }

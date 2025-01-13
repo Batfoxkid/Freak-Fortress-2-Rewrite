@@ -25,7 +25,7 @@ void Weapons_PluginStart()
 	#endif
 }
 
-stock void Weapons_LibraryAdded(const char[] name)
+public void Weapons_LibraryAdded(const char[] name)
 {
 	#if defined __cwx_included
 	if(!Loaded && StrEqual(name, CWX_LIBRARY))
@@ -33,7 +33,7 @@ stock void Weapons_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void Weapons_LibraryRemoved(const char[] name)
+public void Weapons_LibraryRemoved(const char[] name)
 {
 	#if defined __cwx_included
 	if(Loaded && StrEqual(name, CWX_LIBRARY))
@@ -232,39 +232,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t", SlotNames[i]);
 			
-			int entity = GetPlayerWeaponSlot(client, i);
-			if(entity == -1)
-			{
-				switch(i)
-				{
-					case TFWeaponSlot_Primary:
-					{
-						int index;
-						while((TF2U_GetWearable(client, entity, index)))
-						{
-							int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-							switch(defindex)
-							{
-								case 405, 608:
-									break;
-							}
-						}
-					}
-					case TFWeaponSlot_Secondary:
-					{
-						int index;
-						while((TF2U_GetWearable(client, entity, index)))
-						{
-							int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-							switch(defindex)
-							{
-								case 133, 444, 131, 406, 1099, 1144, 57, 231, 642:
-									break;
-							}
-						}
-					}
-				}
-			}
+			int entity = TF2U_GetPlayerLoadoutEntity(client, i);
 			
 			if(entity != -1 && FindWeaponSection(entity, loadout))
 			{
@@ -362,17 +330,47 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 					
 					Weapons_ChangeMenu(client, _, choice);
 				}
-				else
+				else if(!Client(client).IsBoss && !Client(client).Minion)
 				{
 					Client(client).SetLoadout(buffer);
 
-					if(Enabled && RoundStatus < 1 && !Client(client).IsBoss && !Client(client).Minion)
+					if(!Enabled)
+					{
+
+					}
+					else if(RoundStatus < 1)
 					{
 						TF2_RemoveAllItems(client);
 						TF2_RespawnPlayer(client);
 					}
 					else
 					{
+						int entity, i;
+						while(TF2_GetItem(client, entity, i))
+						{
+							if(IsPlayerAlive(client))
+							{
+								SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+							}
+							else
+							{
+								TF2_RemoveItem(client, entity);
+							}
+						}
+
+						i = 0;
+						while(TF2U_GetWearable(client, entity, i))
+						{
+							if(IsPlayerAlive(client))
+							{
+								SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+							}
+							else
+							{
+								TF2_RemoveWearable(client, entity);
+							}
+						}
+
 						Weapons_ChangeMenu(client, _, choice);
 					}
 				}

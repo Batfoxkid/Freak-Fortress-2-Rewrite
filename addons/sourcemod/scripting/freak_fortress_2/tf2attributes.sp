@@ -20,7 +20,7 @@ void Attrib_PluginStart()
 	#endif
 }
 
-stock void Attrib_LibraryAdded(const char[] name)
+public void Attrib_LibraryAdded(const char[] name)
 {
 	#if defined _tf2attributes_included
 	if(!Loaded && StrEqual(name, ATTRIB_LIBRARY))
@@ -28,7 +28,7 @@ stock void Attrib_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void Attrib_LibraryRemoved(const char[] name)
+public void Attrib_LibraryRemoved(const char[] name)
 {
 	#if defined _tf2attributes_included
 	if(Loaded && StrEqual(name, ATTRIB_LIBRARY))

@@ -51,7 +51,7 @@ void CustomAttrib_PluginStart()
 	#endif
 }
 
-stock void CustomAttrib_LibraryAdded(const char[] name)
+public void CustomAttrib_LibraryAdded(const char[] name)
 {
 	#if defined __tf_econ_dyn_included
 	if(!TFEYLoaded && StrEqual(name, TFEY_LIBRARY))
@@ -69,7 +69,7 @@ stock void CustomAttrib_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void CustomAttrib_LibraryRemoved(const char[] name)
+public void CustomAttrib_LibraryRemoved(const char[] name)
 {
 	#if defined __tf_econ_dyn_included
 	if(TFEYLoaded && StrEqual(name, TFEY_LIBRARY))

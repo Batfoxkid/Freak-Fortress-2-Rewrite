@@ -17,7 +17,7 @@ void SteamWorks_PluginStart()
 	#endif
 }
 
-stock void SteamWorks_LibraryAdded(const char[] name)
+public void SteamWorks_LibraryAdded(const char[] name)
 {
 	#if defined _SteamWorks_Included
 	if(!Loaded && StrEqual(name, STEAMWORKS_LIBRARY))
@@ -28,7 +28,7 @@ stock void SteamWorks_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void SteamWorks_LibraryRemoved(const char[] name)
+public void SteamWorks_LibraryRemoved(const char[] name)
 {
 	#if defined _SteamWorks_Included
 	if(Loaded && StrEqual(name, STEAMWORKS_LIBRARY))
@@ -46,6 +46,10 @@ void SteamWorks_PrintStatus()
 }
 
 stock void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
+{
+	_SteamWorks_SetGameTitle(pack);
+}
+public void _SteamWorks_SetGameTitle(const char[] pack)
 {
 	#if defined _SteamWorks_Included
 	strcopy(Pack, sizeof(Pack), pack);
