@@ -21,6 +21,7 @@ void Events_PluginStart()
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
@@ -168,7 +169,7 @@ static Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 		{
 			int attacker = GetClientOfUserId(event.GetInt("userid"));
 			if(attacker)
-				Weapons_OnAirblastBoss(attacker);
+				CustomAttrib_OnAirblastBoss(victim, attacker);
 		}
 	}
 	return Plugin_Continue;
@@ -274,7 +275,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		
-		Weapons_OnInventoryApplication(userid);
+		CustomAttrib_OnInventoryApplication(userid);
 	}
 	return Plugin_Continue;
 }
@@ -340,7 +341,10 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					
 					rage += (damage * 100.0 * debuff / ragedmg);
 					if(rage > maxrage)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						rage = maxrage;
+					}
 					
 					Client(victim).SetCharge(0, rage);
 				}
@@ -425,7 +429,7 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						}
 						
 						IntToString(lives, buffer, sizeof(buffer));
-						if(Cvar[SoundType].BoolValue)
+						if(!MultiBosses())
 						{
 							if(!Bosses_PlaySoundToAll(victim, "sound_lifeloss", buffer, _, _, _, _, 2.0))
 							{
@@ -475,7 +479,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					Client(victim).OverlayFor = 1.0;
 				
 				Events_CheckAlivePlayers(victim);
-				Weapons_PlayerDeath(victim);
+				CustomAttrib_PlayerDeath(victim);
 				
 				int entity, i;
 				while(TF2_GetItem(victim, entity, i))
@@ -515,7 +519,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				
 				if(event.GetInt("customkill") != TF_CUSTOM_TELEFRAG)
 				{
-					if(!Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
 						if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 							Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
@@ -619,6 +623,13 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			}
 		}
 	}
+}
+
+static void Events_UberDeployed(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client)
+		CustomAttrib_OnUberDeployed(client);
 }
 
 static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)

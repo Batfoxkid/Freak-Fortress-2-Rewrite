@@ -188,14 +188,6 @@
 	}
 	
 	
-	"model_projectile_replace"
-	{
-		"tf_projectile_pipe"	"models/player/saxton_hale/w_easteregg.mdl"
-		
-		"plugin_name"			"ff2r_default_abilities"
-	}
-	
-	
 	"spawn_many_objects_on_death"
 	{
 		"model"			"models/player/saxton_hale/w_easteregg.mdl"	// Pickup model
@@ -265,6 +257,18 @@
 		"duration"			"120.0"												// Prop lifetime
 		
 		"plugin_name"		"ff2r_default_abilities"
+	}
+	
+	
+	"special_projectile_model"
+	{
+		"tf_projectile_pipe"
+		{
+			"model"	"models/player/saxton_hale/w_easteregg.mdl"
+			"scale"	"1.0"
+		}
+		
+		"plugin_name"			"ff2r_default_abilities"
 	}
 	
 	
@@ -341,34 +345,18 @@
 #include <morecolors>
 #include <cfgmap>
 #include <ff2r>
-#include <tf2items>
-#include <tf2attributes>
+#undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
-#tryinclude <tf2utils>
-#tryinclude <tf_custom_attributes>
 
 #pragma semicolon 1
 #pragma newdecls required
-
-#include "freak_fortress_2/formula_parser.sp"
 
 #define PLUGIN_VERSION	"Custom"
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
 
-#define TF2U_LIBRARY	"nosoop_tf2utils"
-#define TCA_LIBRARY		"tf2custattr"
-
 #define TF_PLAYER_ENEMY_BLASTED_ME (1 << 2)
-
-#if defined __nosoop_tf2_utils_included
-bool TF2ULoaded;
-#endif
-
-#if defined __tf_custom_attributes_included
-bool TCALoaded;
-#endif
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
@@ -418,6 +406,14 @@ ConVar CvarCheats;
 ConVar CvarFriendlyFire;
 ConVar CvarTimeScale;
 
+#include "freak_fortress_2/customattrib.sp"
+#include "freak_fortress_2/econdata.sp"
+#include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/tf2attributes.sp"
+#include "freak_fortress_2/tf2items.sp"
+#include "freak_fortress_2/tf2utils.sp"
+#include "freak_fortress_2/vscript.sp"
+
 public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Default Abilities",
@@ -429,17 +425,10 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	#if defined __nosoop_tf2_utils_included
-	MarkNativeAsOptional("TF2Util_GetPlayerWearableCount");
-	MarkNativeAsOptional("TF2Util_GetPlayerWearable");
-	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
-	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
-	MarkNativeAsOptional("TF2Util_SetPlayerActiveWeapon");
-	#endif
-	
-	#if defined __tf_custom_attributes_included
-	MarkNativeAsOptional("TF2CustAttr_SetString");
-	#endif
+	CustomAttrib_PluginLoad();
+	TF2Items_PluginLoad();
+	TF2U_PluginLoad();
+	TFED_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -485,13 +474,12 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	#if defined __nosoop_tf2_utils_included
-	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
-	#endif
-	
-	#if defined __tf_custom_attributes_included
-	TCALoaded = LibraryExists(TCA_LIBRARY);
-	#endif
+	Attrib_PluginStart();
+	CustomAttrib_PluginStart();
+	TF2Items_PluginStart();
+	TF2U_PluginStart();
+	TFED_PluginStart();
+	VScript_PluginStart();
 	
 	SyncHud = CreateHudSynchronizer();
 	
@@ -550,28 +538,22 @@ public void OnMapEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = true;
-	#endif
-	
-	#if defined __tf_custom_attributes_included
-	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
-		TCALoaded = true;
-	#endif
+	Attrib_LibraryAdded(name);
+	CustomAttrib_LibraryAdded(name);
+	TF2Items_LibraryAdded(name);
+	TF2U_LibraryAdded(name);
+	TFED_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = false;
-	#endif
-	
-	#if defined __tf_custom_attributes_included
-	if(TCALoaded && StrEqual(name, TCA_LIBRARY))
-		TCALoaded = false;
-	#endif
+	Attrib_LibraryRemoved(name);
+	CustomAttrib_LibraryRemoved(name);
+	TF2Items_LibraryRemoved(name);
+	TF2U_LibraryRemoved(name);
+	TFED_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 }
 
 public void OnClientPutInServer(int client)
@@ -633,7 +615,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 				if(boss && (ability = boss.GetAbility(MatrixName[client])))
 				{
 					int team1 = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
-					int alive = GetTotalPlayersAlive(team1);
+					int alive = TotalPlayersAliveEnemy(team1);
 					float timescale = CvarTimeScale.FloatValue;
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
@@ -765,11 +747,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						{
 							if(AnchorLastAttrib[client] == -69.42)
 							{
-								Address address = TF2Attrib_GetByDefIndex(client, 252);
-								AnchorLastAttrib[client] = address == Address_Null ? 1.0 : TF2Attrib_GetValue(address);
+								AnchorLastAttrib[client] = 1.0;
+								Attrib_Get(client, "damage force reduction", AnchorLastAttrib[client]);
 							}
 							
-							TF2Attrib_SetByDefIndex(client, 252, 0.0);
+							Attrib_Set(client, "damage force reduction", 0.0);
 							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
 							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
@@ -796,9 +778,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	
 	if(AnchorLastAttrib[client] != -69.42 && AnchorStartTime[client] <= 1.0)
 	{
-		Address address = TF2Attrib_GetByDefIndex(client, 252);
-		if(address == Address_Null || TF2Attrib_GetValue(address) == 0.0)
-			TF2Attrib_SetByDefIndex(client, 252, AnchorLastAttrib[client]);
+		float value;
+		if(!Attrib_Get(client, "damage force reduction", value) || !value)
+			Attrib_Set(client, "damage force reduction", AnchorLastAttrib[client]);
 		
 		AnchorLastAttrib[client] = -69.42;
 	}
@@ -1189,7 +1171,7 @@ public void TF2_OnConditionAdded(int client, TFCond cond)
 					ability.GetString("slot", slot, sizeof(slot), "0");
 					float charge = GetBossCharge(boss, slot);
 					
-					int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+					int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 					
 					if(GetFormula(ability, "minimum", alive, 10.0) < charge && GetFormula(ability, "maximum", alive, 90.0) > charge)
 					{
@@ -1362,20 +1344,20 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	if(!StrContains(ability, "rage_stunsg", false))
 	{
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStunSg, pack));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStunSg, pack));
 		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_stun", false))
 	{
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStun, pack));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "delay", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client))), Timer_RageStun, pack));
 		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 	}
 	else if(!StrContains(ability, "rage_uber", false))
 	{
-		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 5.0);
+		float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 5.0);
 		
 		SpecialUber[client] = GetGameTime() + duration;
 		SetEntProp(client, Prop_Data, "m_takedamage", 0);
@@ -1387,7 +1369,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		cfg.GetString("path", file, sizeof(file));
 		
 		int team = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
-		float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
+		float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(team), 6.0);
 		bool blind = cfg.GetBool("blind");
 		bool muffle = cfg.GetBool("muffle");
 
@@ -1505,7 +1487,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		SetEntityMoveType(client, MOVETYPE_NONE);
 		
 		DataPack pack;
-		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "initial", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 0.15), Timer_RageExplosiveDance, pack));
+		BossTimers[client].Push(CreateDataTimer(GetFormula(cfg, "initial", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 0.15), Timer_RageExplosiveDance, pack));
 		pack.WriteCell(GetClientUserId(client));
 		pack.WriteString(ability);
 		pack.WriteCell(0);
@@ -1552,13 +1534,12 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			}
 			else
 			{
-				float hp = float(GetClientMaxHealth(client) * (lives - 1));
+				float hp;
+				Attrib_Get(client, "max health additive bonus", hp);
 				
-				Address attrib = TF2Attrib_GetByDefIndex(client, 26);
-				if(attrib != Address_Null)
-					hp += TF2Attrib_GetValue(attrib);
+				hp += float(SDKCall_GetMaxHealth(client) * (lives - 1));
 				
-				TF2Attrib_SetByDefIndex(client, 26, hp);
+				Attrib_Set(client, "max health additive bonus", hp);
 			}
 			
 			SetEntityHealth(client, GetClientHealth(client) * lives);
@@ -1576,13 +1557,12 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 		}
 		else
 		{
-			float hp = float(GetClientMaxHealth(client)) * (multi - 1.0);
+			float hp;
+			Attrib_Get(client, "max health additive bonus", hp);
 			
-			Address attrib = TF2Attrib_GetByDefIndex(client, 26);
-			if(attrib != Address_Null)
-				hp += TF2Attrib_GetValue(attrib);
+			hp += float(SDKCall_GetMaxHealth(client)) * (multi - 1.0);
 			
-			TF2Attrib_SetByDefIndex(client, 26, hp);
+			Attrib_Set(client, "max health additive bonus", hp);
 		}
 		
 		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));
@@ -1784,7 +1764,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						pos[2] += 20;
 						TeleportEntity(entity, pos);
 						
-						float duration = GetFormula(ability, "duration", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(attacker)), 0.0);
+						float duration = GetFormula(ability, "duration", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(attacker)), 0.0);
 						if(duration > 0.5)
 						{
 							FormatEx(model, sizeof(model), "OnUser1 !self:Kill::%.1f:1", duration);
@@ -1857,7 +1837,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 public Action Hook_SetTransmit(int client, int target)
 {
-	if(client != target && target > 0 && target <= MaxClients && OverlayMuffled[target])
+	if(client != target && target > 0 && target <= MaxClients && OverlayMuffled[target] && IsPlayerAlive(target))
 		return Plugin_Stop;
 	
 	return Plugin_Continue;
@@ -1871,13 +1851,32 @@ public void Hook_ProjectileSpawned(int entity)
 		BossData boss = FF2R_GetBossData(client);
 		if(boss)
 		{
-			AbilityData ability = boss.GetAbility("model_projectile_replace");
+			AbilityData ability = boss.GetAbility("special_projectile_model");
 			if(ability.IsMyPlugin())
 			{
-				char buffer[128];
+				char buffer[64];
 				GetEntityClassname(entity, buffer, sizeof(buffer));
-				if(ability.GetString(buffer, buffer, sizeof(buffer)))
-					SetEntityModel(entity, buffer);
+				ConfigData cfg = ability.GetSection(buffer);
+				if(cfg)
+				{
+					if(ability.GetString("model", buffer, sizeof(buffer)))
+						SetEntityModel(entity, buffer);
+					
+					float scale = ability.GetFloat("scale", 1.0);
+					if(scale != 1.0 && scale > 0.0)
+						SetEntPropFloat(client, Prop_Send, "m_flModelScale", GetEntPropFloat(client, Prop_Send, "m_flModelScale") * scale);
+				}
+			}
+			else
+			{
+				ability = boss.GetAbility("model_projectile_replace");
+				if(ability.IsMyPlugin())
+				{
+					char buffer[64];
+					GetEntityClassname(entity, buffer, sizeof(buffer));
+					if(ability.GetString(buffer, buffer, sizeof(buffer)))
+						SetEntityModel(entity, buffer);
+				}
 			}
 		}
 	}
@@ -1903,7 +1902,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 	{
 		int team = GetClientTeam(client);
 		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
-		int alive = GetTotalPlayersAlive(friendly ? -1 : team);
+		int alive = TotalPlayersAliveEnemy(friendly ? -1 : team);
 		
 		float duration = GetFormula(cfg, "duration", alive, 5.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
@@ -2022,7 +2021,7 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 	{
 		int team = GetClientTeam(client);
 		bool friendly = cfg.GetBool("friendly", CvarFriendlyFire.BoolValue);
-		int alive = GetTotalPlayersAlive(friendly ? -1 : team);
+		int alive = TotalPlayersAliveEnemy(friendly ? -1 : team);
 		
 		float duration = GetFormula(cfg, "duration", alive, 7.0);
 		float distance = GetFormula(cfg, "distance", alive, 800.0);
@@ -2163,7 +2162,7 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	int team = CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client);
 	
 	
-	float duration = GetFormula(cfg, "duration", GetTotalPlayersAlive(team), 6.0);
+	float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(team), 6.0);
 	bool more = cfg.GetInt("count", 12) > phase;
 	int blind = cfg.GetInt("blind");
 	int muffle = cfg.GetInt("muffle", 1);
@@ -2221,11 +2220,9 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 
 void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 {
-	static char classname[36], attributes[2048];
+	static char classname[36];
 	if(!cfg.GetString("classname", classname, sizeof(classname)))
 		cfg.GetString("name", classname, sizeof(classname), ability);
-	
-	cfg.GetString("attributes", attributes, sizeof(attributes));
 	
 	TFClassType class = TF2_GetPlayerClass(client);
 	GetClassWeaponClassname(class, classname, sizeof(classname));
@@ -2243,272 +2240,68 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			TF2_RemoveWeaponSlot(client, slot);
 	}
 	
-	int index = cfg.GetInt("index");
-	int level = cfg.GetInt("level", -1);
-	int quality = cfg.GetInt("quality", 5);
-	bool preserve = cfg.GetBool("preserve");
-	
-	int kills = cfg.GetInt("rank", -99);
-	if(kills == -99 && level == -1)
-		kills = GetURandomInt() % 21;
-	
-	if(kills >= 0)
-		kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
-	
-	if(level < 0 || level > 127)
-		level = 101;
-	
-	static char buffers[40][256];
-	
-	TFClassType forceClass;
-	if(cfg.GetString("class", buffers[0], sizeof(buffers[])))
-		forceClass = GetClassOfName(buffers[0]);
-	
-	if(forceClass != TFClass_Unknown)
-		TF2_SetPlayerClass(client, forceClass, _, false);
-	
-	int count = ExplodeString(attributes, " ; ", buffers, sizeof(buffers), sizeof(buffers));
-	
-	if(count % 2)
-		count--;
-	
-	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
-	int attribs;
-	int entity = -1;
-	if(wearable)
+	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, true);
+
+	if(entity != -1 && !wearable)
 	{
-		entity = CreateEntityByName(classname);
-		if(IsValidEntity(entity))
-		{
-			SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-			SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-			SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
-			SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
-			
-			DispatchSpawn(entity);
-		}
-		else
-		{
-			FF2R_GetBossData(client).GetString("filename", buffers[0], sizeof(buffers[]));
-			LogError("[Boss] Invalid classname '%s' for '%s' in '%s'", classname, buffers[0], ability);
-		}
-	}
-	else
-	{
-		Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
-		TF2Items_SetClassname(item, classname);
-		TF2Items_SetItemIndex(item, index);
-		TF2Items_SetLevel(item, level);
-		TF2Items_SetQuality(item, quality);
-		TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
-		for(level = 0; attribs < count && level < 16; attribs += 2)
-		{
-			int attrib = StringToInt(buffers[attribs]);
-			if(attrib)
-			{
-				TF2Items_SetAttribute(item, level++, attrib, ParseFormula(buffers[attribs+1], alive));
-			}
-			else
-			{
-				FF2R_GetBossData(client).Get("filename", attributes, sizeof(attributes));
-				LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s in '%s'", attributes, classname, buffers[attribs], buffers[attribs+1], ability);
-			}
-		}
-		
-		entity = TF2Items_GiveNamedItem(client, item);
-		delete item;
-	}
-	
-	if(entity != -1)
-	{
-		if(wearable)
-		{
-			EquipPlayerWearable(client, entity);
-		}
-		else
-		{
-			EquipPlayerWeapon(client, entity);
-		}
-		
-		if(forceClass != TFClass_Unknown)
-			TF2_SetPlayerClass(client, class, _, false);
-		
-		for(; attribs < count; attribs += 2)
-		{
-			int attrib = StringToInt(buffers[attribs]);
-			if(attrib)
-			{
-				TF2Attrib_SetByDefIndex(entity, attrib, ParseFormula(buffers[attribs+1], alive));
-			}
-			else
-			{
-				FF2R_GetBossData(client).Get("filename", attributes, sizeof(attributes));
-				LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s in '%s'", attributes, classname, buffers[attribs], buffers[attribs+1], ability);
-			}
-		}
-		
-		#if defined __tf_custom_attributes_included
-		if(TCALoaded)
-		{
-			ConfigData custom = cfg.GetSection("custom");
-			if(custom)
-				ApplyCustomAttributes(entity, custom);
-		}
-		#endif
-		
-		if(kills >= 0)
-		{
-			TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
-			if(wearable)
-				TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
-		}
-		
-		if(!wearable)
-		{
-			if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
-			{
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
-				}
-			}
-			else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
-			{
-				SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
-				SetEntProp(entity, Prop_Data, "m_iSubType", 3);
-				
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
-				}
-			}
-			
-			level = RoundFloat(GetFormula(cfg, "clip", alive, -1.0));
-			index = RoundFloat(GetFormula(cfg, "ammo", alive, -1.0));
-			kills = RoundFloat(GetFormula(cfg, "max", alive, -1.0));
-			
-			if(kills >= 0 && index > kills)
-				index = kills;
-			
-			if(level >= 0)
-				SetEntProp(entity, Prop_Data, "m_iClip1", level);
-			
-			if(index >= 0)
-			{
-				kills = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-				if(kills >= 0)
-					SetEntProp(client, Prop_Data, "m_iAmmo", index, _, kills);
-			}
-		}
-		
-		if(cfg.GetBool("show", true))
-		{
-			if(cfg.GetString("worldmodel", buffers[0], sizeof(buffers[])))
-			{
-				index = StringToInt(buffers[0]);
-				if(!index)
-					index = PrecacheModel(buffers[0]);
-				
-				SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
-				}
-			}
-				
-			GetEntityNetClass(entity, attributes, sizeof(attributes));
-			int offset = FindSendPropInfo(attributes, "m_iItemIDHigh");
-			
-			SetEntData(entity, offset - 8, 0);	// m_iItemID
-			SetEntData(entity, offset - 4, 0);	// m_iItemID
-			SetEntData(entity, offset, 0);		// m_iItemIDHigh
-			SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
-			
-			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-		}
-		else
-		{
-			SetEntityRenderMode(entity, RENDER_ENVIRONMENTAL);
-		}
-		
-		level = cfg.GetInt("alpha", 255);
-		index = cfg.GetInt("red", 255);
-		kills = cfg.GetInt("green", 255);
-		count = cfg.GetInt("blue", 255);
-		
-		if(level != 255 || index != 255 || kills != 255 || count != 255)
-		{
-			SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-			SetEntityRenderColor(entity, index, kills, count, level);
-		}
-		
-		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-		
-		if(!wearable)
-		{
-			if(lifetime > 0.0)
-			{
-				// Sets this weapon as the main weapon to switch to in this slot
-				// Swaps weapons in m_hMyWeapons to do this
-				
-				int lowestSlot = -1;
-				int lowestEnt = -1;
-				int currentSlot = -1;
-
-				static int length;
-				if(!length)
-					length = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
-				
-				char classname2[36];
-				for(int i; i < length; i++)
-				{
-					int other = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
-					if(other == entity)
-					{
-						currentSlot = i;
-
-						if(lowestSlot != -1)
-							break;
-					}
-					else if(lowestSlot == -1 && other != -1 && GetEntityClassname(other, classname2, sizeof(classname2)) && TF2_GetClassnameSlot(classname2) == slot)
-					{
-						lowestSlot = i;
-						lowestEnt = other;
-
-						if(currentSlot != -1)
-							break;
-					}
-				}
-
-				if(lowestSlot != -1 && currentSlot != -1)
-				{
-					SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", lowestEnt, currentSlot);
-					SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", entity, lowestSlot);
-				}
-			}
-
-			if(cfg.GetBool("force switch"))
-			{
-				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
-			}
-			else
-			{
-				SetPlayerActiveWeapon(client, entity);
-			}
-		}
-
 		if(lifetime > 0.0)
 		{
-			DataPack pack;
-			CreateDataTimer(lifetime, Timer_RemoveItem, pack, TIMER_FLAG_NO_MAPCHANGE);
-			pack.WriteCell(EntIndexToEntRef(entity));
-			pack.WriteCell(GetClientUserId(client));
-			pack.WriteCell(wearable);
+			// Sets this weapon as the main weapon to switch to in this slot
+			// Swaps weapons in m_hMyWeapons to do this
+			
+			int lowestSlot = -1;
+			int lowestEnt = -1;
+			int currentSlot = -1;
+
+			static int length;
+			if(!length)
+				length = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+			
+			char classname2[36];
+			for(int i; i < length; i++)
+			{
+				int other = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
+				if(other == entity)
+				{
+					currentSlot = i;
+
+					if(lowestSlot != -1)
+						break;
+				}
+				else if(lowestSlot == -1 && other != -1 && GetEntityClassname(other, classname2, sizeof(classname2)) && TF2_GetClassnameSlot(classname2) == slot)
+				{
+					lowestSlot = i;
+					lowestEnt = other;
+
+					if(currentSlot != -1)
+						break;
+				}
+			}
+
+			if(lowestSlot != -1 && currentSlot != -1)
+			{
+				SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", lowestEnt, currentSlot);
+				SetEntPropEnt(client, Prop_Send, "m_hMyWeapons", entity, lowestSlot);
+			}
+		}
+
+		if(cfg.GetBool("force switch"))
+		{
+			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", entity);
+		}
+		else
+		{
+			TF2U_SetPlayerActiveWeapon(client, entity);
 		}
 	}
-	else if(forceClass != TFClass_Unknown)
+
+	if(lifetime > 0.0)
 	{
-		TF2_SetPlayerClass(client, class, _, false);
+		DataPack pack;
+		CreateDataTimer(lifetime, Timer_RemoveItem, pack, TIMER_FLAG_NO_MAPCHANGE);
+		pack.WriteCell(EntIndexToEntRef(entity));
+		pack.WriteCell(GetClientUserId(client));
+		pack.WriteCell(wearable);
 	}
 }
 
@@ -2544,7 +2337,7 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 								TF2_RemoveCondition(client, TFCond_Slowed);
 							}
 
-							SetPlayerActiveWeapon(client, other);
+							TF2U_SetPlayerActiveWeapon(client, other);
 							SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", other);
 							break;
 						}
@@ -2561,7 +2354,7 @@ public Action Timer_RemoveItem(Handle timer, DataPack pack)
 void Rage_CloneAttack(int client, ConfigData cfg)
 {
 	int team = GetClientTeam(client);
-	int amount = RoundToCeil(GetFormula(cfg, "amount", GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team), 1.0));
+	int amount = RoundToCeil(GetFormula(cfg, "amount", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : team), 1.0));
 	if(amount > 0)
 	{
 		float pos[3];
@@ -2659,6 +2452,9 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 	
 	cap -= amount;
 	
+	if(rivalTeam)
+		team = (team == 2) ? 3 : 2;
+	
 	float vel[3];
 	for(int i; i < amount; i++)
 	{
@@ -2666,9 +2462,6 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		
 		if(IsPlayerAlive(clients[i]))
 			ForcePlayerSuicide(clients[i]);
-
-		if(rivalTeam)
-			team = (team == 2) ? 3 : 2;
 		
 		FF2R_SetClientMinion(clients[i], true);
 		
@@ -2727,7 +2520,7 @@ public Action CloneTakeDamage(int victim, int &attacker, int &inflictor, float &
 void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 {
 	int team = GetClientTeam(client);
-	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : team);
+	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : team);
 	float timescale = GetFormula(cfg, "timescale", alive, 0.1);
 	if(timescale <= 0.0)
 		timescale = 1.0;
@@ -2830,7 +2623,7 @@ void Rage_ExplosiveDance(int client, ConfigData cfg, const char[] ability, int c
 		return;
 	}
 	
-	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	float damage = GetFormula(cfg, "damage", alive, 180.0);
 	float distance = GetFormula(cfg, "distance", alive, 350.0);
 	int magnitude = RoundFloat(GetFormula(cfg, "magnitude", alive, 280.0));
@@ -2894,7 +2687,7 @@ void SpawnManyObjects(int client, int target, ConfigData cfg)
 	char model[128];
 	cfg.GetString("model", model, sizeof(model), "error.mdl");
 	
-	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	int skin = cfg.GetInt("skin");
 	int amount = RoundFloat(GetFormula(cfg, "amount", alive, 14.0));
 	float distance = GetFormula(cfg, "distance", alive, 30.0);
@@ -2957,7 +2750,7 @@ public Action Hook_PickupDelay(int entity, int client)
 
 void Rage_TeleportToTarget(int client, int target, ConfigData cfg)
 {
-	int alive = GetTotalPlayersAlive(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
 	float stun = GetFormula(cfg, "stun", alive, 2.0);
 	
 	if(stun > 0.0)
@@ -3061,7 +2854,7 @@ public Action Timer_RestoreCollision(Handle timer, DataPack pack)
 	return Plugin_Continue;
 }
 
-int GetTotalPlayersAlive(int team = -1)
+int TotalPlayersAliveEnemy(int team = -1)
 {
 	int amount;
 	for(int i = SpecTeam ? 0 : 2; i < sizeof(PlayersAlive); i++)
@@ -3086,16 +2879,16 @@ float GetPlayerStunMulti(int client)
 	multi = 1.15 - (multi * 0.001);
 	
 	// Ranged damage attributes
-	multi *= Attributes_FindOnPlayer(client, 60, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 61, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 64, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 65, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 66, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 67, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 412, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 492, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 516, true, 1.0) *
-			 Attributes_FindOnPlayer(client, 1001, true, 1.0);
+	multi *= Attrib_FindOnPlayer(client, "dmg taken from fire reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from fire increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets reduced", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets increased", true) *
+			 Attrib_FindOnPlayer(client, "dmg taken increased", true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from fire reduced set bonus", true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from bullets increased", true) *
+			 Attrib_FindOnPlayer(client, "CARD: dmg taken from bullets reduced", true);
 	
 	// Mark-for-Death = x1.35
 	if(TF2_IsPlayerInCondition(client, TFCond_MarkedForDeath) ||
@@ -3105,12 +2898,12 @@ float GetPlayerStunMulti(int client)
 	
 	// Ranged damage attributes
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	multi *= Attributes_FindOnWeapon(client, active, 205, true, 1.0) *
-			 Attributes_FindOnWeapon(client, active, 852, true, 1.0);
+	multi *= Attrib_FindOnWeapon(client, active, "dmg from ranged reduced", true) *
+			 Attrib_FindOnWeapon(client, active, "dmg taken from fire reduced on active", true) *
+			 Attrib_FindOnWeapon(client, active, "mult_dmgtaken_active", true);
 	
-	if(TF2_IsPlayerInCondition(client, TFCond_Slowed) &&
-	   health < GetClientMaxHealth(client) / 2)
-		multi *= Attributes_FindOnWeapon(client, active, 738, true, 1.0);
+	if(TF2_IsPlayerInCondition(client, TFCond_Slowed) && health < SDKCall_GetMaxHealth(client) / 2)
+		multi *= Attrib_FindOnWeapon(client, active, "spunup_damage_resistance", true);
 	
 	return multi;
 }
@@ -3165,7 +2958,7 @@ bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang = -1, co
 	return view_as<bool>(buffer[0]);
 }
 
-int GetClientMaxHealth(int client)
+int SDKCall_GetMaxHealth(int client)
 {
 	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
@@ -3229,250 +3022,6 @@ void ConstrainDistance(const float[] startPoint, float[] endPoint, float distanc
 	endPoint[1] = ((endPoint[1] - startPoint[1]) * constrainFactor) + startPoint[1];
 	endPoint[2] = ((endPoint[2] - startPoint[2]) * constrainFactor) + startPoint[2];
 }
-
-float Attributes_FindOnPlayer(int client, int index, bool multi = false, float defaul = 0.0)
-{
-	float total = defaul;
-	bool found = Attributes_GetByDefIndex(client, index, total);
-	
-	int i;
-	int entity;
-	float value;
-	while(TF2_GetWearable(client, entity, i))
-	{
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	while(TF2_GetItem(client, entity, i))
-	{
-		if(index != 128 && active != entity && Attributes_GetByDefIndex(entity, 128, value) && value)
-			continue;
-		
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	return total;
-}
-
-float Attributes_FindOnWeapon(int client, int entity, int index, bool multi = false, float defaul = 0.0)
-{
-	float total = defaul;
-	bool found = Attributes_GetByDefIndex(client, index, total);
-	
-	int i;
-	int wear;
-	float value;
-	while(TF2_GetWearable(client, wear, i))
-	{
-		if(Attributes_GetByDefIndex(wear, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-				found = true;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	if(entity != -1)
-	{
-		if(Attributes_GetByDefIndex(entity, index, value))
-		{
-			if(!found)
-			{
-				total = value;
-			}
-			else if(multi)
-			{
-				total *= value;
-			}
-			else
-			{
-				total += value;
-			}
-		}
-	}
-	
-	return total;
-}
-
-bool Attributes_GetByDefIndex(int entity, int index, float &value)
-{
-	Address attrib = TF2Attrib_GetByDefIndex(entity, index);
-	if(attrib != Address_Null)
-	{
-		value = TF2Attrib_GetValue(attrib);
-		return true;
-	}
-	
-	if(entity <= MaxClients)
-		return false;
-	
-	static int indexes[20];
-	static float values[20];
-	int count = TF2Attrib_GetSOCAttribs(entity, indexes, values, 20);
-	for(int i; i < count; i++)
-	{
-		if(indexes[i] == index)
-		{
-			value = values[i];
-			return true;
-		}
-	}
-	
-	if(!GetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", 1))
-	{
-		count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
-		for(int i; i < count; i++)
-		{
-			if(indexes[i] == index)
-			{
-				value = values[i];
-				return true;
-			}
-		}
-	}
-	
-	return false;
-}
-
-bool TF2_GetWearable(int client, int &entity, int &index)
-{
-	/*#if defined __nosoop_tf2_utils_included
-	if(Loaded)
-	{
-		int length = TF2Util_GetPlayerWearableCount(client);
-		while(index < length)
-		{
-			entity = TF2Util_GetPlayerWearable(client, index++);
-			if(entity != -1)
-				return true;
-		}
-	}
-	else
-	#endif*/
-	{
-		if(index >= -1 && index <= MaxClients)
-			index = MaxClients + 1;
-		
-		if(index > -2)
-		{
-			while((index = FindEntityByClassname(index, "tf_wear*")) != -1)
-			{
-				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client)
-				{
-					entity = index;
-					return true;
-				}
-			}
-			
-			index = -(MaxClients + 1);
-		}
-		
-		entity = -index;
-		while((entity = FindEntityByClassname(entity, "tf_powerup_bottle")) != -1)
-		{
-			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client)
-			{
-				index = -entity;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-void EquipPlayerWearable(int client, int entity)
-{
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
-	{
-		TF2Util_EquipPlayerWearable(client, entity);
-	}
-	else
-	#endif
-	{
-		SDKCall_EquipWearable(client, entity);
-	}
-}
-
-void SetPlayerActiveWeapon(int client, int entity)
-{
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
-	{
-		TF2Util_SetPlayerActiveWeapon(client, entity);
-	}
-	else
-	#endif
-	{
-		char buffer[36];
-		GetEntityClassname(entity, buffer, sizeof(buffer));
-		ClientCommand(client, "use %s", buffer);
-	}
-}
-
-#if defined __tf_custom_attributes_included
-void ApplyCustomAttributes(int entity, ConfigData cfg)
-{
-	StringMapSnapshot snap = cfg.Snapshot();
-	
-	int entries = snap.Length;
-	for(int i; i < entries; i++)
-	{
-		int length = snap.KeyBufferSize(i) + 1;
-		
-		char[] key = new char[length];
-		snap.GetKey(i, key, length);
-		
-		static PackVal attribute;	
-		cfg.GetArray(key, attribute, sizeof(attribute));
-		if(attribute.tag == KeyValType_Value)
-			TF2CustAttr_SetString(entity, key, attribute.data);
-	}
-	
-	delete snap;
-}
-#endif
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
 {

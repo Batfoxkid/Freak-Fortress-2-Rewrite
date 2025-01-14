@@ -463,7 +463,7 @@ void Gamemode_RoundStart()
 					
 					int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 					if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 0.0);
+						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max"));
 				}
 			}
 		}
@@ -1127,7 +1127,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	float time = GetEngineTime();
 	if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).NoHud && !Client(client).NoDmgHud && !(buttons & IN_SCORE))
 	{
-		if(Client(client).RefreshAt < time)
+		if(Client(client).SapperCooldownFor < time && Client(client).RefreshAt < time)
 		{
 			Client(client).RefreshAt = time + 0.2;
 			

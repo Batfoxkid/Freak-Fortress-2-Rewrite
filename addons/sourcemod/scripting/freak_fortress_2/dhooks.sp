@@ -1,5 +1,9 @@
+#include <dhooks>
+
 #pragma semicolon 1
 #pragma newdecls required
+
+#define DHOOKS_LIBRARY	"dhooks"
 
 enum struct RawHooks
 {
@@ -29,7 +33,39 @@ static int PrefClass;
 static int EffectClass;
 static int KnifeWasChanged = -1;
 
-void DHook_Setup()
+void DHook_PluginStart()
+{
+	if(LibraryExists(DHOOKS_LIBRARY))
+		SetupDHook();
+}
+
+void DHook_LibraryAdded(const char[] name)
+{
+	if(!RawEntityHooks && StrEqual(name, DHOOKS_LIBRARY))
+		SetupDHook();
+}
+
+void DHook_LibraryRemoved(const char[] name)
+{
+	if(RawEntityHooks && StrEqual(name, DHOOKS_LIBRARY))
+	{
+		delete RawEntityHooks;
+		ChangeTeam = null;
+		ForceRespawn = null;
+		RoundRespawn = null;
+		SetWinningTeam = null;
+		GetCaptureValue = null;
+		ApplyOnInjured = null;
+		ApplyPostHit = null;
+	}
+}
+
+void DHook_PrintStatus()
+{
+	PrintToServer("'%s' is %sloaded", DHOOKS_LIBRARY, RawEntityHooks ? "" : "not ");
+}
+
+static void SetupDHook()
 {
 	GameData gamedata = new GameData("ff2");
 	
@@ -132,28 +168,32 @@ void DHook_EntityCreated(int entity, const char[] classname)
 
 void DHook_EntityDestoryed()
 {
-	RequestFrame(DHook_EntityDestoryedFrame);
+	if(RawEntityHooks)
+		RequestFrame(DHook_EntityDestoryedFrame);
 }
 
 static void DHook_EntityDestoryedFrame()
 {
-	int length = RawEntityHooks.Length;
-	if(length)
+	if(RawEntityHooks)
 	{
-		RawHooks raw;
-		for(int i; i < length; i++)
+		int length = RawEntityHooks.Length;
+		if(length)
 		{
-			RawEntityHooks.GetArray(i, raw);
-			if(!IsValidEntity(raw.Ref))
+			RawHooks raw;
+			for(int i; i < length; i++)
 			{
-				if(raw.Pre != INVALID_HOOK_ID)
-					DynamicHook.RemoveHook(raw.Pre);
-				
-				if(raw.Post != INVALID_HOOK_ID)
-					DynamicHook.RemoveHook(raw.Post);
-				
-				RawEntityHooks.Erase(i--);
-				length--;
+				RawEntityHooks.GetArray(i, raw);
+				if(!IsValidEntity(raw.Ref))
+				{
+					if(raw.Pre != INVALID_HOOK_ID)
+						DynamicHook.RemoveHook(raw.Pre);
+					
+					if(raw.Post != INVALID_HOOK_ID)
+						DynamicHook.RemoveHook(raw.Post);
+					
+					RawEntityHooks.Erase(i--);
+					length--;
+				}
 			}
 		}
 	}
@@ -246,11 +286,11 @@ static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 {
 	if(param.Get(1) % 2)
 	{
-		TF2Attrib_RemoveByDefIndex(client, 406);
+		Attrib_Remove(client, "vision opt in flags");
 	}
 	else
 	{
-		TF2Attrib_SetByDefIndex(client, 406, 4.0);
+		Attrib_Set(client, "vision opt in flags", 4.0);
 	}
 	return MRES_Ignored;
 }
@@ -288,7 +328,7 @@ static MRESReturn DHook_ForceRespawnPost(int client)
 static MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 {
 	int client = param.Get(1);
-	if(!Client(client).IsBoss || Attributes_FindOnPlayer(client, 68))
+	if(!Client(client).IsBoss || Attrib_FindOnPlayer(client, "increase player capture value"))
 		return MRES_Ignored;
 	
 	ret.Value += TF2_GetPlayerClass(client) == TFClass_Scout ? 1 : 2;

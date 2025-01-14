@@ -79,11 +79,11 @@
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <ff2r>
+#undef REQUIRE_EXTENSIONS
+#undef REQUIRE_PLUGIN
 
 #pragma semicolon 1
 #pragma newdecls required
-
-#include "freak_fortress_2/formula_parser.sp"
 
 #define PLUGIN_VERSION	"Custom"
 
@@ -112,6 +112,8 @@ int ViewingPage[MAXTF2PLAYERS];
 bool SetupMode[MAXTF2PLAYERS];
 int PlayersAlive[4];
 bool SpecTeam;
+
+#include "freak_fortress_2/formula_parser.sp"
 
 public Plugin myinfo =
 {

@@ -5,6 +5,11 @@
 
 static int GoombaOverride = 1;
 
+void Goomba_PrintStatus()
+{
+	PrintToServer("'goomba' is %sloaded", LibraryExists("goomba") ? "" : "not ");
+}
+
 void Goomba_RoundSetup()
 {
 	GoombaOverride = 1;

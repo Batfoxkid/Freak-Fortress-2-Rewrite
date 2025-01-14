@@ -52,6 +52,12 @@ void Music_BossCreated(int boss)
 	}
 }
 
+void Music_ClientDisconnect(int client)
+{
+	CurrentTheme[client][0] = 0;
+	NextThemeAt[client] = 0.0;
+}
+
 void Music_RoundStart()
 {
 	for(int i = 1; i <= MaxClients; i++)

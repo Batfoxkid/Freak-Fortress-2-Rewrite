@@ -52,6 +52,19 @@ static Action Menu_MainMenuCmd(int client, int args)
 			PrintToServer("Boss Pack: %s (%d)", buffer, Charset);
 		}
 		
+		Attrib_PrintStatus();
+		CustomAttrib_PrintStatus();
+		DHook_PrintStatus();
+		FileNet_PrintStatus();
+		Goomba_PrintStatus();
+		SDKHook_PrintStatus();
+		SteamWorks_PrintStatus();
+		TF2Items_PrintStatus();
+		TF2U_PrintStatus();
+		TFED_PrintStatus();
+		VScript_PrintStatus();
+		Weapons_PrintStatus();
+		
 		int amount, ready;
 		bool enabled;
 		ConfigMap cfg;
@@ -95,27 +108,30 @@ void Menu_MainMenu(int client)
 	SetGlobalTransTarget(client);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Selection");
-	menu.AddItem(NULL_STRING, buffer);
+	menu.AddItem("0", buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Queue");
-	menu.AddItem(NULL_STRING, buffer);
+	menu.AddItem("1", buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Music");
-	menu.AddItem(NULL_STRING, buffer);
+	menu.AddItem("2", buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Voice");
-	menu.AddItem(NULL_STRING, buffer);
+	menu.AddItem("3", buffer);
 	
-	FormatEx(buffer, sizeof(buffer), "%t", "Command Weapon");
-	menu.AddItem(NULL_STRING, buffer);
+	if(Weapons_ConfigEnabled())
+	{
+		FormatEx(buffer, sizeof(buffer), "%t", "Command Weapon");
+		menu.AddItem("4", buffer);
+	}
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Command Hud");
-	menu.AddItem(NULL_STRING, buffer);
+	menu.AddItem("5", buffer);
 	
 	if(Preference_HasDifficulties())
 	{
 		FormatEx(buffer, sizeof(buffer), "%t", "Command Difficulty");
-		menu.AddItem(NULL_STRING, buffer);
+		menu.AddItem("6", buffer);
 	}
 	
 	menu.ExitButton = true;
@@ -132,7 +148,9 @@ static int Menu_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 		}
 		case MenuAction_Select:
 		{
-			switch(choice)
+			char buffer[16];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+			switch(StringToInt(buffer))
 			{
 				case 0:
 				{
@@ -352,7 +370,7 @@ static Action Menu_AddPointsCmd(int client, int args)
 			ReplyToTargetError(client, matches);
 		}
 	}
-	else if(args || GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+	else if(args || GetCmdReplySource() == SM_REPLY_TO_CONSOLE || GetFeatureStatus(FeatureType_Native, "AddTargetsToMenu") != FeatureStatus_Available)
 	{
 		ReplyToCommand(client, "[SM] Usage: ff2_addpoints <player> <points>");
 	}
