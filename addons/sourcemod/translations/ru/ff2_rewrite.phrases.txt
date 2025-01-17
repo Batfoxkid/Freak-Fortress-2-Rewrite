@@ -19,7 +19,7 @@
 	}
 	"You Dealt Damage Hud"
 	{
-		"ru"		"Ты нанёс {1} урона, вылечил {2} ОЗ, и помог на {3} очков."
+		"ru"		"Ты нанёс {1} урона, вылечил {2} ОЗ и помог на {3} очков."
 	}
 	"Top Damage Hud"
 	{
@@ -95,15 +95,15 @@
 	}
 	"Boss Jump Time"
 	{
-		"ru"		"Супер прыжок не готов. {1}с"
+		"ru"		"Суперпрыжок не готов. {1}с"
 	}
 	"Boss Jump Charge"
 	{
-		"ru"		"Супер прыжок не готов. {1}%%"
+		"ru"		"Суперпрыжок не готов. {1}%%"
 	}
 	"Boss Jump Ready"
 	{
-		"ru"		"Супер Прыжок готов. {1}%%"
+		"ru"		"Суперпрыжок готов. {1}%%"
 	}
 	"Boss Jump Look"
 	{
@@ -180,7 +180,7 @@
 	}
 	"Next Pack Vote"
 	{
-		"ru"		"Пак Боссов для Freak Fortress 2:\n "
+		"ru"		"Пак боссов для Freak Fortress 2:\n "
 	}
 	"Next Pack Voted"
 	{
@@ -625,11 +625,11 @@
 	}
 	"Disable Weapon Changes"
 	{
-		"ru"		"Выкл. выпад. меню"
+		"ru"		"Выкл. это меню"
 	}
 	"Enable Weapon Changes"
 	{
-		"ru"		"Вкл. выпад. меню"
+		"ru"		"Вкл. это меню"
 	}
 	"Weapon Stripped"
 	{
