@@ -1,9 +1,3 @@
-/*
-	void Events_PluginStart()
-	void Events_RoundSetup()
-	void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

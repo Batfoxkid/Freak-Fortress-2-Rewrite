@@ -1,14 +1,3 @@
-/*
-	void TFED_PluginLoad()
-	void TFED_PluginStart()
-	void TFED_LibraryAdded(const char[] name)
-	void TFED_LibraryRemoved(const char[] name)
-	bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
-	bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, const char[] classname = NULL_STRING)
-	bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
-	int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] name)
-*/
-
 #tryinclude <tf_econ_data> 
 
 #pragma semicolon 1

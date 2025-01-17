@@ -1,10 +1,3 @@
-/*
-	void Database_PluginStart()
-	void Database_PluginEnd()
-	void Database_ClientPostAdminCheck(int client)
-	void Database_ClientDisconnect(int client, DBPriority prioity = DBPrio_Normal)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

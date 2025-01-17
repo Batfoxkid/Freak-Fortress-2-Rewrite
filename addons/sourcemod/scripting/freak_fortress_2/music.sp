@@ -1,17 +1,3 @@
-/*
-	void Music_PluginStart()
-	void Music_ClearPlaylist()
-	void Music_AddSong(int special, const char[] section, const char[] key)
-	void Music_RoundStart()
-	void Music_RoundEnd(int[] clients, int amount, int winner)
-	void Music_PlayerRunCmd(int client)
-	void Music_PlayNextSong(int client = 0)
-	void Music_PlaySong(int[] clients, int numClients, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
-	void Music_PlaySongToClient(int client, const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
-	void Music_PlaySongToAll(const char[] sample = NULL_STRING, int source = 0, const char[] name = NULL_STRING, const char[] artist = NULL_STRING, float duration = 0.0, float volume = 1.0, int pitch = SNDPITCH_NORMAL)
-	void Music_MainMenu(int client)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

@@ -1,7 +1,3 @@
-/*
-	void Command_PluginStart()
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

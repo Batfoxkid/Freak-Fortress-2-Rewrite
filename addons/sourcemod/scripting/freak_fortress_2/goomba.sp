@@ -1,8 +1,3 @@
-/*
-	void Goomba_RoundSetup()
-	void Goomba_BossCreated(ConfigMap cfg)
-*/
-
 #tryinclude <goomba>
 
 #pragma semicolon 1

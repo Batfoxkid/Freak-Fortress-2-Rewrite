@@ -1,21 +1,3 @@
-/*
-	void Weapons_PluginLoad()
-	void Weapons_PluginStart()
-	void Weapons_LibraryAdded(const char[] name)
-	void Weapons_LibraryRemoved(const char[] name)
-	bool Weapons_ConfigsExecuted(bool force = false)
-	void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER)
-	void Weapons_ShowChanges(int client, int entity)
-	void Weapons_PlayerDeath(int client)
-	void Weapons_OnHitBossPre(int attacker, int victim, float &damage, int weapon, int critType, int damagetype)
-	void Weapons_OnHitBoss(int attacker, int weapon, int newWeaponDamage, int lastWeaponDamage)
-	void Weapons_OnAirblastBoss(int attacker)
-	void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &time = 0.0, float &multi = 0.0)
-	void Weapons_OnInventoryApplication(int userid)
-	void Weapons_OnWeaponSwitch(int client, int weapon)
-	void Weapons_EntityCreated(int entity, const char[] classname)
-*/
-
 #tryinclude <cwx>
 #tryinclude <tf_custom_attributes>
 
@@ -681,7 +663,7 @@ stock void Weapons_OnBackstabBoss(int victim, float &damage, int weapon, float &
 	#endif
 }
 
-float Weapons_GetCustAttrFloat(int weapon, const char[] name, float defaul = 1.0)
+stock float Weapons_GetCustAttrFloat(int weapon, const char[] name, float defaul = 1.0)
 {
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded)

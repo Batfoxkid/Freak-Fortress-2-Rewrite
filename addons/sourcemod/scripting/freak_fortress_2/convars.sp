@@ -1,10 +1,3 @@
-/*
-	void ConVar_PluginStart()
-	void ConVar_ConfigsExecuted()
-	void ConVar_Enable()
-	void ConVar_Disable()
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 

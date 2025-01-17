@@ -1,27 +1,3 @@
-/*
-	void Preference_PluginStart()
-	void Preference_ConfigsExecuted()
-	void Preference_MapEnd()
-	void Preference_AddBoss(int client, const char[] name)
-	void Preference_AddDifficulty(int client, const char[] name)
-	bool Preference_ShouldUpdate(int client)
-	bool Preference_GetBoss(int client, int index, char[] buffer, int length)
-	bool Preference_GetDifficulty(int client, int index, char[] buffer, int length)
-	void Preference_ClearArrays(int client)
-	bool Preference_DisabledBoss(int client, int charset)
-	int Preference_PickBoss(int client, int team = -1)
-	void Preference_BossMenu(int client)
-	void Preference_ClientDisconnect(int client)
-	int Preference_IsInParty(int client)
-	void Preference_FinishParty(int client)
-	int Preference_GetCompanion(int client, int special, int team, bool &disband)
-	int Preference_GetFullQueuePoints(int client)
-	int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
-	void Preference_ApplyDifficulty(int client, int leader, bool delay)
-	bool Preference_HasDifficulties()
-	void Preference_DifficultyMenu(int client)
-*/
-
 #pragma semicolon 1
 #pragma newdecls required
 
