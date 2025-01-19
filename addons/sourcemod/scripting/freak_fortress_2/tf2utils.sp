@@ -17,6 +17,7 @@ void TF2U_PluginLoad()
 	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
 	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
 	MarkNativeAsOptional("TF2Util_SetPlayerActiveWeapon");
+	MarkNativeAsOptional("TF2Util_IsPointInRespawnRoom");
 	MarkNativeAsOptional("TF2Util_GetPlayerLoadoutEntity");
 	#endif
 }
@@ -157,6 +158,20 @@ stock void TF2U_SetPlayerActiveWeapon(int client, int entity)
 		GetEntityClassname(entity, buffer, sizeof(buffer));
 		ClientCommand(client, "use %s", buffer);
 	}
+}
+
+stock bool TF2U_IsInRespawnRoom(int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(Loaded)
+	{
+		float pos[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos);
+		return TF2Util_IsPointInRespawnRoom(pos, entity);
+	}
+	#endif
+
+	return !entity;
 }
 
 stock int TF2U_GetPlayerLoadoutEntity(int client, int loadoutSlot, bool includeWearableWeapons = true)

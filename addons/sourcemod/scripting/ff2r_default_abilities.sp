@@ -4,10 +4,13 @@
 		"slot"				"0"			// Ability slot
 		"amount"			"n/3 + 1"	// Amount of clones to summon
 		"die on boss death"	"true"		// If clones die when the boss dies
-		"allow bosses"	"false"		//Allow bosses to become minions (in the process the boss becomes normal player)
-		"rival"		"false"		//Whether players will spawn on ally or rival team
-		"move to spawn"		"false"	//Whether player should be moved to spawnroom
-		
+		"allow bosses"		"false"		// Allow bosses to become minions (in the process the boss becomes normal player)
+		"rival"				"false"		// Whether players will spawn on ally or rival team
+		"move to spawn"		"false"		// Whether player should be moved to spawnroom
+		"low prio"			"false"		// If clones can be resummoned while still alive and bypasses "allow bosses" (if true, does not resummon other low prio)
+		"high prio"			"false"		// If the clone is NOT considered a minion
+		"weapons only"		"false"		// If the clone is NOT considered a boss (will use config to setup, then removed after)
+
 		"character"
 		{
 			// Boss Config
@@ -377,9 +380,13 @@ float SpecialUber[MAXTF2PLAYERS];
 Handle OverlayTimer[MAXTF2PLAYERS];
 bool OverlayMuffled[MAXTF2PLAYERS];
 
+bool PlayerSuicide[MAXTF2PLAYERS];
 int CloneOwner[MAXTF2PLAYERS];
 int CloneLastTeam[MAXTF2PLAYERS];
 bool CloneIdle[MAXTF2PLAYERS];
+bool CloneLowPrio[MAXTF2PLAYERS];
+bool CloneRemoveCfg[MAXTF2PLAYERS];
+Handle CloneTimer[MAXTF2PLAYERS];
 
 Handle TimescaleTimer;
 float MatrixFor[MAXTF2PLAYERS];
@@ -490,6 +497,11 @@ public void OnPluginStart()
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Post);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
 	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
+	HookEvent("arena_round_start", OnRoundStart, EventHookMode_PostNoCopy);
+	HookEvent("teamplay_setup_finished", OnRoundStart, EventHookMode_PostNoCopy);
+	
+	AddCommandListener(OnKermitSewerSlide, "explode");
+	AddCommandListener(OnKermitSewerSlide, "kill");
 	
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -570,6 +582,8 @@ public void OnClientDisconnect(int client)
 	OverlayMuffled[client] = false;
 	CloneOwner[client] = 0;
 	CloneIdle[client] = false;
+	CloneLowPrio[client] = false;
+	delete CloneTimer[client];
 	WeighdownLastGravity[client] = -69.42;
 	AnchorLastAttrib[client] = -69.42;
 	
@@ -667,16 +681,19 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 										finished = true;
 										FF2R_FinishLagCompensation(client);
 									}
-									
-									if(!friendly)
+
+									if(friendly || FF2R_GetGamemodeType() == 2 || !TF2U_IsInRespawnRoom(target))	// Don't teleport in spawn rooms on non-arena
 									{
-										SDKHooks_TakeDamage(target, client, client, GetFormula(ability, "damage", alive, 850.0), _, _, _, _, false);
-										block = false;
+										if(!friendly)
+										{
+											SDKHooks_TakeDamage(target, client, client, GetFormula(ability, "damage", alive, 850.0), _, _, _, _, false);
+											block = false;
+										}
+										
+										SetEntProp(client, Prop_Send, "m_bDucked", true);
+										SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
+										TeleportEntity(client, pos);
 									}
-									
-									SetEntProp(client, Prop_Send, "m_bDucked", true);
-									SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
-									TeleportEntity(client, pos);
 								}
 							}
 						}
@@ -709,7 +726,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3])
 {
-	if(CloneIdle[client] && buttons)
+	if(CloneIdle[client] && (buttons || vel[0] || vel[1] || vel[2]))
 	{
 		if(!TF2_IsPlayerInCondition(client, TFCond_HalloweenKartNoTurn))
 		{
@@ -884,6 +901,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							float distance;
 							float pos2[3];
 							float scale = GetEntPropFloat(client, Prop_Send, "m_flModelScale");
+							bool arena = FF2R_GetGamemodeType() == 2;
 							int team1 = GetClientTeam(client);
 							
 							for(int i = 1; i <= MaxClients; i++)
@@ -904,6 +922,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 									if(team1 != team2)
 										continue;
 								}
+
+								// Don't teleport into spawn rooms
+								if(team1 != team2 && !arena && TF2U_IsInRespawnRoom(target))
+									continue;
 
 								if(team1 > view_as<int>(TFTeam_Spectator) && !SpecTeam && team2 <= view_as<int>(TFTeam_Spectator))
 									continue;
@@ -1307,6 +1329,7 @@ public void FF2R_OnBossRemoved(int client)
 	WeighdownAirTimeAt[client] = 0.0;
 	AnchorStartTime[client] = 0.0;
 	NoAbilities[client] = false;
+	CloneRemoveCfg[client] = false;
 	
 	int length = BossTimers[client].Length;
 	for(int i; i<length; i++)
@@ -1408,9 +1431,8 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	else if(!StrContains(ability, "rage_instant_teleport", false))
 	{
 		bool friendly = cfg.GetBool("friendly");
+		bool arena = FF2R_GetGamemodeType() == 2;
 		int team1 = GetClientTeam(client);
-		
-		// TODO: Since we will now support outside arena gamemode, in the future make some checks for respawn rooms
 		
 		float scale = GetEntPropFloat(client, Prop_Send, "m_flModelScale");
 		
@@ -1434,6 +1456,9 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 			{
 				if(team1 == team2)
 					continue;
+				
+				if(!arena && TF2U_IsInRespawnRoom(target))
+					continue;
 			}
 			
 			if(GetEntPropFloat(target, Prop_Send, "m_flModelScale") < scale)
@@ -1451,6 +1476,9 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				
 				int team2 = GetClientTeam(target);
 				if(!SpecTeam && team2 <= view_as<int>(TFTeam_Spectator))
+					continue;
+				
+				if(team1 != team2 && !arena && TF2U_IsInRespawnRoom(target))
 					continue;
 				
 				if(GetEntPropFloat(target, Prop_Send, "m_flModelScale") < scale)
@@ -1511,6 +1539,18 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 	{
 		SetEntProp(client, Prop_Send, "m_bUseClassAnimations", ability.GetBool("custom model animation"));
 		SetEntProp(client, Prop_Send, "m_bCustomModelRotates", ability.GetBool("custom model rotates"));
+	}
+
+	if(weapons && CloneRemoveCfg[client])
+	{
+		FF2R_SetBossData(client, null, true);
+		SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
+		SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
+		SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
+		Attrib_Remove(client, "major move speed bonus");
+		Attrib_Remove(client, "max health additive bonus");
+		Attrib_Remove(client, "healing received penalty");
+		Attrib_Remove(client, "reduced_healing_from_medics");
 	}
 }
 
@@ -1652,7 +1692,7 @@ static void ModifiyBoss(ConfigData boss, ConfigData cfg, bool type)
 	delete snap;
 }
 
-public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int userid = event.GetInt("userid");
 	int victim = GetClientOfUserId(userid);
@@ -1663,18 +1703,6 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			SoloVictim[victim] = false;
 			CPrintToChatAll("%t%t", "Prefix", "Boss Solo Rage Success");
 		}
-		
-		if(OverlayTimer[victim])
-			TriggerTimer(OverlayTimer[victim]);
-		
-		if(CloneOwner[victim])
-		{
-			CloneOwner[victim] = 0;
-			FF2R_CreateBoss(victim, null);
-			ChangeClientTeam(victim, CloneLastTeam[victim]);
-		}
-		
-		CloneIdle[victim] = false;
 		
 		int attacker = GetClientOfUserId(event.GetInt("attacker"));
 		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
@@ -1792,11 +1820,32 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				if(CloneOwner[target] == victim)
 					ForcePlayerSuicide(target);
 			}
+
+			if(OverlayTimer[victim])
+				TriggerTimer(OverlayTimer[victim]);
+			
+			delete CloneTimer[victim];
+			CloneTimer[victim] = CreateTimer(0.5, Timer_RemoveCloneStatus, victim);
 		}
 	}
 }
 
-public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
+Action Timer_RemoveCloneStatus(Handle timer, int client)
+{
+	if(CloneOwner[client])
+	{
+		CloneOwner[client] = 0;
+		FF2R_CreateBoss(client, null);
+		ChangeClientTeam(client, CloneLastTeam[client]);
+	}
+	
+	CloneIdle[client] = false;
+	CloneLowPrio[client] = false;
+	CloneTimer[client] = null;
+	return Plugin_Continue;
+}
+
+void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!event.GetInt("weaponid")) 
 	{
@@ -1815,7 +1864,15 @@ public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast
 	}
 }
 
-public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
+void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		PlayerSuicide[client] = false;
+	}
+}
+
+void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -1828,6 +1885,11 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				if(ability.IsMyPlugin())
 					ability.SetFloat("hudin", FAR_FUTURE);
 			}
+			
+			CloneOwner[client] = 0;
+			CloneIdle[client] = false;
+			CloneLowPrio[client] = false;
+			delete CloneTimer[client];
 		}
 	}
 	
@@ -1835,7 +1897,14 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		TriggerTimer(TimescaleTimer);
 }
 
-public Action Hook_SetTransmit(int client, int target)
+Action OnKermitSewerSlide(int client, const char[] command, int argc)
+{
+	// Punish kill binding during the round (pro or anti clone)
+	PlayerSuicide[client] = true;
+	return Plugin_Continue;
+}
+
+Action Hook_SetTransmit(int client, int target)
 {
 	if(client != target && target > 0 && target <= MaxClients && OverlayMuffled[target] && IsPlayerAlive(target))
 		return Plugin_Stop;
@@ -1882,7 +1951,7 @@ public void Hook_ProjectileSpawned(int entity)
 	}
 }
 
-public Action Timer_RageStun(Handle timer, DataPack pack)
+Action Timer_RageStun(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
@@ -2002,7 +2071,7 @@ public Action Timer_RageStun(Handle timer, DataPack pack)
 	return Plugin_Continue;
 }
 
-public Action Timer_RageStunSg(Handle timer, DataPack pack)
+Action Timer_RageStunSg(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
@@ -2133,7 +2202,7 @@ public Action Timer_RageStunSg(Handle timer, DataPack pack)
 	return Plugin_Continue;
 }
 
-public Action Timer_RageTradeSpam(Handle timer, DataPack pack)
+Action Timer_RageTradeSpam(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
@@ -2305,7 +2374,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	}
 }
 
-public Action Timer_RemoveItem(Handle timer, DataPack pack)
+Action Timer_RemoveItem(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int entity = EntRefToEntIndex(pack.ReadCell());
@@ -2362,8 +2431,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		
 		int owner = cfg.GetBool("die on boss death", true) ? client : -1;
 		bool allowBosses = cfg.GetBool("allow bosses", false);
-		bool rival = cfg.GetBool("rival", false);
-		bool teleToSpawn = cfg.GetBool("move to spawn", false);
+		bool lowPrio = cfg.GetBool("low prio", false);
 
 		ConfigData minion = cfg.GetSection("character");
 		
@@ -2373,15 +2441,22 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		{
 			for(int target = 1; target <= MaxClients; target++)
 			{
-				if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) != team)
+				if(client == target || PlayerSuicide[target] || !IsClientInGame(target) || GetClientTeam(target) != team)
 					continue;
+				
+				if(IsPlayerAlive(target))
+				{
+					// Low Priorty bypasses this rule
+					if(!CloneLowPrio[target] && lowPrio)
+						continue;
+				}
 
 				if(FF2R_GetBossData(target))
 				{
-					if(!allowBosses)
+					if(!CloneLowPrio[target] && !allowBosses)
 						continue;
-					else
-						FF2R_CreateBoss(target, null);
+					
+					FF2R_CreateBoss(target, null);
 				}
 
 				// 1st: Same team dead players
@@ -2389,31 +2464,34 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			}
 			
 			if(victims)
-				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
+				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
 		}
 		
 		if(amount)
 		{
-			victims = 0;
-			for(int target = 1; target <= MaxClients; target++)
+			if(!lowPrio)	// Don't constantly respawn low prio clones in some cases
 			{
-				if(client == target || !IsClientInGame(target) || !IsPlayerAlive(target) || GetClientTeam(target) != team)
-					continue;
-
-				if(FF2R_GetBossData(target))
+				victims = 0;
+				for(int target = 1; target <= MaxClients; target++)
 				{
-					if(!allowBosses)
+					if(client == target || PlayerSuicide[target] || !IsClientInGame(target) || !IsPlayerAlive(target) || GetClientTeam(target) != team)
 						continue;
-					else
-						FF2R_CreateBoss(target, null);
-				}
 
-				// 2nd: Same team alive players
-				victim[victims++] = target;
+					if(FF2R_GetBossData(target))
+					{
+						if(!CloneLowPrio[target] && !allowBosses)
+							continue;
+						
+						FF2R_CreateBoss(target, null);
+					}
+
+					// 2nd: Same team alive players
+					victim[victims++] = target;
+				}
+				
+				if(victims)
+					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
 			}
-			
-			if(victims)
-				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
 			
 			if(amount)
 			{
@@ -2425,10 +2503,10 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 
 					if(FF2R_GetBossData(target))
 					{
-						if(!allowBosses)
+						if(!CloneLowPrio[target] && !allowBosses)
 							continue;
-						else
-							FF2R_CreateBoss(target, null);
+						
+						FF2R_CreateBoss(target, null);
 					}
 
 					// 3rd: Any non-spec dead players
@@ -2436,14 +2514,20 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 				}
 				
 				if(victims)
-					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, rival, teleToSpawn);
+					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
 			}
 		}
 	}
 }
 
-void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int owner, int team, const float pos[3], bool rivalTeam, bool teleToSpawn)
+void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int owner, int team, const float pos[3], ConfigData ability)
 {
+	bool rivalTeam = ability.GetBool("rival", false);
+	bool teleToSpawn = ability.GetBool("move to spawn", false);
+	bool lowPrio = ability.GetBool("low prio", false);
+	bool highPrio = ability.GetBool("high prio", false);
+	bool weaponsOnly = (cfg && ability.GetBool("weapons only", false));
+
 	if(amount > cap)
 	{
 		SortIntegers(clients, amount, Sort_Random);
@@ -2459,11 +2543,14 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 	for(int i; i < amount; i++)
 	{
 		CloneLastTeam[clients[i]] = GetClientTeam(clients[i]);
+		CloneLowPrio[clients[i]] = lowPrio;
+		CloneRemoveCfg[clients[i]] = weaponsOnly;
+		delete CloneTimer[clients[i]];
 		
 		if(IsPlayerAlive(clients[i]))
 			ForcePlayerSuicide(clients[i]);
 		
-		FF2R_SetClientMinion(clients[i], true);
+		FF2R_SetClientMinion(clients[i], !highPrio);
 		
 		if(cfg)
 			FF2R_CreateBoss(clients[i], cfg, team);
@@ -2490,10 +2577,12 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 		
 		if(owner > 0)
 			SDKHook(clients[i], SDKHook_OnTakeDamage, CloneTakeDamage);
+
+		ClientCommand(clients[i], "playgamesound ui/system_message_alert.wav");
 	}
 }
 
-public Action CloneTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+Action CloneTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(CloneIdle[victim])
 	{
@@ -2553,7 +2642,7 @@ void Rage_MatrixAttack(int client, ConfigData cfg, const char[] ability)
 	TimescaleTimer = CreateTimer(duration, Timer_RestoreTime, GetClientUserId(client));
 }
 
-public Action Timer_RestoreTime(Handle timer, int userid)
+Action Timer_RestoreTime(Handle timer, int userid)
 {
 	TimescaleTimer = null;
 	
@@ -2595,7 +2684,7 @@ void TimescaleSound(int client, float current, float newvalue)
 	}
 }
 
-public Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
+Action Timer_RageExplosiveDance(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
@@ -2732,7 +2821,7 @@ void SpawnManyObjects(int client, int target, ConfigData cfg)
 	}
 }
 
-public Action Timer_PickupDelay(Handle timer, int ref)
+Action Timer_PickupDelay(Handle timer, int ref)
 {
 	int entity = EntRefToEntIndex(ref);
 	if(entity != INVALID_ENT_REFERENCE)
@@ -2743,7 +2832,7 @@ public Action Timer_PickupDelay(Handle timer, int ref)
 	return Plugin_Continue;
 }
 
-public Action Hook_PickupDelay(int entity, int client)
+Action Hook_PickupDelay(int entity, int client)
 {
 	return Plugin_Handled;
 }
@@ -2787,7 +2876,7 @@ void Rage_TeleportToTarget(int client, int target, ConfigData cfg)
 	TeleportEntity(client, pos, _, view_as<float>({0.0, 0.0, 0.0}));
 }
 
-public Action Timer_EnableBuilding(Handle timer, int ref)
+Action Timer_EnableBuilding(Handle timer, int ref)
 {
 	int entity = EntRefToEntIndex(ref);
 	if(entity != INVALID_ENT_REFERENCE)
@@ -2796,7 +2885,7 @@ public Action Timer_EnableBuilding(Handle timer, int ref)
 	return Plugin_Continue;
 }
 
-public Action Timer_RemoveOverlay(Handle timer, int client)
+Action Timer_RemoveOverlay(Handle timer, int client)
 {
 	OverlayTimer[client] = null;
 	OverlayMuffled[client] = false;
@@ -2809,7 +2898,7 @@ public Action Timer_RemoveOverlay(Handle timer, int client)
 	return Plugin_Continue;
 }
 
-public Action Timer_DissolveRagdoll(Handle timer, any userid)
+Action Timer_DissolveRagdoll(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client)
@@ -2832,7 +2921,7 @@ public Action Timer_DissolveRagdoll(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
-public Action Timer_RemoveRagdoll(Handle timer, any userid)
+Action Timer_RemoveRagdoll(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client)
@@ -2844,7 +2933,7 @@ public Action Timer_RemoveRagdoll(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
-public Action Timer_RestoreCollision(Handle timer, DataPack pack)
+Action Timer_RestoreCollision(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());

@@ -189,7 +189,6 @@ Handle SDKInitPickedUpWeapon;
 Handle SDKSetSpeed;
 int PlayersAlive[4];
 Handle SyncHud;
-bool SpecTeam;
 
 ConVar CvarDebug;
 ConVar CvarCheats;
@@ -680,8 +679,6 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	{
 		PlayersAlive[i] = alive[i];
 	}
-	
-	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
 public void FF2R_OnBossModifier(int client, ConfigData cfg)
@@ -871,7 +868,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 			bool hud;
 			float gameTime = GetGameTime();
 			
-			int dead = -1;
+			int summonable = -1;
 			int allies = -1;
 			int count = -1;
 			static int button[4];
@@ -897,7 +894,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -921,7 +918,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -945,7 +942,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -1062,11 +1059,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs One Life");
 									}
-									else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+									else if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Partner");
 									}
-									else if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+									else if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Summon");
 									}
@@ -1240,13 +1237,13 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									blocked = true;
 								}
 								
-								if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+								if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 								{
 									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Partner");
 									blocked = true;
 								}
 								
-								if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+								if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 								{
 									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Summon");
 									blocked = true;
@@ -1282,7 +1279,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	}
 }
 
-public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
+void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -1301,7 +1298,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	TriggerTimer(TimescaleTimer);
 }
 
-public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
+Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	bf.ReadByte();
 	int victim = bf.ReadByte();
@@ -1335,7 +1332,7 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 	return Plugin_Continue;
 }
 
-public Action Timer_WeaponSwitch(Handle handle, int userid)
+Action Timer_WeaponSwitch(Handle handle, int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client && HookedWeaponSwap[client])
@@ -1596,7 +1593,7 @@ public void OnWeaponSwitch(int client, int weapon)
 	}
 }
 
-public Action FirstPersonTransmit(int entity, int client)
+Action FirstPersonTransmit(int entity, int client)
 {
 	if(client > 0 && client <= MaxClients)
 	{
@@ -1691,9 +1688,9 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 	return MRES_Ignored;
 }
 
-bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &dead = -2, int &allies = -2)
+bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &summonable = -2, int &allies = -2)
 {
-	bool refund = dead == -2;
+	bool refund = summonable == -2;
 	
 	int length = snap.KeyBufferSize(index)+1;
 	char[] key = new char[length];
@@ -1707,10 +1704,10 @@ bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapsho
 		if(cfg.GetFloat("delay") < gameTime)
 		{
 			int flags = cfg.GetInt("flags");
-			if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+			if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 			{
 			}
-			else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+			else if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 			{
 			}
 			else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
@@ -1798,31 +1795,29 @@ bool ChangeAbility(int client, BossData boss, ConfigData ability, ConfigData spe
 	return true;
 }
 
-bool GetDeadCount(int client, int &dead, int &allies)
+bool GetDeadCount(int client, int &summonable, int &allies)
 {
-	if(dead < 0 || allies < 0)
+	if(summonable < 0 || allies < 0)
 	{
-		dead = 0;
+		summonable = 0;
 		allies = 0;
 		
-		int team = GetClientTeam(client);
+		int team1 = GetClientTeam(client);
 		for(int i = 1; i <= MaxClients; i++)
 		{
 			if(i != client && IsClientInGame(i))
 			{
+				int team2 = GetClientTeam(i);
+
 				if(FF2R_GetBossData(i))
 				{
-					if(GetClientTeam(i) == team)
+					if(IsPlayerAlive(i) && team1 == team2)
 						allies++;
 				}
-				else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
+				else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
 				{
-					if(!IsPlayerAlive(i))
-						dead++;
-				}
-				else if(!SpecTeam && IsPlayerAlive(i))
-				{
-					dead++;
+					if(team1 == team2 || !IsPlayerAlive(i))
+						summonable++;
 				}
 			}
 		}
@@ -1867,12 +1862,12 @@ void RemoveWeaponSwapHooks(int client)
 	}
 }
 
-public Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	return Plugin_Handled;
 }
 
-public Action Timer_RestoreTime(Handle timer, int userid)
+Action Timer_RestoreTime(Handle timer, int userid)
 {
 	TimescaleTimer = null;
 	UnhookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
@@ -1915,7 +1910,7 @@ void TimescaleSound(int client, float current, float newvalue)
 	}
 }
 
-public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && RazorbackDeployed[victim] == INVALID_ENT_REFERENCE &&
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
@@ -2392,7 +2387,7 @@ int EquipRazorback(int client)
 	return wearable;
 }
 
-public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(attacker > 0 && attacker <= MaxClients && damagecustom != TF_CUSTOM_BACKSTAB && !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{

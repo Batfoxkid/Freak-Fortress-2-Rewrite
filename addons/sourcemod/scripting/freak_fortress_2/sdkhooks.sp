@@ -149,11 +149,11 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					float gameTime = GetGameTime();
 					
-					damage = 750.0;	// 2250 max damage
+					damage = Client(victim).Minion ? 500.0 : 750.0;	// 2250 max damage
 					damagetype |= DMG_PREVENT_PHYSICS_FORCE|DMG_CRIT;
 					critType = CritType_Crit;
 					
-					if(!Client(attacker).IsBoss && weapon != -1)
+					if(!Client(victim).Minion && !Client(attacker).IsBoss && weapon != -1)
 					{
 						SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+0.5);
 						
@@ -179,8 +179,11 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					bool silent = Attributes_OnBackstabBoss(attacker, victim, damage, weapon, true);
 					if(!silent)
 					{
-						EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
-						EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+						if(!Client(victim).Minion)
+						{
+							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
+						}
 						
 						if(!MultiBosses())
 						{

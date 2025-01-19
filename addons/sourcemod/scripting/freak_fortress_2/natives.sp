@@ -54,8 +54,10 @@ static any Native_SetBossData(Handle plugin, int params)
 	{
 		forwards = GetNativeCell(2);
 	}
+
+	bool wasBoss = Client(client).IsBoss;
 	
-	if(Client(client).Cfg)
+	if(wasBoss)
 	{
 		if(forwards || !cfg)
 			Forward_OnBossRemoved(client);
@@ -64,9 +66,33 @@ static any Native_SetBossData(Handle plugin, int params)
 	}
 	
 	Client(client).Cfg = cfg;
+	
+	// Setup/remove required hooks (rest is up to the plugin to handle with this native)
+	if(wasBoss && !cfg)
+	{
+		Client(client).Index = -1;
+		DHook_UnhookBoss(client);
+	}
+	else if(!wasBoss && cfg)
+	{
+		if(Client(client).Index < 0)
+		{
+			for(int i; ; i++)
+			{
+				if(FindClientOfBossIndex(i) == -1)
+				{
+					Client(client).Index = i;
+					break;
+				}
+			}
+		}
+
+		DHook_HookBoss(client);
+	}
+
 	if(forwards && Client(client).Cfg)
 		Forward_OnBossCreated(client, cfg, GetRoundStatus() == 1);
-	
+
 	return 0;
 }
 

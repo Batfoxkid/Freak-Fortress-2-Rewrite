@@ -2163,7 +2163,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 					if(ragedamage >= 0.0 && ragedamage < 99999.0)
 					{
 						float rage = Client(client).GetCharge(0);
-						float ragemin = Client(client).RageMin;
+						float ragemin = ragedamage <= 1.0 ? -FAR_FUTURE : Client(client).RageMin;
 						if(rage >= ragemin)
 						{
 							SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
