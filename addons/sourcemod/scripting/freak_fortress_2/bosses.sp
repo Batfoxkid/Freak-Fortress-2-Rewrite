@@ -519,7 +519,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(action != Plugin_Handled)
 	{
 		int i;
-		if(cfg.GetInt("version", i) && i != MAJOR_REVISION && i != 99)
+		if(cfg.GetInt("version", i) && i != 1 && i != 99)
 		{
 			if(i == 2)
 			{
@@ -532,27 +532,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			
 			DeleteCfg(full);
 			return;
-		}
-		
-		if(cfg.GetInt("version_minor", i))
-		{
-			int stable = -1;
-			cfg.GetInt("version_stable", stable);
-			
-			if(i > MINOR_REVISION || (i == MINOR_REVISION && stable > STABLE_REVISION))
-			{
-				if(stable < 0)
-				{
-					LogError("[Boss] %s is only compatible with base FF2 v%d.%d and newer", character, MAJOR_REVISION, i);
-				}
-				else
-				{
-					LogError("[Boss] %s is only compatible with base FF2 v%d.%d.%d and newer", character, MAJOR_REVISION, i, stable);
-				}
-				
-				DeleteCfg(full);
-				return;
-			}
 		}
 		
 		if(cfg.GetInt("fversion", i) && i != 2)
@@ -819,7 +798,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										PrecacheScriptSound(key);
 									}
 									
-									if(music)
+									if(music && val.cfg && val.cfg.ContainsKey("name"))
 										Music_AddSong(special, section, key);
 								}
 								case KeyValType_Value:
@@ -852,6 +831,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												PrecacheScriptSound(key);
 											}
+
+											if(music)
+												Format(buffer2, sizeof(buffer2), "%sname", val.data);
 										}
 										else	// "1"	"example.mp3"
 										{
@@ -875,10 +857,16 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												PrecacheScriptSound(buffer);
 											}
+
+											if(music)
+												Format(buffer2, sizeof(buffer2), "%sname", key);
 										}
 										
 										if(music)
-											Music_AddSong(special, section, key);
+										{
+											if(cfgsub.ContainsKey(buffer2))
+												Music_AddSong(special, section, key);
+										}
 									}
 								}
 							}
@@ -2002,7 +1990,7 @@ void Bosses_SetSpeed(int client)
 
 void Bosses_OnConditonAdded(int client, TFCond cond)
 {
-	if(cond == TFCond_Jarated && Client(client).IsBoss)
+	if(Client(client).IsBoss && (cond == TFCond_Jarated || cond == TFCond_Bleeding || cond == TFCond_OnFire || cond == TFCond_Gas))
 	{
 		int flags = GetCommandFlags("r_screenoverlay");
 		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);

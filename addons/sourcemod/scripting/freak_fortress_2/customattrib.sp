@@ -28,16 +28,22 @@ static int HasCritGlow[MAXTF2PLAYERS];
 void CustomAttrib_PluginLoad()
 {
 	#if defined __tf_custom_attributes_included
-	MarkNativeAsOptional("TF2CustAttr_GetAttributeKeyValues");
 	MarkNativeAsOptional("TF2CustAttr_GetFloat");
 	MarkNativeAsOptional("TF2CustAttr_SetString");
+	MarkNativeAsOptional("TF2CustAttr_GetString");
+	MarkNativeAsOptional("TF2EconDynAttribute.TF2EconDynAttribute");
+	MarkNativeAsOptional("TF2EconDynAttribute.SetClass");
+	MarkNativeAsOptional("TF2EconDynAttribute.SetName");
+	MarkNativeAsOptional("TF2EconDynAttribute.SetDescriptionFormat");
+	MarkNativeAsOptional("TF2EconDynAttribute.SetCustom");
+	MarkNativeAsOptional("TF2EconDynAttribute.Register");
 	#endif
 }
 
 void CustomAttrib_PluginStart()
 {
 	#if defined __tf_econ_dyn_included
-	TFEYLoaded = LibraryExists(TFEY_LIBRARY);
+	TFEYLoaded = GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") == FeatureStatus_Available;
 	if(TFEYLoaded)
 	{
 		#if defined IS_MAIN_FF2
@@ -53,16 +59,6 @@ void CustomAttrib_PluginStart()
 
 public void CustomAttrib_LibraryAdded(const char[] name)
 {
-	#if defined __tf_econ_dyn_included
-	if(!TFEYLoaded && StrEqual(name, TFEY_LIBRARY))
-	{
-		TFEYLoaded = true;
-		#if defined IS_MAIN_FF2
-		AddAttributes();
-		#endif
-	}
-	#endif
-
 	#if defined __tf_custom_attributes_included
 	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
 		TCALoaded = true;
@@ -71,11 +67,6 @@ public void CustomAttrib_LibraryAdded(const char[] name)
 
 public void CustomAttrib_LibraryRemoved(const char[] name)
 {
-	#if defined __tf_econ_dyn_included
-	if(TFEYLoaded && StrEqual(name, TFEY_LIBRARY))
-		TFEYLoaded = false;
-	#endif
-
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && StrEqual(name, TCA_LIBRARY))
 		TCALoaded = false;
@@ -86,7 +77,13 @@ stock bool CustomAttrib_Loaded()
 {
 	#if defined __tf_econ_dyn_included
 	if(TFEYLoaded)
-		return TFEYLoaded;
+	{
+		if(GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") != FeatureStatus_Available)
+			TFEYLoaded = false;
+		
+		if(TFEYLoaded)
+			return TFEYLoaded;
+	}
 	#endif
 
 	#if defined __tf_custom_attributes_included
@@ -100,6 +97,9 @@ stock bool CustomAttrib_Loaded()
 stock void CustomAttrib_PrintStatus()
 {
 	#if defined __tf_econ_dyn_included
+	if(GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") != FeatureStatus_Available)
+		TFEYLoaded = false;
+
 	PrintToServer("'%s' is %sloaded", TFEY_LIBRARY, TFEYLoaded ? "" : "not ");
 	#else
 	PrintToServer("'%s' not compiled", TFEY_LIBRARY);
@@ -519,6 +519,21 @@ static void AddAttributes()
 	attrib.SetName("kill effects boss hits DISPLAY ONLY");
 	attrib.SetClass("ff2.displayonly_16");
 	attrib.SetCustom("description_ff2_string", "kill effects boss hits DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("backstabs DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_17");
+	attrib.SetCustom("description_ff2_string", "backstabs DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("disguise resistance DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_18");
+	attrib.SetCustom("description_ff2_string", "disguise resistance DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("sapper boss effect DISPLAY ONLY");
+	attrib.SetClass("ff2.displayonly_19");
+	attrib.SetCustom("description_ff2_string", "sapper boss effect DISPLAY ONLY");
 	attrib.Register();
 	
 	delete attrib;

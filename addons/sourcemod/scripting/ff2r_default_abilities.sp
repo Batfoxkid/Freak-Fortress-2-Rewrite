@@ -25,7 +25,7 @@
 		"slot"			"0"		// Ability slot
 		"initial"		"0.15"	// Initial delay before explosions
 		"delay"			"0.12"	// Delay between ticks
-		"amount"		"35"	// Amount of ticks
+		"count"			"35"	// Amount of ticks
 		"taunt"			"true"	// Force taunt on first explosion
 		
 		"amount"		"5"		// Amount of explosions per a tick
@@ -432,6 +432,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	Attrib_PluginLoad();
 	CustomAttrib_PluginLoad();
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
@@ -483,7 +484,6 @@ public void OnPluginStart()
 	
 	Attrib_PluginStart();
 	CustomAttrib_PluginStart();
-	TF2Items_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
@@ -552,7 +552,6 @@ public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
 	CustomAttrib_LibraryAdded(name);
-	TF2Items_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
@@ -562,7 +561,6 @@ public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
 	CustomAttrib_LibraryRemoved(name);
-	TF2Items_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);
@@ -1542,6 +1540,13 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 	}
 
 	if(weapons && CloneRemoveCfg[client])
+		RequestFrame(RemoveCloneCfg, GetClientUserId(client));
+}
+
+void RemoveCloneCfg(int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(CloneRemoveCfg[client])
 	{
 		FF2R_SetBossData(client, null, true);
 		SetEntProp(client, Prop_Send, "m_bForcedSkin", false);

@@ -160,6 +160,7 @@ ConVar CvarDebug;
 Handle IntervalTimer[MAXTF2PLAYERS];
 int RobotSounds[MAXTF2PLAYERS];
 int RobotVIP[MAXTF2PLAYERS];
+bool InRobotFrame[MAXTF2PLAYERS];
 int PlayingRobotLoop[MAXTF2PLAYERS] = {-1, ...};
 bool Teleporters[MAXTF2PLAYERS];
 ArrayList TeleporterList;
@@ -192,6 +193,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	Attrib_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
 	return APLRes_Success;
@@ -378,13 +380,14 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 {
 	BossData boss = FF2R_GetBossData(client);
 	
-	if(!RobotSounds[client] && weapons)
+	if((InRobotFrame[client] || !RobotSounds[client]) && weapons)
 	{
 		AbilityData ability = boss.GetAbility("special_robot");
 		if(ability.IsMyPlugin())
 		{
 			RobotSounds[client] = ability.GetInt("giant") + 1;
 			RobotVIP[client] = ability.GetInt("vip");
+			InRobotFrame[client] = false;
 
 			if(RobotSounds[client] == 3)
 			{
@@ -486,10 +489,9 @@ public void FF2R_OnBossRemoved(int client)
 {
 	delete IntervalTimer[client];
 	Teleporters[client] = false;
-	RobotVIP[client] = 0;
 
 	// Intentionally leak, used for non-boss minions
-	if(IsPlayerAlive(client))
+	if(!IsPlayerAlive(client))
 		StopRobotSound(client);
 }
 
@@ -656,8 +658,6 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 		if(!(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
 		{
-			StopRobotSound(victim);
-
 			// Announce dead class group
 			if(TheAnnouncer != -1 && RobotVIP[victim])
 			{
@@ -684,6 +684,8 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					}
 				}
 			}
+
+			StopRobotSound(victim);
 
 			// Transfer building ownership to the minion master
 			for(int target = 1; target <= MaxClients; target++)
@@ -1139,12 +1141,23 @@ void OnPointBreakCap(const char[] output, int caller, int activator, float delay
 
 void StopRobotSound(int client)
 {
-	RobotSounds[client] = 0;
+	InRobotFrame[client] = true;
+	RequestFrame(StopRobotSoundFrame);
 
 	if(PlayingRobotLoop[client] != -1)
 	{
 		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOP);
 		PlayingRobotLoop[client] = -1;
+	}
+}
+
+void StopRobotSoundFrame(int client)
+{
+	if(InRobotFrame[client])
+	{
+		RobotSounds[client] = 0;
+		RobotVIP[client] = 0;
+		InRobotFrame[client] = false;
 	}
 }
 

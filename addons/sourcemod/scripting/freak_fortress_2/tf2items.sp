@@ -5,10 +5,6 @@
 
 #define TF2ITEMS_LIBRARY	"tf2items"
 
-#if defined _tf2items_included
-static bool Loaded;
-#endif
-
 void TF2Items_PluginLoad()
 {
 	#if defined _tf2items_included
@@ -23,33 +19,10 @@ void TF2Items_PluginLoad()
 	#endif
 }
 
-void TF2Items_PluginStart()
-{
-	#if defined _tf2items_included
-	Loaded = LibraryExists(TF2ITEMS_LIBRARY);
-	#endif
-}
-
-public void TF2Items_LibraryAdded(const char[] name)
-{
-	#if defined _tf2items_included
-	if(!Loaded && StrEqual(name, TF2ITEMS_LIBRARY))
-		Loaded = true;
-	#endif
-}
-
-public void TF2Items_LibraryRemoved(const char[] name)
-{
-	#if defined _tf2items_included
-	if(Loaded && StrEqual(name, TF2ITEMS_LIBRARY))
-		Loaded = false;
-	#endif
-}
-
 stock void TF2Items_PrintStatus()
 {
 	#if defined _tf2items_included
-	PrintToServer("'%s' is %sloaded", TF2ITEMS_LIBRARY, Loaded ? "" : "not ");
+	PrintToServer("'%s' is %sloaded", TF2ITEMS_LIBRARY, GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") == FeatureStatus_Available ? "" : "not ");
 	#else
 	PrintToServer("'%s' not compiled", TF2ITEMS_LIBRARY);
 	#endif
@@ -57,7 +30,7 @@ stock void TF2Items_PrintStatus()
 
 stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false, bool forumla = false)
 {
-	static char classname2[36], buffer[PLATFORM_MAX_PATH];
+	static char classname2[36], netclass[32], buffer[PLATFORM_MAX_PATH];
 	strcopy(classname2, sizeof(classname2), classname);
 	
 	if(StrContains(classname2, "tf_") != 0 &&
@@ -149,18 +122,27 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 #endif
 
 	#if defined _tf2items_included
-	if(wearable || !Loaded)
+	if(wearable || GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") != FeatureStatus_Available)
 	#endif
 	{
+		PrintToConsoleAll("EEEE %d", preserve);
 		entity = CreateEntityByName(classname2);
 		if(IsValidEntity(entity))
 		{
 			SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
 			SetEntProp(entity, Prop_Send, "m_bInitialized", true);
+
+			GetEntityNetClass(entity, netclass, sizeof(netclass));
+			SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityQuality"), quality);
+			SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityLevel"), level);
+
 			SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
 			SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
 			
 			DispatchSpawn(entity);
+
+			if(!preserve)
+				SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
 		}
 		else
 		{
@@ -175,6 +157,7 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	#if defined _tf2items_included
 	else
 	{
+		PrintToConsoleAll("AAAA %d", preserve);
 		Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
 		TF2Items_SetClassname(item, classname2);
 		TF2Items_SetItemIndex(item, index);
@@ -201,6 +184,8 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 		
 		entity = TF2Items_GiveNamedItem(client, item);
 		delete item;
+
+		GetEntityNetClass(entity, netclass, sizeof(netclass));
 	}
 	#endif
 	
@@ -286,9 +271,9 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 		
 		if(kills >= 0)
 		{
-			Attrib_Set(entity, "kill eater", view_as<float>(kills));
+			Attrib_SetInt(entity, "kill eater", kills);
 			if(wearable)
-				Attrib_Set(entity, "strange restriction type 1", view_as<float>(64));
+				Attrib_SetInt(entity, "strange restriction type 1", 64);
 		}
 		
 		if(!wearable)

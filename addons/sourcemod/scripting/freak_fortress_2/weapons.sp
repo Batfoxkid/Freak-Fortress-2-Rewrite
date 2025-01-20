@@ -131,7 +131,7 @@ bool Weapons_ConfigsExecuted(bool force = false)
 
 				if(val.tag == KeyValType_Section && val.cfg)
 				{
-					FormatEx(buffer, sizeof(buffer), "data/freak_fortress/%s.cfg", key);
+					FormatEx(buffer, sizeof(buffer), "data/freak_fortress_2/%s.cfg", key);
 					ConfigMap loadout = new ConfigMap(buffer);
 					if(loadout)
 					{
@@ -758,13 +758,13 @@ static void Weapons_SpawnFrame(int ref)
 
 static ConfigMap FindMatchingLoadout(const char[] loadou)
 {
-	char buffer[64];
+	static char buffer[32];
 
 	ConfigMap cfg;
 	for(int i = LoadoutList.Length - 1; i >= 0; i--)
 	{
 		cfg = LoadoutList.Get(i);
-		if(cfg.Get("name", buffer, sizeof(buffer)) && StrEqual(buffer, loadou))
+		if(cfg.Get("key", buffer, sizeof(buffer)) && StrEqual(buffer, loadou))
 			break;
 	}
 

@@ -700,6 +700,9 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		int colors[4];
 		for(int i; i < total; i++)
 		{
+			SetGlobalTransTarget(clients[i]);
+			FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+
 			if(!Client(clients[i]).NoHud)
 			{
 				if(dmg[0] > 9000)
@@ -710,13 +713,13 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				if(team > -1)
 				{
 					SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], TopHud, "%T", "Top Damage Hud", clients[i], top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
+					ShowSyncHudText(clients[i], TopHud, "%t", "Top Damage Hud", top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
 				}
 				
 				if(team == -1 || !Client(clients[i]).IsBoss)
 				{
 					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], YourHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+					ShowSyncHudText(clients[i], YourHud, "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
 				}
 			}
 		}

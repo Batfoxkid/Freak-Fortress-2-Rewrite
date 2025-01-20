@@ -13,6 +13,12 @@
 static bool Loaded;
 #endif
 
+void Attrib_PluginLoad()
+{
+	MarkNativeAsOptional("TF2Attrib_SetFromStringValue");
+	MarkNativeAsOptional("TF2Attrib_UnsafeGetStringValue");
+}
+
 void Attrib_PluginStart()
 {
 	#if defined _tf2attributes_included
@@ -168,9 +174,9 @@ stock float Attrib_FindOnWeapon(int client, int entity, const char[] name, bool 
 
 stock bool Attrib_Get(int entity, const char[] name, float &value = 0.0)
 {
-	if(VScript_Loaded())
+	float result = DEFAULT_VALUE_TEST;
+	if(VScript_GetAttribute(entity, name, result))
 	{
-		float result = VScript_GetAttribute(entity, name, DEFAULT_VALUE_TEST);
 		if(result == DEFAULT_VALUE_TEST)
 			return false;
 		
@@ -248,6 +254,14 @@ stock void Attrib_Set(int entity, const char[] name, float value, float duration
 	AcceptEntityInput(entity, "RunScriptCode");
 }
 
+stock void Attrib_SetInt(int entity, const char[] name, int value, float duration = -1.0)
+{
+	static char buffer[256];
+	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", casti2f(%d), %f)", entity > MaxClients ? "" : "Custom", name, value, duration);
+	SetVariantString(buffer);
+	AcceptEntityInput(entity, "RunScriptCode");
+}
+
 stock bool Attrib_SetString(int entity, const char[] name, const char[] value)
 {
 	#if defined _tf2attributes_included
@@ -256,7 +270,7 @@ stock bool Attrib_SetString(int entity, const char[] name, const char[] value)
 	#endif
 
 	static char buffer[256];
-	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, -1)", entity > MaxClients ? "" : "Custom", name, value);
+	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, -1)", entity > MaxClients ? "" : "Custom", name, StringToFloat(value));
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "RunScriptCode");
 	return true;

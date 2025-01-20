@@ -553,7 +553,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 				event.SetInt("inflictor_entindex", inflictor);
 				event.SetInt("weaponid", weapon);
 				event.SetInt("kill_streak_total", total);
-				event.SetInt("kill_streak_wep", streak);
+				event.SetInt("kill_streak_wep", streak / 5 * 5);
 				event.SetInt("crit_type", streak > 10);
 				event.SetString("weapon_logclassname", "ff2_killstreak");
 				

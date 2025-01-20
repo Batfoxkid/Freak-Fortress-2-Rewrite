@@ -6,6 +6,8 @@
 #define VSCRIPT_LIBRARY	"vscript"
 
 #if defined _vscript_included
+static Handle SDKGetAttribute;
+static Handle SDKGetCustomAttribute;
 static bool Loaded;
 #endif
 
@@ -13,6 +15,8 @@ void VScript_PluginStart()
 {
 	#if defined _vscript_included
 	Loaded = LibraryExists(VSCRIPT_LIBRARY);
+	if(Loaded && VScript_IsScriptVMInitialized())
+		VScript_OnScriptVMInitialized();
 	#endif
 }
 
@@ -20,7 +24,12 @@ public void VScript_LibraryAdded(const char[] name)
 {
 	#if defined _vscript_included
 	if(!Loaded && StrEqual(name, VSCRIPT_LIBRARY))
+	{
 		Loaded = true;
+		
+		if(VScript_IsScriptVMInitialized())
+			VScript_OnScriptVMInitialized();
+	}
 	#endif
 }
 
@@ -50,42 +59,44 @@ stock void VScript_PrintStatus()
 	#endif
 }
 
-// Check VScript_Loaded()
-stock any VScript_RunScriptFunction(int entity, const char[] name)
+#if defined _vscript_included
+public void VScript_OnScriptVMInitialized()
 {
-	#if defined _vscript_included
-	if(Loaded)
+	VScriptFunction func = VScript_GetClassFunction("CEconEntity", "GetAttribute");
+	if(func)
 	{
-		VScriptExecute execute = new VScriptExecute(HSCRIPT_RootTable.GetValue(name));
-		execute.Execute();
-		any value = execute.ReturnValue;
-		delete execute;
-
-		return value;
+		SDKGetAttribute = func.CreateSDKCall();
+		if(!SDKGetAttribute)
+			LogError("[VScript] Could not call CEconEntity::GetAttribute");
 	}
-	#endif
+	else
+	{
+		LogError("[VScript] Could not find CEconEntity::GetAttribute");
+	}
 
-	ThrowError("VScript library is not loaded", entity, name);
-	return 0;
+	func = VScript_GetClassFunction("CTFPlayer", "GetCustomAttribute");
+	if(func)
+	{
+		SDKGetCustomAttribute = func.CreateSDKCall();
+		if(!SDKGetCustomAttribute)
+			LogError("[VScript] Could not call CTFPlayer::GetCustomAttribute");
+	}
+	else
+	{
+		LogError("[VScript] Could not find CTFPlayer::GetCustomAttribute");
+	}
 }
+#endif
 
-// Check VScript_Loaded()
-stock float VScript_GetAttribute(int entity, const char[] name, float defaul = 0.0)
+stock bool VScript_GetAttribute(int entity, const char[] name, float &value)
 {
 	#if defined _vscript_included
-	if(Loaded)
+	if(SDKGetAttribute && SDKGetCustomAttribute)
 	{
-		VScriptExecute execute = new VScriptExecute(HSCRIPT_RootTable.GetValue(entity > MaxClients ? "GetAttribute" : "GetCustomAttribute"));
-		execute.SetParamString(1, FIELD_CSTRING, name);
-		execute.SetParam(2, FIELD_FLOAT, defaul);
-		execute.Execute();
-		float value = execute.ReturnValue;
-		delete execute;
-
-		return value;
+		value = SDKCall(entity > MaxClients ? SDKGetAttribute : SDKGetCustomAttribute, entity, name, value);
+		return true;
 	}
 	#endif
 
-	ThrowError("VScript library is not loaded", entity, name, defaul);
-	return 0.0;
+	return false;
 }

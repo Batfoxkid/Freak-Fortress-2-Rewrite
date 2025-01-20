@@ -25,10 +25,6 @@
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
 
-#define MAJOR_REVISION	1
-#define MINOR_REVISION	11
-#define STABLE_REVISION	0
-
 #define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
 #define FAR_FUTURE		100000000.0
@@ -276,6 +272,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	ThisPlugin = myself;
 	
+	Attrib_PluginLoad();
 	CustomAttrib_PluginLoad();
 	Forward_PluginLoad();
 	ForwardOld_PluginLoad();
@@ -314,7 +311,6 @@ public void OnPluginStart()
 	SDKCall_Setup();
 	SDKHook_PluginStart();
 	SteamWorks_PluginStart();
-	TF2Items_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
@@ -398,7 +394,6 @@ public void OnLibraryAdded(const char[] name)
 	FileNet_LibraryAdded(name);
 	SDKHook_LibraryAdded(name);
 	SteamWorks_LibraryAdded(name);
-	TF2Items_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
@@ -413,7 +408,6 @@ public void OnLibraryRemoved(const char[] name)
 	FileNet_LibraryRemoved(name);
 	SDKHook_LibraryRemoved(name);
 	SteamWorks_LibraryRemoved(name);
-	TF2Items_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);
