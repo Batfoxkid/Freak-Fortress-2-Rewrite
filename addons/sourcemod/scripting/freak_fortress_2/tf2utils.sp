@@ -17,6 +17,8 @@ void TF2U_PluginLoad()
 	MarkNativeAsOptional("TF2Util_GetPlayerMaxHealthBoost");
 	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
 	MarkNativeAsOptional("TF2Util_SetPlayerActiveWeapon");
+	MarkNativeAsOptional("TF2Util_IsPointInRespawnRoom");
+	MarkNativeAsOptional("TF2Util_GetPlayerLoadoutEntity");
 	#endif
 }
 
@@ -27,7 +29,7 @@ void TF2U_PluginStart()
 	#endif
 }
 
-stock void TF2U_LibraryAdded(const char[] name)
+public void TF2U_LibraryAdded(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(!Loaded && StrEqual(name, TF2U_LIBRARY))
@@ -35,11 +37,20 @@ stock void TF2U_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void TF2U_LibraryRemoved(const char[] name)
+public void TF2U_LibraryRemoved(const char[] name)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded && StrEqual(name, TF2U_LIBRARY))
 		Loaded = false;
+	#endif
+}
+
+stock void TF2U_PrintStatus()
+{
+	#if defined __nosoop_tf2_utils_included
+	PrintToServer("'%s' is %sloaded", TF2U_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", TF2U_LIBRARY);
 	#endif
 }
 
@@ -91,8 +102,20 @@ stock bool TF2U_GetWearable(int client, int &entity, int &index)
 
 stock int TF2U_GetMaxOverheal(int client)
 {
+#if defined IS_MAIN_FF2
 	if(Client(client).IsBoss)
 		return Client(client).MaxHealth * (1 + Client(client).MaxLives - Client(client).Lives);
+#else
+	BossData cfg = FF2R_GetBossData(client);
+	if(cfg)
+	{
+		int health = cfg.GetInt("maxhealth");
+		if(health < 1)
+			health = SDKCall_GetMaxHealth(client);
+		
+		return health * (1 + cfg.GetInt("lives", 1) - cfg.GetInt("livesleft", 1));
+	}
+#endif
 	
 	// 75% overheal from 50%
 	#if defined __nosoop_tf2_utils_included
@@ -102,12 +125,12 @@ stock int TF2U_GetMaxOverheal(int client)
 	
 	int maxhealth = SDKCall_GetMaxHealth(client);
 	float maxoverheal = float(maxhealth) * 0.75;
-	maxoverheal *= Attributes_FindOnPlayer(client, 800, true, 1.0);
-	maxoverheal *= Attributes_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), 853, true, 1.0);
+	maxoverheal *= Attrib_FindOnPlayer(client, "patient overheal penalty", true);
+	maxoverheal *= Attrib_FindOnWeapon(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"), "mult_patient_overheal_penalty_active", true);
 	return maxhealth + (RoundToFloor(maxoverheal / 5.0) * 5);
 }
 
-void TF2U_EquipPlayerWearable(int client, int entity)
+stock void TF2U_EquipPlayerWearable(int client, int entity)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
@@ -121,7 +144,7 @@ void TF2U_EquipPlayerWearable(int client, int entity)
 	}
 }
 
-void TF2U_SetPlayerActiveWeapon(int client, int entity)
+stock void TF2U_SetPlayerActiveWeapon(int client, int entity)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
@@ -135,4 +158,62 @@ void TF2U_SetPlayerActiveWeapon(int client, int entity)
 		GetEntityClassname(entity, buffer, sizeof(buffer));
 		ClientCommand(client, "use %s", buffer);
 	}
+}
+
+stock bool TF2U_IsInRespawnRoom(int entity)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(Loaded)
+	{
+		float pos[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos);
+		return TF2Util_IsPointInRespawnRoom(pos, entity);
+	}
+	#endif
+
+	return !entity;
+}
+
+stock int TF2U_GetPlayerLoadoutEntity(int client, int loadoutSlot, bool includeWearableWeapons = true)
+{
+	#if defined __nosoop_tf2_utils_included
+	if(Loaded)
+		return TF2Util_GetPlayerLoadoutEntity(client, loadoutSlot, includeWearableWeapons);
+	#endif
+
+	int entity = GetPlayerWeaponSlot(client, loadoutSlot);
+	if(entity == -1 && includeWearableWeapons)
+	{
+		switch(loadoutSlot)
+		{
+			case TFWeaponSlot_Primary:
+			{
+				int index;
+				while((TF2U_GetWearable(client, entity, index)))
+				{
+					int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+					switch(defindex)
+					{
+						case 405, 608:
+							break;
+					}
+				}
+			}
+			case TFWeaponSlot_Secondary:
+			{
+				int index;
+				while((TF2U_GetWearable(client, entity, index)))
+				{
+					int defindex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+					switch(defindex)
+					{
+						case 133, 444, 131, 406, 1099, 1144, 57, 231, 642:
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	return entity;
 }

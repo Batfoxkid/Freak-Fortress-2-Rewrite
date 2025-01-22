@@ -519,7 +519,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(action != Plugin_Handled)
 	{
 		int i;
-		if(cfg.GetInt("version", i) && i != MAJOR_REVISION && i != 99)
+		if(cfg.GetInt("version", i) && i != 1 && i != 99)
 		{
 			if(i == 2)
 			{
@@ -532,27 +532,6 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			
 			DeleteCfg(full);
 			return;
-		}
-		
-		if(cfg.GetInt("version_minor", i))
-		{
-			int stable = -1;
-			cfg.GetInt("version_stable", stable);
-			
-			if(i > MINOR_REVISION || (i == MINOR_REVISION && stable > STABLE_REVISION))
-			{
-				if(stable < 0)
-				{
-					LogError("[Boss] %s is only compatible with base FF2 v%d.%d and newer", character, MAJOR_REVISION, i);
-				}
-				else
-				{
-					LogError("[Boss] %s is only compatible with base FF2 v%d.%d.%d and newer", character, MAJOR_REVISION, i, stable);
-				}
-				
-				DeleteCfg(full);
-				return;
-			}
 		}
 		
 		if(cfg.GetInt("fversion", i) && i != 2)
@@ -819,7 +798,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 										PrecacheScriptSound(key);
 									}
 									
-									if(music)
+									if(music && val.cfg && val.cfg.ContainsKey("name"))
 										Music_AddSong(special, section, key);
 								}
 								case KeyValType_Value:
@@ -852,6 +831,9 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												PrecacheScriptSound(key);
 											}
+
+											if(music)
+												Format(buffer2, sizeof(buffer2), "%sname", val.data);
 										}
 										else	// "1"	"example.mp3"
 										{
@@ -875,10 +857,16 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											{
 												PrecacheScriptSound(buffer);
 											}
+
+											if(music)
+												Format(buffer2, sizeof(buffer2), "%sname", key);
 										}
 										
 										if(music)
-											Music_AddSong(special, section, key);
+										{
+											if(cfgsub.ContainsKey(buffer2))
+												Music_AddSong(special, section, key);
+										}
 									}
 								}
 							}
@@ -1825,10 +1813,10 @@ static void EquipBoss(int client, bool weapons)
 	switch(i)
 	{
 		case 0:
-			TF2Attrib_SetByDefIndex(client, 734, 0.0);
+			Attrib_Set(client, "healing received penalty", 0.0);
 								
 		case 1:
-			TF2Attrib_SetByDefIndex(client, 740, 0.0);
+			Attrib_Set(client, "reduced_healing_from_medics", 0.0);
 	}
 	
 	any class;
@@ -1883,308 +1871,19 @@ static void EquipBoss(int client, bool weapons)
 		int entries = snap.Length;
 		if(entries)
 		{
-			value = false;
+			value = true;
 			PackVal val;
 			for(i = 0; i < entries; i++)
 			{
-				static char classname[36];
-				snap.GetKey(i, classname, sizeof(classname));
+				int length = snap.KeyBufferSize(i)+1;
+				char[] classname = new char[length];
+				snap.GetKey(i, classname, length);
 				Client(client).Cfg.GetArray(classname, val, sizeof(val));
 				if(val.tag != KeyValType_Section || GetSectionType(classname) != Section_Weapon)
 					continue;
 				
-				ConfigMap cfg = val.cfg;
-				if(!cfg)
-					continue;
-				
-				if(StrContains(classname, "tf_") != 0 &&
-				  !StrEqual(classname, "saxxy"))
-				{
-					if(!cfg.Get("name", classname, sizeof(classname)))
-						strcopy(classname, sizeof(classname), "tf_wearable");
-				}
-				
-				GetClassWeaponClassname(class, classname, sizeof(classname));
-				bool wearable = StrContains(classname, "tf_weap") != 0;
-				
-				cfg.GetInt("index", index);
-				
-				int level = -1;
-				cfg.GetInt("level", level);
-				
-				int quality = 5;
-				cfg.GetInt("quality", quality);
-				
-				bool preserve;
-				cfg.GetBool("preserve", preserve, false);
-				
-				bool override;
-				cfg.GetBool("override", override, false);
-				
-				int kills = -1;
-				if(!cfg.GetInt("rank", kills) && level == -1 && !override)
-					kills = GetURandomInt() % 21;
-				
-				if(kills >= 0)
-					kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
-				
-				if(level < 0 || level > 127)
-					level = 101;
-				
-				TFClassType forceClass;
-				if(cfg.Get("class", buffer, sizeof(buffer)))
-					forceClass = GetClassOfName(buffer);
-				
-				if(forceClass != TFClass_Unknown)
-					TF2_SetPlayerClass(client, forceClass, _, false);
-				
-				bool found = (cfg.GetKeyValType("attributes") == KeyValType_Value && cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
-				
-				if(!wearable && !override)
-				{
-					if(value)
-					{
-						if(found)
-						{
-							Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
-						}
-						else
-						{
-							strcopy(buffer, sizeof(buffer), "2 ; 3.1");
-						}
-					}
-					else if(found)
-					{
-						Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
-					}
-					else
-					{
-						strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
-					}
-				}
-				else if(!found)
-				{
-					buffer[0] = 0;
-				}
-				
-				static char buffers[40][16];
-				int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
-				
-				if(count % 2)
-					count--;
-				
-				int attribs;
-				int entity = -1;
-				if(wearable)
-				{
-					entity = CreateEntityByName(classname);
-					if(IsValidEntity(entity))
-					{
-						SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-						SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-						SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
-						SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
-						
-						DispatchSpawn(entity);
-						
-						Debug("Created Wearable");
-					}
-					else
-					{
-						Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-						LogError("[Boss] Invalid classname '%s' for '%s'", classname, buffer);
-					}
-				}
-				else
-				{
-					Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
-					TF2Items_SetClassname(item, classname);
-					TF2Items_SetItemIndex(item, index);
-					TF2Items_SetLevel(item, level);
-					TF2Items_SetQuality(item, quality);
-					TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
-					for(int a; attribs < count && a < 16; attribs += 2)
-					{
-						int attrib = StringToInt(buffers[attribs]);
-						if(attrib)
-						{
-							TF2Items_SetAttribute(item, a++, attrib, StringToFloat(buffers[attribs+1]));
-						}
-						else
-						{
-							Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-							LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
-						}
-					}
-					
-					entity = TF2Items_GiveNamedItem(client, item);
-					delete item;
-				}
-				
-				if(entity != -1)
-				{
-					if(wearable)
-					{
-						TF2U_EquipPlayerWearable(client, entity);
-					}
-					else
-					{
-						EquipPlayerWeapon(client, entity);
-					}
-					
-					if(forceClass != TFClass_Unknown)
-						TF2_SetPlayerClass(client, class, _, false);
-					
-					switch(cfg.GetKeyValType("attributes"))
-					{
-						case KeyValType_Value:
-						{
-							for(; attribs < count; attribs += 2)
-							{
-								int attrib = StringToInt(buffers[attribs]);
-								if(attrib)
-								{
-									TF2Attrib_SetByDefIndex(entity, attrib, StringToFloat(buffers[attribs+1]));
-								}
-								else
-								{
-									Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-									LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname, buffers[attribs], buffers[attribs+1]);
-								}
-							}
-						}
-						case KeyValType_Section:
-						{
-							ConfigMap cfgAttributes = cfg.GetSection("attributes");
-
-							StringMapSnapshot attributeListSnap = cfgAttributes.Snapshot();
-							int attributeListSnapLength = attributeListSnap.Length;
-
-							PackVal attributeValue;
-
-							for(attribs = 0; attribs < attributeListSnapLength; attribs++)
-							{
-								int length = attributeListSnap.KeyBufferSize(attribs) + 1;
-								char[] key = new char[length];
-
-								attributeListSnap.GetKey(attribs, key, length);
-								
-								cfgAttributes.GetArray(key, attributeValue, sizeof(attributeValue));
-
-								if(attributeValue.tag == KeyValType_Value)
-								{
-									TF2Attrib_SetFromStringValue(entity, key, attributeValue.data);
-								}
-							}
-
-							delete attributeListSnap;
-						}
-					}
-					
-					ConfigMap custom = cfg.GetSection("custom");
-					if(custom)
-						Weapons_ApplyCustomAttributes(entity, custom);
-					
-					if(kills >= 0)
-					{
-						TF2Attrib_SetByDefIndex(entity, 214, view_as<float>(kills));
-						if(wearable)
-							TF2Attrib_SetByDefIndex(entity, 454, view_as<float>(64));
-					}
-					
-					if(!wearable)
-					{
-						if(cfg.GetInt("clip", level))
-							SetEntProp(entity, Prop_Data, "m_iClip1", level);
-						
-						if(cfg.GetInt("ammo", level))
-						{
-							int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-							if(type >= 0)
-								SetEntProp(client, Prop_Data, "m_iAmmo", level, _, type);
-						}
-						
-						if(index != 735 && StrEqual(classname, "tf_weapon_builder"))
-						{
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
-							}
-						}
-						else if(index == 735 || StrEqual(classname, "tf_weapon_sapper"))
-						{
-							SetEntProp(entity, Prop_Send, "m_iObjectType", 3);
-							SetEntProp(entity, Prop_Data, "m_iSubType", 3);
-							
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
-							}
-						}
-					}
-
-					override = wearable;
-					cfg.GetBool("show", override, false);
-					if(override)
-					{
-						if(cfg.GetInt("worldmodel", index) && index)
-						{
-							if(!wearable)
-								SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-							
-							for(level = 0; level < 4; level++)
-							{
-								SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
-							}
-						}
-						
-						GetEntityNetClass(entity, classname, sizeof(classname));
-						int offset = FindSendPropInfo(classname, "m_iItemIDHigh");
-						
-						SetEntData(entity, offset - 8, 0);	// m_iItemID
-						SetEntData(entity, offset - 4, 0);	// m_iItemID
-						SetEntData(entity, offset, 0);		// m_iItemIDHigh
-						SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
-						
-						SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-					}
-					else if(!wearable)
-					{
-						SetEntityRenderMode(entity, RENDER_ENVIRONMENTAL);
-					}
-					
-					level = 255;
-					index = 255;
-					kills = 255;
-					count = 255;
-					
-					override = view_as<bool>(cfg.GetInt("alpha", level));
-					override = (cfg.GetInt("red", index) || override);
-					override = (cfg.GetInt("green", kills) || override);
-					override = (cfg.GetInt("blue", count) || override);
-					
-					if(override)
-					{
-						SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-						SetEntityRenderColor(entity, index, kills, count, level);
-					}
-					
-					SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-					
-					if(!wearable && !value)
-					{
-						level = TF2_GetClassnameSlot(classname);
-						if(level >= TFWeaponSlot_Primary && level <= TFWeaponSlot_Melee)
-						{
-							value = true;
-							TF2U_SetPlayerActiveWeapon(client, entity);
-						}
-					}
-				}
-				else if(forceClass != TFClass_Unknown)
-				{
-					TF2_SetPlayerClass(client, class, _, false);
-				}
+				if(val.cfg)
+					TF2Items_CreateFromCfg(client, classname, val.cfg, value);
 			}
 		}
 		
@@ -2218,11 +1917,11 @@ void Bosses_UpdateHealth(int client)
 				defaul = 150;
 		}
 		
-		TF2Attrib_SetByDefIndex(client, 26, float(maxhealth-defaul));
+		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul));
 	}
 	else
 	{
-		TF2Attrib_SetByDefIndex(client, 26, 0.0);
+		Attrib_Set(client, "max health additive bonus", 0.0);
 	}
 }
 
@@ -2280,12 +1979,23 @@ void Bosses_SetSpeed(int client)
 			}
 		}
 		
-		TF2Attrib_SetByDefIndex(client, 442, speed/defaul);
+		Attrib_Set(client, "major move speed bonus", speed / defaul);
 		SDKCall_SetSpeed(client);
 	}
 	else
 	{
-		TF2Attrib_SetByDefIndex(client, 442, 1.0);
+		Attrib_Set(client, "major move speed bonus", 1.0);
+	}
+}
+
+void Bosses_OnConditonAdded(int client, TFCond cond)
+{
+	if(Client(client).IsBoss && (cond == TFCond_Jarated || cond == TFCond_Bleeding || cond == TFCond_OnFire || cond == TFCond_Gas))
+	{
+		int flags = GetCommandFlags("r_screenoverlay");
+		SetCommandFlags("r_screenoverlay", flags & ~FCVAR_CHEAT);
+		ClientCommand(client, "r_screenoverlay \"\"");
+		SetCommandFlags("r_screenoverlay", flags);
 	}
 }
 
@@ -2351,10 +2061,10 @@ void Bosses_Remove(int client)
 		SetVariantString(NULL_STRING);
 		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 		
-		TF2Attrib_SetByDefIndex(client, 442, 1.0);
-		TF2Attrib_SetByDefIndex(client, 26, 0.0);
-		TF2Attrib_SetByDefIndex(client, 734, 1.0);
-		TF2Attrib_SetByDefIndex(client, 740, 1.0);
+		Attrib_Remove(client, "major move speed bonus");
+		Attrib_Remove(client, "max health additive bonus");
+		Attrib_Remove(client, "healing received penalty");
+		Attrib_Remove(client, "reduced_healing_from_medics");
 		
 		TF2_RemoveAllItems(client);
 		if(IsPlayerAlive(client))
@@ -2377,66 +2087,108 @@ int Bosses_GetBossTeam()
 
 void Bosses_PlayerRunCmd(int client, int buttons)
 {
-	if((!Enabled || RoundStatus == 1) && Client(client).IsBoss && IsPlayerAlive(client))
+	if((!Enabled || RoundStatus == 1) && IsPlayerAlive(client))
 	{
 		float time = GetGameTime();
-		if(Client(client).PassiveAt <= time)
+
+		if(Client(client).HoldingButton & IN_ATTACK)
 		{
-			Client(client).PassiveAt = time + 0.2;
-			Bosses_UseSlot(client, 1, 3);
+			if(!(buttons & IN_ATTACK))
+				Client(client).HoldingButton &= ~IN_ATTACK;
+		}
+		else if(buttons & IN_ATTACK)
+		{
+			Client(client).HoldingButton |= IN_ATTACK;
+
+			if(Client(client).SapperCooldownFor < time)
+			{
+				int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+				if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_iObjectType") && GetEntProp(weapon, Prop_Send, "m_iObjectType") == view_as<int>(TFObject_Sapper))
+				{
+					int target = GetClientAimTarget(client, true);
+					if(target != -1)
+					{
+						if(Client(target).IsBoss && (GetClientTeam(client) != GetClientTeam(target) || Cvar[FriendlyFire].BoolValue))
+						{
+							TF2_AddCondition(target, TFCond_Sapped, 4.0);
+							Client(client).SapperCooldownFor = time + 15.0;
+						}
+					}
+				}
+			}
 		}
 		
-		if(!Client(client).NoHud && !(buttons & IN_SCORE))
+		if(Client(client).IsBoss)
 		{
-			time = GetEngineTime();
-			if(Client(client).RefreshAt < time)
+			if(Client(client).PassiveAt <= time)
 			{
-				Client(client).RefreshAt = time + 0.2;
-				
-				SetGlobalTransTarget(client);
-				
-				static char buffer[256];
-				int maxlives = Client(client).MaxLives;
-				if(maxlives > 1)
+				Client(client).PassiveAt = time + 0.2;
+				Bosses_UseSlot(client, 1, 3);
+			}
+			
+			if(!Client(client).NoHud && !(buttons & IN_SCORE))
+			{
+				time = GetEngineTime();
+				if(Client(client).RefreshAt < time)
 				{
-					Format(buffer, sizeof(buffer), "%t", "Boss Lives Left", Client(client).Lives, maxlives);
-				}
-				else
-				{
-					buffer[0] = ' ';
-					buffer[1] = 0;
-				}
-				
-				float ragedamage = Client(client).RageDamage;
-				if(ragedamage >= 0.0 && ragedamage < 99999.0)
-				{
-					float rage = Client(client).GetCharge(0);
-					float ragemin = Client(client).RageMin;
-					if(rage >= ragemin)
+					Client(client).RefreshAt = time + 0.2;
+					
+					SetGlobalTransTarget(client);
+					
+					static char buffer[256];
+					int maxlives = Client(client).MaxLives;
+					if(maxlives > 1)
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
-						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
+						Format(buffer, sizeof(buffer), "%t", "Boss Lives Left", Client(client).Lives, maxlives);
 					}
 					else
 					{
-						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
-						Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+						buffer[0] = ' ';
+						buffer[1] = 0;
 					}
 					
-					if(rage < ragemin || Client(client).RageMode == 2)
+					float ragedamage = Client(client).RageDamage;
+					if(ragedamage >= 0.0 && ragedamage < 99999.0)
 					{
+						float rage = Client(client).GetCharge(0);
+						float ragemin = ragedamage <= 1.0 ? -FAR_FUTURE : Client(client).RageMin;
+						if(rage >= ragemin)
+						{
+							SetHudTextParams(-1.0, 0.78, 0.35, 255, 64, 64, 255, _, _, 0.01, 0.5);
+							Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Ready", RoundToFloor(rage));
+						}
+						else
+						{
+							SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
+							Format(buffer, sizeof(buffer), "%s\n%t", buffer, "Boss Rage Charge", RoundToFloor(rage));
+						}
+						
+						if(rage < ragemin || Client(client).RageMode == 2)
+						{
+							ShowSyncHudText(client, PlayerHud, buffer);
+						}
+						else
+						{
+							ShowSyncHudText(client, PlayerHud, "%s%t", buffer, "Boss Rage Medic");
+						}
+					}
+					else if(buffer[1])
+					{
+						SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
 						ShowSyncHudText(client, PlayerHud, buffer);
 					}
-					else
-					{
-						ShowSyncHudText(client, PlayerHud, "%s%t", buffer, "Boss Rage Medic");
-					}
 				}
-				else if(buffer[1])
-				{
-					SetHudTextParams(-1.0, 0.78, 0.35, 255, 255, 255, 255, _, _, 0.01, 0.5);
-					ShowSyncHudText(client, PlayerHud, buffer);
-				}
+			}
+		}
+		else if(Client(client).SapperCooldownFor > time && !Client(client).NoHud && !(buttons & IN_SCORE))
+		{
+			float engineTime = GetEngineTime();
+			if(Client(client).RefreshAt < engineTime)
+			{
+				Client(client).RefreshAt = engineTime + 0.2;
+				
+				SetHudTextParams(-1.0, 0.88, 0.35, 90, 255, 90, 255, 0, 0.35, 0.0, 0.1);
+				ShowSyncHudText(client, PlayerHud, "%t", "Sapper Cooldown", 100 - RoundToCeil((Client(client).SapperCooldownFor - time) / 0.15));
 			}
 		}
 	}
@@ -2451,7 +2203,7 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && Cvar[SoundType].BoolValue)
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && !MultiBosses())
 			{
 				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
 			}

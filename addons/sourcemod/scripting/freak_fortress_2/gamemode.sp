@@ -422,78 +422,73 @@ void Gamemode_RoundStart()
 	
 	Events_CheckAlivePlayers(_, _, true);
 	
-	bool enabled = (Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1));
-	
-	int[] merc = new int[MaxClients];
-	int[] boss = new int[MaxClients];
-	int mercs, bosses;
+	if(Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	{
+		int[] merc = new int[MaxClients];
+		int[] boss = new int[MaxClients];
+		int mercs, bosses;
 
-	bool bvb = Cvar[BossVsBoss].BoolValue;
-	int mercTeam = TFTeam_Red;
-	if(!bvb)
-	{
-		int client = FindClientOfBossIndex(0);
-		if(client != -1)
-			mercTeam = GetClientTeam(client) == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
-	}
-	
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client))
+		bool bvb = Cvar[BossVsBoss].BoolValue;
+		int mercTeam = TFTeam_Red;
+		if(!bvb)
 		{
-			if(Client(client).IsBoss)
+			int client = FindClientOfBossIndex(0);
+			if(client != -1)
+				mercTeam = GetClientTeam(client) == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+		}
+	
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
 			{
-				boss[bosses++] = client;
-			}
-			else
-			{
-				merc[mercs++] = client;
-				
-				if(enabled && IsPlayerAlive(client))
+				if(Client(client).IsBoss)
 				{
-					if(!bvb && IsFakeClient(client) && GetClientTeam(client) != mercTeam)
-					{
-						ChangeClientTeam(client, mercTeam);
-					}
-					else
-					{
-						TF2_RegeneratePlayer(client);
-						TF2_RefillMaxAmmo(client);
-					}
+					boss[bosses++] = client;
+				}
+				else
+				{
+					merc[mercs++] = client;
 					
-					int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-					if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-						SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 0.0);
+					if(IsPlayerAlive(client))
+					{
+						if(!bvb && IsFakeClient(client) && GetClientTeam(client) != mercTeam)
+						{
+							ChangeClientTeam(client, mercTeam);
+						}
+						else
+						{
+							TF2_RegeneratePlayer(client);
+							TF2_RefillMaxAmmo(client);
+						}
+						
+						int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+						if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
+							SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max"));
+					}
 				}
 			}
 		}
-	}
-	
-	char buffer[512];
-	bool specTeam = Cvar[SpecTeam].BoolValue;
-	for(int i; i < bosses; i++)
-	{
-		int team = GetClientTeam(boss[i]);
-		int amount = 1;
-		for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a < TFTeam_MAX; a++)
-		{
-			if(team != a)
-				amount += PlayersAlive[a];
-		}
 		
-		Bosses_SetHealth(boss[i], amount);
-		
-		if(enabled)
+		char buffer[512];
+		bool specTeam = Cvar[SpecTeam].BoolValue;
+		for(int i; i < bosses; i++)
 		{
+			int team = GetClientTeam(boss[i]);
+			int amount = 1;
+			for(int a = specTeam ? TFTeam_Unassigned : TFTeam_Spectator; a < TFTeam_MAX; a++)
+			{
+				if(team != a)
+					amount += PlayersAlive[a];
+			}
+			
+			Bosses_SetHealth(boss[i], amount);
+			
 			if(Client(boss[i]).Cfg.Get("command", buffer, sizeof(buffer)))
 				ServerCommand(buffer);
 			
 			Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
 			Preference_ApplyDifficulty(boss[i], boss[i], false);
-		}
-		
-		if(enabled)
-		{
+			
 			int maxhealth = Client(boss[i]).MaxHealth;
 			int maxlives = Client(boss[i]).MaxLives;
 			
@@ -1102,10 +1097,8 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 2) 
 			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
-				if (Cvar[PlayerGlow].BoolValue)
-				{
+				if(Cvar[PlayerGlow].BoolValue)
 					Gamemode_SetClientGlow(client, 5.0);
-				}
 			}
 		}
 		
@@ -1127,7 +1120,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 	float time = GetEngineTime();
 	if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).NoHud && !Client(client).NoDmgHud && !(buttons & IN_SCORE))
 	{
-		if(Client(client).RefreshAt < time)
+		if(Client(client).SapperCooldownFor < time && Client(client).RefreshAt < time)
 		{
 			Client(client).RefreshAt = time + 0.2;
 			

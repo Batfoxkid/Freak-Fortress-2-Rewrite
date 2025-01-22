@@ -19,7 +19,7 @@
  * 
  * @error		Invalid client index or client is not a boss
  * 
- * @return		True if the sound was found, false otherwise
+ * @noreturn
  */
 native bool FF2R_DoBossSlot(int boss, int low, int high = -2147483647);
 
@@ -789,7 +789,7 @@ native BossData FF2R_GetBossData(int client);
  * 
  * @noreturn
  */
-native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards = false);
+native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards);
 
 /**
  * Get's the ConfigMap of the boss in the boss list
@@ -898,7 +898,7 @@ forward void FF2R_OnBossModifier(int client, ConfigData cfg);
 #else
 
 native bool FF2R_GetBossData(int client);
-native void FF2R_SetBossData(int client, bool forwards = true);
+native void FF2R_SetBossData(int client, Handle cfg = null, bool forwards);
 native bool FF2R_GetSpecialData(int special);
 native bool FF2R_CreateBoss(int client);
 forward void FF2R_OnAbility(int client, const char[] ability);

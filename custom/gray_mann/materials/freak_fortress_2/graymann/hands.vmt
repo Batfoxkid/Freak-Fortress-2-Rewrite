@@ -1,0 +1,38 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "freak_fortress_2/graymann/hands"
+	"$bumpmap" "freak_fortress_2/graymann/hands_normal"
+	"$detail" "effects/tiledfire/fireLayeredSlowTiled512.vtf"	
+	"$detailscale" "5"
+	"$detailblendfactor" 0
+	"$detailblendmode" 6
+
+	//why doesn't this work with bumpmap in gmod? why do you hate me
+//	"$BasemapAlphaPhongMask" "1"
+
+
+	"$phong" "1"
+	"$phongexponent" "10"
+
+
+	"$phongboost" ".15"	
+	
+//	"$phongboost" ".3"	
+	"$lightwarptexture" "models/player/pyro/pyro_lightwarp"
+	"$phongfresnelranges"	"[.3 1 8]"
+	"$halflambert" "0"
+
+	// Rim lighting parameters
+	"$rimlight" "1"
+	"$rimlightexponent" "4"	
+	"$rimlightboost" "2"	
+
+	// Cloaking
+	"$cloakPassEnabled" "1"
+	"Proxies"
+	{
+		"spy_invis"
+		{
+		}
+	}
+}

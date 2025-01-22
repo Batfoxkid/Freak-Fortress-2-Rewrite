@@ -10,31 +10,19 @@ Use `Update Package` to update your current version of Rewrite
 
 Required:
 
-- [SourceMod](https://www.sourcemod.net/downloads.php)
-- [TF2Attributes](https://github.com/FlaminSarge/tf2attributes)
-- [TF2Items](https://github.com/nosoop/SMExt-TF2Items)
-
-Recommended:
-
-- [TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
-- [TFEconData](https://github.com/nosoop/SM-TFEconData)
-- [TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)
+1. **[VScript](https://github.com/FortyTwoFortyTwo/VScript)** or [TF2Attributes](https://github.com/FlaminSarge/tf2attributes)
+2. **[SM-TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)** or [SMExt-TFEconDynamic](https://github.com/nosoop/SMExt-TFEconDynamic)
+3. **[SM-TFEconData](https://github.com/nosoop/SM-TFEconData)** or [VScript](https://github.com/FortyTwoFortyTwo/VScript)
 
 Supported:
 
-- [SteamWorks](https://github.com/ExperimentFailed/SteamWorks)
-- [File Network](https://github.com/Batfoxkid/File-Network)
-- [SM-TFUtils](https://github.com/nosoop/SM-TFUtils)
-- [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX)
-- [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons)
-
-## Breaking Changes
-
-- Any plugins or includes that rely on the .ff2 file extension will no longer function correctly
-- Abilities are no longer activated in a set order
-- Bosses can not have the multiple abilities with the same name
-- FF2_GetSpecialKV no longer can modify boss stats
-- Less restrictions on when natives or forwards can be used. (Such as FF2_StartMusic)
+- **[TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)** (Recommended)
+- [TF2Items](https://github.com/nosoop/SMExt-TF2Items) (Improved Weapon Generation)
+- [SM-TFUtils](https://github.com/nosoop/SM-TFUtils) (Improved Weapon Equipping)
+- [SteamWorks](https://github.com/ExperimentFailed/SteamWorks) (Server Game Description)
+- [File Network](https://github.com/Batfoxkid/File-Network) (Late Download Support)
+- [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX) (Weapon Config Support)
+- [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons) (Boss Support)
 
 ## Credits
 

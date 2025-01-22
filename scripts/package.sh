@@ -9,6 +9,17 @@ rm addons/sourcemod/configs/freak_fortress_2/non-default/epicscout.cfg
 cp addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx Epic-Scout/addons/sourcemod/plugins/ff2r_epic_abilities.smx
 rm addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx
 
+# Gray Mann Package
+mkdir -p Gray-Mann/addons/sourcemod/configs/freak_fortress_2
+mkdir -p Gray-Mann/addons/sourcemod/plugins
+cp -r custom/gray_mann/models Gray-Mann
+cp -r custom/gray_mann/materials Gray-Mann
+cp -r custom/gray_mann/sound Gray-Mann
+cp addons/sourcemod/configs/freak_fortress_2/non-default/graymann.cfg Gray-Mann/addons/sourcemod/configs/freak_fortress_2/graymann.cfg
+rm addons/sourcemod/configs/freak_fortress_2/non-default/graymann.cfg
+cp addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx Gray-Mann/addons/sourcemod/plugins/ff2r_gray_abilities.smx
+rm addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx
+
 # Update Package
 mkdir -p Update-Package
 cp -r addons/sourcemod/scripting/plugins Update-Package
