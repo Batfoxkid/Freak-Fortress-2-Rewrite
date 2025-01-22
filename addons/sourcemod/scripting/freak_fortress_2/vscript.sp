@@ -88,7 +88,7 @@ public void VScript_OnScriptVMInitialized()
 }
 #endif
 
-stock bool VScript_GetAttribute(int entity, const char[] name, float &value)
+public bool VScript_GetAttribute(int entity, const char[] name, float &value)
 {
 	#if defined _vscript_included
 	if(SDKGetAttribute && SDKGetCustomAttribute)

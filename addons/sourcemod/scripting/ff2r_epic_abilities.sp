@@ -2919,7 +2919,7 @@ void SDKCall_EquipWearable(int client, int entity)
 
 stock int SDKCall_GetMaxHealth(int client)
 {
-	return 0;
+	return client;
 }
 
 bool TF2_GetItem(int client, int &weapon, int &pos)

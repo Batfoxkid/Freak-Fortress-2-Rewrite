@@ -232,7 +232,7 @@ stock bool Attrib_Get(int entity, const char[] name, float &value = 0.0)
 	return false;
 }
 
-stock bool Attrib_GetString(int entity, const char[] name, char[] buffer, int length)
+public bool Attrib_GetString(int entity, const char[] name, char[] buffer, int length)
 {
 	#if defined _tf2attributes_included
 	if(Loaded)

@@ -19,7 +19,7 @@ jobs:
       - name: Install Setup SP
         uses: rumblefrog/setup-sp@master
         with:
-          version: '1.11.x'
+          version: '1.12.x'
       
       - name: Get GitHub Env
         run: |
@@ -90,7 +90,7 @@ jobs:
       - name: Install Setup SP
         uses: rumblefrog/setup-sp@master
         with:
-          version: '1.11.x'
+          version: '1.12.x'
       
       - name: Get GitHub Env
         run: |

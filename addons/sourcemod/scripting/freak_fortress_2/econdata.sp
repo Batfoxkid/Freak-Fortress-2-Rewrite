@@ -85,7 +85,7 @@ stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, cons
 		return true;
 	#endif
 	
-	if(classname[0])
+	if(classname[0] && itemdef >= 0)
 	{
 		static const char SlotNames[][] = { "#TR_Primary", "#TR_Secondary", "#TR_Melee", "#TF_Weapon_PDA_Engineer", "#LoadoutSlot_Utility", "#LoadoutSlot_Building", "#LoadoutSlot_Action" };
 		int slot = TF2_GetClassnameSlot(classname);
