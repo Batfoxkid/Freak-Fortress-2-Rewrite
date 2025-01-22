@@ -185,7 +185,7 @@ stock bool Attrib_Get(int entity, const char[] name, float &value = 0.0)
 	}
 
 	#if defined _tf2attributes_included
-	if(!Loaded)
+	if(!Loaded && TF2Attrib_IsValidAttributeName(name))
 	{
 		Address attrib = TF2Attrib_GetByName(entity, name);
 		if(attrib != Address_Null)
@@ -235,7 +235,7 @@ stock bool Attrib_Get(int entity, const char[] name, float &value = 0.0)
 public bool Attrib_GetString(int entity, const char[] name, char[] buffer, int length)
 {
 	#if defined _tf2attributes_included
-	if(Loaded)
+	if(Loaded && TF2Attrib_IsValidAttributeName(name))
 	{
 		Address address = TF2Attrib_GetByName(entity, name);
 		if(address != Address_Null)
@@ -266,7 +266,12 @@ stock bool Attrib_SetString(int entity, const char[] name, const char[] value)
 {
 	#if defined _tf2attributes_included
 	if(Loaded)
+	{
+		if(!TF2Attrib_IsValidAttributeName(name))
+			return false;
+		
 		return TF2Attrib_SetFromStringValue(entity, name, value);
+	}
 	#endif
 
 	static char buffer[256];
