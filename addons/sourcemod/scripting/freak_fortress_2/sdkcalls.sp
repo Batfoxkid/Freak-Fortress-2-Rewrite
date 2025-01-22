@@ -145,10 +145,8 @@ void SDKCall_FinishLagCompensation(int client)
 	if(SDKStartLagCompensation && SDKFinishLagCompensation && SDKGetCurrentCommand != view_as<Address>(-1))
 	{
 		Address value = DHook_GetLagCompensationManager();
-		if(!value)
-			ThrowError("Trying to finish lag compensation before any existed");
-		
-		SDKCall(SDKFinishLagCompensation, value, client);
+		if(value)
+			SDKCall(SDKFinishLagCompensation, value, client);
 	}
 }
 
@@ -190,10 +188,8 @@ void SDKCall_StartLagCompensation(int client)
 	if(SDKStartLagCompensation && SDKFinishLagCompensation && SDKGetCurrentCommand != view_as<Address>(-1))
 	{
 		Address value = DHook_GetLagCompensationManager();
-		if(!value)
-			ThrowError("Trying to start lag compensation before any existed");
-		
-		SDKCall(SDKStartLagCompensation, value, client, GetEntityAddress(client) + SDKGetCurrentCommand);
+		if(value)
+			SDKCall(SDKStartLagCompensation, value, client, GetEntityAddress(client) + SDKGetCurrentCommand);
 	}
 }
 

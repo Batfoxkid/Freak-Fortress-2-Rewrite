@@ -125,7 +125,6 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	if(wearable || GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") != FeatureStatus_Available)
 	#endif
 	{
-		PrintToConsoleAll("EEEE %d", preserve);
 		entity = CreateEntityByName(classname2);
 		if(IsValidEntity(entity))
 		{
@@ -157,7 +156,6 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	#if defined _tf2items_included
 	else
 	{
-		PrintToConsoleAll("AAAA %d", preserve);
 		Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
 		TF2Items_SetClassname(item, classname2);
 		TF2Items_SetItemIndex(item, index);
@@ -278,21 +276,21 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 		
 		if(!wearable)
 		{
-			if(cfg.GetString("clip", buffer, sizeof(buffer)))
+			if(cfg.Get("clip", buffer, sizeof(buffer)))
 			{
 				level = RoundFloat(ParseFormula(buffer, alive));
 				if(level >= 0)
 					SetEntProp(entity, Prop_Data, "m_iClip1", level);
 			}
 			
-			if(cfg.GetString("ammo", buffer, sizeof(buffer)))
+			if(cfg.Get("ammo", buffer, sizeof(buffer)))
 			{
 				quality = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
 				if(quality >= 0)
 				{
 					level = RoundFloat(ParseFormula(buffer, alive));
 
-					if(cfg.GetString("max", buffer, sizeof(buffer)))
+					if(cfg.Get("max", buffer, sizeof(buffer)))
 					{
 						int limit = RoundFloat(ParseFormula(buffer, alive));
 						if(limit >= 0 && level > limit)

@@ -136,11 +136,15 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		Gamemode_CheckPointUnlock(total, !LastMann);
 }
 
-static void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
+static Action Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	FirstBlood = true;
 	LastMann = false;
 	Gamemode_RoundStart();
+
+	// Disables the siren noise
+	event.BroadcastDisabled = true;
+	return Plugin_Changed;
 }
 
 static void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -701,7 +705,9 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		for(int i; i < total; i++)
 		{
 			SetGlobalTransTarget(clients[i]);
-			FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+
+			if(team == -1 || !Client(clients[i]).IsBoss)
+				FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
 
 			if(!Client(clients[i]).NoHud)
 			{

@@ -707,6 +707,11 @@
 	{
 		"en"		"Sentry Busters has spawned in!"
 	}
+	"Gray Mann Refund"
+	{
+		"#format"	"{1:d}"
+		"en"		"Refunded {1} resources for killing an ally"
+	}
 	
 	"Weapon Menu"
 	{

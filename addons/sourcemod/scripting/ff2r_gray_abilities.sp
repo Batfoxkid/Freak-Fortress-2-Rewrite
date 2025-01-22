@@ -57,6 +57,7 @@
 	"special_minion_master"
 	{
 		"stun on death"	"20.0"	// Time to stun team's minions on death
+		"boss refund"	"40.0"	// RAGE refund for killing a boss minion
 
 		"plugin_name"	"ff2r_gray_abilities"
 	}
@@ -155,12 +156,14 @@ static const char LoopingSounds[][] =
 Handle SDKEquipWearable;
 int PlayersAlive[4];
 
+ConVar CvarFriendlyFire;
+ConVar CvarTags;
 ConVar CvarDebug;
 
 Handle IntervalTimer[MAXTF2PLAYERS];
 int RobotSounds[MAXTF2PLAYERS];
 int RobotVIP[MAXTF2PLAYERS];
-bool InRobotFrame[MAXTF2PLAYERS];
+Handle RobotRemoveTimer[MAXTF2PLAYERS];
 int PlayingRobotLoop[MAXTF2PLAYERS] = {-1, ...};
 bool Teleporters[MAXTF2PLAYERS];
 ArrayList TeleporterList;
@@ -224,10 +227,13 @@ public void OnPluginStart()
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
+
+	CvarFriendlyFire = FindConVar("mp_friendlyfire");
+	CvarTags = FindConVar("sv_tags");
 	
 	AddNormalSoundHook(OnNormalSHook);
 
-	HookEvent("player_death", OnPlayerDeath, EventHookMode_Post);
+	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("post_inventory_application", OnInventoryApplication, EventHookMode_Post);
 	HookEvent("teamplay_flag_event", OnFlagEvent, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_Post);
@@ -323,11 +329,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			if(ability.IsMyPlugin())
 			{
 				if(!BombEnabled[0] && !BombEnabled[1] && !BombEnabled[2] && !BombEnabled[3])
-				{
-					int entity = FindEntityByClassname(-1, "tf_logic_arena");
-					if(entity != -1)
-						HookSingleEntityOutput(entity, "OnCapEnabled", OnCapEnabled, true);
-				}
+					HookEntityOutput("tf_logic_arena", "OnCapEnabled", OnCapEnabled);
 				
 				BombEnabled[team] = ability.GetBool("minions") ? 2 : 1;
 			}
@@ -380,14 +382,16 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 {
 	BossData boss = FF2R_GetBossData(client);
 	
-	if((InRobotFrame[client] || !RobotSounds[client]) && weapons)
+	if((RobotRemoveTimer[client] || !RobotSounds[client]) && weapons)
 	{
 		AbilityData ability = boss.GetAbility("special_robot");
 		if(ability.IsMyPlugin())
 		{
+			StopRobotSound(client);
 			RobotSounds[client] = ability.GetInt("giant") + 1;
 			RobotVIP[client] = ability.GetInt("vip");
-			InRobotFrame[client] = false;
+			delete RobotRemoveTimer[client];
+			SDKHook(client, SDKHook_TraceAttack, OnTraceAttack);
 
 			if(RobotSounds[client] == 3)
 			{
@@ -435,7 +439,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 
 					EmitGameSoundToAll("MVM.TankStart");
 
-					char buffer[64];
+					char buffer[256];
 
 					int leader;
 					int count;
@@ -444,23 +448,29 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 					{
 						if(IsClientInGame(target) && !IsFakeClient(target))
 						{
+							SetGlobalTransTarget(target);
 							GetBossNameCfg(boss, buffer, sizeof(buffer), GetClientLanguage(client));
+
 							if(maxlives > 1)
 							{
-								FPrintToChatEx(target, client, "%t", "Boss Spawned As Lives", client, buffer, maxhealth, maxlives);
-								ShowGameText(target, "ico_notify_on_fire", team, "%t", "Boss Spawned As Lives", client, buffer, maxhealth, maxlives);
+								Format(buffer, sizeof(buffer), "%t", "Boss Spawned As Lives", client, buffer, maxhealth, maxlives);
 							}
 							else
 							{
-								FPrintToChatEx(target, client, "%t", "Boss Spawned As", client, buffer, maxhealth);
-								ShowGameText(target, "ico_notify_on_fire", team, "%t", "Boss Spawned As", client, buffer, maxhealth);
+								Format(buffer, sizeof(buffer), "%t", "Boss Spawned As", client, buffer, maxhealth);
 							}
+
+							FPrintToChatEx(target, client, buffer);
+							CRemoveTags(buffer, sizeof(buffer));
+							ShowGameText(target, "ico_notify_on_fire", team, buffer);
 
 							if(GetClientTeam(target) == team)
 							{
-								if(!leader && client != target && FF2R_GetBossData(client))
-									leader = client;
+								if(!leader && client != target && !FF2R_GetClientMinion(target) && FF2R_GetBossData(target))
+									leader = target;
 							}
+
+							targets[count++] = target;
 						}
 					}
 
@@ -591,9 +601,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 	if(TeleporterList)
 	{
 		if(!StrContains(classname, "obj_teleporter", false))
-		{
 			SDKHook(entity, SDKHook_SpawnPost, OnTeleporterSpawn);
-		}
 	}
 }
 
@@ -633,12 +641,15 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 	}
 }
 
-void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int userid = event.GetInt("userid");
 	int victim = GetClientOfUserId(userid);
 	if(victim)
 	{
+		if(RobotSounds[victim])
+			RequestFrame(RemoveRagdollFrame, userid);
+		
 		if(RobotSounds[victim] == 2)
 		{
 			if(TF2_GetPlayerClass(victim) == TFClass_Heavy)
@@ -649,6 +660,10 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			{
 				EmitGameSoundToAll("MVM.GiantCommonExplodes");
 			}
+
+			int attacker = GetClientOfUserId(event.GetInt("attacker"));
+			if(attacker)
+				ReactConcept(attacker, "TLK_MVM_GIANT_KILLED");
 		}
 
 		int team = GetClientTeam(victim);
@@ -692,14 +707,14 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			{
 				if(IsClientInGame(target) && IsPlayerAlive(target) && team == GetClientTeam(target))
 				{
-					BossData boss = FF2R_GetBossData(victim);
+					BossData boss = FF2R_GetBossData(target);
 					if(boss)
 					{
 						AbilityData ability = boss.GetAbility("special_minion_master");
 						if(ability.IsMyPlugin())
 						{
 							int entity = -1;
-							while((entity=FindEntityByClassname(entity, "obj_teleporter")) != -1)
+							while((entity=FindEntityByClassname(entity, "obj_*")) != -1)
 							{
 								if(GetEntPropEnt(entity, Prop_Send, "m_hBuilder") == victim)
 									SetEntPropEnt(entity, Prop_Send, "m_hBuilder", target);
@@ -711,10 +726,10 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 				}
 			}
 
-			// Stun minions on death
 			BossData boss = FF2R_GetBossData(victim);
 			if(boss)
 			{
+				// Stun minions on death
 				AbilityData ability = boss.GetAbility("special_minion_master");
 				if(ability.IsMyPlugin())
 				{
@@ -729,11 +744,16 @@ void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 					}
 				}
 
-				if(TheAnnouncer == team)
+				if(!FF2R_GetClientMinion(victim) && TheAnnouncer == team)
+				{
 					RequestAnnouncement(Announce_Destruction);
+					ReactConceptEnemy(team, "TLK_MVM_TAUNT");
+				}
 			}
 		}
 	}
+
+	return Plugin_Continue;
 }
 
 void OnInventoryApplication(Event event, const char[] name, bool dontBroadcast)
@@ -786,10 +806,10 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		float pos[3];
 		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
-		TE_Particle("fluidSmokeExpl_ring_mvm", pos);
+		TE_Particle("mvm_hatch_destroy", pos);
 		EmitGameSoundToAll("MVM.BombExplodes", BombCarrier);
 		ForcePlayerSuicide(BombCarrier);
-		RequestFrame(RemoveRagdollFrame, GetClientUserId(BombCarrier));
+		RemoveEntity(BombRef);
 	}
 }
 
@@ -899,12 +919,81 @@ Action OnNormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATF
 			}
 		}
 	}
+	else if(!StrContains(sample, "vo/intel_", false))
+	{
+		if(IsValidEntity(BombRef))
+			return Plugin_Stop;
+	}
 
+	return Plugin_Continue;
+}
+
+Action OnTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+{
+	if(attacker > 0 && attacker <= MaxClients && GetClientTeam(victim) == GetClientTeam(attacker) && !CvarFriendlyFire.BoolValue)
+	{
+		if(victim != BombCarrier)
+		{
+			// Can only effect non-boss minions (including bomb carriers)
+			if(RobotVIP[victim] > 2 || !FF2R_GetClientMinion(victim))
+				return Plugin_Continue;
+		}
+
+		BossData boss = FF2R_GetBossData(attacker);
+		if(boss)
+		{
+			AbilityData ability = boss.GetAbility("special_minion_master");
+			if(ability.IsMyPlugin())
+			{
+				if(FF2R_GetBossData(victim))
+				{
+					float refund = ability.GetFloat("boss refund");
+					if(refund > 0.0)
+					{
+						int health = GetClientHealth(victim);
+						int maxhealth = FF2R_GetBossData(victim).GetInt("maxhealth");
+
+						health += maxhealth * boss.GetInt("livesleft", 1);
+						maxhealth *= boss.GetInt("lives", 1);
+
+						if(health > 0 && maxhealth > 0)
+						{
+							if(health > maxhealth)
+								health = maxhealth;
+							
+							refund *= float(health) / float(maxhealth);
+							SetBossCharge(boss, "0", GetBossCharge(boss, "0") + refund);
+							PrintHintText(attacker, "%t", "Gray Mann Refund", RoundFloat(refund));
+						}
+					}
+				}
+
+				int weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+
+				int fflags = CvarFriendlyFire.Flags;
+				CvarFriendlyFire.Flags = fflags & ~FCVAR_NOTIFY;
+
+				int tflags = CvarTags.Flags;
+				CvarTags.Flags = tflags & ~FCVAR_NOTIFY;
+				
+				CvarFriendlyFire.BoolValue = true;
+				SDKHooks_TakeDamage(victim, inflictor, attacker, 3333.0, DMG_CRIT, weapon);
+				CvarFriendlyFire.BoolValue = false;
+
+				CvarFriendlyFire.Flags = fflags;
+				CvarTags.Flags = tflags;
+
+				FakeClientCommand(victim, "kill");
+			}
+		}
+	}
+	
 	return Plugin_Continue;
 }
 
 void OnCapEnabled(const char[] output, int caller, int activator, float delay)
 {
+	UnhookEntityOutput("tf_logic_arena", "OnCapEnabled", OnCapEnabled);
 	if(BombEnabled[0] || BombEnabled[1] || BombEnabled[2] || BombEnabled[3])
 	{
 		if(!IsValidEntity(BombRef))
@@ -916,7 +1005,7 @@ void OnCapEnabled(const char[] output, int caller, int activator, float delay)
 			int entity = -1;
 			while((entity=FindEntityByClassname(entity, "func_respawnroom")) != -1)
 			{
-				AcceptEntityInput(entity, "Disable");
+				AcceptEntityInput(entity, "Kill");
 			}
 
 			int count;
@@ -957,6 +1046,8 @@ void OnCapEnabled(const char[] output, int caller, int activator, float delay)
 					FF2R_EmitBossSound(targets, count, "sound_bomb_spawn", boss);
 			}
 
+			ReactConceptEnemy(-1, "TLK_MVM_FIRST_BOMB_PICKUP");
+
 			BombRef = CreateEntityByName("item_teamflag");
 			if(BombRef != -1)
 			{
@@ -964,7 +1055,7 @@ void OnCapEnabled(const char[] output, int caller, int activator, float delay)
 				DispatchKeyValue(BombRef, "Angles", "0 0 0");
 				DispatchKeyValue(BombRef, "TeamNum", (BombEnabled[0] || BombEnabled[1] || BombEnabled[2]) ? ((BombEnabled[0] || BombEnabled[1] || BombEnabled[3]) ? "0" : "2") : "3");
 				DispatchKeyValue(BombRef, "StartDisabled", "0");
-				DispatchKeyValue(BombRef, "ReturnTime", "60");
+				DispatchKeyValue(BombRef, "ReturnTime", "30");
 				DispatchKeyValue(BombRef, "flag_model", "models/props_td/atom_bomb.mdl");
 				DispatchKeyValue(BombRef, "trail_effect", "3");
 				DispatchSpawn(BombRef);
@@ -1006,10 +1097,17 @@ void OnBombPickup(const char[] output, int caller, int activator, float delay)
 	{
 		PrintCenterText(activator, "%t", "Gray Mann Bomb Hint");
 		
-		if(!FF2R_GetBossData(activator))
+		if(FF2R_GetBossData(activator))
+		{
+			ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_GIANT_HAS_BOMB");
+		}
+		else
 		{
 			Attrib_Set(activator, "move speed penalty", 0.5);
+			Attrib_Set(activator, "increase player capture value", 1.01);
 			TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+
+			ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_PICKUP");
 		}
 	}
 }
@@ -1019,12 +1117,14 @@ void OnBombDropped(const char[] output, int caller, int activator, float delay)
 	delete BombTimer;
 	BombCarrier = 0;
 	SetControlPoint(false);
-	PointsCapping = 0;
 
 	if(activator > 0 && activator <= MaxClients)
 	{
 		Attrib_Remove(activator, "move speed penalty");
+		Attrib_Remove(activator, "increase player capture value");
 		TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+
+		ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_DROPPED");
 	}
 }
 
@@ -1036,6 +1136,8 @@ void OnBombReturn(const char[] output, int caller, int activator, float delay)
 	RequestAnnouncement(Announce_BombReset);
 
 	RemoveEntity(BombRef);
+
+	ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_DROPPED");
 }
 
 Action OnBombTouch(int entity, int client)
@@ -1093,7 +1195,7 @@ Action Timer_BombThink(Handle timer)
 				if(IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) == team && !FF2R_GetBossData(target))
 				{
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos2);
-					if(GetVectorDistance(pos1, pos2, true) < 10000.0)
+					if(GetVectorDistance(pos1, pos2, true) < 90000.0)
 					{
 						TF2_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
 
@@ -1141,24 +1243,23 @@ void OnPointBreakCap(const char[] output, int caller, int activator, float delay
 
 void StopRobotSound(int client)
 {
-	InRobotFrame[client] = true;
-	RequestFrame(StopRobotSoundFrame);
+	delete RobotRemoveTimer[client];
+	RobotRemoveTimer[client] = CreateTimer(0.1, StopRobotSoundTimer, client);
 
 	if(PlayingRobotLoop[client] != -1)
 	{
-		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOP);
+		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOPLOOPING);
 		PlayingRobotLoop[client] = -1;
 	}
 }
 
-void StopRobotSoundFrame(int client)
+Action StopRobotSoundTimer(Handle timer, int client)
 {
-	if(InRobotFrame[client])
-	{
-		RobotSounds[client] = 0;
-		RobotVIP[client] = 0;
-		InRobotFrame[client] = false;
-	}
+	SDKUnhook(client, SDKHook_TraceAttack, OnTraceAttack);
+	RobotSounds[client] = 0;
+	RobotVIP[client] = 0;
+	RobotRemoveTimer[client] = null;
+	return Plugin_Continue;
 }
 
 Action Interval_Timer(Handle timer, int client)
@@ -1244,6 +1345,9 @@ Action Timer_ParticleWait(Handle timer, DataPack pack)
 				TE_Particle("teleported_mvm_bot", pos, _, _, particle, 1, 0);
 				CreateTimer(0.5, Timer_ParticleActive, pack, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
 
+				// Particle effect ends after 5 seconds, spawn a new one
+				CreateTimer(5.0, Timer_ParticleRespawn, ref, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+
 				TeleporterList.Push(EntIndexToEntRef(particle));
 				return Plugin_Stop;
 			}
@@ -1281,6 +1385,20 @@ Action Timer_ParticleActive(Handle timer, DataPack pack)
 	if(TeleporterList)
 		TeleporterList.Erase(TeleporterList.FindValue(ref));
 	
+	return Plugin_Stop;
+}
+
+Action Timer_ParticleRespawn(Handle timer, int ref)
+{
+	int particle = EntRefToEntIndex(ref);
+	if(particle != -1)
+	{
+		float pos[3];
+		GetEntPropVector(particle, Prop_Data, "m_vecOrigin", pos);
+		TE_Particle("teleported_mvm_bot", pos, _, _, particle, 1, 0);
+		return Plugin_Continue;
+	}
+
 	return Plugin_Stop;
 }
 
@@ -1337,7 +1455,6 @@ Action SentryBusterExplode(Handle timer, int userid)
 
 			TE_Particle("fluidSmokeExpl_ring_mvm", pos);
 			ForcePlayerSuicide(client);
-			RequestFrame(RemoveRagdollFrame, userid);
 		}
 	}
 	return Plugin_Continue;
@@ -1402,16 +1519,22 @@ Action AnnounceDelay(Handle timer)
 				switch(item)
 				{
 					case Announce_Engineer:
+					{
 						ShowGameText(target, "ico_metal", _, "%t", "Gray Mann Engineer Bot Spawned");
-					
+					}
 					case Announce_Spy:
+					{
 						ShowGameText(target, "hud_spy_disguise_menu_icon", _, "%t", "Gray Mann Spy Bots Spawned");
-					
+					}
 					case Announce_SentryBuster:
+					{
 						ShowGameText(target, "ico_demolish", _, "%t", "Gray Mann Sentry Buster Spawned");
-					
+						ReactConcept(target, "TLK_MVM_SENTRY_BUSTER");
+					}
 					case Announce_ControlPoint:
+					{
 						ShowGameText(target, "ico_notify_flag_moving_alt", TheAnnouncer == 3 ? 2 : 3, "%t", "Point Unlocked");
+					}
 				}
 			}
 		}
@@ -1465,7 +1588,7 @@ Action AnnounceDelay(Handle timer)
 			}
 			case Announce_BombReset:
 			{
-				EmitGameSound(targets, count, "Announcer.MVM_Bomb_Reset");
+				EmitGameSoundToAll("Announcer.MVM_Bomb_Reset");
 				AnnounceList.Push(Announce_ControlPoint);
 			}
 			case Announce_BombEntered:
@@ -1536,6 +1659,22 @@ void GetMinMaxFromFormula(float &minn, float &maxx, ConfigData cfg, const char[]
 		minn = ParseFormula(buffer1, players);
 		maxx = ParseFormula(buffer2, players);
 	}
+}
+
+float GetBossCharge(ConfigData cfg, const char[] slot, float defaul = 0.0)
+{
+	int length = strlen(slot)+7;
+	char[] buffer = new char[length];
+	Format(buffer, length, "charge%s", slot);
+	return cfg.GetFloat(buffer, defaul);
+}
+
+void SetBossCharge(ConfigData cfg, const char[] slot, float amount)
+{
+	int length = strlen(slot)+7;
+	char[] buffer = new char[length];
+	Format(buffer, length, "charge%s", slot);
+	cfg.SetFloat(buffer, amount);
 }
 
 bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
@@ -1696,6 +1835,26 @@ void SetControlPoint(bool enable)
 			AcceptEntityInput(entity, "HideModel");
 			SetVariantInt(1);
 			AcceptEntityInput(entity, "SetLocked");
+		}
+	}
+}
+
+void ReactConcept(int client, const char[] string)
+{
+	SetVariantString("IsMvMDefender:1");
+	AcceptEntityInput(client, "AddContext");
+	SetVariantString(string);
+	AcceptEntityInput(client, "SpeakResponseConcept");
+	AcceptEntityInput(client, "ClearContext");
+}
+
+void ReactConceptEnemy(int notTeam, const char[] string)
+{
+	for(int target = 1; target <= MaxClients; target++)
+	{
+		if(IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != notTeam)
+		{
+			ReactConcept(target, string);
 		}
 	}
 }

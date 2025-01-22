@@ -643,6 +643,9 @@ methodmap ConfigMap < StringMap {
 		IntToString(key, key_str, sizeof(key_str));
 		return this.GetBool(key_str, b, simple);
 	}
+	
+	public void GetString() { }
+	public void SetString() { }
 };
 
 enum struct PackVal {

@@ -606,7 +606,7 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 				critType = RoundFloat(value);
 		}
 		
-		value = CustomAttrib_FindOnWeapon(attacker, weapon, "charge outlines bosses", true);
+		value = CustomAttrib_FindOnWeapon(attacker, weapon, "charge outlines bosses");
 		if(value > 0.0)
 		{
 			if(HasEntProp(weapon, Prop_Send, "m_flChargedDamage"))

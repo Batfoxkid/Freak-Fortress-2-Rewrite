@@ -2427,8 +2427,8 @@ Action Timer_RemoveItem(Handle timer, DataPack pack)
 
 void Rage_CloneAttack(int client, ConfigData cfg)
 {
-	int team = GetClientTeam(client);
-	int amount = RoundToCeil(GetFormula(cfg, "amount", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : team), 1.0));
+	int team1 = GetClientTeam(client);
+	int amount = RoundToCeil(GetFormula(cfg, "amount", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : team1), 1.0));
 	if(amount > 0)
 	{
 		float pos[3];
@@ -2441,105 +2441,89 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 		ConfigData minion = cfg.GetSection("character");
 		
 		int victims;
-		int[] victim = new int[MaxClients - 1];
-		if(!SpecTeam && team <= view_as<int>(TFTeam_Spectator))
+		int[][] victim = new int[MaxClients - 1][2];
+		for(int target = 1; target <= MaxClients; target++)
 		{
-			for(int target = 1; target <= MaxClients; target++)
+			if(client == target || !IsClientInGame(target))
+				continue;
+			
+			if(CloneLowPrio[target])
 			{
-				if(client == target || PlayerSuicide[target] || !IsClientInGame(target) || GetClientTeam(target) != team)
+				// Don't resummon low prio
+				if(lowPrio)
+					continue;
+			}
+
+			if(FF2R_GetBossData(target))
+			{
+				// Don't summon bosses (unless low prio)
+				if(!CloneLowPrio[target] && !allowBosses)
+					continue;
+			}
+			
+			int team2 = GetClientTeam(target);
+
+			// +4 for the same team
+			int points = (team1 == team2) ? 4 : 0;
+
+			if(IsPlayerAlive(target))
+			{
+				// Don't steal alive players
+				if(team1 != team2)
+					continue;
+			}
+			else
+			{
+				// Don't summon dead spectators
+				if(team2 <= view_as<int>(TFTeam_Spectator))
 					continue;
 				
-				if(IsPlayerAlive(target))
-				{
-					// Low Priorty bypasses this rule
-					if(!CloneLowPrio[target] && lowPrio)
-						continue;
-				}
-
-				if(FF2R_GetBossData(target))
-				{
-					if(!CloneLowPrio[target] && !allowBosses)
-						continue;
-					
-					FF2R_CreateBoss(target, null);
-				}
-
-				// 1st: Same team dead players
-				victim[victims++] = target;
+				// +2 for being dead already
+				points += 2;
 			}
-			
-			if(victims)
-				SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
+
+			if(!PlayerSuicide[target])
+			{
+				// +1 for being a good person
+				points++;
+			}
+
+			victim[victims][0] = target;
+			victim[victims][1] = points;
+			victims++;
 		}
 		
-		if(amount)
+		if(victims)
 		{
-			if(!lowPrio)	// Don't constantly respawn low prio clones in some cases
+			if(victims > amount)
 			{
-				victims = 0;
-				for(int target = 1; target <= MaxClients; target++)
-				{
-					if(client == target || PlayerSuicide[target] || !IsClientInGame(target) || !IsPlayerAlive(target) || GetClientTeam(target) != team)
-						continue;
-
-					if(FF2R_GetBossData(target))
-					{
-						if(!CloneLowPrio[target] && !allowBosses)
-							continue;
-						
-						FF2R_CreateBoss(target, null);
-					}
-
-					// 2nd: Same team alive players
-					victim[victims++] = target;
-				}
-				
-				if(victims)
-					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
+				SortCustom2D(victim, victims, CloneSorting);
+				victims = amount;
 			}
 			
-			if(amount)
-			{
-				victims = 0;
-				for(int target = 1; target <= MaxClients; target++)
-				{
-					if(client == target || !IsClientInGame(target) || IsPlayerAlive(target) || GetClientTeam(target) <= view_as<int>(TFTeam_Spectator))
-						continue;
-
-					if(FF2R_GetBossData(target))
-					{
-						if(!CloneLowPrio[target] && !allowBosses)
-							continue;
-						
-						FF2R_CreateBoss(target, null);
-					}
-
-					// 3rd: Any non-spec dead players
-					victim[victims++] = target;
-				}
-				
-				if(victims)
-					SpawnCloneList(victim, victims, amount, minion, owner, team, pos, cfg);
-			}
+			SpawnCloneList(victim, victims, minion, owner, team1, pos, cfg);
 		}
 	}
 }
 
-void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int owner, int team, const float pos[3], ConfigData ability)
+int CloneSorting(int[] elem1, int[] elem2, const int[][] array, Handle hndl)
+{
+	if(elem1[1] > elem2[1])
+		return -1;
+	
+	if(elem1[1] < elem2[1])
+		return 1;
+	
+	return 0;
+}
+
+void SpawnCloneList(int[][] clients, int amount, ConfigData cfg, int owner, int team, const float pos[3], ConfigData ability)
 {
 	bool rivalTeam = ability.GetBool("rival", false);
 	bool teleToSpawn = ability.GetBool("move to spawn", false);
 	bool lowPrio = ability.GetBool("low prio", false);
 	bool highPrio = ability.GetBool("high prio", false);
 	bool weaponsOnly = (cfg && ability.GetBool("weapons only", false));
-
-	if(amount > cap)
-	{
-		SortIntegers(clients, amount, Sort_Random);
-		amount = cap;
-	}
-	
-	cap -= amount;
 	
 	if(rivalTeam)
 		team = (team == 2) ? 3 : 2;
@@ -2547,43 +2531,44 @@ void SpawnCloneList(int[] clients, int &amount, int &cap, ConfigData cfg, int ow
 	float vel[3];
 	for(int i; i < amount; i++)
 	{
-		CloneLastTeam[clients[i]] = GetClientTeam(clients[i]);
-		CloneLowPrio[clients[i]] = lowPrio;
-		CloneRemoveCfg[clients[i]] = weaponsOnly;
-		delete CloneTimer[clients[i]];
+		int client = clients[i][0];
 		
-		if(IsPlayerAlive(clients[i]))
-			ForcePlayerSuicide(clients[i]);
+		if(!CloneOwner[client])
+			CloneLastTeam[client] = GetClientTeam(client);
 		
-		FF2R_SetClientMinion(clients[i], !highPrio);
+		CloneLowPrio[client] = lowPrio;
+		CloneRemoveCfg[client] = weaponsOnly;
+		delete CloneTimer[client];
+
+		FF2R_SetClientMinion(client, !highPrio);
 		
 		if(cfg)
-			FF2R_CreateBoss(clients[i], cfg, team);
+			FF2R_CreateBoss(client, cfg, team);
 		
-		CloneOwner[clients[i]] = owner;
+		CloneOwner[client] = owner;
 		
 		vel[0] = GetRandomFloat(-500.0, 500.0);
 		vel[1] = GetRandomFloat(-500.0, 500.0);
 		vel[2] = GetRandomFloat(300.0, 500.0);
 		
-		TF2_RespawnPlayer(clients[i]);
-		SetEntProp(clients[i], Prop_Send, "m_bDucked", true);
-		SetEntityFlags(clients[i], GetEntityFlags(clients[i]) | FL_DUCKING);
+		TF2_RespawnPlayer(client);
+		SetEntProp(client, Prop_Send, "m_bDucked", true);
+		SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
 
 		if(!teleToSpawn)
-			TeleportEntity(clients[i], pos, _, vel);
+			TeleportEntity(client, pos, _, vel);
 		
 		// Lessen the strength cap between active and AFK players
-		CloneIdle[clients[i]] = true;
-		TF2_AddCondition(clients[i], TFCond_HalloweenKartNoTurn, 2.0);
-		TF2_AddCondition(clients[i], TFCond_DisguisedAsDispenser, 20.0);
-		TF2_AddCondition(clients[i], TFCond_UberchargedOnTakeDamage, 20.0);
-		TF2_AddCondition(clients[i], TFCond_MegaHeal, 15.0);
+		CloneIdle[client] = true;
+		TF2_AddCondition(client, TFCond_HalloweenKartNoTurn, 2.0);
+		TF2_AddCondition(client, TFCond_DisguisedAsDispenser, 20.0);
+		TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, 20.0);
+		TF2_AddCondition(client, TFCond_MegaHeal, 15.0);
 		
 		if(owner > 0)
-			SDKHook(clients[i], SDKHook_OnTakeDamage, CloneTakeDamage);
+			SDKHook(client, SDKHook_OnTakeDamage, CloneTakeDamage);
 
-		ClientCommand(clients[i], "playgamesound ui/system_message_alert.wav");
+		ClientCommand(client, "playgamesound ui/system_message_alert.wav");
 	}
 }
 

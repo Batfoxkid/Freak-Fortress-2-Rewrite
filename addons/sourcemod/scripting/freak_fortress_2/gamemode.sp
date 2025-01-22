@@ -1097,10 +1097,8 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 			if(PlayersAlive[team] < 2) 
 			{
 				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
-				if (Cvar[PlayerGlow].BoolValue)
-				{
+				if(Cvar[PlayerGlow].BoolValue)
 					Gamemode_SetClientGlow(client, 5.0);
-				}
 			}
 		}
 		
