@@ -423,6 +423,12 @@ static void AddAttributes()
 	attrib.SetCustom("description_ff2_string", "mod airblast rage");
 	attrib.Register();
 
+	attrib.SetName("medigun charge adds crit boost");
+	attrib.SetClass("ff2.medigun_with_crits");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "medigun charge adds crit boost");
+	attrib.Register();
+
 	attrib.SetName("mod stun boss on hit");
 	attrib.SetClass("ff2.mod_stun_on_hit");
 	attrib.SetDescriptionFormat("additive");
