@@ -644,7 +644,7 @@
 	}
 	"Gray Mann Spy Bots Spawned"
 	{
-		"ru"		"Появился шпион!"
+		"ru"		"Появились шпионы!"
 	}
 	"Gray Mann Sentry Buster Spawned"
 	{
