@@ -24,7 +24,7 @@ void FileNet_PluginStart()
 	#endif
 }
 
-stock void FileNet_LibraryAdded(const char[] name)
+public void FileNet_LibraryAdded(const char[] name)
 {
 	#if defined _filenetwork_included
 	if(!Loaded && StrEqual(name, FILENET_LIBRARY))
@@ -40,11 +40,20 @@ stock void FileNet_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void FileNet_LibraryRemoved(const char[] name)
+public void FileNet_LibraryRemoved(const char[] name)
 {
 	#if defined _filenetwork_included
 	if(Loaded && StrEqual(name, FILENET_LIBRARY))
 		Loaded = false;
+	#endif
+}
+
+void FileNet_PrintStatus()
+{
+	#if defined _filenetwork_included
+	PrintToServer("'%s' is %sloaded", FILENET_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", FILENET_LIBRARY);
 	#endif
 }
 
@@ -62,7 +71,7 @@ void FileNet_MapEnd()
 	#endif
 }
 
-stock void FileNet_ClientPutInServer(int client)
+public void FileNet_ClientPutInServer(int client)
 {
 	#if defined _filenetwork_included
 	FileNet_ClientDisconnect(client);
@@ -71,7 +80,7 @@ stock void FileNet_ClientPutInServer(int client)
 	#endif
 }
 
-stock void FileNet_ClientDisconnect(int client)
+public void FileNet_ClientDisconnect(int client)
 {
 	#if defined _filenetwork_included
 	StartedQueue[client] = false;
@@ -107,7 +116,7 @@ void FileNet_AddFileToDownloads(const char[] raw)
 	AddFileToDownloadsTable(raw);
 }
 
-stock bool FileNet_HasFile(int client, int progress)
+public bool FileNet_HasFile(int client, int progress)
 {
 	#if defined _filenetwork_included
 	return FileProgress[client] >= progress;
@@ -116,7 +125,7 @@ stock bool FileNet_HasFile(int client, int progress)
 	#endif
 }
 
-stock int FileNet_FileProgress(const char[] raw)
+public int FileNet_FileProgress(const char[] raw)
 {
 	#if defined _filenetwork_included
 	char file[PLATFORM_MAX_PATH];
@@ -129,7 +138,7 @@ stock int FileNet_FileProgress(const char[] raw)
 	#endif
 }
 
-stock int FileNet_SoundProgress(const char[] sound)
+public int FileNet_SoundProgress(const char[] sound)
 {
 	#if defined _filenetwork_included
 	char file[PLATFORM_MAX_PATH];

@@ -21,6 +21,7 @@ void Events_PluginStart()
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
 	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
@@ -135,11 +136,15 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		Gamemode_CheckPointUnlock(total, !LastMann);
 }
 
-static void Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
+static Action Events_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	FirstBlood = true;
 	LastMann = false;
 	Gamemode_RoundStart();
+
+	// Disables the siren noise
+	event.BroadcastDisabled = true;
+	return Plugin_Changed;
 }
 
 static void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -168,7 +173,7 @@ static Action Events_ObjectDeflected(Event event, const char[] name, bool dontBr
 		{
 			int attacker = GetClientOfUserId(event.GetInt("userid"));
 			if(attacker)
-				Weapons_OnAirblastBoss(attacker);
+				CustomAttrib_OnAirblastBoss(victim, attacker);
 		}
 	}
 	return Plugin_Continue;
@@ -274,7 +279,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		
-		Weapons_OnInventoryApplication(userid);
+		CustomAttrib_OnInventoryApplication(userid);
 	}
 	return Plugin_Continue;
 }
@@ -340,7 +345,10 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					
 					rage += (damage * 100.0 * debuff / ragedmg);
 					if(rage > maxrage)
+					{
+						Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 						rage = maxrage;
+					}
 					
 					Client(victim).SetCharge(0, rage);
 				}
@@ -425,7 +433,7 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 						}
 						
 						IntToString(lives, buffer, sizeof(buffer));
-						if(Cvar[SoundType].BoolValue)
+						if(!MultiBosses())
 						{
 							if(!Bosses_PlaySoundToAll(victim, "sound_lifeloss", buffer, _, _, _, _, 2.0))
 							{
@@ -475,7 +483,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 					Client(victim).OverlayFor = 1.0;
 				
 				Events_CheckAlivePlayers(victim);
-				Weapons_PlayerDeath(victim);
+				CustomAttrib_PlayerDeath(victim);
 				
 				int entity, i;
 				while(TF2_GetItem(victim, entity, i))
@@ -515,7 +523,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				
 				if(event.GetInt("customkill") != TF_CUSTOM_TELEFRAG)
 				{
-					if(!Cvar[SoundType].BoolValue)
+					if(MultiBosses())
 					{
 						if(Bosses_PlaySound(victim, merc, mercs, "sound_death", _, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 							Bosses_PlaySound(victim, boss, bosses, "sound_death", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
@@ -621,6 +629,13 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
+static void Events_UberDeployed(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client)
+		CustomAttrib_OnUberDeployed(client);
+}
+
 static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
@@ -689,6 +704,11 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 		int colors[4];
 		for(int i; i < total; i++)
 		{
+			SetGlobalTransTarget(clients[i]);
+
+			if(team == -1 || !Client(clients[i]).IsBoss)
+				FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+
 			if(!Client(clients[i]).NoHud)
 			{
 				if(dmg[0] > 9000)
@@ -699,13 +719,13 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				if(team > -1)
 				{
 					SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], TopHud, "%T", "Top Damage Hud", clients[i], top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
+					ShowSyncHudText(clients[i], TopHud, "%t", "Top Damage Hud", top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
 				}
 				
 				if(team == -1 || !Client(clients[i]).IsBoss)
 				{
 					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], YourHud, "%T", "You Dealt Damage Hud", clients[i], Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+					ShowSyncHudText(clients[i], YourHud, "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
 				}
 			}
 		}

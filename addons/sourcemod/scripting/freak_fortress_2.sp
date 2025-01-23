@@ -6,30 +6,24 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
-#include <adminmenu>
 #include <clientprefs>
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <morecolors>
-#include <dhooks>
-#include <tf2items>
-#include <tf2attributes>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <adminmenu>
 
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.1"
+#define PLUGIN_VERSION			"1.2"
 #define PLUGIN_VERSION_REVISION	"custom"
 #define PLUGIN_VERSION_FULL		"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
+#define IS_MAIN_FF2
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
 #define FOLDER_CONFIGS	"configs/freak_fortress_2"
-
-#define MAJOR_REVISION	1
-#define MINOR_REVISION	11
-#define STABLE_REVISION	0
 
 #define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
@@ -184,7 +178,6 @@ enum
 	PackVotes,
 	SubpluginFolder,
 	
-	SoundType,
 	BossTriple,
 	BossCrits,
 	BossHealing,
@@ -208,9 +201,9 @@ enum
 	PrefSpecial,
 	
 	AllowSpectators,
+	FriendlyFire,
 	MovementFreeze,
 	PreroundTime,
-	//BonusRoundTime,
 	Tournament,
 	WaitingTime,
 	
@@ -236,6 +229,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/commands.sp"
 #include "freak_fortress_2/configs.sp"
 #include "freak_fortress_2/convars.sp"
+#include "freak_fortress_2/customattrib.sp"
 #include "freak_fortress_2/database.sp"
 #include "freak_fortress_2/dhooks.sp"
 #include "freak_fortress_2/econdata.sp"
@@ -254,7 +248,10 @@ Handle ThisPlugin;
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
 #include "freak_fortress_2/steamworks.sp"
+#include "freak_fortress_2/tf2attributes.sp"
+#include "freak_fortress_2/tf2items.sp"
 #include "freak_fortress_2/tf2utils.sp"
+#include "freak_fortress_2/vscript.sp"
 #include "freak_fortress_2/weapons.sp"
 
 public Plugin myinfo =
@@ -275,13 +272,15 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	ThisPlugin = myself;
 	
+	Attrib_PluginLoad();
+	CustomAttrib_PluginLoad();
 	Forward_PluginLoad();
 	ForwardOld_PluginLoad();
 	Native_PluginLoad();
 	NativeOld_PluginLoad();
+	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
-	Weapons_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -290,17 +289,19 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
-	if(!TranslationPhraseExists("Difficulty Menu"))
+	if(!TranslationPhraseExists("Sapper Cooldown"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	PlayerHud = CreateHudSynchronizer();
 	
+	Attrib_PluginStart();
 	Attributes_PluginStart();
 	Bosses_PluginStart();
 	Command_PluginStart();
 	ConVar_PluginStart();
+	CustomAttrib_PluginStart();
 	Database_PluginStart();
-	DHook_Setup();
+	DHook_PluginStart();
 	Events_PluginStart();
 	FileNet_PluginStart();
 	Gamemode_PluginStart();
@@ -312,6 +313,7 @@ public void OnPluginStart()
 	SteamWorks_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
+	VScript_PluginStart();
 	Weapons_PluginStart();
 	
 	for(int i = 1; i <= MaxClients; i++)
@@ -324,6 +326,15 @@ public void OnPluginStart()
 public void OnAllPluginsLoaded()
 {
 	Configs_AllPluginsLoaded();
+
+	if(!Attrib_Loaded() && !VScript_Loaded())
+		LogError("[!!!] No attribute manager is loaded, make sure either TF2Attributes or VScript is loaded on the server and compiled into FF2");
+	
+	if(!TFED_Loaded() && !VScript_Loaded())
+		LogError("[!!!] Static attribute and weapons config will have problems, make sure either TFEconData or VScript is loaded on the server and compiled into FF2");
+	
+	if(!CustomAttrib_Loaded())
+		LogError("[!!!] No custom attribute manager is loaded, make sure either TFCustAttr or TFEconDynamic is loaded on the server and compiled into FF2");
 }
 
 public void OnMapInit()
@@ -377,21 +388,29 @@ public void OnPluginEnd()
 
 public void OnLibraryAdded(const char[] name)
 {
+	Attrib_LibraryAdded(name);
+	CustomAttrib_LibraryAdded(name);
+	DHook_LibraryAdded(name);
 	FileNet_LibraryAdded(name);
 	SDKHook_LibraryAdded(name);
 	SteamWorks_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
+	Attrib_LibraryRemoved(name);
+	CustomAttrib_LibraryRemoved(name);
+	DHook_LibraryRemoved(name);
 	FileNet_LibraryRemoved(name);
 	SDKHook_LibraryRemoved(name);
 	SteamWorks_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);
 }
 
@@ -413,6 +432,7 @@ public void OnClientDisconnect(int client)
 	Database_ClientDisconnect(client);
 	Events_CheckAlivePlayers(client);
 	FileNet_ClientDisconnect(client);
+	Music_ClientDisconnect(client);
 	Preference_ClientDisconnect(client);
 	
 	Client(client).ResetByAll();
@@ -437,6 +457,7 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 
 public void TF2_OnConditionAdded(int client, TFCond cond)
 {
+	Bosses_OnConditonAdded(client, cond);
 	Gamemode_ConditionAdded(client, cond);
 }
 

@@ -62,6 +62,24 @@ int FindClientOfBossIndex(int boss = 0)
 	return -1;
 }
 
+bool MultiBosses()
+{
+	bool found;
+
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(Client(client).IsBoss)
+		{
+			if(found)
+				return true;
+			
+			found = true;
+		}
+	}
+	
+	return false;
+}
+
 TFClassType GetClassOfName(const char[] buffer)
 {
 	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
@@ -104,6 +122,18 @@ int TotalPlayersAlive()
 	int amount = PlayersAlive[TFTeam_Red] + PlayersAlive[TFTeam_Blue];
 	if(Cvar[SpecTeam].BoolValue)
 		amount += PlayersAlive[TFTeam_Unassigned] + PlayersAlive[TFTeam_Spectator];
+	
+	return amount;
+}
+
+int TotalPlayersAliveEnemy(int team)
+{
+	int amount;
+	for(int i = Cvar[SpecTeam].BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
+	{
+		if(i != team)
+			amount += PlayersAlive[i];
+	}
 	
 	return amount;
 }
@@ -616,6 +646,9 @@ void ApplySelfHealEvent(int entindex, int amount)
 
 int DamageGoal(int goal, int current, int last)
 {
+	if(!goal)
+		return 0;
+	
 	return (current / goal) - (last / goal);
 }
 
@@ -856,6 +889,32 @@ void ScreenShake(const float pos[3], float amplitude, float frequency, float dur
 		AcceptEntityInput(entity, "AddOutput");
 		AcceptEntityInput(entity, "FireUser1");
 	}
+}
+
+void ImportValuesIntoConfigMap(ConfigMap from, ConfigMap to)
+{
+	StringMapSnapshot snap = from.Snapshot();
+
+	int entries = snap.Length;
+	if(entries)
+	{
+		PackVal val;
+
+		for(int i = 0; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i) + 1;
+
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+
+			from.GetArray(key, val, sizeof(val));
+
+			if(!val.cfg)
+				to.SetArray(key, val, sizeof(val));
+		}
+	}
+
+	delete snap;
 }
 
 void FPrintToChat(int client, const char[] message, any ...)

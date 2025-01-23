@@ -19,6 +19,11 @@
 		"#format"	"{1:N},{2:s},{3:d},{4:d}"
 		"en"		"{teamcolor}{1} {default}became {olive}{2} {default}with {olive}{3} (x{4}) {default}HP."
 	}
+	"You Dealt Damage"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"		"You dealt {1} damage, healed {2} health, and assisted in {3} points."
+	}
 	"You Dealt Damage Hud"
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
@@ -195,6 +200,11 @@
 	{
 		"#format"	"{1:N},{2:d},{3:d},{4:d}"
 		"en"		"{1} - Damage: {2} | Healing: {3} | Assisting: {4}"
+	}
+	"Sapper Cooldown"
+	{
+		"#format"	"{1:d}"
+		"en"		"Sapper: {1}%%"
 	}
 	
 	"Preference Updated"
@@ -681,10 +691,40 @@
 	{
 		"en"		"Demo Charge - Special Attack"
 	}
+	"Gray Mann Bomb Spawned"
+	{
+		"en"		"A bomb has spawned!"
+	}
+	"Gray Mann Bomb Hint"
+	{
+		"en"		"Capture the control point with the bomb!"
+	}
+	"Gray Mann Engineer Bot Spawned"
+	{
+		"en"		"An Engineer has spawned in!"
+	}
+	"Gray Mann Spy Bots Spawned"
+	{
+		"en"		"Spies has spawned in!"
+	}
+	"Gray Mann Sentry Buster Spawned"
+	{
+		"en"		"Sentry Busters has spawned in!"
+	}
+	"Gray Mann Refund"
+	{
+		"#format"	"{1:d}"
+		"en"		"Refunded {1} resources for killing an ally"
+	}
 	
 	"Weapon Menu"
 	{
 		"en"		"FF2 Weapon Changes\n "
+	}
+	"Weapon Menu Variant"
+	{
+		"#format"	"{1:s}"
+		"en"		"FF2 Weapon Changes\nVariant: {1} "
 	}
 	"Disable Weapon Changes"
 	{
@@ -796,10 +836,35 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Successive airblasts on a boss increases airblast cooldown"
 	}
-	"nailgun custom slow"
+	"mod airblast rage"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"On Hit: Causes a stackable slowness on target"
+		"en"		"Airblasting a boss gives {4}%% RAGE"
+	}
+	"mod fire rate hit stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss decreases fire rate by {3}%%"
+	}
+	"mod reload time hit stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss increases reload time by {3}%%"
+	}
+	"mod stun boss on hit"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Stuns boss for {4} seconds"
+	}
+	"mod rage loss on hit"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Drain {4}%% RAGE from a boss on hit"
+	}
+	"jarate is rage loss"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Jarate effect instead drains {4}%% RAGE from a boss"
 	}
 	"milk limit DISPLAY ONLY"
 	{
@@ -819,7 +884,7 @@
 	"jarate limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Jarate effect is limited to {4} damage when applied to a boss"
+		"en"		"Jarate effect only boosts the next {4} damage dealt to a boss"
 	}
 	"boost limit DISPLAY ONLY"
 	{
@@ -839,11 +904,61 @@
 	"cloak on hit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Disables cloaking for {4} seconds when hitting a boss"
+		"en"		"Disables cloaking for {4} seconds when backstabbing a boss"
 	}
 	"cloak and dagger no DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Cloak Type: Normal."
+	}
+	"laugh is slow DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Slows targets by 50%% on hit instead of laughing"
+	}
+	"caber boss crit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"100%% critical hit vs bosses on detonation"
+	}
+	"start with uber DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Start the round with full organ count"
+	}
+	"mark limit DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Mark-for-Death effect only boosts the next {4} damage dealt to a boss"
+	}
+	"health drop on damage DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"A small health pack is dropped every {4} damage dealt to a boss"
+	}
+	"resist effects stuns DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Ranged resistances effect boss stun duration (x{4})"
+	}
+	"kill effects boss hits DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"On kill effects trigger when hitting a boss"
+	}
+	"backstabs DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Backstabs deal a large amount of damage to a boss"
+	}
+	"disguise resistance DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Reduces damage from a boss while disguised"
+	}
+	"sapper boss effect DISPLAY ONLY"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Can be applied to a boss to reduce their damage for a short time"
 	}
 }

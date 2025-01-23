@@ -16,6 +16,7 @@ void TFED_PluginLoad()
 	MarkNativeAsOptional("TF2Econ_GetLocalizedItemName");
 	MarkNativeAsOptional("TF2Econ_GetAttributeDefinitionString");
 	MarkNativeAsOptional("TF2Econ_TranslateAttributeNameToDefinitionIndex");
+	MarkNativeAsOptional("TF2Econ_GetAttributeName");
 	#endif
 }
 
@@ -26,7 +27,7 @@ void TFED_PluginStart()
 	#endif
 }
 
-stock void TFED_LibraryAdded(const char[] name)
+public void TFED_LibraryAdded(const char[] name)
 {
 	#if defined __tf_econ_data_included
 	if(!Loaded && StrEqual(name, TFED_LIBRARY))
@@ -34,7 +35,7 @@ stock void TFED_LibraryAdded(const char[] name)
 	#endif
 }
 
-stock void TFED_LibraryRemoved(const char[] name)
+public void TFED_LibraryRemoved(const char[] name)
 {
 	#if defined __tf_econ_data_included
 	if(Loaded && StrEqual(name, TFED_LIBRARY))
@@ -42,7 +43,29 @@ stock void TFED_LibraryRemoved(const char[] name)
 	#endif
 }
 
+stock bool TFED_Loaded()
+{
+	#if defined __tf_econ_data_included
+	return Loaded;
+	#else
+	return false;
+	#endif
+}
+
+stock void TFED_PrintStatus()
+{
+	#if defined __tf_econ_data_included
+	PrintToServer("'%s' is %sloaded", TFED_LIBRARY, Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", TFED_LIBRARY);
+	#endif
+}
+
 stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
+{
+	return _TFED_GetItemDefinitionString(itemdef, key, buffer, maxlen, defaultValue);
+}
+public bool _TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue)
 {
 	//TODO: Find a way to use m_pszItemIconClassname instead
 	
@@ -62,7 +85,7 @@ stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, cons
 		return true;
 	#endif
 	
-	if(classname[0])
+	if(classname[0] && itemdef >= 0)
 	{
 		static const char SlotNames[][] = { "#TR_Primary", "#TR_Secondary", "#TR_Melee", "#TF_Weapon_PDA_Engineer", "#LoadoutSlot_Utility", "#LoadoutSlot_Building", "#LoadoutSlot_Action" };
 		int slot = TF2_GetClassnameSlot(classname);
@@ -75,6 +98,10 @@ stock bool TF2ED_GetLocalizedItemName(int itemdef, char[] name, int maxlen, cons
 
 stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)
 {
+	return _TF2ED_GetAttributeDefinitionString(attrdef, key, buffer, maxlen, defaultValue);
+}
+public bool _TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue)
+{
 	#if defined __tf_econ_data_included
 	if(Loaded)
 		return TF2Econ_GetAttributeDefinitionString(attrdef, key, buffer, maxlen, defaultValue);
@@ -84,7 +111,7 @@ stock bool TF2ED_GetAttributeDefinitionString(int attrdef, const char[] key, cha
 	return false;
 }
 
-stock int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] key)
+public int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] key)
 {
 	#if defined __tf_econ_data_included
 	if(Loaded)
@@ -92,4 +119,15 @@ stock int TF2ED_TranslateAttributeNameToDefinitionIndex(const char[] key)
 	#endif
 	
 	return -1;
+}
+
+public bool TF2ED_GetAttributeName(int attrdef, char[] buffer, int maxlen)
+{
+	#if defined __tf_econ_data_included
+	if(Loaded)
+		return TF2Econ_GetAttributeName(attrdef, buffer, maxlen);
+	#endif
+	
+	buffer[0] = 0;
+	return false;
 }

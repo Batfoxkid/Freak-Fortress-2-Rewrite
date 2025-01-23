@@ -126,22 +126,16 @@
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <ff2r>
-#include <tf2attributes>
-#include <tf_econ_data>
+#undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
-#tryinclude <tf2utils>
 
 #pragma semicolon 1
 #pragma newdecls required
-
-#include "freak_fortress_2/formula_parser.sp"
 
 #define PLUGIN_VERSION	"Custom"
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
-
-#define TF2U_LIBRARY	"nosoop_tf2utils"
 
 #define	HITGROUP_GENERIC	0
 #define	HITGROUP_HEAD		1
@@ -186,10 +180,6 @@ enum
 	EF_MAX_BITS = 10
 };
 
-#if defined __nosoop_tf2_utils_included
-bool TF2ULoaded;
-#endif
-
 Handle SDKCanAirDash;
 Handle SDKCreate;
 Handle SDKEquipWearable;
@@ -199,7 +189,6 @@ Handle SDKInitPickedUpWeapon;
 Handle SDKSetSpeed;
 int PlayersAlive[4];
 Handle SyncHud;
-bool SpecTeam;
 
 ConVar CvarDebug;
 ConVar CvarCheats;
@@ -240,6 +229,12 @@ float WallSpeedMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallJumpMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
 
+#include "freak_fortress_2/econdata.sp"
+#include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/tf2attributes.sp"
+#include "freak_fortress_2/tf2utils.sp"
+#include "freak_fortress_2/vscript.sp"
+
 public Plugin myinfo =
 {
 	name		=	"Freak Fortress 2: Rewrite - Epic Abilities",
@@ -249,13 +244,13 @@ public Plugin myinfo =
 	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
-#if defined __nosoop_tf2_utils_included
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	MarkNativeAsOptional("TF2Util_EquipPlayerWearable");
+	Attrib_PluginLoad();
+	TF2U_PluginLoad();
+	TFED_PluginLoad();
 	return APLRes_Success;
 }
-#endif
 
 public void OnPluginStart()
 {
@@ -339,9 +334,10 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	#if defined __nosoop_tf2_utils_included
-	TF2ULoaded = LibraryExists(TF2U_LIBRARY);
-	#endif
+	Attrib_PluginStart();
+	TF2U_PluginStart();
+	TFED_PluginStart();
+	VScript_PluginStart();
 	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
@@ -689,8 +685,6 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	{
 		PlayersAlive[i] = alive[i];
 	}
-	
-	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
 public void FF2R_OnBossModifier(int client, ConfigData cfg)
@@ -732,9 +726,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				
 				EquipPlayerWeapon(client, weapon);
 				
-				TF2Attrib_SetByDefIndex(weapon, 128, 1.0);
-				TF2Attrib_SetByDefIndex(weapon, 303, -1.0);
-				TF2Attrib_SetByDefIndex(weapon, 821, 1.0);
+				Attrib_Set(weapon, "provide on active", 1.0);
+				Attrib_Set(weapon, "mod max primary clip override", -1.0);
+				Attrib_Set(weapon, "no_attack", 1.0);
 				
 				RazorbackRef[client] = EntIndexToEntRef(weapon);
 				
@@ -783,19 +777,21 @@ public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 	return CanPickup[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
 }
 
-#if defined __nosoop_tf2_utils_included
 public void OnLibraryAdded(const char[] name)
 {
-	if(!TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = true;
+	Attrib_LibraryAdded(name);
+	TF2U_LibraryAdded(name);
+	TFED_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
-	if(TF2ULoaded && StrEqual(name, TF2U_LIBRARY))
-		TF2ULoaded = false;
+	Attrib_LibraryRemoved(name);
+	TF2U_LibraryRemoved(name);
+	TFED_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 }
-#endif
 
 public void OnClientPutInServer(int client)
 {
@@ -869,8 +865,8 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	{
 		if(GetEntityFlags(client) & FL_ONGROUND)
 		{
-			JumperAttribRestore(client, 107, WallSpeedMulti[client]);
-			JumperAttribRestore(client, 443, WallJumpMulti[client]);
+			JumperAttribRestore(client, "move speed bonus", WallSpeedMulti[client]);
+			JumperAttribRestore(client, "major increased jump height", WallJumpMulti[client]);
 			WallStale[client] = 0;
 		}
 	}
@@ -881,7 +877,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		if(value < 1.0)
 			value = 1.0;
 		
-		JumperAttribApply(client, 610, WallAirMulti[client], value);
+		JumperAttribApply(client, "increased air control", WallAirMulti[client], value);
 	}
 	
 	if(HasAbility[client] && IsPlayerAlive(client))
@@ -894,7 +890,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 			bool hud;
 			float gameTime = GetGameTime();
 			
-			int dead = -1;
+			int summonable = -1;
 			int allies = -1;
 			int count = -1;
 			static int button[4];
@@ -920,7 +916,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -944,7 +940,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -968,7 +964,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						int length = snap.Length;
 						if(HasAbility[client] == -1 && length > i)
 						{
-							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, dead, allies);
+							hud = ActivateAbility(client, boss, spells, snap, i, gameTime, summonable, allies);
 						}
 						else
 						{
@@ -1085,11 +1081,11 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs One Life");
 									}
-									else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+									else if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Partner");
 									}
-									else if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+									else if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 									{
 										Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Rage Needs Summon");
 									}
@@ -1263,13 +1259,13 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									blocked = true;
 								}
 								
-								if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+								if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 								{
 									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Partner");
 									blocked = true;
 								}
 								
-								if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+								if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 								{
 									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Rage Needs Summon");
 									blocked = true;
@@ -1305,7 +1301,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	}
 }
 
-public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
+void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	for(int client = 1; client <= MaxClients; client++)
 	{
@@ -1324,7 +1320,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	TriggerTimer(TimescaleTimer);
 }
 
-public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
+Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
 {
 	bf.ReadByte();
 	int victim = bf.ReadByte();
@@ -1338,7 +1334,7 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 			{
 				entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 				if(entity != -1)
-					SetPlayerActiveWeapon(victim, entity);
+					TF2U_SetPlayerActiveWeapon(victim, entity);
 			}
 		}
 		
@@ -1358,7 +1354,7 @@ public Action OnShieldBlocked(UserMsg msg_id, BfRead bf, const int[] players, in
 	return Plugin_Continue;
 }
 
-public Action Timer_WeaponSwitch(Handle handle, int userid)
+Action Timer_WeaponSwitch(Handle handle, int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client && HookedWeaponSwap[client])
@@ -1438,7 +1434,7 @@ public void OnWeaponSwitch(int client, int weapon)
 							SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 							
 							ability.SetInt("tpref", EntIndexToEntRef(entity));
-							EquipWearable(client, entity);
+							TF2U_EquipPlayerWearable(client, entity);
 							
 							SetEntProp(entity, Prop_Send, "m_fEffects", 0);
 							
@@ -1513,7 +1509,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
 					
 					BodyRef[client] = EntIndexToEntRef(entity);
-					EquipWearable(client, entity);
+					TF2U_EquipPlayerWearable(client, entity);
 					
 					SetEntityRenderFx(client, RENDERFX_FADE_FAST);
 					
@@ -1540,7 +1536,7 @@ public void OnWeaponSwitch(int client, int weapon)
 					SDKHook(entity, SDKHook_SetTransmit, FirstPersonTransmit);
 					
 					HandRef[client] = EntIndexToEntRef(entity);
-					EquipWearable(client, entity);
+					TF2U_EquipPlayerWearable(client, entity);
 				}
 			}
 			
@@ -1560,7 +1556,7 @@ public void OnWeaponSwitch(int client, int weapon)
 				SDKHook(entity, SDKHook_SetTransmit, FirstPersonTransmit);
 				
 				WeapRef[client] = EntIndexToEntRef(entity);
-				EquipWearable(client, entity);
+				TF2U_EquipPlayerWearable(client, entity);
 				
 				entity = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
 				if(entity != -1)
@@ -1619,7 +1615,7 @@ public void OnWeaponSwitch(int client, int weapon)
 	}
 }
 
-public Action FirstPersonTransmit(int entity, int client)
+Action FirstPersonTransmit(int entity, int client)
 {
 	if(client > 0 && client <= MaxClients)
 	{
@@ -1700,10 +1696,11 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 			EquipPlayerWeapon(client, entity);
 			SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
 			
-			SetPlayerActiveWeapon(client, entity);
+			TF2U_SetPlayerActiveWeapon(client, entity);
 		}
 		else
 		{
+			RegenerateSupply(client);
 			ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
 		}
 		
@@ -1713,9 +1710,9 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 	return MRES_Ignored;
 }
 
-bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &dead = -2, int &allies = -2)
+bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &summonable = -2, int &allies = -2)
 {
-	bool refund = dead == -2;
+	bool refund = summonable == -2;
 	
 	int length = snap.KeyBufferSize(index)+1;
 	char[] key = new char[length];
@@ -1729,10 +1726,10 @@ bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapsho
 		if(cfg.GetFloat("delay") < gameTime)
 		{
 			int flags = cfg.GetInt("flags");
-			if((flags & MAG_SUMMON) && GetDeadCount(client, dead, allies) && !dead)
+			if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
 			{
 			}
-			else if((flags & MAG_PARTNER) && GetDeadCount(client, dead, allies) && !allies)
+			else if((flags & MAG_PARTNER) && GetDeadCount(client, summonable, allies) && !allies)
 			{
 			}
 			else if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
@@ -1820,31 +1817,29 @@ bool ChangeAbility(int client, BossData boss, ConfigData ability, ConfigData spe
 	return true;
 }
 
-bool GetDeadCount(int client, int &dead, int &allies)
+bool GetDeadCount(int client, int &summonable, int &allies)
 {
-	if(dead < 0 || allies < 0)
+	if(summonable < 0 || allies < 0)
 	{
-		dead = 0;
+		summonable = 0;
 		allies = 0;
 		
-		int team = GetClientTeam(client);
+		int team1 = GetClientTeam(client);
 		for(int i = 1; i <= MaxClients; i++)
 		{
 			if(i != client && IsClientInGame(i))
 			{
+				int team2 = GetClientTeam(i);
+
 				if(FF2R_GetBossData(i))
 				{
-					if(GetClientTeam(i) == team)
+					if(IsPlayerAlive(i) && team1 == team2)
 						allies++;
 				}
-				else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
+				else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
 				{
-					if(!IsPlayerAlive(i))
-						dead++;
-				}
-				else if(!SpecTeam && IsPlayerAlive(i))
-				{
-					dead++;
+					if(team1 == team2 || !IsPlayerAlive(i))
+						summonable++;
 				}
 			}
 		}
@@ -1889,12 +1884,12 @@ void RemoveWeaponSwapHooks(int client)
 	}
 }
 
-public Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+Action DodgeTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	return Plugin_Handled;
 }
 
-public Action Timer_RestoreTime(Handle timer, int userid)
+Action Timer_RestoreTime(Handle timer, int userid)
 {
 	TimescaleTimer = null;
 	UnhookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_PostNoCopy);
@@ -1937,7 +1932,7 @@ void TimescaleSound(int client, float current, float newvalue)
 	}
 }
 
-public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
+Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &ammotype, int hitbox, int hitgroup)
 {
 	if(attacker > 0 && attacker <= MaxClients && StealNext[attacker] && RazorbackDeployed[victim] == INVALID_ENT_REFERENCE &&
 	  !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
@@ -2022,15 +2017,12 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						while((index = FindEntityByClassname(index, "obj_*")) != -1)
 						{
 							if(GetEntPropEnt(index, Prop_Send, "m_hBuilder") == victim)
-							{
-								SetEntPropEnt(index, Prop_Send, "m_hBuilder", -1);
 								SetEntProp(index, Prop_Send, "m_bDisabled", true);
-							}
 						}
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "9", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2054,7 +2046,7 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "8", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						return Plugin_Handled;
@@ -2124,12 +2116,12 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 						
 						index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(index != -1)
-							SetPlayerActiveWeapon(victim, index);
+							TF2U_SetPlayerActiveWeapon(victim, index);
 						
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, "6", victim, SNDCHAN_VOICE, 90, _, 1.0);
 						
-						ApplyHealEvent(attacker, attacker, 600);
-						SetEntityHealth(attacker, GetClientHealth(attacker) + 600);
+						ApplyHealEvent(attacker, attacker, 1000);
+						SetEntityHealth(attacker, GetClientHealth(attacker) + 1000);
 						return Plugin_Handled;
 					}
 				}
@@ -2220,12 +2212,9 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 					}
 					
 					float value = 1.0;
-					Address attrib = TF2Attrib_GetByDefIndex(weapon, 2);
-					if(attrib != Address_Null)
-						value = TF2Attrib_GetValue(attrib);
-					
-					TF2Attrib_SetByDefIndex(weapon, 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
-					TF2Attrib_SetByDefIndex(weapon, 28, 0.1);
+					Attrib_Get(weapon, "damage bonus", value);
+					Attrib_Set(weapon, "damage bonus", value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
+					Attrib_Set(weapon, "crit mod disabled hidden", 0.1);
 					
 					int entity = CreateEntityByName("item_ammopack_medium");
 					if(entity != -1)
@@ -2281,6 +2270,8 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								SetEntProp(index, Prop_Send, "m_bValidatedAttachedEntity", true);
 								
 								EquipPlayerWeapon(victim, index);
+
+								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
 						}
 						else if(TF2_GetClassnameSlot(classname) == TFWeaponSlot_Melee)
@@ -2300,14 +2291,16 @@ public Action StealingTraceAttack(int victim, int &attacker, int &inflictor, flo
 								EquipPlayerWeapon(victim, index);
 								
 								if(StrContains(classname, "tf_weapon_fists") == -1)
-									TF2Attrib_SetByDefIndex(index, 138, 0.5);
+									Attrib_Set(index, "dmg penalty vs players", 0.5);
+								
+								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
 						}
 						else
 						{
 							index = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 							if(index != -1)
-								SetPlayerActiveWeapon(victim, index);
+								TF2U_SetPlayerActiveWeapon(victim, index);
 						}
 						
 						IntToString(view_as<int>(TF2_GetPlayerClass(victim)), classname, sizeof(classname));
@@ -2335,6 +2328,12 @@ void StealFromBoss(int victim, int attacker)
 	StealNext[attacker] = 0;
 	
 	TF2_RegeneratePlayer(attacker);
+}
+
+void RegenerateSupply(int client)
+{
+	SetHealthTo[client] = GetClientHealth(client);
+	TF2_RegeneratePlayer(client);
 }
 
 int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float ang[3])
@@ -2405,12 +2404,12 @@ int EquipRazorback(int client)
 		SetEntProp(wearable, Prop_Send, "m_bValidatedAttachedEntity", true);
 		SetEntProp(wearable, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 		
-		EquipWearable(client, wearable);
+		TF2U_EquipPlayerWearable(client, wearable);
 	}
 	return wearable;
 }
 
-public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(attacker > 0 && attacker <= MaxClients && damagecustom != TF_CUSTOM_BACKSTAB && !IsInvuln(victim) && (GetClientTeam(victim) != GetClientTeam(attacker) || CvarFriendlyFire.BoolValue))
 	{
@@ -2450,7 +2449,7 @@ public Action RazorbackTakeDamage(int victim, int &attacker, int &inflictor, flo
 						
 						entity = GetPlayerWeaponSlot(victim, TFWeaponSlot_Melee);
 						if(entity != -1)
-							SetPlayerActiveWeapon(victim, entity);
+							TF2U_SetPlayerActiveWeapon(victim, entity);
 					}
 					
 					entity = EntRefToEntIndex(ability.GetInt("wearableref", INVALID_ENT_REFERENCE));
@@ -2545,11 +2544,11 @@ bool JumperTestJump(int client, bool success)
 							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
 						}
 						
-						JumperAttribApply(client, 610, WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
+						JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
 					}
 					
-					JumperAttribApply(client, 107, WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
-					JumperAttribApply(client, 443, WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
+					JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
+					JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
 				}
 				
 				delete trace;
@@ -2561,11 +2560,11 @@ bool JumperTestJump(int client, bool success)
 		
 		if(!jumped)
 		{
-			JumperAttribApply(client, 107, WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
-			JumperAttribApply(client, 443, WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
+			JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
+			JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
 			
 			if(!WallInLagComp)
-				JumperAttribApply(client, 610, WallAirMulti[client], ability.GetFloat("double_air", 1.0));
+				JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("double_air", 1.0));
 		}
 		else if(!WallInLagComp)
 		{
@@ -2579,52 +2578,48 @@ bool JumperTestJump(int client, bool success)
 	return false;
 }
 
-void JumperAttribApply(int client, int index, float &current, float multi)
+void JumperAttribApply(int client, const char[] name, float &current, float multi)
 {
 	if(multi != current)
 	{
 		float value = 1.0;
-		Address attrib = TF2Attrib_GetByDefIndex(client, index);
-		if(attrib != Address_Null)
-			value = TF2Attrib_GetValue(attrib);
+		bool found = Attrib_Get(client, name, value);
 		
 		value *= multi / current;
 		if(value > 1.01 || value < 0.99)
 		{
-			TF2Attrib_SetByDefIndex(client, index, value);
+			Attrib_Set(client, name, value);
 		}
-		else if(attrib != Address_Null)
+		else if(found)
 		{
-			TF2Attrib_RemoveByDefIndex(client, index);
+			Attrib_Remove(client, name);
 		}
 		
 		current = multi;
-		if(index == 107)
+		if(StrEqual(name, "move speed bonus"))
 			SDKCall(SDKSetSpeed, client);
 	}
 }
 
-void JumperAttribRestore(int client, int index, float &current)
+void JumperAttribRestore(int client, const char[] name, float &current)
 {
 	if(current != 1.0)
 	{
 		float value = 1.0;
-		Address attrib = TF2Attrib_GetByDefIndex(client, index);
-		if(attrib != Address_Null)
-			value = TF2Attrib_GetValue(attrib);
+		bool found = Attrib_Get(client, name, value);
 		
 		value /= current;
 		if(value > 1.01 || value < 0.99)
 		{
-			TF2Attrib_SetByDefIndex(client, index, value);
+			Attrib_Set(client, name, value);
 		}
-		else if(attrib != Address_Null)
+		else if(found)
 		{
-			TF2Attrib_RemoveByDefIndex(client, index);
+			Attrib_Remove(client, name);
 		}
 		
 		current = 1.0;
-		if(index == 107)
+		if(StrEqual(name, "move speed bonus"))
 			SDKCall(SDKSetSpeed, client);
 	}
 }
@@ -2931,16 +2926,8 @@ void ApplyHealEvent(int patient, int healer, int amount)
 	event.Fire();
 }
 
-void EquipWearable(int client, int entity)
+void SDKCall_EquipWearable(int client, int entity)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
-	{
-		TF2Util_EquipPlayerWearable(client, entity);
-		return;
-	}
-	#endif
-	
 	if(SDKEquipWearable)
 	{
 		SDKCall(SDKEquipWearable, client, entity);
@@ -2951,20 +2938,31 @@ void EquipWearable(int client, int entity)
 	}
 }
 
-void SetPlayerActiveWeapon(int client, int entity)
+stock int SDKCall_GetMaxHealth(int client)
 {
-	#if defined __nosoop_tf2_utils_included
-	if(TF2ULoaded)
+	return client;
+}
+
+bool TF2_GetItem(int client, int &weapon, int &pos)
+{
+	//TODO: Find out if we need to check m_bDisguiseWeapon
+	
+	static int maxWeapons;
+	if(!maxWeapons)
+		maxWeapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+	
+	if(pos < 0)
+		pos = 0;
+	
+	while(pos < maxWeapons)
 	{
-		TF2Util_SetPlayerActiveWeapon(client, entity);
+		weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", pos);
+		pos++;
+		
+		if(weapon != -1)
+			return true;
 	}
-	else
-	#endif
-	{
-		char buffer[36];
-		GetEntityClassname(entity, buffer, sizeof(buffer));
-		ClientCommand(client, "use %s", buffer);
-	}
+	return false;
 }
 
 public bool Trace_WorldOnly(int entity, int contentsMask)

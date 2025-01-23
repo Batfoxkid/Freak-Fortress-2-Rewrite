@@ -1,0 +1,42 @@
+"VertexLitGeneric"
+{
+//	"$basetexture" "freak_fortress_2/graymann/hwm/graymann_head"
+	"$basetexture" "freak_fortress_2/graymann/hwm/graymann_head_alpha"
+
+	"$bumpmap" "models\player/shared/shared_normal"
+
+
+	"$stretch" "freak_fortress_2/graymann/hwm/graymann_head_stretch"
+	"$compress" "freak_fortress_2/graymann/hwm/graymann_head_compress"
+
+	"$phong" "1"
+	"$phongexponenttexture" "freak_fortress_2/graymann/hwm/graymann_head_exponent"
+	"$phongexponent" "10"
+
+	"$phongboost" "1"	
+//	"$phongboost" ".3"	
+
+	"$phongalbedotint" "1"
+
+	"$lightwarptexture" "models/player/pyro/pyro_lightwarp"
+	"$phongfresnelranges"	"[.3 1 8]"
+	"$basemapalphaphongmask" "1"
+
+	"$halflambert" "0"
+
+	// Rim lighting parameters
+	"$rimlight" "1"		
+	"$rimlightexponent" "4"					
+	"$rimlightboost" "2"	
+
+	"$rimmask" "1"  	
+
+	// Cloaking
+	"$cloakPassEnabled" "1"
+	"Proxies"
+	{
+		"spy_invis"
+		{
+		}
+	}
+}

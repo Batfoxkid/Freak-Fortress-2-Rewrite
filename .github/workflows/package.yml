@@ -19,7 +19,7 @@ jobs:
       - name: Install Setup SP
         uses: rumblefrog/setup-sp@master
         with:
-          version: '1.11.x'
+          version: '1.12.x'
       
       - name: Get GitHub Env
         run: |
@@ -39,6 +39,7 @@ jobs:
           spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities" ff2r_default_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities" ff2r_epic_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities" ff2r_gray_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
@@ -63,6 +64,12 @@ jobs:
         with:
           args: zip -qq -r Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Epic-Scout
       
+      - name: Package Gray Mann
+        uses: montudor/action-zip@v1.0.0
+        if: "contains(github.event.head_commit.message, '[G]')"
+        with:
+          args: zip -qq -r Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Gray-Mann
+      
       - name: Release
         uses: softprops/action-gh-release@master
         with:
@@ -71,6 +78,7 @@ jobs:
             New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
   
   nonrelease:
     runs-on: ubuntu-latest
@@ -83,7 +91,7 @@ jobs:
       - name: Install Setup SP
         uses: rumblefrog/setup-sp@master
         with:
-          version: '1.11.x'
+          version: '1.12.x'
       
       - name: Get GitHub Env
         run: |
@@ -103,6 +111,7 @@ jobs:
           spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities" ff2r_default_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities" ff2r_epic_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities" ff2r_gray_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
@@ -126,3 +135,9 @@ jobs:
         with:
           name: Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./Epic-Scout
+      
+      - name: Upload Gray Mann
+        uses: actions/upload-artifact@master
+        with:
+          name: Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./Gray-Mann

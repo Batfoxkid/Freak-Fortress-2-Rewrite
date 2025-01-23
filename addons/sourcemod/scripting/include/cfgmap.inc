@@ -351,7 +351,7 @@ methodmap ConfigMap < StringMap {
 		PackVal val;
 		val.tag = KeyValType_Section;
 		val.cfg = view_as< ConfigMap >(new StringMap());
-		val.size = sizeof(val.cfg);
+		val.size = 1;
 		this.SetArray(key_path, val, sizeof(val));
 		return val.cfg;
 	}
@@ -643,6 +643,9 @@ methodmap ConfigMap < StringMap {
 		IntToString(key, key_str, sizeof(key_str));
 		return this.GetBool(key_str, b, simple);
 	}
+	
+	public void GetString() { }
+	public void SetString() { }
 };
 
 enum struct PackVal {
@@ -714,7 +717,7 @@ public SMCResult ConfigMap_OnEndSection(SMCParser smc)
 		
 		PackVal val;
 		val.cfg = view_as<ConfigMap>(g_kvstate.top);
-		val.size = sizeof(g_kvstate.top);
+		val.size = 1;
 		val.tag = KeyValType_Section;
 		
 		if( StrEqual(g_kvstate.curr_section, "<ENUM>") ) {

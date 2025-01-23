@@ -79,11 +79,11 @@
 #include <adt_trie_sort>
 #include <cfgmap>
 #include <ff2r>
+#undef REQUIRE_EXTENSIONS
+#undef REQUIRE_PLUGIN
 
 #pragma semicolon 1
 #pragma newdecls required
-
-#include "freak_fortress_2/formula_parser.sp"
 
 #define PLUGIN_VERSION	"Custom"
 
@@ -111,7 +111,8 @@ bool ViewingMenu[MAXTF2PLAYERS];
 int ViewingPage[MAXTF2PLAYERS];
 bool SetupMode[MAXTF2PLAYERS];
 int PlayersAlive[4];
-bool SpecTeam;
+
+#include "freak_fortress_2/formula_parser.sp"
 
 public Plugin myinfo =
 {
@@ -326,8 +327,6 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	{
 		PlayersAlive[i] = alive[i];
 	}
-	
-	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
 public void FF2R_OnBossModifier(int client, ConfigData cfg)
@@ -410,7 +409,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 	}
 }
 
-public Action Timer_MenuTick(Handle timer, int client)
+Action Timer_MenuTick(Handle timer, int client)
 {
 	if(IsClientInGame(client) && ShowMenuAll(client, !SetupMode[client]))
 		return Plugin_Continue;
@@ -587,25 +586,23 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 		
 		limited = view_as<bool>(ability.GetInt("limit"));
 		
-		int team = GetClientTeam(client);
-		int dead, allies;
+		int team1 = GetClientTeam(client);
+		int summonable, allies;
 		for(int i = 1; i <= MaxClients; i++)
 		{
 			if(i != client && IsClientInGame(i))
 			{
+				int team2 = GetClientTeam(i);
+
 				if(FF2R_GetBossData(i))
 				{
-					if(IsPlayerAlive(i) && GetClientTeam(i) == team)
+					if(IsPlayerAlive(i) && team1 == team2)
 						allies++;
 				}
-				else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
+				else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
 				{
-					if(!IsPlayerAlive(i))
-						dead++;
-				}
-				else if(!SpecTeam && IsPlayerAlive(i))
-				{
-					dead++;
+					if(team1 == team2 || !IsPlayerAlive(i))
+						summonable++;
 				}
 			}
 		}
@@ -715,7 +712,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				if(!blocked)
 				{
 					int flags = spell.GetInt("flags");
-					if((flags & MAG_SUMMON) && !dead)
+					if((flags & MAG_SUMMON) && !summonable)
 					{
 						blocked = true;
 					}
@@ -875,32 +872,30 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 								{
 									bool blocked;
 									var1 = spell.GetInt("flags");
-									if(var1 & MAG_SUMMON|MAG_PARTNER)
+									if(var1 & (MAG_SUMMON|MAG_PARTNER))
 									{
-										int team = GetClientTeam(client);
-										int dead, allies;
+										int team1 = GetClientTeam(client);
+										int summonable, allies;
 										for(int i = 1; i <= MaxClients; i++)
 										{
 											if(i != client && IsClientInGame(i))
 											{
+												int team2 = GetClientTeam(i);
+
 												if(FF2R_GetBossData(i))
 												{
-													if(IsPlayerAlive(i) && GetClientTeam(i) == team)
+													if(IsPlayerAlive(i) && team1 == team2)
 														allies++;
 												}
-												else if(GetClientTeam(i) > view_as<int>(TFTeam_Spectator))
+												else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
 												{
-													if(!IsPlayerAlive(i))
-														dead++;
-												}
-												else if(!SpecTeam && IsPlayerAlive(i))
-												{
-													dead++;
+													if(team1 == team2 || !IsPlayerAlive(i))
+														summonable++;
 												}
 											}
 										}
 										
-										if((var1 & MAG_SUMMON) && !dead)
+										if((var1 & MAG_SUMMON) && !summonable)
 										{
 											blocked = true;
 										}
@@ -1153,7 +1148,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 	}
 }
 
-public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
 	{
@@ -1237,7 +1232,7 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
+void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
 	{
@@ -1254,7 +1249,7 @@ public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
+void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled && !event.GetInt("weaponid")) 
 	{

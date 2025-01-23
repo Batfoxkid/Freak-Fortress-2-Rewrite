@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        sm-version: [ '1.11.x', '1.12.x']
+        sm-version: [ '1.12.x', '1.13.x']
     
     steps:
       - name: Install Checkout
@@ -46,5 +46,6 @@ jobs:
           spcomp -E -O2 -v2 -i "include" freak_fortress_2.sp
           spcomp -E -O2 -v2 -i "include" ff2r_default_abilities.sp
           spcomp -E -O2 -v2 -i "include" ff2r_epic_abilities.sp
+          spcomp -E -O2 -v2 -i "include" ff2r_gray_abilities.sp
           spcomp -E -O2 -v2 -i "include" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}

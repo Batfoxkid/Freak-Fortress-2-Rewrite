@@ -17,6 +17,3 @@ done
 # Install Required Includes
 cd include
 wget "https://raw.githubusercontent.com/DoctorMcKay/sourcemod-plugins/master/scripting/include/morecolors.inc"
-wget "https://raw.githubusercontent.com/peace-maker/DHooks2/dynhooks/sourcemod_files/scripting/include/dhooks.inc"
-wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc"
-wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/scripting/include/tf2attributes.inc"

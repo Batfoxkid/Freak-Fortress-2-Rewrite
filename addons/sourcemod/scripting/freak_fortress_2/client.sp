@@ -15,6 +15,9 @@ static bool Glowing[MAXTF2PLAYERS];
 static float GlowFor[MAXTF2PLAYERS];
 static float OverlayFor[MAXTF2PLAYERS];
 static float RefreshAt[MAXTF2PLAYERS];
+static int HoldingButton[MAXTF2PLAYERS];
+static float SapperCooldownFor[MAXTF2PLAYERS];
+static char LoadoutName[MAXTF2PLAYERS][32];
 static int Damage[MAXTF2PLAYERS][6];
 static int TotalDamage[MAXTF2PLAYERS];
 static int Assist[MAXTF2PLAYERS];
@@ -199,6 +202,40 @@ methodmap Client
 		{
 			RefreshAt[view_as<int>(this)] = time;
 		}
+	}
+	
+	property int HoldingButton
+	{
+		public get()
+		{
+			return HoldingButton[view_as<int>(this)];
+		}
+		public set(int value)
+		{
+			HoldingButton[view_as<int>(this)] = value;
+		}
+	}
+	
+	property float SapperCooldownFor
+	{
+		public get()
+		{
+			return SapperCooldownFor[view_as<int>(this)];
+		}
+		public set(float time)
+		{
+			SapperCooldownFor[view_as<int>(this)] = time;
+		}
+	}
+	
+	public int GetLoadout(char[] buffer, int length)
+	{
+		return strcopy(buffer, length, LoadoutName[view_as<int>(this)]);
+	}
+	
+	public void SetLoadout(const char[] buffer)
+	{
+		strcopy(LoadoutName[view_as<int>(this)], sizeof(LoadoutName[]), buffer);
 	}
 	
 	property int Damage
