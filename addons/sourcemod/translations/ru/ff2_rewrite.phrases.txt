@@ -765,7 +765,7 @@
 	}
 	"mod fire rate hit stale"
 	{
-		"ru"		"Последовательные попадания по боссу снижаю скорострельность на {3}%%"
+		"ru"		"Последовательные попадания по боссу снижат скорострельность на {3}%%"
 	}
 	"mod reload time hit stale"
 	{
@@ -841,7 +841,7 @@
 	}
 	"resist effects stuns DISPLAY ONLY"
 	{
-		"ru"		"Ranged resistances effect boss stun duration (x{4})"
+		"ru"		"Сопротивление дальнему бою влияет на длительность оглушения босса (x{4})"
 	}
 	"kill effects boss hits DISPLAY ONLY"
 	{
