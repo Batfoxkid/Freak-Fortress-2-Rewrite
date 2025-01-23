@@ -648,7 +648,7 @@
 	}
 	"Gray Mann Sentry Buster Spawned"
 	{
-		"ru"		"Появился разрушитель турелей!"
+		"ru"		"Появились разрушители турелей!"
 	}
 	"Gray Mann Refund"
 	{
