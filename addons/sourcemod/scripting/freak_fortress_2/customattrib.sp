@@ -712,7 +712,7 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 
 void CustomAttrib_OnHitBossPost(int attacker, int newPlayerDamage, int lastPlayerDamage)
 {
-	float value = CustomAttrib_FindOnPlayer(attacker, "primary ammo from damage", true);
+	float value = CustomAttrib_FindOnPlayer(attacker, "primary ammo from damage");
 	if(value)
 	{
 		int ammo = DamageGoal(RoundFloat(value), newPlayerDamage, lastPlayerDamage);
@@ -729,7 +729,7 @@ void CustomAttrib_OnHitBossPost(int attacker, int newPlayerDamage, int lastPlaye
 		}
 	}
 
-	value = CustomAttrib_FindOnPlayer(attacker, "secondary ammo from damage", true);
+	value = CustomAttrib_FindOnPlayer(attacker, "secondary ammo from damage");
 	if(value)
 	{
 		int ammo = DamageGoal(RoundFloat(value), newPlayerDamage, lastPlayerDamage);
@@ -909,7 +909,7 @@ static void ApplyRage(int victim, int attacker, float amount)
 			Client(victim).SetCharge(0, rage);
 
 			rage = amount / 100.0 * Client(victim).RageDamage;
-			Client(attacker).Assist += GetClientTeam(victim) == GetClientTeam(attacker) ? rage : -rage;
+			Client(attacker).Assist += RoundFloat(GetClientTeam(victim) == GetClientTeam(attacker) ? rage : -rage);
 		}
 	}
 }
