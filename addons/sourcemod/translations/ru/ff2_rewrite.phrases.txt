@@ -19,7 +19,7 @@
 	}
 	"You Dealt Damage"
 	{
-		"ru"		"Ты нанёс {1} урона, вылечил {2} ОЗ и помог на {3} очков."
+		"ru"		"Ты нанёс {olive}{1} {default}урона, вылечил {olive}{2} {default}ОЗ и помог на {olive}{3} {default}очков."
 	}
 	"You Dealt Damage Hud"
 	{

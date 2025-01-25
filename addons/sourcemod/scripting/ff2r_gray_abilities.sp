@@ -153,6 +153,8 @@ static const char LoopingSounds[][] =
 	""
 };
 
+native void FF2_SetClientGlow(int client, float add, float set=-1.0);
+
 Handle SDKEquipWearable;
 int PlayersAlive[4];
 
@@ -413,6 +415,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 			{
 				SetEntPropFloat(client, Prop_Send, "m_flRageMeter", 90.0);
 			}
+
+			if(RobotSounds[client] > 1)
+				FF2_SetClientGlow(client, 0.0, 999.0);
 
 			switch(RobotVIP[client])
 			{

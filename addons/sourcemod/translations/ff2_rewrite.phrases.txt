@@ -22,7 +22,7 @@
 	"You Dealt Damage"
 	{
 		"#format"	"{1:d},{2:d},{3:d}"
-		"en"		"You dealt {1} damage, healed {2} health, and assisted in {3} points."
+		"en"		"You dealt {olive}{1} {default}damage, healed {olive}{2} {default}health, and assisted in {olive}{3} {default}points."
 	}
 	"You Dealt Damage Hud"
 	{
