@@ -1,6 +1,0 @@
-"Refract"
-{
-	"$basetexture" "freak_fortress_2/graymann/intro"
-	 "$translucent" 1
-	"$normalmap" "freak_fortress_2/graymann/intro"
-}
