@@ -185,7 +185,7 @@
 	"rage_uber"
 	{
 		"slot"			"0"		// Ability slot
-		"duration"		"10.0"	// Base uration
+		"duration"		"10.0"	// Base Duration
 		
 		"plugin_name"	"ff2r_default_abilities"
 	}
