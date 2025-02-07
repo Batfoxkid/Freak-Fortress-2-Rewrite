@@ -353,6 +353,7 @@ public void OnConfigsExecuted()
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
+	GetMapDisplayName(mapname, mapname, sizeof(mapname));
 	if(Configs_SetMap(mapname))
 	{
 		Charset = Cvar[NextCharset].IntValue;
