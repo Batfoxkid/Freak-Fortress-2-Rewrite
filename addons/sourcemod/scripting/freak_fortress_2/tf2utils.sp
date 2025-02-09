@@ -77,7 +77,7 @@ stock bool TF2U_GetWearable(int client, int &entity, int &index)
 		{
 			while((index = FindEntityByClassname(index, "tf_wear*")) != -1)
 			{
-				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+				if(GetEntPropEnt(index, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(index, Prop_Send, "m_bDisguiseWearable"))
 				{
 					entity = index;
 					return true;
