@@ -56,7 +56,11 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	bool preserve;
 	cfg.GetBool("preserve", preserve, false);
 	
-	bool override;
+#if defined IS_MAIN_FF2
+	bool override = false;
+#else
+	bool override = true;
+#endif
 	cfg.GetBool("override", override, false);
 	
 	int kills = -1;

@@ -36,11 +36,11 @@ jobs:
       - name: Full Compile
         run: |
           mkdir -p plugins
-          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities" ff2r_default_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities" ff2r_epic_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities" ff2r_gray_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities" ff2r_menu_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2.smx" freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities.smx" ff2r_default_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities.smx" ff2r_epic_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities.smx" ff2r_gray_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities.smx" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Setup Package
@@ -108,11 +108,11 @@ jobs:
       - name: Full Compile
         run: |
           mkdir -p plugins
-          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2" freak_fortress_2.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities" ff2r_default_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities" ff2r_epic_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities" ff2r_gray_abilities.sp
-          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities" ff2r_menu_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2.smx" freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities.smx" ff2r_default_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities.smx" ff2r_epic_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities.smx" ff2r_gray_abilities.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_menu_abilities.smx" ff2r_menu_abilities.sp
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Setup Package

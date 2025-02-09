@@ -185,7 +185,7 @@ stock bool Attrib_Get(int entity, const char[] name, float &value = 0.0)
 	}
 
 	#if defined _tf2attributes_included
-	if(!Loaded && TF2Attrib_IsValidAttributeName(name))
+	if(Loaded && TF2Attrib_IsValidAttributeName(name))
 	{
 		Address attrib = TF2Attrib_GetByName(entity, name);
 		if(attrib != Address_Null)
