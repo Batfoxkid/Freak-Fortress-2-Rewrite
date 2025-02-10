@@ -465,7 +465,7 @@
 	}
 	"Music Unknown Arg"
 	{
-		"ru"		"Неизвестный аргумент '{1}'\nДоступные аргумент: 'on', 'off', 'next', 'shuffle', 'list', '#<song id>'"
+		"ru"		"Неизвестный аргумент '{1}'\nДоступные аргументы: 'on', 'off', 'next', 'shuffle', 'list', '#<song id>'"
 	}
 	"Music Menu"
 	{
