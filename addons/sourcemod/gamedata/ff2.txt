@@ -20,7 +20,7 @@
 				"linux"		"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
 				"linux64"	"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x44\x8B\x15\x2A\x2A\x2A\x2A"
-				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xC0\x00\x00\x00"
+				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xD0\x00\x00\x00"
 			}
 			"CTFDroppedWeapon::Create"
 			{
@@ -47,7 +47,7 @@
 				"linux"		"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
 				"linux64"	"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\xD9\xEE\x53"
-				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x41\x56\x41\x57\x48\x83\xEC\x40\x4C\x8B\xFA"
+				"windows64"	"\x48\x89\x5C\x24\x18\x55\x56\x57\x41\x56\x41\x57\x48\x83\xEC\x40"
 			}
 			"CTFGameStats::ResetRoundStats"
 			{
@@ -115,8 +115,7 @@
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
-				// m_flSendPickupWeaponMessageTime = gpGlobals->curtime + 0.1f;
-				// this[2406] = *(float *)(dword_10A2B7E8 + 12) + 0.1 in last line
+				// m_flSendPickupWeaponMessageTime = gpGlobals->curtime + 0.1f; in last line
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
 				"linux64"	"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
@@ -138,7 +137,7 @@
 				"linux"		"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"linux64"	"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x89\x75\xF0"
-				"windows64"	"\x40\x55\x48\x83\xEC\x60\x48\x8B\x05\x13\x3D\x7A\x00"
+				"windows64"	"\x40\x55\x48\x83\xEC\x70\x48\x8B\x05\xBB\x98\x7A\x00"
 			}
 			"CTFPowerup::DropSingleInstance"
 			{
