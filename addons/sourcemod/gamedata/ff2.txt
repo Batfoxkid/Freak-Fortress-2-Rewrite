@@ -19,8 +19,8 @@
 				"library"	"server"
 				"linux"		"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
 				"linux64"	"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x40\x8B\x15\x2A\x2A\x2A\x2A\x53\x56\x33\xF6\x8B\xD9"
-				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xC0\x00\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x44\x8B\x15\x2A\x2A\x2A\x2A"
+				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xD0\x00\x00\x00"
 			}
 			"CTFDroppedWeapon::Create"
 			{
@@ -37,7 +37,7 @@
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
 				"linux64"	"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x30\x56\x57\x8B\xF9\x8B\x4D\x08"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x56\x57\x8B\xF9\x8B\x4D\x08"
 				"windows64"	"\x48\x8B\xC4\x48\x89\x58\x08\x48\x89\x70\x10\x48\x89\x78\x18\x55\x41\x56\x41\x57\x48\x8D\x68\xA9"
 			}
 			"CTFDroppedWeapon::InitPickedUpWeapon"
@@ -46,8 +46,8 @@
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
 				"linux64"	"@_ZN16CTFDroppedWeapon18InitPickedUpWeaponEP9CTFPlayerP13CTFWeaponBase"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x14\xD9\xEE\x53"
-				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x41\x56\x41\x57\x48\x83\xEC\x40\x4C\x8B\xFA"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\xD9\xEE\x53"
+				"windows64"	"\x48\x89\x5C\x24\x18\x55\x56\x57\x41\x56\x41\x57\x48\x83\xEC\x40"
 			}
 			"CTFGameStats::ResetRoundStats"
 			{
@@ -77,10 +77,14 @@
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
 				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
-				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
 				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x08\x53\x56\x57\x80\xB8\x04\x05\x00\x00\x00"
 				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x56\x57\x41\x56\x48\x83\xEC\x20\x80\xBA\x54\x06\x00\x00\x00"
+			}
+			"CTFPlayer::CanPickupDroppedWeapon.part.0"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
+				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -111,10 +115,11 @@
 			}
 			"CTFPlayer::PickupWeaponFromOther"
 			{
+				// m_flSendPickupWeaponMessageTime = gpGlobals->curtime + 0.1f; in last line
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
 				"linux64"	"@_ZN9CTFPlayer21PickupWeaponFromOtherEP16CTFDroppedWeapon"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x24\x53\x56\x57\x8B\x7D\x08\x8B\xF1\x81\xC7\xB0\x04\x00\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x20\x53\x56\x57\x8B\x7D\x08\x8B\xF1"
 				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x57\x41\x56\x41\x57\x48\x81\xEC\x80\x00\x00\x00"
 			}
 			"CTFPlayer::RegenThink"
@@ -131,8 +136,8 @@
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"linux64"	"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x28\xA1\x2A\x2A\x2A\x2A\x56"
-				"windows64"	"\x40\x55\x48\x83\xEC\x60\x48\x8B\x05\x13\x3D\x7A\x00"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x24\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x89\x75\xF0"
+				"windows64"	"\x40\x55\x48\x83\xEC\x70\x48\x8B\x05\xBB\x98\x7A\x00"
 			}
 			"CTFPowerup::DropSingleInstance"
 			{
@@ -140,7 +145,7 @@
 				"library"	"server"
 				"linux"		"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
 				"linux64"	"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
-				"windows"	"\x55\x8B\xEC\x51\x53\x56\x57\x6A\x01\x6A\x05"
+				"windows"	"\x55\x8B\xEC\x53\x56\x57\x6A\x01\x6A\x05"
 				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x48\x8B\xDA"
 			}
 		}
@@ -346,6 +351,25 @@
 					"pWeapon"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::CanPickupDroppedWeapon.part.0"
+			{
+				"signature"    "CTFPlayer::CanPickupDroppedWeapon.part.0"
+				"callconv"    "cdecl"
+				"return"    "bool"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"    "cbaseentity"
+						"register"    "eax"
+					}
+					"pWeapon"
+					{
+						"type"    "cbaseentity"
+						"register"    "edx"
 					}
 				}
 			}
