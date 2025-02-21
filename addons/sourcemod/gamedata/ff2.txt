@@ -77,10 +77,14 @@
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
 				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
-				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon"
 				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x08\x53\x56\x57\x80\xB8\x04\x05\x00\x00\x00"
 				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x56\x57\x41\x56\x48\x83\xEC\x20\x80\xBA\x54\x06\x00\x00\x00"
+			}
+			"CTFPlayer::CanPickupDroppedWeapon.part.0"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
+				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -348,6 +352,25 @@
 					"pWeapon"
 					{
 						"type"	"cbaseentity"
+					}
+				}
+			}
+			"CTFPlayer::CanPickupDroppedWeapon.part.0"
+			{
+				"signature"    "CTFPlayer::CanPickupDroppedWeapon.part.0"
+				"callconv"    "cdecl"
+				"return"    "bool"
+				"arguments"
+				{
+					"pPlayer"
+					{
+						"type"    "cbaseentity"
+						"register"    "eax"
+					}
+					"pWeapon"
+					{
+						"type"    "cbaseentity"
+						"register"    "edx"
 					}
 				}
 			}
