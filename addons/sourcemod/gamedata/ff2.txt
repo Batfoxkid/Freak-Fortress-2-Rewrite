@@ -146,7 +146,7 @@
 				"library"	"server"
 				"linux"		"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
 				"linux64"	"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
-				"windows"	"\x55\x8B\xEC\x51\x53\x56\x57\x6A\x01\x6A\x05"
+				"windows"	"\x55\x8B\xEC\x53\x56\x57\x6A\x01\x6A\x05"
 				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x48\x8B\xDA"
 			}
 		}
