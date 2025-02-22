@@ -65,6 +65,7 @@ static Action Bosses_ReloadCharsetCmd(int client, int args)
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
+	GetMapDisplayName(mapname, mapname, sizeof(mapname));
 	Bosses_BuildPacks(Charset, mapname);
 	return Plugin_Handled;
 }

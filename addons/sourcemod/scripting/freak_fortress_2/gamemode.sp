@@ -31,6 +31,7 @@ void Gamemode_MapInit()
 {
 	char mapname[64];
 	GetCurrentMap(mapname, sizeof(mapname));
+	GetMapDisplayName(mapname, mapname, sizeof(mapname));
 	if(Configs_MapIsGamemode(mapname))
 	{
 		bool addMaster;
