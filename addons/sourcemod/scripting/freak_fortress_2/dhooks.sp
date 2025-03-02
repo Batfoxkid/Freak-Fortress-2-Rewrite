@@ -75,9 +75,21 @@ static void SetupDHook()
 	
 	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
-	CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
+	// CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
+	
+	// Sorry, we can't use CreateDetour to handle clone function.
+	DynamicDetour detour_CanPickupDroppedWeapon = DynamicDetour.FromConf(gamedata, "CTFPlayer::CanPickupDroppedWeapon");
+	if(detour_CanPickupDroppedWeapon)
+	{
+		detour_CanPickupDroppedWeapon.Enable(Hook_Pre, DHook_CanPickupDroppedWeaponPre);
+	}
+	else
+	{
+		detour_CanPickupDroppedWeapon = DynamicDetour.FromConf(gamedata, "CTFPlayer::CanPickupDroppedWeapon.part.0");
+		detour_CanPickupDroppedWeapon.Enable(Hook_Pre, DHook_CanPickupDroppedWeaponInlinePre);
+	}
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
@@ -253,6 +265,34 @@ static void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
 	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
+	{
+		case Plugin_Continue:
+		{
+			if(Client(client).IsBoss || Client(client).Minion)
+			{
+				ret.Value = false;
+				return MRES_Supercede;
+			}
+		}
+		case Plugin_Handled:
+		{
+			ret.Value = true;
+			return MRES_Supercede;
+		}
+		case Plugin_Stop:
+		{
+			ret.Value = false;
+			return MRES_Supercede;
+		}
+	}
+	
+	return MRES_Ignored;
+}
+
+static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookParam param) {
+	int client = param.Get(1);
+	int weapon = param.Get(2);
+	switch(Forward_OnPickupDroppedWeapon(client, weapon))
 	{
 		case Plugin_Continue:
 		{
