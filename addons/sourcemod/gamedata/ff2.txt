@@ -195,10 +195,10 @@
 			}
 			"CTFGameRules::GetCaptureValueForPlayer"
 			{
-				"linux"		"158"
-				"linux64"	"158"
-				"windows"	"157"
-				"windows64"	"157"
+				"linux"		"159"
+				"linux64"	"159"
+				"windows"	"158"
+				"windows64"	"158"
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
