@@ -825,7 +825,7 @@
 	}
 	"caber boss crit DISPLAY ONLY"
 	{
-		"ru"		"100%% критический урон против боссов при детонации"
+		"ru"		"100%% критический урон по боссам при детонации"
 	}
 	"start with uber DISPLAY ONLY"
 	{
