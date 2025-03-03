@@ -824,7 +824,7 @@
 	"multi boss rage"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
-		"en"		"Decerases rage gained by bosses by {2}%%"
+		"en"		"Decreases rage gained by bosses by {2}%%"
 	}
 	"backstab damage percent"
 	{
