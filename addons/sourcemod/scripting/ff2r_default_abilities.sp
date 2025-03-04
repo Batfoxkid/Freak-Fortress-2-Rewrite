@@ -313,10 +313,11 @@
 	
 	"special_weighdown"
 	{
-		"slot"			"2"			// Charge slot (Only used for sound_ability)
-		"delay"			"3.0"		// Airtime before being able to use
-		"gravity"		"6.0"		// Weighdown gravity
-		"velocity"		"1000.0"	// Downward velocity
+		"slot"		"2"				// Charge slot (Only used for sound_ability)
+		"delay"		"3.0"				// Airtime before being able to use
+		"gravity"	"6.0"				// Weighdown gravity
+		"velocity"	"1000.0"			// Downward velocity
+		"strings"       "You have used weighdown!"  	// Strings
 		
 		"plugin_name"	"ff2r_default_abilities"
 	}
@@ -1160,6 +1161,13 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				GetEntPropVector(client, Prop_Data, "m_vecVelocity", velocity);
 				velocity[2] = -ability.GetFloat("velocity", 1000.0);
 				TeleportEntity(client, _, _, velocity);
+
+				char message[128];
+				if (ability.GetString("strings", message, sizeof(message), ""))
+				{
+					if (message[0] != 0)
+					CPrintToChat(client, message);					
+				}
 			}
 			else
 			{
