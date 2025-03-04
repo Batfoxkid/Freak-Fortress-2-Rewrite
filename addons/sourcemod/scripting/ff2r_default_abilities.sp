@@ -1163,9 +1163,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				TeleportEntity(client, _, _, velocity);
 
 				char message[128];
-				ability.GetString("strings", message, sizeof(message), "");
+				if (ability.GetString("strings", message, sizeof(message), ""))
 				{
-					if (message[0] != 0) 
+					if (message[0] != 0)
 					CPrintToChat(client, message);					
 				}
 			}
