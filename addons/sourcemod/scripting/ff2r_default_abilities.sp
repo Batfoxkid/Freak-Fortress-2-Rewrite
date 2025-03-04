@@ -1164,7 +1164,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 
 				char message[128];
 				ability.GetString("strings", message, sizeof(message), "");
-				CPrintToChat(client, message);
+				{
+					if (message[0] != 0) 
+					CPrintToChat(client, message);					
+				}
 			}
 			else
 			{
