@@ -159,7 +159,8 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 	event.SetInt("weaponid", weapon);
 	event.SetString("weapon", backstab ? "backstab" : "market_gardener");
 	event.SetString("weapon_logclassname", "ff2_notice");
-	event.SetInt("customkill", TF_CUSTOM_BACKSTAB);
+	event.SetInt("damagebits", DMG_CRIT);
+ 	event.SetInt("customkill", backstab ? TF_CUSTOM_BACKSTAB : 0);
 	event.SetInt("crit_type", 2);
 	
 	int stabs = ++Client(attacker).Stabs;

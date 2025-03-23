@@ -832,11 +832,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					int button = ability.GetInt("button", 11);
 					if(SpecialCharge[client])
 					{
-						if(button == 11)	// IN_ATTACK2 -> IN_RELOAD
+						if(button == 11)
 						{
-							button = 13;
+							button = SpecialChargeButton[client];
 						}
-						else if(button == 13)	// IN_RELOAD -> IN_ATTACK2
+						else if(button == SpecialChargeButton[client])
 						{
 							button = 11;
 						}
@@ -1393,6 +1393,11 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(team), 6.0);
 		bool blind = cfg.GetBool("blind");
 		bool muffle = cfg.GetBool("muffle");
+		float distance = cfg.GetFloat("distance");
+		distance = distance * distance;
+		
+		float pos1[3], pos2[3];
+		GetClientEyePosition(client, pos1);
 
 		int victims;
 		int[] victim = new int[MaxClients - 1];
@@ -1401,6 +1406,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		{
 			if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 			{
+				GetClientEyePosition(target, pos2);
+				if(GetVectorDistance(pos1, pos2, true) > distance)
+					continue;
+				
 				delete OverlayTimer[target];
 
 				AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
@@ -1933,12 +1942,12 @@ public void Hook_ProjectileSpawned(int entity)
 				ConfigData cfg = ability.GetSection(buffer);
 				if(cfg)
 				{
-					if(ability.GetString("model", buffer, sizeof(buffer)))
+					if(cfg.GetString("model", buffer, sizeof(buffer)))
 						SetEntityModel(entity, buffer);
 					
-					float scale = ability.GetFloat("scale", 1.0);
+					float scale = cfg.GetFloat("scale", 1.0);
 					if(scale != 1.0 && scale > 0.0)
-						SetEntPropFloat(client, Prop_Send, "m_flModelScale", GetEntPropFloat(client, Prop_Send, "m_flModelScale") * scale);
+						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", GetEntPropFloat(entity, Prop_Send, "m_flModelScale") * scale);
 				}
 			}
 			else
@@ -2240,6 +2249,11 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	bool more = cfg.GetInt("count", 12) > phase;
 	int blind = cfg.GetInt("blind");
 	int muffle = cfg.GetInt("muffle", 1);
+	float distance = cfg.GetFloat("distance");
+	distance = distance * distance;
+	
+	float pos1[3], pos2[3];
+	GetClientEyePosition(client, pos1);
 	
 	int victims;
 	int[] victim = new int[MaxClients - 1];
@@ -2251,6 +2265,10 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	{
 		if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 		{
+			GetClientEyePosition(target, pos2);
+			if(GetVectorDistance(pos1, pos2, true) > distance)
+				continue;
+			
 			delete OverlayTimer[target];
 
 			AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
