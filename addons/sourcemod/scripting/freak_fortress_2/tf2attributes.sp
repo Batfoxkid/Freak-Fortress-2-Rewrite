@@ -327,7 +327,7 @@ stock void Attrib_Remove(int entity, const char[] name, bool custom = false)
 		if(!TF2Attrib_IsValidAttributeName(name))
 			return;
 		
-		if(entity > MaxClients || force)
+		if(custom && 0 < entity <= MaxClients)
 		{
 			TF2Attrib_RemoveByName(entity, name);
 		}

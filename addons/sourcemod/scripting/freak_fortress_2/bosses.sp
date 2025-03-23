@@ -1816,10 +1816,10 @@ static void EquipBoss(int client, bool weapons)
 	switch(i)
 	{
 		case 0:
-			Attrib_Set(client, "healing received penalty", 0.0, true);
+			Attrib_Set(client, "healing received penalty", 0.0, _, true);
 								
 		case 1:
-			Attrib_Set(client, "reduced_healing_from_medics", 0.0, true);
+			Attrib_Set(client, "reduced_healing_from_medics", 0.0, _, true);
 	}
 	
 	any class;
@@ -1920,11 +1920,11 @@ void Bosses_UpdateHealth(int client)
 				defaul = 150;
 		}
 		
-		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul), true);
+		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul), _, true);
 	}
 	else
 	{
-		Attrib_Set(client, "max health additive bonus", 0.0, true);
+		Attrib_Set(client, "max health additive bonus", 0.0, _, true);
 	}
 }
 
@@ -1982,12 +1982,12 @@ void Bosses_SetSpeed(int client)
 			}
 		}
 		
-		Attrib_Set(client, "major move speed bonus", speed / defaul, true);
+		Attrib_Set(client, "major move speed bonus", speed / defaul, _, true);
 		SDKCall_SetSpeed(client);
 	}
 	else
 	{
-		Attrib_Set(client, "major move speed bonus", 1.0, true);
+		Attrib_Set(client, "major move speed bonus", 1.0, _, true);
 	}
 }
 
