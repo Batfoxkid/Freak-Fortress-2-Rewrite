@@ -476,7 +476,7 @@ public void OnPluginStart()
 		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
 	
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gameConf, SDKConf_Signature, "CTFPlayer::SetBlastJumpState");
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::SetBlastJumpState");
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	SDKSetBlastJumpState = EndPrepSDKCall();
