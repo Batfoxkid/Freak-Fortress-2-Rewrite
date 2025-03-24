@@ -364,9 +364,8 @@
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
 Handle SDKSetSpeed;
+Handle SDKSetBlastJumpState;
 Handle SyncHud;
-
-int BlastJumpStateOffset = -1;
 
 int PlayersAlive[4];
 bool SpecTeam;
@@ -476,9 +475,13 @@ public void OnPluginStart()
 	if(!SDKSetSpeed)
 		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
 	
-	BlastJumpStateOffset = gamedata.GetOffset("CTFPlayer::m_iBlastJumpState");
-	if(BlastJumpStateOffset == -1)
-		LogError("[Gamedata] Could not find CTFPlayer::m_iBlastJumpState");
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gameConf, SDKConf_Signature, "CTFPlayer::SetBlastJumpState");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	SDKSetBlastJumpState = EndPrepSDKCall();
+	if (!SDKSetBlastJumpState)
+		LogError("[Gamedata] Could not find CTFPlayer::SetBlastJumpState");
 	
 	delete gamedata;
 	
@@ -997,9 +1000,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							SetEntProp(client, Prop_Send, "m_bJumping", true);
 
-							if(BlastJumpStateOffset != -1)
-								SetEntData(client, BlastJumpStateOffset, TF_PLAYER_ENEMY_BLASTED_ME);
-							
+							SDKCall_SetJumpBlastState(client, TF_PLAYER_ENEMY_BLASTED_ME);
 							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
@@ -3070,6 +3071,12 @@ void SDKCall_EquipWearable(int client, int entity)
 	{
 		RemoveEntity(entity);
 	}
+}
+
+void SDKCall_SetJumpBlastState(int client, int state)
+{
+	if(SDKSetBlastJumpState)
+		SDKCall(SDKSetBlastJumpState, client, state, false);
 }
 
 bool IsInvuln(int client)
