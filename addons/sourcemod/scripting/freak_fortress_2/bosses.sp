@@ -1,6 +1,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#define SAPPER_MAX_DISTANCE_SQAURE (160.0 * 160.0)
+
 static ArrayList BossList;
 static ArrayList PackList;
 static int DownloadTable;
@@ -1814,10 +1816,10 @@ static void EquipBoss(int client, bool weapons)
 	switch(i)
 	{
 		case 0:
-			Attrib_Set(client, "healing received penalty", 0.0);
+			Attrib_Set(client, "healing received penalty", 0.0, _, true);
 								
 		case 1:
-			Attrib_Set(client, "reduced_healing_from_medics", 0.0);
+			Attrib_Set(client, "reduced_healing_from_medics", 0.0, _, true);
 	}
 	
 	any class;
@@ -1918,11 +1920,11 @@ void Bosses_UpdateHealth(int client)
 				defaul = 150;
 		}
 		
-		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul));
+		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul), _, true);
 	}
 	else
 	{
-		Attrib_Set(client, "max health additive bonus", 0.0);
+		Attrib_Set(client, "max health additive bonus", 0.0, _, true);
 	}
 }
 
@@ -1980,12 +1982,12 @@ void Bosses_SetSpeed(int client)
 			}
 		}
 		
-		Attrib_Set(client, "major move speed bonus", speed / defaul);
+		Attrib_Set(client, "major move speed bonus", speed / defaul, _, true);
 		SDKCall_SetSpeed(client);
 	}
 	else
 	{
-		Attrib_Set(client, "major move speed bonus", 1.0);
+		Attrib_Set(client, "major move speed bonus", 1.0, _, true);
 	}
 }
 
@@ -2109,10 +2111,16 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 					int target = GetClientAimTarget(client, true);
 					if(target != -1)
 					{
-						if(Client(target).IsBoss && (GetClientTeam(client) != GetClientTeam(target) || Cvar[FriendlyFire].BoolValue))
+ 						if(Client(target).IsBoss && IsPlayerAlive(target) && (GetClientTeam(client) != GetClientTeam(target) || Cvar[FriendlyFire].BoolValue))
 						{
-							TF2_AddCondition(target, TFCond_Sapped, 4.0);
-							Client(client).SapperCooldownFor = time + 15.0;
+							float pos1[3], pos2[3];
+							GetClientAbsOrigin(client, pos1);
+							GetClientAbsOrigin(target, pos2);
+							if (GetVectorDistance(pos1, pos2, true) < SAPPER_MAX_DISTANCE_SQAURE)
+							{
+								TF2_AddCondition(target, TFCond_Sapped, 4.0);
+								Client(client).SapperCooldownFor = time + 15.0;
+							}
 						}
 					}
 				}

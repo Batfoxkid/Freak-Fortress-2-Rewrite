@@ -743,7 +743,7 @@ static void Weapons_SpawnFrame(int ref)
 				if(attributeValue.tag == KeyValType_Value)
 				{
 					if(!Attrib_SetString(entity, key, attributeValue.data))
-						LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config");
+						LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config", key);
 				}
 			}
 

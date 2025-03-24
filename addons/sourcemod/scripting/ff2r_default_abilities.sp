@@ -364,9 +364,8 @@
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
 Handle SDKSetSpeed;
+Handle SDKSetBlastJumpState;
 Handle SyncHud;
-
-int BlastJumpStateOffset = -1;
 
 int PlayersAlive[4];
 bool SpecTeam;
@@ -476,9 +475,13 @@ public void OnPluginStart()
 	if(!SDKSetSpeed)
 		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
 	
-	BlastJumpStateOffset = gamedata.GetOffset("CTFPlayer::m_iBlastJumpState");
-	if(BlastJumpStateOffset == -1)
-		LogError("[Gamedata] Could not find CTFPlayer::m_iBlastJumpState");
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::SetBlastJumpState");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	SDKSetBlastJumpState = EndPrepSDKCall();
+	if (!SDKSetBlastJumpState)
+		LogError("[Gamedata] Could not find CTFPlayer::SetBlastJumpState");
 	
 	delete gamedata;
 	
@@ -832,11 +835,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					int button = ability.GetInt("button", 11);
 					if(SpecialCharge[client])
 					{
-						if(button == 11)	// IN_ATTACK2 -> IN_RELOAD
+						if(button == 11)
 						{
-							button = 13;
+							button = SpecialChargeButton[client];
 						}
-						else if(button == 13)	// IN_RELOAD -> IN_ATTACK2
+						else if(button == SpecialChargeButton[client])
 						{
 							button = 11;
 						}
@@ -997,9 +1000,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							SetEntProp(client, Prop_Send, "m_bJumping", true);
 
-							if(BlastJumpStateOffset != -1)
-								SetEntData(client, BlastJumpStateOffset, TF_PLAYER_ENEMY_BLASTED_ME);
-							
+							SDKCall_SetJumpBlastState(client, TF_PLAYER_ENEMY_BLASTED_ME);
 							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
@@ -1393,6 +1394,11 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(team), 6.0);
 		bool blind = cfg.GetBool("blind");
 		bool muffle = cfg.GetBool("muffle");
+		float distance = cfg.GetFloat("distance");
+		distance = distance * distance;
+		
+		float pos1[3], pos2[3];
+		GetClientEyePosition(client, pos1);
 
 		int victims;
 		int[] victim = new int[MaxClients - 1];
@@ -1401,6 +1407,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		{
 			if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 			{
+				GetClientEyePosition(target, pos2);
+				if(GetVectorDistance(pos1, pos2, true) > distance)
+					continue;
+				
 				delete OverlayTimer[target];
 
 				AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
@@ -1933,12 +1943,12 @@ public void Hook_ProjectileSpawned(int entity)
 				ConfigData cfg = ability.GetSection(buffer);
 				if(cfg)
 				{
-					if(ability.GetString("model", buffer, sizeof(buffer)))
+					if(cfg.GetString("model", buffer, sizeof(buffer)))
 						SetEntityModel(entity, buffer);
 					
-					float scale = ability.GetFloat("scale", 1.0);
+					float scale = cfg.GetFloat("scale", 1.0);
 					if(scale != 1.0 && scale > 0.0)
-						SetEntPropFloat(client, Prop_Send, "m_flModelScale", GetEntPropFloat(client, Prop_Send, "m_flModelScale") * scale);
+						SetEntPropFloat(entity, Prop_Send, "m_flModelScale", GetEntPropFloat(entity, Prop_Send, "m_flModelScale") * scale);
 				}
 			}
 			else
@@ -2240,6 +2250,11 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	bool more = cfg.GetInt("count", 12) > phase;
 	int blind = cfg.GetInt("blind");
 	int muffle = cfg.GetInt("muffle", 1);
+	float distance = cfg.GetFloat("distance");
+	distance = distance * distance;
+	
+	float pos1[3], pos2[3];
+	GetClientEyePosition(client, pos1);
 	
 	int victims;
 	int[] victim = new int[MaxClients - 1];
@@ -2251,6 +2266,10 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	{
 		if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 		{
+			GetClientEyePosition(target, pos2);
+			if(GetVectorDistance(pos1, pos2, true) > distance)
+				continue;
+			
 			delete OverlayTimer[target];
 
 			AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
@@ -3052,6 +3071,12 @@ void SDKCall_EquipWearable(int client, int entity)
 	{
 		RemoveEntity(entity);
 	}
+}
+
+void SDKCall_SetJumpBlastState(int client, int state)
+{
+	if(SDKSetBlastJumpState)
+		SDKCall(SDKSetBlastJumpState, client, state, false);
 }
 
 bool IsInvuln(int client)
