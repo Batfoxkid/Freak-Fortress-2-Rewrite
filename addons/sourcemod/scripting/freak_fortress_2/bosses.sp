@@ -1861,11 +1861,12 @@ static void EquipBoss(int client, bool weapons)
 	}
 	
 	static char buffer[PLATFORM_MAX_PATH];
-	if(Client(client).Cfg.Get("model", buffer, sizeof(buffer)))
-	{
+	if (Client(client).Cfg.Get("model", buffer, sizeof(buffer)))
 		SetVariantString(buffer);
-		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
-	}
+	else
+		SetVariantString("");
+
+	AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 	
 	if(weapons)
 	{
