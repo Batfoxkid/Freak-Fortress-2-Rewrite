@@ -283,11 +283,11 @@ stock void Attrib_SetInt(int entity, const char[] name, int value, float duratio
 		
 		if(custom && 0 < entity <= MaxClients)
 		{
-			TF2Attrib_SetByName(entity, name, float(value));
+			TF2Attrib_AddCustomPlayerAttribute(entity, name, float(value), duration);
 		}
 		else
 		{
-			TF2Attrib_AddCustomPlayerAttribute(entity, name, float(value), duration);
+			TF2Attrib_SetByName(entity, name, float(value));
 		}
 		
 		return;
@@ -329,11 +329,11 @@ stock void Attrib_Remove(int entity, const char[] name, bool custom = false)
 		
 		if(custom && 0 < entity <= MaxClients)
 		{
-			TF2Attrib_RemoveByName(entity, name);
+			TF2Attrib_RemoveCustomPlayerAttribute(entity, name);
 		}
 		else
 		{
-			TF2Attrib_RemoveCustomPlayerAttribute(entity, name);
+			TF2Attrib_RemoveByName(entity, name);
 		}
 		
 		return;
