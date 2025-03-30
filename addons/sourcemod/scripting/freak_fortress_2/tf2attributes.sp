@@ -246,18 +246,56 @@ public bool Attrib_GetString(int entity, const char[] name, char[] buffer, int l
 	return false;
 }
 
-stock void Attrib_Set(int entity, const char[] name, float value, float duration = -1.0)
+stock void Attrib_Set(int entity, const char[] name, float value, float duration = -1.0, bool custom = false)
 {
+	#if defined _tf2attributes_included
+	if(Loaded)
+	{
+		if(!TF2Attrib_IsValidAttributeName(name))
+			return;
+		
+		if(custom && 0 < entity <= MaxClients)
+		{
+			TF2Attrib_AddCustomPlayerAttribute(entity, name, value, duration);
+		}
+		else
+		{
+			TF2Attrib_SetByName(entity, name, value);
+		}
+		
+		return;
+	}
+	#endif
+	
 	static char buffer[256];
-	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, %f)", entity > MaxClients ? "" : "Custom", name, value, duration);
+	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, %f)", (!custom || entity > MaxClients) ? "" : "Custom", name, value, duration);
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "RunScriptCode");
 }
 
-stock void Attrib_SetInt(int entity, const char[] name, int value, float duration = -1.0)
+stock void Attrib_SetInt(int entity, const char[] name, int value, float duration = -1.0, bool custom = false)
 {
+	#if defined _tf2attributes_included
+	if(Loaded)
+	{
+		if(!TF2Attrib_IsValidAttributeName(name))
+			return;
+		
+		if(custom && 0 < entity <= MaxClients)
+		{
+			TF2Attrib_AddCustomPlayerAttribute(entity, name, float(value), duration);
+		}
+		else
+		{
+			TF2Attrib_SetByName(entity, name, float(value));
+		}
+		
+		return;
+	}
+	#endif
+	
 	static char buffer[256];
-	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", casti2f(%d), %f)", entity > MaxClients ? "" : "Custom", name, value, duration);
+	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", casti2f(%d), %f)", (!custom || entity > MaxClients) ? "" : "Custom", name, value, duration);
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "RunScriptCode");
 }
@@ -281,10 +319,29 @@ stock bool Attrib_SetString(int entity, const char[] name, const char[] value)
 	return true;
 }
 
-stock void Attrib_Remove(int entity, const char[] name)
+stock void Attrib_Remove(int entity, const char[] name, bool custom = false)
 {
+	#if defined _tf2attributes_included
+	if(Loaded)
+	{
+		if(!TF2Attrib_IsValidAttributeName(name))
+			return;
+		
+		if(custom && 0 < entity <= MaxClients)
+		{
+			TF2Attrib_RemoveCustomPlayerAttribute(entity, name);
+		}
+		else
+		{
+			TF2Attrib_RemoveByName(entity, name);
+		}
+		
+		return;
+	}
+	#endif
+	
 	static char buffer[256];
-	Format(buffer, sizeof(buffer), "self.Remove%sAttribute(\"%s\")", entity > MaxClients ? "" : "Custom", name);
+	Format(buffer, sizeof(buffer), "self.Remove%sAttribute(\"%s\")", (!custom || entity > MaxClients) ? "" : "Custom", name);
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "RunScriptCode");
 }
