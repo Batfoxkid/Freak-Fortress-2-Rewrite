@@ -713,7 +713,14 @@ static void Weapons_SpawnFrame(int ref)
 				
 				if(TF2ED_GetAttributeName(attrib, key, sizeof(key)))
 				{
-					Attrib_Set(entity, key, StringToFloat(value));
+					if(value[0] == 'R')
+					{
+						Attrib_Remove(entity, key);
+					}
+					else
+					{
+						Attrib_Set(entity, key, StringToFloat(value));
+					}
 				}
 				else
 				{
@@ -742,8 +749,16 @@ static void Weapons_SpawnFrame(int ref)
 
 				if(attributeValue.tag == KeyValType_Value)
 				{
-					if(!Attrib_SetString(entity, key, attributeValue.data))
-						LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config", key);
+					// Some attributes have string value. So check size of value.
+					if(attributeValue.data[0] == 'R' && attributeValue.size < 2)
+					{
+						Attrib_Remove(entity, key);
+					}
+					else
+					{
+						if(!Attrib_SetString(entity, key, attributeValue.data))
+							LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config", key);
+					}
 				}
 			}
 
