@@ -23,6 +23,9 @@ void Goomba_BossCreated(ConfigMap cfg)
 
 public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
 {
+	if(Client(attacker).MinionType == 2)
+		return Plugin_Handled;
+	
 	switch(GoombaOverride)
 	{
 		case 0:
@@ -46,7 +49,7 @@ public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &
 		}
 		case 5:	// No Minions
 		{
-			if(Client(attacker).Minion)
+			if(Client(attacker).MinionType)
 				return Plugin_Handled;
 		}
 		case 6:	// Boss Only

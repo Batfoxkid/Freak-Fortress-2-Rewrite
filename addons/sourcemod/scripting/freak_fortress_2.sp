@@ -195,6 +195,7 @@ enum
 	BossSewer,
 	Telefrags,
 	StreakDamage,
+	Teutons,
 	
 	PrefBlacklist,
 	PrefToggle,
@@ -248,6 +249,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
 #include "freak_fortress_2/steamworks.sp"
+#include "freak_fortress_2/teuton.sp"
 #include "freak_fortress_2/tf2attributes.sp"
 #include "freak_fortress_2/tf2items.sp"
 #include "freak_fortress_2/tf2utils.sp"
@@ -347,6 +349,7 @@ public void OnMapStart()
 	Configs_MapStart();
 	DHook_MapStart();
 	Gamemode_MapStart();
+	Teuton_MapStart();
 }
 
 public void OnConfigsExecuted()
@@ -449,6 +452,8 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
 {
+	CustomAttrib_CalcIsAttackCritical(client, weapon);
+	
 	if(!Client(client).IsBoss || Client(client).Crits || TF2_IsCritBoosted(client))
 		return Plugin_Continue;
 	

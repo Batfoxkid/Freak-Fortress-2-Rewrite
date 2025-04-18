@@ -48,15 +48,20 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		PlayersAlive[i] = 0;
 	}
 	
+	bool nonTeuton[TFTeam_MAX];
 	bool spec = Cvar[SpecTeam].BoolValue;
 	int redBoss, bluBoss;
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(i != exclude && IsClientInGame(i) && !Client(i).Minion)
+		if(i != exclude && IsClientInGame(i) && Client(i).MinionType != 2)
 		{
 			int team = GetClientTeam(i);
 			if((spec || team > TFTeam_Spectator) && ((!alive && team > TFTeam_Spectator) || IsPlayerAlive(i)))
 			{
+				nonTeuton[team] = true;
+				if(Client(i).MinionType)
+					continue;
+				
 				PlayersAlive[team]++;
 				if(team == TFTeam_Blue && !bluBoss && Client(i).IsBoss && IsPlayerAlive(i) && Client(i).Cfg.GetSection("sound_lastman"))
 				{
@@ -128,6 +133,19 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 				}
 				
 				found = true;
+			}
+		}
+	}
+
+	if(Enabled && alive)
+	{
+		// Kill all teutons if everyone on the team is dead
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(i != exclude && Client(i).MinionType == 2 && IsClientInGame(i) && IsPlayerAlive(i))
+			{
+				if(!nonTeuton[GetClientTeam(i)])
+					ForcePlayerSuicide(i);
 			}
 		}
 	}
@@ -231,7 +249,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 		{
 			Bosses_Equip(client);
 		}
-		else if(Enabled && !Client(client).Minion)
+		else if(Enabled && !Client(client).MinionType)
 		{
 			// There's issues with items sometimes carrying over
 			if(!InRegen)
@@ -621,6 +639,8 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 							AcceptEntityInput(entity, "kill");
 						}
 					}
+
+					Teuton_PlayerDeath(victim);
 				}
 				
 				Client(victim).ResetByDeath();

@@ -56,9 +56,9 @@ native bool FF2R_EmitBossSound(const int[] clients, int numClients, const char[]
  * 
  * @error			Invalid client index
  * 
- * @return			True if the player is a minion, false otherwise
+ * @return			1 if the player is a minion, 2 if the player a "dead" minion, 0 if normal
  */
-native bool FF2R_GetClientMinion(int client);
+native int FF2R_GetClientMinion(int client);
 
 /**
  * Sets if a player is considered a minion which ignores weapon changes and players alive count
@@ -66,13 +66,13 @@ native bool FF2R_GetClientMinion(int client);
  * @note			Minion status is removed when a player dies
  * 
  * @param client	Client index
- * @param value		If the player is a minion
+ * @param value		If the player is a minion, 2 for a "dead" minion
  * 
  * @error			Invalid client index or client is not in game
  * 
  * @noreturn
  */
-native void FF2R_SetClientMinion(int client, bool value);
+native void FF2R_SetClientMinion(int client, any value);
 
 /**
  * Gets the player's score in the current round

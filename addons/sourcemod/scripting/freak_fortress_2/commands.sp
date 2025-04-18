@@ -58,7 +58,7 @@ static bool FF2TargetFilter(const char[] pattern, ArrayList clients)
 				if(!IsClientInGame(client))
 					continue;
 
-				if(Client(client).Minion)
+				if(Client(client).MinionType)
 				{
 					if(!isOppositeFilter)
 						clients.Push(client);
@@ -76,7 +76,7 @@ static bool FF2TargetFilter(const char[] pattern, ArrayList clients)
 
 static Action Command_Voicemenu(int client, const char[] command, int args)
 {
-	if(client && args == 2 && Client(client).IsBoss && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
+	if(client && args == 2 && (Client(client).IsBoss || Client(client).MinionType == 2) && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
 	{
 		char arg[4];
 		GetCmdArg(1, arg, sizeof(arg));
@@ -85,6 +85,9 @@ static Action Command_Voicemenu(int client, const char[] command, int args)
 			GetCmdArg(2, arg, sizeof(arg));
 			if(arg[0] == '0')
 			{
+				if(!Client(client).IsBoss)
+					return Plugin_Handled;
+				
 				float rageDamage = Client(client).RageDamage;
 				if(rageDamage >= 0.0 && rageDamage < 99999.0)
 				{
@@ -121,7 +124,7 @@ static Action Command_KermitSewerSlide(int client, const char[] command, int arg
 {
 	if(Enabled)
 	{
-		if((Client(client).IsBoss || Client(client).Minion) && (RoundStatus == 0 || (RoundStatus == 1 && !Cvar[BossSewer].BoolValue)))
+		if((Client(client).IsBoss || Client(client).MinionType == 1) && (RoundStatus == 0 || (RoundStatus == 1 && !Cvar[BossSewer].BoolValue)))
 			return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -129,7 +132,7 @@ static Action Command_KermitSewerSlide(int client, const char[] command, int arg
 
 static Action Command_Spectate(int client, const char[] command, int args)
 {
-	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
+	if((!Client(client).IsBoss && Client(client).MinionType != 1 && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	return SwapTeam(client, TFTeam_Spectator);
@@ -137,7 +140,7 @@ static Action Command_Spectate(int client, const char[] command, int args)
 
 static Action Command_AutoTeam(int client, const char[] command, int args)
 {
-	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
+	if((!Client(client).IsBoss && Client(client).MinionType != 1 && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	int reds, blus;
@@ -180,7 +183,7 @@ static Action Command_AutoTeam(int client, const char[] command, int args)
 
 static Action Command_JoinTeam(int client, const char[] command, int args)
 {
-	if((!Client(client).IsBoss && !Client(client).Minion && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
+	if((!Client(client).IsBoss && Client(client).MinionType != 1 && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
 	char buffer[10];
@@ -217,7 +220,7 @@ static Action SwapTeam(int client, int wantTeam)
 	if(Enabled)
 	{
 		// No suicides
-		if(RoundStatus != 2 && !Cvar[BossSewer].BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).Minion))
+		if(RoundStatus != 2 && !Cvar[BossSewer].BoolValue && IsPlayerAlive(client) && (Client(client).IsBoss || Client(client).MinionType == 1))
 			return Plugin_Handled;
 		
 		// Prevent going to spectate with cvar disabled
@@ -230,7 +233,7 @@ static Action SwapTeam(int client, int wantTeam)
 		if(currentTeam > TFTeam_Spectator && newTeam == currentTeam)
 			return Plugin_Handled;
 		
-		if(Client(client).IsBoss || Client(client).Minion)
+		if(Client(client).IsBoss || Client(client).MinionType == 1)
 		{
 			// Prevent swapping to a different team unless to spec
 			if(newTeam > TFTeam_Spectator)
@@ -253,7 +256,7 @@ static Action SwapTeam(int client, int wantTeam)
 			return Plugin_Handled;
 	}
 	
-	if(Client(client).IsBoss || Client(client).Minion)
+	if(Client(client).IsBoss || Client(client).MinionType)
 	{
 		// Remove properties
 		Bosses_Remove(client);
@@ -299,7 +302,7 @@ static Action Command_AggressiveSwap(Handle timer, DataPack pack)
 
 static Action Command_JoinClass(int client, const char[] command, int args)
 {
-	if(Client(client).IsBoss || Client(client).Minion)
+	if(Client(client).IsBoss || Client(client).MinionType)
 	{
 		if(Enabled)
 		{

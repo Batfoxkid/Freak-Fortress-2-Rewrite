@@ -10,7 +10,7 @@ static bool NoChanges[MAXTF2PLAYERS];
 static bool NoDmgHud[MAXTF2PLAYERS];
 static bool NoHud[MAXTF2PLAYERS];
 static char LastPlayed[MAXTF2PLAYERS][64];
-static bool Minion[MAXTF2PLAYERS];
+static int Minion[MAXTF2PLAYERS];
 static bool Glowing[MAXTF2PLAYERS];
 static float GlowFor[MAXTF2PLAYERS];
 static float OverlayFor[MAXTF2PLAYERS];
@@ -144,13 +144,13 @@ methodmap Client
 		strcopy(LastPlayed[view_as<int>(this)], sizeof(LastPlayed[]), buffer);
 	}
 	
-	property bool Minion
+	property int MinionType
 	{
 		public get()
 		{
 			return Minion[view_as<int>(this)];
 		}
-		public set(bool value)
+		public set(int value)
 		{
 			Minion[view_as<int>(this)] = value;
 		}
@@ -688,7 +688,7 @@ methodmap Client
 	public void ResetByDeath()
 	{
 		this.GlowFor = 0.0;
-		this.Minion = false;
+		this.MinionType = 0;
 	}
 	
 	public void ResetByRound()

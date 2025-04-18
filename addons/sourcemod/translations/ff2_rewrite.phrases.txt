@@ -866,6 +866,11 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Jarate effect instead drains {4}%% RAGE from a boss"
 	}
+	"melee sickle climb"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Climb walls by hitting them but consumes {4} health"
+	}
 	"milk limit DISPLAY ONLY"
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
