@@ -103,6 +103,13 @@ static Action SDKHook_TakeDamage(int victim, int &attacker, int &inflictor, floa
 
 public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom, CritType &critType)
 {
+	if(attacker > 0 && attacker <= MaxClients && Client(attacker).MinionType == 2)
+	{
+		// Teutons damage limit (eg. taunt kills)
+		if(damage > 100.0)
+			return Plugin_Handled;
+	}
+
 	if(Client(victim).IsBoss)
 	{
 		if(!attacker)
@@ -149,11 +156,11 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					float gameTime = GetGameTime();
 					
-					damage = Client(victim).Minion ? 500.0 : 750.0;	// 2250 max damage
+					damage = Client(victim).MinionType ? 500.0 : 750.0;	// 2250 max damage
 					damagetype |= DMG_PREVENT_PHYSICS_FORCE|DMG_CRIT;
 					critType = CritType_Crit;
 					
-					if(!Client(victim).Minion && !Client(attacker).IsBoss && weapon != -1)
+					if(!Client(victim).MinionType && !Client(attacker).IsBoss && weapon != -1)
 					{
 						SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+0.5);
 						
@@ -179,7 +186,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					bool silent = Attributes_OnBackstabBoss(attacker, victim, damage, weapon, true);
 					if(!silent)
 					{
-						if(!Client(victim).Minion)
+						if(!Client(victim).MinionType)
 						{
 							EmitSoundToClient(victim, "player/spy_shield_break.wav", _, _, _, _, 0.7);
 							EmitSoundToClient(attacker, "player/spy_shield_break.wav", _, _, _, _, 0.7);
@@ -435,7 +442,7 @@ static void SDKHook_TakeDamagePost(int victim, int attacker, int inflictor, floa
 
 static void SDKHook_SwitchPost(int client, int weapon)
 {
-	CustomAttrib_OnWeaponSwitch(client, weapon);
+	CustomAttrib_OnWeaponSwitch(client);
 }
 
 static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
@@ -530,7 +537,7 @@ static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 
 static Action SDKHook_HealthTouch(int entity, int client)
 {
-	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && (Client(client).Pickups != 1 && Client(client).Pickups < 3))))
+	if(client > 0 && client <= MaxClients && (Client(client).MinionType || (Client(client).IsBoss && (Client(client).Pickups != 1 && Client(client).Pickups < 3))))
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
@@ -538,7 +545,7 @@ static Action SDKHook_HealthTouch(int entity, int client)
 
 static Action SDKHook_AmmoTouch(int entity, int client)
 {
-	if(client > 0 && client <= MaxClients && (Client(client).Minion || (Client(client).IsBoss && Client(client).Pickups < 2)))
+	if(client > 0 && client <= MaxClients && (Client(client).MinionType || (Client(client).IsBoss && Client(client).Pickups < 2)))
 		return Plugin_Handled;
 	
 	return Plugin_Continue;

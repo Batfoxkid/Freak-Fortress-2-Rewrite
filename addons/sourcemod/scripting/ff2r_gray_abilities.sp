@@ -1254,6 +1254,7 @@ void StopRobotSound(int client)
 	if(PlayingRobotLoop[client] != -1)
 	{
 		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOPLOOPING);
+		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOPLOOPING);
 		PlayingRobotLoop[client] = -1;
 	}
 }

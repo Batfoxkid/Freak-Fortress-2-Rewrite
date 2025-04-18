@@ -168,7 +168,7 @@ static any Native_GetClientMinion(Handle plugin, int params)
 	if(client < 0 || client >= MAXTF2PLAYERS)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
 	
-	return Client(client).Minion;
+	return Client(client).MinionType;
 }
 
 static any Native_SetClientMinion(Handle plugin, int params)
@@ -177,7 +177,7 @@ static any Native_SetClientMinion(Handle plugin, int params)
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
 	
-	Client(client).Minion = GetNativeCell(2);
+	Client(client).MinionType = GetNativeCell(2);
 	return 0;
 }
 

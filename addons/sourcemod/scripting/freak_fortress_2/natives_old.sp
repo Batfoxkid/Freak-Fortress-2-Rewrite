@@ -553,7 +553,7 @@ static any NativeOld_GetFF2flags(Handle plugin, int params)
 	
 	int flags = FF2FLAG_USEBOSSTIMER|FF2FLAG_CLASSHELPED|FF2FLAG_HASONGIVED;
 	
-	if(Client(client).Minion)
+	if(Client(client).MinionType)
 		flags += FF2FLAG_CLASSTIMERDISABLED;
 	
 	if(Client(client).NoHud)
@@ -608,7 +608,7 @@ static any NativeOld_SetFF2flags(Handle plugin, int params)
 	{
 		int flags = GetNativeCell(2);
 		
-		Client(client).Minion = view_as<bool>(flags & FF2FLAG_CLASSTIMERDISABLED);
+		Client(client).MinionType = (flags & FF2FLAG_CLASSTIMERDISABLED) ? 1 : 0;
 		Client(client).NoHud = view_as<bool>(flags & FF2FLAG_HUDDISABLED);
 		
 		if(Client(client).IsBoss)

@@ -469,6 +469,8 @@ void Gamemode_RoundStart()
 				}
 			}
 		}
+
+		Teuton_RoundStart(bvb ? 0 : mercTeam);
 		
 		char buffer[512];
 		bool specTeam = Cvar[SpecTeam].BoolValue;
@@ -1089,7 +1091,7 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 {
 	if(IsPlayerAlive(client))
 	{
-		if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).Minion)
+		if(Enabled && RoundStatus == 1 && !Client(client).IsBoss && !Client(client).MinionType)
 		{
 			int team = GetClientTeam(client);
 			if(PlayersAlive[team] < 3)

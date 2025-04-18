@@ -268,7 +268,7 @@ static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 	{
 		case Plugin_Continue:
 		{
-			if(Client(client).IsBoss || Client(client).Minion)
+			if(Client(client).IsBoss || Client(client).MinionType)
 			{
 				ret.Value = false;
 				return MRES_Supercede;
@@ -289,14 +289,15 @@ static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, D
 	return MRES_Ignored;
 }
 
-static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookParam param) {
+static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookParam param)
+{
 	int client = param.Get(1);
 	int weapon = param.Get(2);
 	switch(Forward_OnPickupDroppedWeapon(client, weapon))
 	{
 		case Plugin_Continue:
 		{
-			if(Client(client).IsBoss || Client(client).Minion)
+			if(Client(client).IsBoss || Client(client).MinionType)
 			{
 				ret.Value = false;
 				return MRES_Supercede;
@@ -337,7 +338,7 @@ static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 
 static MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
 {
-	return (Client(client).Minion || Client(client).IsBoss) ? MRES_Supercede : MRES_Ignored;
+	return (Client(client).MinionType || Client(client).IsBoss) ? MRES_Supercede : MRES_Ignored;
 }
 
 static MRESReturn DHook_ForceRespawnPre(int client)

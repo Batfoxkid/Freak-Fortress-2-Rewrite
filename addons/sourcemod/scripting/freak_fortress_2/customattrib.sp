@@ -447,6 +447,12 @@ static void AddAttributes()
 	attrib.SetCustom("description_ff2_string", "jarate is rage loss");
 	attrib.Register();
 
+	attrib.SetName("melee sickle climb");
+	attrib.SetClass("ff2.mod_melee_climb");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "melee sickle climb");
+	attrib.Register();
+
 	attrib.SetName("milk limit DISPLAY ONLY");
 	attrib.SetClass("ff2.displayonly_1");
 	attrib.SetCustom("description_ff2_string", "milk limit DISPLAY ONLY");
@@ -792,49 +798,54 @@ void CustomAttrib_OnJarateBoss(int victim, int attacker, int weapon, float &jara
 
 void CustomAttrib_OnInventoryApplication(int userid)
 {
-	RequestFrame(InventoryApplicationFrame, userid);
+	RequestFrame(WeaponSwitchFrame, userid);
 }
 
-static void InventoryApplicationFrame(int userid)
+void CustomAttrib_OnWeaponSwitch(int client)
+{
+	RequestFrame(WeaponSwitchFrame, GetClientUserId(client));
+}
+
+static void WeaponSwitchFrame(int userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(client)
-		CustomAttrib_OnWeaponSwitch(client, GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"));
-}
-
-void CustomAttrib_OnWeaponSwitch(int client, int weapon)
-{
-	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
-		switch(HasCritGlow[client])
+		int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 		{
-			case 1:
+			TFClassType class = TF2_GetPlayerClass(client);
+
+			switch(HasCritGlow[client])
 			{
-				TF2_RemoveCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola);
+				case 1:
+				{
+					TF2_RemoveCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
+				}
+				case 2:
+				{
+					TF2_RemoveCondition(client, TFCond_CritOnDamage);
+				}
 			}
-			case 2:
+			
+			float type = 0.0;
+			CustomAttrib_Get(weapon, "mod crit type glow", type);
+			switch(RoundFloat(type))
 			{
-				TF2_RemoveCondition(client, TFCond_CritOnDamage);
-			}
-		}
-		
-		float type = 0.0;
-		CustomAttrib_Get(weapon, "mod crit type glow", type);
-		switch(RoundFloat(type))
-		{
-			case 1:
-			{
-				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola);
-				HasCritGlow[client] = 1;
-			}
-			case 2:
-			{
-				TF2_AddCondition(client, TFCond_CritOnDamage);
-				HasCritGlow[client] = 2;
-			}
-			default:
-			{
-				HasCritGlow[client] = 0;
+				case 1:
+				{
+					TF2_AddCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
+					HasCritGlow[client] = 1;
+				}
+				case 2:
+				{
+					TF2_AddCondition(client, TFCond_CritOnDamage);
+					HasCritGlow[client] = 2;
+				}
+				default:
+				{
+					HasCritGlow[client] = 0;
+				}
 			}
 		}
 	}
@@ -912,4 +923,52 @@ static void ApplyRage(int victim, int attacker, float amount)
 			Client(attacker).Assist += RoundFloat(GetClientTeam(victim) == GetClientTeam(attacker) ? rage : -rage);
 		}
 	}
+}
+
+void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
+{
+	float damage;
+	if(CustomAttrib_Get(weapon, "melee sickle climb"))
+	{
+		float pos[3];
+		float ang[3];
+		GetClientEyePosition(client, pos);
+		GetClientEyeAngles(client, ang);
+		
+		Handle trace = TR_TraceRayFilterEx(pos, ang, MASK_SOLID, RayType_Infinite, TraceRay_DontHitSelf, client);
+
+		if(TR_DidHit(trace) && TR_GetEntityIndex(trace) == 0)
+		{
+			float vec[3];
+			TR_GetPlaneNormal(trace, vec);
+			GetVectorAngles(vec, vec);
+
+			if(vec[0] < 30.0 || vec[0] > 330.0)
+			{
+				if(vec[0] > -30.0)
+				{
+					TR_GetEndPosition(vec);
+
+					if(GetVectorDistance(pos, vec, true) < 10000.0)
+					{
+						GetEntPropVector(client, Prop_Data, "m_vecVelocity", vec);
+						vec[2] = 600.0;
+						TeleportEntity(client, _, _, vec);
+
+						if(damage > 0.0)
+							SDKHooks_TakeDamage(client, client, client, damage, DMG_CLUB, 0);
+
+						ClientCommand(client, "playgamesound player/taunt_clip_spin.wav");
+					}
+				}
+			}
+		}
+
+		delete trace;
+	}
+}
+
+static bool TraceRay_DontHitSelf(int entity, int mask, any data)
+{
+	return (entity != data);
 }

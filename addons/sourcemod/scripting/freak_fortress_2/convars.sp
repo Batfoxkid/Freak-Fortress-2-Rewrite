@@ -42,6 +42,7 @@ void ConVar_PluginStart()
 	Cvar[FileCheck] = CreateConVar("ff2_plugin_checkfiles", "1", "If to check and warn about missing files from bosses. (Disabling this can help load times.)", _, true, 0.0, true, 1.0);
 	Cvar[PackVotes] = CreateConVar("ff2_plugin_packvotes", "1", "If to host a boss pack vote when the next map is set.", _, true, 0.0, true, 1.0);
 	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill.", _, true, 1.0);
+	Cvar[Teutons] = CreateConVar("ff2_game_teutons", "0", "Damage dealt by dead roaming players, 0 to disable", _, true, 0.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

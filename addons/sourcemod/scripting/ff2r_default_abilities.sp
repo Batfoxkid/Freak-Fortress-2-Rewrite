@@ -2485,7 +2485,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			// +4 for the same team
 			int points = (team1 == team2) ? 4 : 0;
 
-			if(IsPlayerAlive(target))
+			if(IsPlayerAlive(target) && FF2R_GetClientMinion(target) != 2)
 			{
 				// Don't steal alive players
 				if(team1 != team2)
@@ -2558,11 +2558,17 @@ void SpawnCloneList(int[][] clients, int amount, ConfigData cfg, int owner, int 
 		CloneLowPrio[client] = lowPrio;
 		CloneRemoveCfg[client] = weaponsOnly;
 		delete CloneTimer[client];
-
-		FF2R_SetClientMinion(client, !highPrio);
 		
 		if(cfg)
+		{
 			FF2R_CreateBoss(client, cfg, team);
+		}
+		else
+		{
+			ChangeClientTeam(client, team);
+		}
+
+		FF2R_SetClientMinion(client, highPrio ? 0 : 1);
 		
 		CloneOwner[client] = owner;
 		
