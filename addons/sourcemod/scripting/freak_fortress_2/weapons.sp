@@ -537,7 +537,10 @@ void Weapons_ShowChanges(int client, int entity)
 				{
 					int attrib = TF2ED_TranslateAttributeNameToDefinitionIndex(key);
 					if(attrib != -1)
+					{
+						strcopy(value, sizeof(value), attributeValue.data);
 						PrintThisAttrib(client, attrib, value, type, desc, buffer2, key, length);
+					}
 				}
 			}
 
