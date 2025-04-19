@@ -261,7 +261,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 			
 			int entity = TF2U_GetPlayerLoadoutEntity(client, i);
 			
-			if(entity != -1 && FindWeaponSection(entity, loadout))
+			if(entity != -1 && FindWeaponSection(entity, loadout, _, client))
 			{
 				IntToString(EntIndexToEntRef(entity), buffer1, sizeof(buffer1));
 				menu.AddItem(buffer1, buffer2);
@@ -418,7 +418,7 @@ void Weapons_ShowChanges(int client, int entity)
 	
 	char cwx[64], loadout[32];
 	Client(client).GetLoadout(loadout, sizeof(loadout));
-	ConfigMap cfg = FindWeaponSection(entity, loadout, cwx);
+	ConfigMap cfg = FindWeaponSection(entity, loadout, cwx, client);
 
 	if(!cfg)
 		return;
@@ -679,7 +679,7 @@ static void Weapons_SpawnFrame(int ref)
 	
 	char loadout[32];
 	Client(client).GetLoadout(loadout, sizeof(loadout));
-	ConfigMap cfg = FindWeaponSection(entity, loadout);
+	ConfigMap cfg = FindWeaponSection(entity, loadout, _, client);
 	if(!cfg)
 		return;
 	
@@ -798,7 +798,7 @@ static ConfigMap FindMatchingLoadout(const char[] loadou)
 	return cfg;
 }
 
-static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64] = "")
+static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64] = "", int client = 0)
 {
 	char buffer1[64];
 
@@ -816,7 +816,7 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 	
 	cwx[0] = 0;
 	
-	if(Client(entity).MinionType == 2)
+	if(client && Client(client).MinionType == 2)
 		return loadout.GetSection("Classnames.ff2_weapon_teuton");
 
 	ConfigMap cfg = loadout.GetSection("Indexes");
