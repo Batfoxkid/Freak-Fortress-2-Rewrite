@@ -677,7 +677,7 @@ static void Weapons_SpawnFrame(int ref)
 		return;
 	
 	int client = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
-	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).MinionType != 1)
+	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).MinionType == 1)
 		return;
 	
 	char loadout[32];

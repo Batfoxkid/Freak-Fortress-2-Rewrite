@@ -57,6 +57,7 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 			TF2_RespawnPlayer(client);
 			TF2_SetPlayerClass(client, TFClass_DemoMan);
 			TF2_RemoveAllItems(client);
+			Client(client).MinionType = 2;
 			
 			int i, entity;
 			while(TF2U_GetWearable(client, entity, i))
