@@ -74,6 +74,18 @@ static bool FF2TargetFilter(const char[] pattern, ArrayList clients)
 	return true;
 }
 
+public Action OnClientCommandKeyValues(int client, KeyValues kv)
+{
+	if((Client(client).IsBoss || Client(client).MinionType == 2) && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
+	{
+		char buffer[64];
+		kv.GetSectionName(buffer, sizeof(buffer));
+		if(StrEqual(buffer, "+helpme_server", false))
+			return UseRage(client);
+	}
+	return Plugin_Continue;
+}
+
 static Action Command_Voicemenu(int client, const char[] command, int args)
 {
 	if(client && args == 2 && (Client(client).IsBoss || Client(client).MinionType == 2) && IsPlayerAlive(client) && (!Enabled || RoundStatus == 1))
@@ -84,36 +96,40 @@ static Action Command_Voicemenu(int client, const char[] command, int args)
 		{
 			GetCmdArg(2, arg, sizeof(arg));
 			if(arg[0] == '0')
+				return UseRage(client);
+		}
+	}
+	return Plugin_Continue;
+}
+
+static Action UseRage(int client)
+{
+	if(!Client(client).IsBoss)
+		return Plugin_Handled;
+	
+	float rageDamage = Client(client).RageDamage;
+	if(rageDamage >= 0.0 && rageDamage < 99999.0)
+	{
+		int rageType = Client(client).RageMode;
+		if(rageType != 2)
+		{
+			float rageMin, charge;
+			if(rageDamage <= 1.0 || (charge = Client(client).GetCharge(0)) >= (rageMin = Client(client).RageMin))
 			{
-				if(!Client(client).IsBoss)
-					return Plugin_Handled;
-				
-				float rageDamage = Client(client).RageDamage;
-				if(rageDamage >= 0.0 && rageDamage < 99999.0)
+				if(rageDamage > 1.0)
 				{
-					int rageType = Client(client).RageMode;
-					if(rageType != 2)
+					if(rageType == 1)
 					{
-						float rageMin, charge;
-						if(rageDamage <= 1.0 || (charge = Client(client).GetCharge(0)) >= (rageMin = Client(client).RageMin))
-						{
-							if(rageDamage > 1.0)
-							{
-								if(rageType == 1)
-								{
-									Client(client).SetCharge(0, charge - rageMin);
-								}
-								else if(rageType == 0)
-								{
-									Client(client).SetCharge(0, 0.0);
-								}
-							}
-							
-							Bosses_UseSlot(client, 0, 0);
-							return Plugin_Handled;
-						}
+						Client(client).SetCharge(0, charge - rageMin);
+					}
+					else if(rageType == 0)
+					{
+						Client(client).SetCharge(0, 0.0);
 					}
 				}
+				
+				Bosses_UseSlot(client, 0, 0);
+				return Plugin_Handled;
 			}
 		}
 	}

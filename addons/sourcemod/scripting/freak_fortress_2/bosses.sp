@@ -1846,7 +1846,7 @@ static void EquipBoss(int client, bool weapons)
 			{
 				// Action slot items
 			}
-			case 131, 133, 405, 406, 444, 608, 1099, 1144:
+			case 57, 131, 133, 231, 405, 406, 444, 608, 642, 1099, 1144:
 			{
 				// Wearable weapons
 				TF2_RemoveWearable(client, index);
