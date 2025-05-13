@@ -211,17 +211,17 @@
 			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
-				"linux"		"426"
-				"linux64"	"426"
-				"windows"	"419"
-				"windows64"	"419"
-			}
-			"CTFWeaponBase::ApplyOnInjuredAttributes"
-			{
 				"linux"		"427"
 				"linux64"	"427"
 				"windows"	"420"
 				"windows64"	"420"
+			}
+			"CTFWeaponBase::ApplyOnInjuredAttributes"
+			{
+				"linux"		"428"
+				"linux64"	"428"
+				"windows"	"421"
+				"windows64"	"421"
 			}
 			"m_bitsDamageType"
 			{
