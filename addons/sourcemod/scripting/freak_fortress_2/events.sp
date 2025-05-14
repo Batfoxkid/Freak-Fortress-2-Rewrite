@@ -25,6 +25,7 @@ void Events_PluginStart()
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
+	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
 }
@@ -248,6 +249,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 		if(Client(client).IsBoss)
 		{
 			Bosses_Equip(client);
+			Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		else if(Enabled && !Client(client).MinionType)
 		{
@@ -647,6 +649,11 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 			}
 		}
 	}
+}
+
+static void Events_PointCaptured(Event event, const char[] name, bool dontBroadcast)
+{
+	Dome_SetTeam(event.GetInt("team"));
 }
 
 static void Events_UberDeployed(Event event, const char[] name, bool dontBroadcast)

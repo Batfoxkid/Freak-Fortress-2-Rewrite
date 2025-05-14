@@ -187,6 +187,7 @@ enum
 	SpecTeam,
 	CaptureTime,
 	CaptureAlive,
+	CaptureDome,
 	HealthBar,
 	RefreshDmg,
 	RefreshTime,
@@ -233,6 +234,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/customattrib.sp"
 #include "freak_fortress_2/database.sp"
 #include "freak_fortress_2/dhooks.sp"
+#include "freak_fortress_2/dome.sp"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/events.sp"
 #include "freak_fortress_2/filenetwork.sp"
@@ -304,6 +306,7 @@ public void OnPluginStart()
 	CustomAttrib_PluginStart();
 	Database_PluginStart();
 	DHook_PluginStart();
+	Dome_PluginStart();
 	Events_PluginStart();
 	FileNet_PluginStart();
 	Gamemode_PluginStart();
@@ -348,6 +351,7 @@ public void OnMapStart()
 {
 	Configs_MapStart();
 	DHook_MapStart();
+	Dome_MapStart();
 	Gamemode_MapStart();
 	Teuton_MapStart();
 }

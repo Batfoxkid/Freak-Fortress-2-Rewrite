@@ -164,6 +164,13 @@
 				"windows"	"97"
 				"windows64"	"97"
 			}
+			"CBaseEntity::ShouldTransmit"
+			{
+				"linux"		"21"
+				"linux64"	"21"
+				"windows"	"20"
+				"windows64"	"20"
+			}
 			"CBasePlayer::ForceRespawn"
 			{
 				"linux"		"338"
@@ -246,6 +253,13 @@
 						"type"	"int"
 					}
 				}
+			}
+			"CBaseEntity::ShouldTransmit"
+			{
+				"offset"	"CBaseEntity::ShouldTransmit"
+				"hooktype"	"entity"
+				"return"	"int"
+				"this"		"entity"
 			}
 			"CBasePlayer::ForceRespawn"
 			{

@@ -145,6 +145,7 @@ void Gamemode_RoundSetup()
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
+			Dome_RoundSetup();
 			Goomba_RoundSetup();
 			
 			float preround = Cvar[PreroundTime].FloatValue;
