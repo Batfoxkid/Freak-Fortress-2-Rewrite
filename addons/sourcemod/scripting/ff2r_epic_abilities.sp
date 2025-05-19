@@ -125,9 +125,9 @@
 #include <dhooks>
 #include <adt_trie_sort>
 #include <cfgmap>
-#include <ff2r>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <ff2r>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -231,6 +231,7 @@ float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
 
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/subplugin.sp"
 #include "freak_fortress_2/tf2attributes.sp"
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/vscript.sp"
@@ -241,7 +242,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid",
 	description	=	"You gotta be kidding me!",
 	version		=	PLUGIN_VERSION,
-	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+	url		=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -348,6 +349,8 @@ public void OnPluginStart()
 	CvarTimeScale = FindConVar("host_timescale");
 	CvarUnlag = FindConVar("sv_unlag");
 	CvarMaxUnlag = FindConVar("sv_maxunlag");
+
+	Subplugin_PluginStart();
 }
 
 void CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
@@ -369,7 +372,7 @@ void CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallbac
 	}
 }
 
-public void OnAllPluginsLoaded()
+void FF2R_PluginLoaded()
 {
 	CvarDebug = FindConVar("ff2_debug");
 	
@@ -780,6 +783,7 @@ public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
+	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
@@ -788,6 +792,7 @@ public void OnLibraryAdded(const char[] name)
 public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
+	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);

@@ -94,9 +94,9 @@
 #include <morecolors>
 //#include <adt_trie_sort>
 #include <cfgmap>
-#include <ff2r>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <ff2r>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -183,6 +183,7 @@ ArrayList AnnounceList;
 
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/subplugin.sp"
 #include "freak_fortress_2/tf2attributes.sp"
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/vscript.sp"
@@ -193,7 +194,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid",
 	description	=	"I must I must I must",
 	version		=	PLUGIN_VERSION,
-	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+	url		=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -239,9 +240,11 @@ public void OnPluginStart()
 	HookEvent("post_inventory_application", OnInventoryApplication, EventHookMode_Post);
 	HookEvent("teamplay_flag_event", OnFlagEvent, EventHookMode_Pre);
 	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_Post);
+
+	Subplugin_PluginStart();
 }
 
-public void OnAllPluginsLoaded()
+void FF2R_PluginLoaded()
 {
 	CvarDebug = FindConVar("ff2_debug");
 	
@@ -571,6 +574,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
+	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
@@ -579,6 +583,7 @@ public void OnLibraryAdded(const char[] name)
 public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
+	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);

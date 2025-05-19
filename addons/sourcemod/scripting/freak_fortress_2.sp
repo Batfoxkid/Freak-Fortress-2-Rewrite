@@ -264,7 +264,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid based on the original done by many others",
 	description	=	"It's like Christmas Morning",
 	version		=	PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
-	url			=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
+	url		=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)

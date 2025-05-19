@@ -347,9 +347,9 @@
 #include <tf2_stocks>
 #include <morecolors>
 #include <cfgmap>
-#include <ff2r>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <ff2r>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -415,6 +415,7 @@ ConVar CvarTimeScale;
 #include "freak_fortress_2/customattrib.sp"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/subplugin.sp"
 #include "freak_fortress_2/tf2attributes.sp"
 #include "freak_fortress_2/tf2items.sp"
 #include "freak_fortress_2/tf2utils.sp"
@@ -426,7 +427,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid",
 	description	=	"Contains too much excitement!",
 	version		=	PLUGIN_VERSION,
-	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+	url		=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -505,7 +506,12 @@ public void OnPluginStart()
 	
 	AddCommandListener(OnKermitSewerSlide, "explode");
 	AddCommandListener(OnKermitSewerSlide, "kill");
-	
+
+	Subplugin_PluginStart();
+}
+
+void FF2R_PluginLoaded()
+{
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
@@ -555,6 +561,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
 	CustomAttrib_LibraryAdded(name);
+	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
@@ -564,6 +571,7 @@ public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
 	CustomAttrib_LibraryRemoved(name);
+	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);

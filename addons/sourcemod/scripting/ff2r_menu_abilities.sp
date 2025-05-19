@@ -78,9 +78,9 @@
 #include <tf2_stocks>
 #include <adt_trie_sort>
 #include <cfgmap>
-#include <ff2r>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <ff2r>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -113,6 +113,7 @@ bool SetupMode[MAXTF2PLAYERS];
 int PlayersAlive[4];
 
 #include "freak_fortress_2/formula_parser.sp"
+#include "freak_fortress_2/subplugin.sp"
 
 public Plugin myinfo =
 {
@@ -120,7 +121,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid",
 	description	=	"Watch what happens when I cast a spell I don't know!",
 	version		=	PLUGIN_VERSION,
-	url			=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
+	url		=	"https://github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 }
 
 public void OnPluginStart()
@@ -145,7 +146,11 @@ public void OnPluginStart()
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
 	
-	// Lateload Support
+	Subplugin_PluginStart();
+}
+
+void FF2R_PluginLoaded()
+{
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client))
@@ -155,6 +160,16 @@ public void OnPluginStart()
 				FF2R_OnBossCreated(client, cfg, false);
 		}
 	}
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	Subplugin_LibraryAdded(name);
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	Subplugin_LibraryRemoved(name);
 }
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
