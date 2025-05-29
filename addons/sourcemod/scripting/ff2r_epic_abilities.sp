@@ -84,6 +84,15 @@
 	}
 	
 	
+	"special_damage_multi"
+	{
+		"players"	"2.0"	// Damage against players
+		"buildings"	"2.0"	// Damage against buildings
+		
+		"plugin_name"	"ff2r_epic_abilities"
+	}
+	
+	
 	"special_razorback_shield"
 	{
 		"secondary"		"false"	// Use secondary weapon slot instead of primary
@@ -128,6 +137,7 @@
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <ff2r>
+#tryinclude <tf_ontakedamage>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -161,6 +171,15 @@
 #define MAG_LASTLIFE	0x0010	// Require having no extra lives left
 #define MAG_GROUND		0x0020	// Require being on the ground
 
+#if !defined __tf_ontakedamage_included
+enum CritType
+{
+	CritType_None = 0,
+	CritType_MiniCrit,
+	CritType_Crit
+};
+#endif
+
 enum
 {
 	EF_BONEMERGE			= 0x001,	// Performs bone merge on client side
@@ -189,6 +208,7 @@ Handle SDKInitPickedUpWeapon;
 Handle SDKSetSpeed;
 int PlayersAlive[4];
 Handle SyncHud;
+bool OTDLoaded;
 
 ConVar CvarDebug;
 ConVar CvarCheats;
@@ -201,6 +221,8 @@ bool HookedWeaponSwap[MAXTF2PLAYERS];
 
 int HasAbility[MAXTF2PLAYERS];
 bool PressedInspectKey[MAXTF2PLAYERS];
+float PlayerDamageMulti[MAXTF2PLAYERS];
+float BuildingDamageMulti[MAXTF2PLAYERS];
 
 Handle TimescaleTimer;
 float DodgeFor[MAXTF2PLAYERS];
@@ -229,6 +251,7 @@ float WallSpeedMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallJumpMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
 
+#define OTD_LIBRARY	"tf_ontakedamage"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/subplugin.sp"
@@ -349,6 +372,8 @@ public void OnPluginStart()
 	CvarTimeScale = FindConVar("host_timescale");
 	CvarUnlag = FindConVar("sv_unlag");
 	CvarMaxUnlag = FindConVar("sv_maxunlag");
+	
+	OTDLoaded = LibraryExists(OTD_LIBRARY);
 
 	Subplugin_PluginStart();
 }
@@ -446,6 +471,16 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				PrintCenterText(client, "%t", "Boss Weapon Pickups");
 				PrintToChat(client, "%t", "Boss Weapon Pickups");
 			}
+		}
+	}
+
+	if(!PlayerDamageMulti[client] && !BuildingDamageMulti[client])
+	{
+		AbilityData ability = boss.GetAbility("special_damage_multi");
+		if(ability.IsMyPlugin())
+		{
+			PlayerDamageMulti[client] = ability.GetFloat("players", 1.0);
+			BuildingDamageMulti[client] = ability.GetFloat("buildings", 1.0);
 		}
 	}
 	
@@ -563,6 +598,8 @@ public void FF2R_OnBossRemoved(int client)
 	ClassSwap[client] = TFClass_Unknown;
 	StealNext[client] = 0;
 	PressedInspectKey[client] = false;
+	PlayerDamageMulti[client] = 0.0;
+	BuildingDamageMulti[client] = 0.0;
 	
 	if(DodgeFor[client])
 		DodgeFor[client] = 1.0;
@@ -787,6 +824,17 @@ public void OnLibraryAdded(const char[] name)
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
+
+	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
+		OTDLoaded = true;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKUnhook(client, SDKHook_OnTakeDamage, PlayerTakeDamage);
+		}
+	}
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -796,6 +844,17 @@ public void OnLibraryRemoved(const char[] name)
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);
+
+	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
+		OTDLoaded = false;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKHook(client, SDKHook_OnTakeDamage, PlayerTakeDamage);
+		}
+	}
 }
 
 public void OnClientPutInServer(int client)
@@ -803,7 +862,10 @@ public void OnClientPutInServer(int client)
 	if(TimescaleTimer && !IsFakeClient(client))
 		CvarCheats.ReplicateToClient(client, "1");
 	
-	SDKHook(client, SDKHook_TraceAttack, StealingTraceAttack);
+	SDKHook(client, SDKHook_OnTakeDamage, StealingTraceAttack);
+
+	if(!OTDLoaded)
+		SDKHook(client, SDKHook_OnTakeDamage, PlayerTakeDamage);
 }
 
 public void OnClientDisconnect(int client)
@@ -1292,7 +1354,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						SetHudTextParams(-1.0, 0.68 - (boss.GetInt("lives") > 1 ? 0.05 : 0.0), 0.1, 255, 255, 255, 255, _, _, 0.01, 0.5);
 					}
 					
-					ReplaceString(buffer, sizeof(buffer), "$", "%");
+					ReplaceString(buffer, sizeof(buffer), "$", "%%");
 					ShowSyncHudText(client, SyncHud, buffer);
 				}
 			}
@@ -1304,6 +1366,12 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 			HasAbility[client] = 0;
 		}
 	}
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if(!StrContains(classname, "obj_"))
+		SDKHook(entity, SDKHook_OnTakeDamage, OtherTakeDamage);
 }
 
 void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -1665,45 +1733,7 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 {
 	if(CanPickup[client] && ClassSwap[client])
 	{
-		int slot = -1;
-		int weapon = param.Get(1);
-		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		TFClassType class = TF2_GetDropClass(index, ClassSwap[client], slot);
-		if(slot != -1 && slot != TFWeaponSlot_Melee)
-		{
-			TF2_RemoveWeaponSlot(client, slot);
-			TF2_SetPlayerClass(client, class, _, false);
-			
-			char classname[36];
-			TF2Econ_GetItemClassName(index, classname, sizeof(classname));
-			TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class);
-			
-			static int offset = -1;
-			if(offset == -1)
-				offset = FindSendPropInfo("CTFDroppedWeapon", "m_Item");
-			
-			int entity = SDKCall(SDKGiveNamedItem, client, classname,
-			(class == TFClass_Spy && (StrEqual(classname, "tf_weapon_builder") || StrEqual(classname, "tf_weapon_sapper"))) ? view_as<int>(TFObject_Sapper) : 0,
-			GetEntityAddress(weapon) + view_as<Address>(offset), true);
-			
-			if(GetEntProp(entity, Prop_Send, "m_iItemIDHigh") == -1 && GetEntProp(entity, Prop_Send, "m_iItemIDLow") == -1)
-			{
-				GetEntityNetClass(entity, classname, sizeof(classname));
-				int offse = FindSendPropInfo(classname, "m_iItemIDHigh");
-				
-				SetEntData(entity, offse - 8, 0);	// m_iItemID
-				SetEntData(entity, offse - 4, 0);	// m_iItemID
-				SetEntData(entity, offse, 0);		// m_iItemIDHigh
-				SetEntData(entity, offse + 4, 0);	// m_iItemIDLow
-			}
-			
-			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-			EquipPlayerWeapon(client, entity);
-			SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
-			
-			TF2U_SetPlayerActiveWeapon(client, entity);
-		}
-		else
+		if(!PickupWeaponEntity(client, param.Get(1)))
 		{
 			RegenerateSupply(client);
 			ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
@@ -1713,6 +1743,53 @@ public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookPar
 		return MRES_Supercede;
 	}
 	return MRES_Ignored;
+}
+
+bool PickupWeaponEntity(int client, int weapon)
+{
+	if(!CanPickup[client] || !ClassSwap[client])
+		return false;
+	
+	int slot = -1;
+	int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+	TFClassType class = TF2_GetDropClass(index, ClassSwap[client], slot);
+	if(slot != -1 && slot != TFWeaponSlot_Melee)
+	{
+		TF2_RemoveWeaponSlot(client, slot);
+		TF2_SetPlayerClass(client, class, _, false);
+		
+		char classname[36];
+		TF2Econ_GetItemClassName(index, classname, sizeof(classname));
+		TF2Econ_TranslateWeaponEntForClass(classname, sizeof(classname), class);
+		
+		static int offset = -1;
+		if(offset == -1)
+			offset = FindSendPropInfo("CTFDroppedWeapon", "m_Item");
+		
+		int entity = SDKCall(SDKGiveNamedItem, client, classname,
+		(class == TFClass_Spy && (StrEqual(classname, "tf_weapon_builder") || StrEqual(classname, "tf_weapon_sapper"))) ? view_as<int>(TFObject_Sapper) : 0,
+		GetEntityAddress(weapon) + view_as<Address>(offset), true);
+		
+		if(GetEntProp(entity, Prop_Send, "m_iItemIDHigh") == -1 && GetEntProp(entity, Prop_Send, "m_iItemIDLow") == -1)
+		{
+			GetEntityNetClass(entity, classname, sizeof(classname));
+			int offse = FindSendPropInfo(classname, "m_iItemIDHigh");
+			
+			SetEntData(entity, offse - 8, 0);	// m_iItemID
+			SetEntData(entity, offse - 4, 0);	// m_iItemID
+			SetEntData(entity, offse, 0);		// m_iItemIDHigh
+			SetEntData(entity, offse + 4, 0);	// m_iItemIDLow
+		}
+		
+		SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+		EquipPlayerWeapon(client, entity);
+		SDKCall(SDKInitPickedUpWeapon, weapon, client, entity);
+
+		TF2U_SetPlayerActiveWeapon(client, entity);
+		return true;
+	}
+
+	return false;
 }
 
 bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapshot snap, int index, float gameTime, int &summonable = -2, int &allies = -2)
@@ -2244,11 +2321,14 @@ Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &dam
 					float pos[3], ang[3];
 					GetClientEyePosition(victim, pos);
 					GetClientEyeAngles(victim, ang);
-					if(CreateDroppedWeapon(victim, weapon, pos, ang) != INVALID_ENT_REFERENCE)
+					int dropped = CreateDroppedWeapon(victim, weapon, pos, ang);
+					if(dropped != INVALID_ENT_REFERENCE)
 					{
 						StealNext[attacker]--;
 						TF2_RemoveItem(victim, weapon);
 						TF2_StunPlayer(victim, 0.4, 0.0, TF_STUNFLAG_BONKSTUCK);
+
+						int slot = TF2_GetClassnameSlot(classname);
 						
 						if(!StrContains(classname, "tf_weapon_wrench"))
 						{
@@ -2279,7 +2359,7 @@ Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &dam
 								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
 						}
-						else if(TF2_GetClassnameSlot(classname) == TFWeaponSlot_Melee)
+						else if(slot == TFWeaponSlot_Melee)
 						{
 							index = CreateEntityByName(classname);
 							if(index != -1)
@@ -2310,6 +2390,13 @@ Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &dam
 						
 						IntToString(view_as<int>(TF2_GetPlayerClass(victim)), classname, sizeof(classname));
 						FF2R_EmitBossSoundToAll(STEAL_REACT, attacker, classname, victim, SNDCHAN_VOICE, 90, _, 1.0);
+						
+						if((damagetype & DMG_CLUB) && (slot == TFWeaponSlot_Primary || slot == TFWeaponSlot_Secondary))
+						{
+							// Pick it up right away on a melee attack
+							if(PickupWeaponEntity(attacker, dropped))
+								RemoveEntity(dropped);
+						}
 						return Plugin_Handled;
 					}
 				}
@@ -2386,12 +2473,39 @@ int CreateDroppedWeapon(int client, int weapon, const float pos1[3], const float
 	if(entity == INVALID_ENT_REFERENCE)
 		return INVALID_ENT_REFERENCE;
 	
-	//DispatchSpawn(entity);
+	DispatchSpawn(entity);
 	SDKCall(SDKInitDroppedWeapon, entity, client, weapon, false, true);
-	SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", 1.0);
 	
 	TeleportEntity(entity, pos1);
 	return entity;
+}
+
+Action OtherTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	if(attacker > 0 && attacker <= MaxClients && BuildingDamageMulti[attacker])
+	{
+		damage *= BuildingDamageMulti[attacker];
+		return Plugin_Changed;	
+	}
+
+	return Plugin_Continue;
+}
+
+Action PlayerTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	CritType crit = (damagetype & DMG_CRIT) ? CritType_Crit : CritType_None;
+	return TF2_OnTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, crit);
+}
+
+public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom, CritType &critType)
+{
+	if(attacker > 0 && attacker <= MaxClients && PlayerDamageMulti[attacker])
+	{
+		damage *= PlayerDamageMulti[attacker];
+		return Plugin_Changed;	
+	}
+
+	return Plugin_Continue;
 }
 
 int EquipRazorback(int client)

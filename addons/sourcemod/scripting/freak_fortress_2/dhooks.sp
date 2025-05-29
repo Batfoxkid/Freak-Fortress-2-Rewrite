@@ -154,7 +154,7 @@ void DHook_HookClient(int client)
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
 	
-	if(ChangeTeam && Cvar[DisguiseModels].BoolValue)
+	if(ChangeTeam)
 		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
@@ -333,14 +333,19 @@ static MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 
 static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 {
-	if(param.Get(1) % 2)
+	if(Cvar[DisguiseModels].BoolValue)
 	{
-		Attrib_Remove(client, "vision opt in flags");
+		if(param.Get(1) % 2)
+		{
+			Attrib_Remove(client, "vision opt in flags");
+		}
+		else
+		{
+			Attrib_Set(client, "vision opt in flags", 4.0);
+		}
 	}
-	else
-	{
-		Attrib_Set(client, "vision opt in flags", 4.0);
-	}
+
+	Events_CheckAlivePlayers();
 	return MRES_Ignored;
 }
 

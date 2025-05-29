@@ -431,7 +431,7 @@ static Action Dome_TimerBleed(Handle timer)
 		if(GetEntProp(entity, Prop_Send, "m_bCarried"))
 			continue;
 		
-		if(GetEntProp(entity, Prop_Send, "m_TeamNum") == DomeTeamOwner)
+		if(GetEntProp(entity, Prop_Send, "m_iTeamNum") == DomeTeamOwner)
 			continue;
 		
 		SetVariantInt(15);

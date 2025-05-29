@@ -34,7 +34,7 @@ void ConVar_PluginStart()
 	Cvar[CaptureAlive] = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
 	Cvar[AggressiveSwap] = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
 	Cvar[AggressiveOverlay] = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
-	Cvar[DisguiseModels] = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.\nCan't modifiy cvar value while players are active.", _, true, 0.0, true, 1.0);
+	Cvar[DisguiseModels] = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.", _, true, 0.0, true, 1.0);
 	Cvar[PlayerGlow] = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted", _, true, 0.0, true, 1.0);
 	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	Cvar[Telefrags] = CreateConVar("ff2_game_telefrag", "5000", "How much damage telefrags do on bosses");
