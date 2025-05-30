@@ -879,17 +879,17 @@ public void OnClientDisconnect(int client)
 	WeapRef[client] = INVALID_ENT_REFERENCE;
 }
 
-public Action OnClientCommandKeyValues(int client, KeyValues kv) {
-	if (!HasAbility[client] || !IsPlayerAlive(client)) {
+public Action OnClientCommandKeyValues(int client, KeyValues kv)
+{
+	if(!HasAbility[client] || !IsPlayerAlive(client))
 		return Plugin_Continue;
-	}
 	
 	char command[64];
 	kv.GetSectionName(command, sizeof(command));
-	if (strcmp(command, "+inspect_server") == 0) {
-		PressedInspectKey[client] = true;
-	} else if (strcmp(command, "-inspect_server") == 0) {
-		PressedInspectKey[client] = false;
+	if(StrContains(command, "inspect_server") == 1)
+	{
+		PressedInspectKey[client] = command[0] == '+';
+		return Plugin_Handled;
 	}
 	
 	return Plugin_Continue;
@@ -1042,7 +1042,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 				}
 			}
 			
-			if(!(buttons & IN_SCORE))
+			if(!(buttons & IN_SCORE) && GameRules_GetRoundState() != RoundState_TeamWin)
 			{
 				if(!hud)
 				{
@@ -1376,20 +1376,6 @@ public void OnEntityCreated(int entity, const char[] classname)
 
 void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client))
-		{
-			BossData boss = FF2R_GetBossData(client);
-			if(boss)
-			{
-				AbilityData ability = boss.GetAbility("rage_ability_management");
-				if(ability.IsMyPlugin())
-					ability.SetFloat("hudin", FAR_FUTURE);
-			}
-		}
-	}
-	
 	TriggerTimer(TimescaleTimer);
 }
 

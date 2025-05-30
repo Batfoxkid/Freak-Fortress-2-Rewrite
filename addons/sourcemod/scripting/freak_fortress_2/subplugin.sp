@@ -6,10 +6,12 @@
 #pragma newdecls required
 
 static bool FF2REnabled;
+static bool HasLoaded;
 
 void Subplugin_PluginStart()
 {
 	FF2REnabled = LibraryExists("ff2r");
+	HasLoaded = FF2REnabled;
 	if(FF2REnabled)
 		FF2R_PluginLoaded();
 }
@@ -19,7 +21,12 @@ void Subplugin_LibraryAdded(const char[] name)
 	if(!FF2REnabled && StrEqual(name, "ff2r"))
 	{
 		FF2REnabled = true;
-		FF2R_PluginLoaded();
+		
+		if(!HasLoaded)
+		{
+			HasLoaded = true;
+			FF2R_PluginLoaded();
+		}
 	}
 }
 
@@ -27,9 +34,7 @@ void Subplugin_LibraryRemoved(const char[] name)
 {
 	if(FF2REnabled && StrEqual(name, "ff2r"))
 	{
-		char buffer[PLATFORM_MAX_PATH];
-		GetPluginFilename(null, buffer, sizeof(buffer));
-		ServerCommand("sm plugins unload %s", buffer);
+		FF2REnabled = false;
 	}
 }
 

@@ -55,6 +55,7 @@ void ConVar_PluginStart()
 	Cvar[FriendlyFire] = FindConVar("mp_friendlyfire");
 	Cvar[MovementFreeze] = FindConVar("tf_player_movement_restart_freeze");
 	Cvar[PreroundTime] = FindConVar("tf_arena_preround_time");
+	Cvar[BonusroundTime] = FindConVar("mp_bonusroundtime");
 	Cvar[Tournament] = FindConVar("mp_tournament");
 	Cvar[WaitingTime] = FindConVar("mp_waitingforplayers_time");
 	

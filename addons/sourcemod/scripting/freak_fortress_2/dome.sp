@@ -85,7 +85,7 @@ void Dome_MapStart()
 
 bool Dome_Enabled()
 {
-	return (DomeAssets && Cvar[CaptureDome].FloatValue > 0.0);
+	return (Enabled && DomeAssets && Cvar[CaptureDome].FloatValue > 0.0);
 }
 
 void Dome_EntityCreated(int entity, const char[] classname)

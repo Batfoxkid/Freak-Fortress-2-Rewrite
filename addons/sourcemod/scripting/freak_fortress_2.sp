@@ -206,6 +206,7 @@ enum
 	FriendlyFire,
 	MovementFreeze,
 	PreroundTime,
+	BonusroundTime,
 	Tournament,
 	WaitingTime,
 	
