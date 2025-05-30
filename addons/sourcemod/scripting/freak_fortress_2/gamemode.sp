@@ -658,6 +658,9 @@ void Gamemode_RoundEnd(int winteam)
 	
 	bool spec = Cvar[SpecTeam].BoolValue;
 
+	int color[4];
+	color = TeamColors[winner];
+
 	char screen[256];
 	for(int a; a < total; a++)
 	{
@@ -704,7 +707,7 @@ void Gamemode_RoundEnd(int winteam)
 
 			if(strlen(screen) > 2)
 			{
-				SetHudTextParamsEx(-1.0, pos, 15.0, {255, 255, 255, 255}, TeamColors[winner], Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 6.0);
+				SetHudTextParamsEx(-1.0, pos, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 6.0);
 				ShowSyncHudText(clients[a], TeamSyncHud[0], screen);
 			}
 		}

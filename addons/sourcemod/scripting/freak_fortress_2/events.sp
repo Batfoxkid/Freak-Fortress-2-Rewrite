@@ -724,6 +724,8 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				}
 			}
 		}
+
+		int color[4];
 		
 		char screen[256];
 		for(int i; i < total; i++)
@@ -747,7 +749,8 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 
 				if(screen[0])
 				{
-					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, TeamColors[GetClientTeam(clients[i])], Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 3.0);
+					color = TeamColors[GetClientTeam(clients[i])];
+					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 3.0);
 					ShowSyncHudText(clients[i], SyncHud, screen);
 				}
 			}
