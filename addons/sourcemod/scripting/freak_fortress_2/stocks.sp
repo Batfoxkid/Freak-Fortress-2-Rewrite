@@ -917,6 +917,19 @@ void ImportValuesIntoConfigMap(ConfigMap from, ConfigMap to)
 	delete snap;
 }
 
+void CreateFade(int client, int duration = 2000, int red = 255, int green = 255, int blue = 255, int alpha = 255)
+{
+	BfWrite bf = UserMessageToBfWrite(StartMessageOne("Fade", client));
+	bf.WriteShort(duration);
+	bf.WriteShort(0);
+	bf.WriteShort(0x0001);
+	bf.WriteByte(red);
+	bf.WriteByte(green);
+	bf.WriteByte(blue);
+	bf.WriteByte(alpha);
+	EndMessage();
+}
+
 void FPrintToChat(int client, const char[] message, any ...)
 {
 	CCheckTrie();

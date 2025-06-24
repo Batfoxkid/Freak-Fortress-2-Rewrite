@@ -30,4 +30,5 @@ Supported:
 - [Artvin](https://github.com/artvin01) - Boss vs Boss testing and support
 - [Marxvee](https://github.com/Marxvee) - HUD layout, score, early disguise port
 - [sarysa](https://github.com/sarysa) - Original Epic Scout boss
+- [Kirillian](https://github.com/KirillianAmu) - Dome model from [VSH Rewrite](https://github.com/redsunservers/VSH-Rewrite)
 - Contributors to the [classic](https://github.com/Steell/Freak-Fortress-2), [better](https://github.com/50DKP/FF2-Official), [spicy](https://github.com/shadow93/FreakFortressBBG), and [crazy](https://github.com/Batfoxkid/FreakFortressBat) versions of FF2.

@@ -86,6 +86,7 @@ public void OnEntityCreated(int entity, const char[] classname)
 	else
 	{
 		DHook_EntityCreated(entity, classname);
+		Dome_EntityCreated(entity, classname);
 		Weapons_EntityCreated(entity, classname);
 	}
 }

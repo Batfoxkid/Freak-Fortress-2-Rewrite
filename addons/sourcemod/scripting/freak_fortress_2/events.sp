@@ -4,13 +4,11 @@
 static bool FirstBlood;
 static bool LastMann;
 static bool InRegen;
-static Handle YourHud;
-static Handle TopHud;
+static Handle SyncHud;
 
 void Events_PluginStart()
 {
-	YourHud = CreateHudSynchronizer();
-	TopHud = CreateHudSynchronizer();
+	SyncHud = CreateHudSynchronizer();
 	
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
@@ -25,6 +23,7 @@ void Events_PluginStart()
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
+	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
 }
@@ -35,8 +34,7 @@ void Events_RoundSetup()
 	{
 		if(IsClientInGame(client))
 		{
-			ClearSyncHud(client, YourHud);
-			ClearSyncHud(client, TopHud);
+			ClearSyncHud(client, SyncHud);
 		}
 	}
 }
@@ -248,6 +246,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 		if(Client(client).IsBoss)
 		{
 			Bosses_Equip(client);
+			Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		else if(Enabled && !Client(client).MinionType)
 		{
@@ -649,6 +648,11 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
+static void Events_PointCaptured(Event event, const char[] name, bool dontBroadcast)
+{
+	Dome_SetTeam(event.GetInt("team"));
+}
+
 static void Events_UberDeployed(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -720,10 +724,13 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				}
 			}
 		}
+
+		int color[4];
 		
-		int colors[4];
+		char screen[256];
 		for(int i; i < total; i++)
 		{
+			screen[0] = 0;
 			SetGlobalTransTarget(clients[i]);
 
 			if(team == -1 || !Client(clients[i]).IsBoss)
@@ -734,18 +741,17 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				if(dmg[0] > 9000)
 					ClientCommand(clients[i], "playgamesound saxton_hale/9000.wav");
 				
-				colors = TeamColors[GetClientTeam(clients[i])];
+				if(team == -1 || !Client(clients[i]).IsBoss)
+					Format(screen, sizeof(screen), "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
 
 				if(team > -1)
+					Format(screen, sizeof(screen), "%s\n \n%t", screen, "Top Damage Hud", top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
+
+				if(screen[0])
 				{
-					SetHudTextParamsEx(0.38, 0.7, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], TopHud, "%t", "Top Damage Hud", top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
-				}
-				
-				if(team == -1 || !Client(clients[i]).IsBoss)
-				{
-					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, colors, 2, 0.1, 0.1);
-					ShowSyncHudText(clients[i], YourHud, "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+					color = TeamColors[GetClientTeam(clients[i])];
+					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 3.0);
+					ShowSyncHudText(clients[i], SyncHud, screen);
 				}
 			}
 		}

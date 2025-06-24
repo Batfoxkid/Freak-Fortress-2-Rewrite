@@ -13,6 +13,7 @@ enum struct RawHooks
 }
 
 static DynamicHook ChangeTeam;
+static DynamicHook ShouldTransmit;
 static DynamicHook ForceRespawn;
 static DynamicHook RoundRespawn;
 static DynamicHook SetWinningTeam;
@@ -92,6 +93,7 @@ static void SetupDHook()
 	}
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
+	ShouldTransmit = CreateHook(gamedata, "CBaseEntity::ShouldTransmit");
 	ForceRespawn = CreateHook(gamedata, "CBasePlayer::ForceRespawn");
 	RoundRespawn = CreateHook(gamedata, "CTeamplayRoundBasedRules::RoundRespawn");
 	SetWinningTeam = CreateHook(gamedata, "CTeamplayRules::SetWinningTeam");
@@ -152,7 +154,7 @@ void DHook_HookClient(int client)
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
 	
-	if(ChangeTeam && Cvar[DisguiseModels].BoolValue)
+	if(ChangeTeam)
 		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
@@ -161,6 +163,12 @@ void DHook_HookBoss(int client)
 	DHook_UnhookBoss(client);
 	if(ChangeTeam && Cvar[AggressiveSwap].BoolValue)
 		ChangeTeamPreHook[client] = ChangeTeam.HookEntity(Hook_Pre, client, DHook_ChangeTeamPre);
+}
+
+void DHook_SetAlwaysTransmit(int entity)
+{
+	if(ShouldTransmit)
+		ShouldTransmit.HookEntity(Hook_Pre, entity, DHook_EntityShouldTransmit);
 }
 
 void DHook_EntityCreated(int entity, const char[] classname)
@@ -325,14 +333,19 @@ static MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 
 static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
 {
-	if(param.Get(1) % 2)
+	if(Cvar[DisguiseModels].BoolValue)
 	{
-		Attrib_Remove(client, "vision opt in flags");
+		if(param.Get(1) % 2)
+		{
+			Attrib_Remove(client, "vision opt in flags");
+		}
+		else
+		{
+			Attrib_Set(client, "vision opt in flags", 4.0);
+		}
 	}
-	else
-	{
-		Attrib_Set(client, "vision opt in flags", 4.0);
-	}
+
+	Events_CheckAlivePlayers();
 	return MRES_Ignored;
 }
 
@@ -372,6 +385,12 @@ static MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 	if(!Client(client).IsBoss || Attrib_FindOnPlayer(client, "increase player capture value"))
 		return MRES_Ignored;
 	
+	if(Dome_Enabled())
+	{
+		ret.Value = 1;
+		return MRES_Override;
+	}
+
 	ret.Value += TF2_GetPlayerClass(client) == TFClass_Scout ? 1 : 2;
 	return MRES_Override;
 }
@@ -412,35 +431,49 @@ static MRESReturn DHook_StartLagCompensation(Address address)
 
 static MRESReturn DHook_SetWinningTeam(DHookParam param)
 {
-	if(Enabled && RoundStatus == 1 && Cvar[SpecTeam].BoolValue && param.Get(2) == WINREASON_OPPONENTS_DEAD)
+	if(Enabled && RoundStatus == 1)
 	{
-		Events_CheckAlivePlayers();
-		
-		int found = -1;
-		for(int i; i < TFTeam_MAX; i++)
+		switch(param.Get(2))
 		{
-			if(PlayersAlive[i])
+			/*case WINREASON_ALL_POINTS_CAPTURED:
 			{
-				if(found != -1)
+				if(Dome_Enabled())
 					return MRES_Supercede;
-				
-				found = i;
+			}*/
+			case WINREASON_OPPONENTS_DEAD:
+			{
+				if(Cvar[SpecTeam].BoolValue)
+				{
+					Events_CheckAlivePlayers();
+					
+					int found = -1;
+					for(int i; i < TFTeam_MAX; i++)
+					{
+						if(PlayersAlive[i])
+						{
+							if(found != -1)
+								return MRES_Supercede;
+							
+							found = i;
+						}
+					}
+					
+					if(found == -1)
+					{
+						found = 0;
+					}
+					else if(found < TFTeam_Red)
+					{
+						Gamemode_OverrideWinner(found);
+						found += 2;
+					}
+					
+					param.Set(1, found);
+
+					return MRES_ChangedOverride;
+				}
 			}
 		}
-		
-		if(found == -1)
-		{
-			found = 0;
-		}
-		else if(found < TFTeam_Red)
-		{
-			Gamemode_OverrideWinner(found);
-			found += 2;
-		}
-		
-		param.Set(1, found);
-
-		return MRES_ChangedOverride;
 	}
 
 	return MRES_Ignored;
@@ -494,4 +527,10 @@ static MRESReturn DHook_ApplyPostHitPost(int entity, DHookParam param)
 	}
 
 	return MRES_Ignored;
+}
+
+static MRESReturn DHook_EntityShouldTransmit(int entity, DHookReturn ret)
+{
+	ret.Value = FL_EDICT_ALWAYS;
+	return MRES_Supercede;
 }

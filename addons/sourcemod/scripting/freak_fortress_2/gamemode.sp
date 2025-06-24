@@ -145,6 +145,7 @@ void Gamemode_RoundSetup()
 		}
 		else if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 		{
+			Dome_RoundSetup();
 			Goomba_RoundSetup();
 			
 			float preround = Cvar[PreroundTime].FloatValue;
@@ -655,69 +656,67 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	int teamColor[4], winColor[4];
-	winColor = TeamColors[winner];
-
 	bool spec = Cvar[SpecTeam].BoolValue;
-	for(int i; i < TFTeam_MAX; i++)
+
+	int color[4];
+	color = TeamColors[winner];
+
+	char screen[256];
+	for(int a; a < total; a++)
 	{
-		if(HasBoss[i] && bosses[i])
+		strcopy(screen, sizeof(screen), " ");
+		
+		if(!Client(clients[a]).NoHud)
 		{
-			teamColor = TeamColors[i];
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, teamColor, winColor, 2, 0.1, 0.1);
-			for(int a; a < total; a++)
+			float pos = 0.4;
+			SetGlobalTransTarget(clients[a]);
+
+			for(int i; i < 4; i++)
 			{
-				if(!Client(clients[a]).NoHud)
+				if(HasBoss[i] && bosses[i])
 				{
-					SetGlobalTransTarget(clients[a]);
+					pos -= 0.05;
 					
 					if(teamName[i])	// Team with a Name
 					{
 						Bosses_GetBossNameCfg(Client(teamName[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]), "group");
-						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Health Left Hud", "_s", buffer, totalHealth[i], totalMax[i]);
+						Format(screen, sizeof(screen), "%s\n%t", screen, "Team Had Health Left Hud", "_s", buffer, totalHealth[i], totalMax[i]);
 					}
 					else if(bosses[i] == 1)	// Solo Boss
 					{
 						Bosses_GetBossNameCfg(Client(lastBoss[i]).Cfg, buffer, sizeof(buffer), GetClientLanguage(clients[a]));
-						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
+						Format(screen, sizeof(screen), "%s\n%t", screen, "Boss Had Health Left Hud", buffer, lastBoss[i], totalHealth[i], totalMax[i]);
 					}
 					else	// Team without a Name
 					{
 						FormatEx(buffer, sizeof(buffer), "Team %d", i);
-						ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
+						Format(screen, sizeof(screen), "%s\n%t", screen, "Team Had Health Left Hud", buffer, totalHealth[i], totalMax[i]);
 					}
 				}
-			}
-		}
-		else if(Enabled && MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
-		{
-			teamColor = TeamColors[i];
-			SetHudTextParamsEx(-1.0, 0.25 + (i * 0.05), 15.0, teamColor, winColor, 2, 0.1, 0.1);
-			for(int a; a < total; a++)
-			{
-				if(!Client(clients[a]).NoHud)
+				else if(Enabled && MaxPlayersAlive[i] && (spec || i > TFTeam_Spectator))
 				{
-					SetGlobalTransTarget(clients[a]);
+					pos -= 0.05;
+					
 					FormatEx(buffer, sizeof(buffer), "Team %d", i);
-					ShowSyncHudText(clients[a], TeamSyncHud[i], "%t", "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
+					Format(screen, sizeof(screen), "%s\n%t", screen, "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
 				}
+
+				if(i != 0 && HasBoss[i])
+					ClearSyncHud(clients[a], TeamSyncHud[i]);
 			}
-		}
-		else if(HasBoss[i])
-		{
-			for(int a; a < total; a++)
+
+			if(strlen(screen) > 2)
 			{
-				ClearSyncHud(clients[a], TeamSyncHud[i]);
+				SetHudTextParamsEx(-1.0, pos, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 6.0);
+				ShowSyncHudText(clients[a], TeamSyncHud[0], screen);
 			}
 		}
-		
+	}
+
+	for(int i; i < TFTeam_MAX; i++)
+	{
 		HasBoss[i] = false;
-		
-		if(HudTimer[i])
-		{
-			KillTimer(HudTimer[i]);
-			HudTimer[i] = null;
-		}
+		delete HudTimer[i];
 	}
 	
 	// Figure out which boss we should play
@@ -1006,11 +1005,7 @@ void Gamemode_UpdateHUD(int team, bool healing = false, bool nobar = false)
 				}
 			}
 			
-			if(HudTimer[team])
-			{
-				KillTimer(HudTimer[team]);
-				HudTimer[team] = null;
-			}
+			delete HudTimer[team];
 			
 			if(health > 0 && RoundStatus != 2)
 				HudTimer[team] = CreateTimer(refresh, Gamemode_UpdateHudTimer, team);

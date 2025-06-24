@@ -34,15 +34,16 @@ void ConVar_PluginStart()
 	Cvar[CaptureAlive] = CreateConVar("ff2_game_capture_alive", "n/5", "Amount of players left alive until the control point unlocks, can be a formula");
 	Cvar[AggressiveSwap] = CreateConVar("ff2_aggressive_noswap", "0", "Block bosses changing teams, even from other plugins.\nOnly use if you have subplugin issues swapping teams, even then you should fix them anyways", _, true, 0.0, true, 1.0);
 	Cvar[AggressiveOverlay] = CreateConVar("ff2_aggressive_overlay", "0", "Force clears overlays on death and round end.\nOnly use if you have subplugin issues not cleaing overlays, even then you should fix them anyways", _, true, 0.0, true, 1.0);
-	Cvar[DisguiseModels] = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.\nCan't modifiy cvar value while players are active.", _, true, 0.0, true, 1.0);
-	Cvar[PlayerGlow] = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted.", _, true, 0.0, true, 1.0);
-	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	Cvar[DisguiseModels] = CreateConVar("ff2_game_disguises", "1", "If to use rome vision to apply custom models to disguises.", _, true, 0.0, true, 1.0);
+	Cvar[PlayerGlow] = CreateConVar("ff2_game_last_glow", "1", "If the final mercenary of a team will be highlighted", _, true, 0.0, true, 1.0);
+	Cvar[PrefSpecial] = CreateConVar("ff2_pref_special", "0.0", "If non-zero, difficulties will be randomly applied onto a boss based on the chance set", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	Cvar[Telefrags] = CreateConVar("ff2_game_telefrag", "5000", "How much damage telefrags do on bosses");
-	Cvar[SubpluginFolder] = CreateConVar("ff2_plugin_subplugins", "freaks", "Folder to load/unload when bosses are at play relative to the plugins folder.");
-	Cvar[FileCheck] = CreateConVar("ff2_plugin_checkfiles", "1", "If to check and warn about missing files from bosses. (Disabling this can help load times.)", _, true, 0.0, true, 1.0);
-	Cvar[PackVotes] = CreateConVar("ff2_plugin_packvotes", "1", "If to host a boss pack vote when the next map is set.", _, true, 0.0, true, 1.0);
-	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill.", _, true, 1.0);
-	Cvar[Teutons] = CreateConVar("ff2_game_teutons", "0", "Damage dealt by dead roaming players, 0 to disable", _, true, 0.0);
+	Cvar[SubpluginFolder] = CreateConVar("ff2_plugin_subplugins", "freaks", "Folder to load/unload when bosses are at play relative to the plugins folder");
+	Cvar[FileCheck] = CreateConVar("ff2_plugin_checkfiles", "1", "If to check and warn about missing files from bosses (Disabling this can help load times)", _, true, 0.0, true, 1.0);
+	Cvar[PackVotes] = CreateConVar("ff2_plugin_packvotes", "1", "If to host a boss pack vote when the next map is set", _, true, 0.0, true, 1.0);
+	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill", _, true, 1.0);
+	Cvar[Teutons] = CreateConVar("ff2_game_teutons", "0", "If to enable dead roaming players when possible", _, true, 0.0, true, 1.0);
+	Cvar[CaptureDome] = CreateConVar("ff2_game_capture_dome", "0.0", "How much time until a dome closes in onto the control point, 0 to disabled", _, true, 0.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
@@ -54,6 +55,7 @@ void ConVar_PluginStart()
 	Cvar[FriendlyFire] = FindConVar("mp_friendlyfire");
 	Cvar[MovementFreeze] = FindConVar("tf_player_movement_restart_freeze");
 	Cvar[PreroundTime] = FindConVar("tf_arena_preround_time");
+	Cvar[BonusroundTime] = FindConVar("mp_bonusroundtime");
 	Cvar[Tournament] = FindConVar("mp_tournament");
 	Cvar[WaitingTime] = FindConVar("mp_waitingforplayers_time");
 	

@@ -187,6 +187,7 @@ enum
 	SpecTeam,
 	CaptureTime,
 	CaptureAlive,
+	CaptureDome,
 	HealthBar,
 	RefreshDmg,
 	RefreshTime,
@@ -205,6 +206,7 @@ enum
 	FriendlyFire,
 	MovementFreeze,
 	PreroundTime,
+	BonusroundTime,
 	Tournament,
 	WaitingTime,
 	
@@ -233,6 +235,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/customattrib.sp"
 #include "freak_fortress_2/database.sp"
 #include "freak_fortress_2/dhooks.sp"
+#include "freak_fortress_2/dome.sp"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/events.sp"
 #include "freak_fortress_2/filenetwork.sp"
@@ -262,7 +265,7 @@ public Plugin myinfo =
 	author		=	"Batfoxkid based on the original done by many others",
 	description	=	"It's like Christmas Morning",
 	version		=	PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION,
-	url			=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
+	url		=	"https://forums.alliedmods.net/forumdisplay.php?f=154"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -304,6 +307,7 @@ public void OnPluginStart()
 	CustomAttrib_PluginStart();
 	Database_PluginStart();
 	DHook_PluginStart();
+	Dome_PluginStart();
 	Events_PluginStart();
 	FileNet_PluginStart();
 	Gamemode_PluginStart();
@@ -348,6 +352,7 @@ public void OnMapStart()
 {
 	Configs_MapStart();
 	DHook_MapStart();
+	Dome_MapStart();
 	Gamemode_MapStart();
 	Teuton_MapStart();
 }
