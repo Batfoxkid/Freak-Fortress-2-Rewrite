@@ -927,7 +927,7 @@ static void ApplyRage(int victim, int attacker, float amount)
 
 void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 {
-	float damage;
+	float damage = 1.0;
 	if(CustomAttrib_Get(weapon, "melee sickle climb"))
 	{
 		float pos[3];
@@ -949,7 +949,7 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 				{
 					TR_GetEndPosition(vec);
 
-					if(GetVectorDistance(pos, vec, true) < 10000.0)
+					if(GetVectorDistance(pos, vec, true) < 3868156.0)
 					{
 						GetEntPropVector(client, Prop_Data, "m_vecVelocity", vec);
 						vec[2] = 600.0;
