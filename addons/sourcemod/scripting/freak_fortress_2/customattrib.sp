@@ -927,8 +927,8 @@ static void ApplyRage(int victim, int attacker, float amount)
 
 void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 {
-	float damage = 1.0;
-	if(CustomAttrib_Get(weapon, "melee sickle climb"))
+	float damage;
+	if(CustomAttrib_Get(weapon, "melee sickle climb", damage))
 	{
 		float pos[3];
 		float ang[3];
