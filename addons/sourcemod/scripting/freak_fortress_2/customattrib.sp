@@ -947,9 +947,9 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 			{
 				if(vec[0] > -30.0)
 				{
-					TR_GetEndPosition(vec);
+					TR_GetEndPosition(vec, trace);
 
-					if(GetVectorDistance(pos, vec, true) < 3868156.0)
+					if(GetVectorDistance(pos, vec, true) < 10000.0)
 					{
 						GetEntPropVector(client, Prop_Data, "m_vecVelocity", vec);
 						vec[2] = 600.0;
