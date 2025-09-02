@@ -543,7 +543,6 @@
 	}
 	"Rank Debuff"
 	{
-		"#format"	"{1:d}"
 		"ru"		"({1}%% ОЗ)"
 	}
 	"Boss Rank Increased"
