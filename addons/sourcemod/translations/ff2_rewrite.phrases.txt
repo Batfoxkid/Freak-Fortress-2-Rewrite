@@ -584,6 +584,47 @@
 	{
 		"en"		"This difficulty does not exist."
 	}
+
+	"Current Rank"
+	{
+		"#format"	"{1:d}"
+		"en"		"Current Rank: {1}"
+	}
+	"Boss Rank"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} Rank: {2}"
+	}
+	"As Rank"
+	{
+		"#format"	"{1:d}"
+		"en"		"Rank {1}"
+	}
+	"Rank Debuff"
+	{
+		"#format"	"{1:d}"
+		"en"		"({1}%% HP)"
+	}
+	"Boss Rank Increased"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{teamcolor}{1} {default}rank increased to {olive}{2}{default}!"
+	}
+	"Boss Rank Decreased"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{teamcolor}{1} {default}rank decreased to {olive}{2}{default}!"
+	}
+	"Boss Rank Decreased Score"
+	{
+		"#format"	"{1:s},{2:d},{3:d},{4:d}"
+		"en"		"{teamcolor}{1} {default}rank decreased to {olive}{2}{default}! ({3} of {4} kills)"
+	}
+	"Boss Rank Saved Score"
+	{
+		"#format"	"{1:s},{2:d},{3:d},{4:d}"
+		"en"		"{teamcolor}{1} {default}rank kept at {olive}{2}{default}! ({3} of {4} kills)"
+	}
 	
 	"Boss Solo Rage"
 	{

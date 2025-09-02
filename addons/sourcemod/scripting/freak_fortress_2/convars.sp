@@ -44,6 +44,9 @@ void ConVar_PluginStart()
 	Cvar[StreakDamage] = CreateConVar("ff2_game_streakdamage", "400", "Amount of damage against a boss to display as a kill", _, true, 1.0);
 	Cvar[Teutons] = CreateConVar("ff2_game_teutons", "0", "If to enable dead roaming players when possible", _, true, 0.0, true, 1.0);
 	Cvar[CaptureDome] = CreateConVar("ff2_game_capture_dome", "0.0", "How much time until a dome closes in onto the control point, 0 to disabled", _, true, 0.0);
+	Cvar[RankingStyle] = CreateConVar("ff2_game_ranks", "0", "Show ranks based on wins as a boss, 1 = Personal Only, 2 = Display To All", FCVAR_NOTIFY, true, 0.0, true, 2.0);
+	Cvar[RankingLose] = CreateConVar("ff2_game_ranks_lose", "0", "Rank loss method when losing as a boss, 0 = None, 0.0-1.0 = When Less Then Players Killed Ratio, # = Ranks Loss", _, true, 0.0);
+	Cvar[RankingStats] = CreateConVar("ff2_game_ranks_stats", "0.0", "Boss health precentage multiplicative decrease per rank", _, true, 0.0, true, 0.9);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

@@ -1,10 +1,11 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define DATABASE				"ff2"
-#define DATATABLE_GENERAL		"ff2_data_v4"
-#define DATATABLE_LISTING		"ff2_listing_v1"
+#define DATABASE		"ff2"
+#define DATATABLE_GENERAL	"ff2_data_v4"
+#define DATATABLE_LISTING	"ff2_listing_v1"
 #define DATATABLE_DIFFICULTY	"ff2_difficulty_v1"
+#define DATATABLE_RANKING	"ff2_rank_v1"
 
 static Database DataBase;
 static bool Cached[MAXTF2PLAYERS];
@@ -50,6 +51,11 @@ static void Database_Connected(Database db, const char[] error, any data)
 		tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_DIFFICULTY ... " ("
 		... "steamid INTEGER NOT NULL, "
 		... "name TEXT NOT NULL);");
+		
+		tr.AddQuery("CREATE TABLE IF NOT EXISTS " ... DATATABLE_RANKING ... " ("
+		... "steamid INTEGER NOT NULL, "
+		... "boss TEXT NOT NULL, "
+		... "rank INTEGER NOT NULL);");
 		
 		db.Execute(tr, Database_SetupCallback, Database_FailHandle, db);
 	}
@@ -168,6 +174,9 @@ void Database_ClientPostAdminCheck(int client)
 			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_DIFFICULTY ... " WHERE steamid = %d;", id);
 			tr.AddQuery(buffer);
 			
+			FormatEx(buffer, sizeof(buffer), "SELECT * FROM " ... DATATABLE_RANKING ... " WHERE steamid = %d;", id);
+			tr.AddQuery(buffer);
+			
 			DataBase.Execute(tr, Database_ClientSetup, Database_Fail, GetClientUserId(client));
 		}
 	}
@@ -220,6 +229,15 @@ static void Database_ClientSetup(Database db, int userid, int numQueries, DBResu
 			{
 				results[2].FetchString(1, buffer, sizeof(buffer));
 				Preference_AddDifficulty(client, buffer);
+			}
+		}
+		
+		while(results[3].MoreRows)
+		{
+			if(results[3].FetchRow())
+			{
+				results[3].FetchString(1, buffer, sizeof(buffer));
+				Ranking_AddBoss(client, buffer, results[3].FetchInt(2));
 			}
 		}
 		
@@ -295,11 +313,38 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 				
 				DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
 			}
+
+			if(Ranking_ShouldUpdate(client))
+			{
+				FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_RANKING ... " WHERE steamid = %d;", id);
+				tr.AddQuery(buffer);
+				
+				StringMapSnapshot snap = Ranking_GetSnapshot(client);
+				if(snap)
+				{
+					int length = snap.Length;
+					for(int i; i < length; i++)
+					{
+						snap.GetKey(i, buffer, sizeof(buffer));
+						int rank = Ranking_GetRank(client, buffer);
+						if(rank)
+						{
+							DataBase.Format(buffer, sizeof(buffer), "INSERT INTO " ... DATATABLE_RANKING ... " (steamid, boss, rank) VALUES ('%d', '%s', '%d')", id, buffer, rank);
+							tr.AddQuery(buffer);
+						}
+					}
+
+					delete snap;
+				}
+				
+				DataBase.Execute(tr, Database_Success, Database_Fail, _, priority);
+			}
 		}
 	}
 	
 	Cached[client] = false;
 	Preference_ClearArrays(client);
+	Ranking_Clear(client);
 }
 
 static void Database_Success(Database db, any data, int numQueries, DBResultSet[] results, any[] queryData)

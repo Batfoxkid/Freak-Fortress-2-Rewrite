@@ -17,9 +17,9 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION			"1.2"
+#define PLUGIN_VERSION		"1.2"
 #define PLUGIN_VERSION_REVISION	"custom"
-#define PLUGIN_VERSION_FULL		"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
+#define PLUGIN_VERSION_FULL	"Rewrite " ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION
 #define IS_MAIN_FF2
 
 #define FILE_CHARACTERS	"data/freak_fortress_2/characters.cfg"
@@ -27,15 +27,15 @@
 
 #define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
-#define FAR_FUTURE		100000000.0
-#define MAXENTITIES		2048
+#define FAR_FUTURE	100000000.0
+#define MAXENTITIES	2048
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 
 #define TFTeam_Unassigned	0
 #define TFTeam_Spectator	1
-#define TFTeam_Red			2
-#define TFTeam_Blue			3
-#define TFTeam_MAX			4
+#define TFTeam_Red		2
+#define TFTeam_Blue		3
+#define TFTeam_MAX		4
 
 enum TFStatType_t
 {
@@ -193,6 +193,9 @@ enum
 	RefreshTime,
 	DisguiseModels,
 	PlayerGlow,
+	RankingStats,
+	RankingLose,
+	RankingStyle,
 	BossSewer,
 	Telefrags,
 	StreakDamage,
@@ -249,6 +252,7 @@ Handle ThisPlugin;
 #include "freak_fortress_2/natives.sp"
 #include "freak_fortress_2/natives_old.sp"
 #include "freak_fortress_2/preference.sp"
+#include "freak_fortress_2/ranking.sp"
 #include "freak_fortress_2/sdkcalls.sp"
 #include "freak_fortress_2/sdkhooks.sp"
 #include "freak_fortress_2/steamworks.sp"

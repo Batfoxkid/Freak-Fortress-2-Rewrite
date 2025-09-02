@@ -2008,6 +2008,7 @@ void Bosses_ClientDisconnect(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		Ranking_BossRemoved(client, true);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
@@ -2036,6 +2037,7 @@ void Bosses_Remove(int client)
 	Client(client).Index = -1;
 	if(Client(client).IsBoss)
 	{
+		Ranking_BossRemoved(client, false);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
 		

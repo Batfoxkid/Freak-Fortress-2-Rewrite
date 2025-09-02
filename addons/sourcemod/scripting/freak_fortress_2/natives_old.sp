@@ -934,12 +934,15 @@ static any NativeOld_Debug(Handle plugin, int params)
 
 static any NativeOld_SetCheats(Handle plugin, int params)
 {
+	if(GetNativeCell(1))
+		Ranking_Disable();
+	
 	return 0;
 }
 
 static any NativeOld_GetCheats(Handle plugin, int params)
 {
-	return true;
+	return !Ranking_Active();
 }
 
 static any NativeOld_MakeBoss(Handle plugin, int params)
