@@ -528,6 +528,40 @@
 	{
 		"ru"		"Такой сложности не существует"
 	}
+
+	"Current Rank"
+	{
+		"ru"		"Текущий ранг: {1}"
+	}
+	"Boss Rank"
+	{
+		"ru"		"Ранг {1}: {2}"
+	}
+	"As Rank"
+	{
+		"ru"		"Ранг {1}"
+	}
+	"Rank Debuff"
+	{
+		"#format"	"{1:d}"
+		"ru"		"({1}%% ОЗ)"
+	}
+	"Boss Rank Increased"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}увеличился до {olive}{2}{default}!"
+	}
+	"Boss Rank Decreased"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}уменьшился до {olive}{2}{default}!"
+	}
+	"Boss Rank Decreased Score"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}уменьшился до {olive}{2}{default}! ({3} из {4} убийств)"
+	}
+	"Boss Rank Saved Score"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}остался на {olive}{2}{default}! ({3} из {4} убийств)"
+	}
 	
 	"Boss Solo Rage"
 	{
