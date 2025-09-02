@@ -689,6 +689,7 @@ methodmap Client
 	{
 		this.GlowFor = 0.0;
 		this.MinionType = 0;
+		this.SapperCooldownFor = 0.0;
 	}
 	
 	public void ResetByRound()

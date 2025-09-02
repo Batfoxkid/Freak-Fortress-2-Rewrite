@@ -644,6 +644,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 					
 					float pos[3];
 					GetEntPropVector(entity, Prop_Data, "m_vecOrigin", pos);
+					pos[2] += 8.0;
 					TeleportEntity(client, pos);
 					SetEntProp(client, Prop_Send, "m_bDucked", 1);
 					SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
@@ -825,6 +826,9 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	// Explode the bomb on win
 	if(event && event.GetInt("winreason") == 1 && IsValidEntity(BombRef) && BombCarrier)
 	{
+		Attrib_Remove(BombCarrier, "move speed penalty");
+		Attrib_Remove(BombCarrier, "increase player capture value");
+
 		float pos[3];
 		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
 		TE_Particle("mvm_hatch_destroy", pos);

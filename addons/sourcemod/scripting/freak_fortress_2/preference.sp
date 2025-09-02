@@ -535,6 +535,37 @@ static void BossMenu(int client)
 			{
 				menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 			}
+
+			if(Cvar[RankingStyle].IntValue)
+			{
+				int special;
+				ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
+
+				if(cfg.GetInt("companion", special))
+				{
+					special = ViewingBoss[client];
+					for(int i; i < MAXTF2PLAYERS; i++)
+					{
+						Bosses_GetBossNameCfg(cfg, data, sizeof(data), _, "filename");
+						int rank = Ranking_GetRank(client, data);
+
+						Bosses_GetBossNameCfg(cfg, data, sizeof(data), lang);
+						FormatEx(buffer, sizeof(buffer), "%t", "Boss Rank", data, rank);
+						menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
+						
+						if(!cfg.GetInt("companion", special))
+							break;
+						
+						cfg = Bosses_GetConfig(special);
+					}
+				}
+				else
+				{
+					Bosses_GetBossNameCfg(cfg, data, sizeof(data), _, "filename");
+					FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", Ranking_GetRank(client, data));
+					menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
+				}
+			}
 			
 			menu.ExitBackButton = true;
 		}
