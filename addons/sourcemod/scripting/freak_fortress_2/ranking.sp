@@ -43,6 +43,12 @@ int Ranking_GetRank(int client, const char[] boss)
 
 int Ranking_ApplyEffects(int client, float &multi)
 {
+	if(IsFakeClient(client))
+	{
+		multi = 1.0;
+		return 0;
+	}
+	
 	char name[64];
 	Bosses_GetBossNameCfg(Client(client).Cfg, name, sizeof(name), _, "filename");
 

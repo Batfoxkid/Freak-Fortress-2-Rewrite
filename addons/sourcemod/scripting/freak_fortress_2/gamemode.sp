@@ -513,7 +513,7 @@ void Gamemode_RoundStart()
 					Format(buffer, sizeof(buffer), "%t", "Boss Spawned As", boss[i], buffer, maxhealth);
 				}
 
-				if(displayRank)
+				if(displayRank && rank)
 				{
 					Format(buffer, sizeof(buffer), "%s %t", buffer, "As Rank", rank);
 

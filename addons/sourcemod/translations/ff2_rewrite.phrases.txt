@@ -92,12 +92,12 @@
 	"Boss Rage Charge"
 	{
 		"#format"	"{1:d}"
-		"en"		"RAGE is not ready. {1}%%"
+		"en"		"RAGE is not ready. {1}％"
 	}
 	"Boss Rage Ready"
 	{
 		"#format"	"{1:d}"
-		"en"		"RAGE is ready! {1}%%"
+		"en"		"RAGE is ready! {1}％"
 	}
 	"Boss Rage Medic"
 	{
@@ -111,7 +111,7 @@
 	"Boss Mobility Charge"
 	{
 		"#format"	"{1:d}"
-		"en"		"Mobility is not ready. {1}%%"
+		"en"		"Mobility is not ready. {1}％"
 	}
 	"Boss Jump Time"
 	{
@@ -121,12 +121,12 @@
 	"Boss Jump Charge"
 	{
 		"#format"	"{1:d}"
-		"en"		"Super Jump is not ready. {1}%%"
+		"en"		"Super Jump is not ready. {1}％"
 	}
 	"Boss Jump Ready"
 	{
 		"#format"	"{1:d}"
-		"en"		"Super Jump is ready. {1}%%"
+		"en"		"Super Jump is ready. {1}％"
 	}
 	"Boss Jump Look"
 	{
@@ -140,12 +140,12 @@
 	"Boss Tele Charge"
 	{
 		"#format"	"{1:d}"
-		"en"		"Teleport is not ready. {1}%%"
+		"en"		"Teleport is not ready. {1}％"
 	}
 	"Boss Tele Ready"
 	{
 		"#format"	"{1:d}"
-		"en"		"Teleport is ready. {1}%%"
+		"en"		"Teleport is ready. {1}％"
 	}
 	"Boss Tele Look"
 	{
@@ -204,7 +204,7 @@
 	"Sapper Cooldown"
 	{
 		"#format"	"{1:d}"
-		"en"		"Sapper: {1}%%"
+		"en"		"Sapper: {1}％"
 	}
 	
 	"Preference Updated"
@@ -603,7 +603,7 @@
 	"Rank Debuff"
 	{
 		"#format"	"{1:d}"
-		"en"		"({1}%% HP)"
+		"en"		"({1}％ HP)"
 	}
 	"Boss Rank Increased"
 	{
