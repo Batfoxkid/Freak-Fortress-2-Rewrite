@@ -316,6 +316,8 @@ void Database_ClientDisconnect(int client, DBPriority priority = DBPrio_Normal)
 
 			if(Ranking_ShouldUpdate(client))
 			{
+				tr = new Transaction();
+				
 				FormatEx(buffer, sizeof(buffer), "DELETE FROM " ... DATATABLE_RANKING ... " WHERE steamid = %d;", id);
 				tr.AddQuery(buffer);
 				
