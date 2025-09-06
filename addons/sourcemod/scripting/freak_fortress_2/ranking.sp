@@ -128,6 +128,8 @@ void Ranking_RoundEnd(int[] clients, int amount, int winner)
 				
 				if(display)
 					CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Increased", name, rank);
+				
+				continue;
 			}
 			else if(lose <= 0.0)
 			{
@@ -178,11 +180,11 @@ void Ranking_RoundEnd(int[] clients, int amount, int winner)
 				{
 					if(par)
 					{
-						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased", name, rank);
+						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased Score", name, rank, kills, par);
 					}
 					else
 					{
-						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased Score", name, rank, kills, par);
+						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased", name, rank);
 					}
 				}
 			}
