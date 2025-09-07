@@ -56,7 +56,7 @@ int Ranking_ApplyEffects(int client, float &multi)
 	multi = Ranking_GetHealthMulti(rank);
 	if(multi != 1.0)
 	{
-		Client(client).MaxHealth *= multi;
+		Client(client).MaxHealth = RoundToCeil(Client(client).MaxHealth * multi);
 
 		if(IsPlayerAlive(client))
 		{
