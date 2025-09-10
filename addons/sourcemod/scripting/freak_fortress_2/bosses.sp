@@ -761,7 +761,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 					}
 					case Section_Sound:
 					{
-						bool bgm = (StrEqual(section, "sound_intromusic") || StrEqual(section, "sound_bgm"));
+						bool bgm = (StrEqual(section, "sound_intromusic") || StrEqual(section, "sound_bgm") || !StrContains(section, "sound_outtromusic"));
 						for(int a; a < entriessub; a++)
 						{
 							int length2 = snapsub.KeyBufferSize(a)+2;
