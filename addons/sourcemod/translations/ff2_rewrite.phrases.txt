@@ -499,6 +499,14 @@
 		"#format"	"{1:d}"
 		"en"		"Blacklist is full with {1} bosses."
 	}
+	"View Creators"
+	{
+		"en"		"View Creators"
+	}
+	"Created By"
+	{
+		"en"		"Created By"
+	}
 	
 	"Now Playing"
 	{

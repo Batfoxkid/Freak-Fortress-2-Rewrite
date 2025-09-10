@@ -16,7 +16,7 @@ Required:
 
 Supported:
 
-- **[TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)** (Recommended)
+- **[TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)** (Corrected Mini-Crits)
 - [TF2Items](https://github.com/nosoop/SMExt-TF2Items) (Improved Weapon Generation)
 - [SM-TFUtils](https://github.com/nosoop/SM-TFUtils) (Improved Weapon Equipping)
 - [SteamWorks](https://github.com/ExperimentFailed/SteamWorks) (Server Game Description)
@@ -26,9 +26,8 @@ Supported:
 
 ## Credits
 
-- [VSH2](https://github.com/VSH2-Devs/Vs-Saxton-Hale-2) - ConfigMap system which this now uses
+- [VSH2](https://github.com/VSH2-Devs/Vs-Saxton-Hale-2) - ConfigMap system
 - [Artvin](https://github.com/artvin01) - Boss vs Boss testing and support
-- [Marxvee](https://github.com/Marxvee) - HUD layout, score, early disguise port
-- [sarysa](https://github.com/sarysa) - Original Epic Scout boss
+- [Marxvee](https://github.com/Marxvee) - HUDs, scores, disguises, menu abilities
 - [Kirillian](https://github.com/KirillianAmu) - Dome model from [VSH Rewrite](https://github.com/redsunservers/VSH-Rewrite)
 - Contributors to the [classic](https://github.com/Steell/Freak-Fortress-2), [better](https://github.com/50DKP/FF2-Official), [spicy](https://github.com/shadow93/FreakFortressBBG), and [crazy](https://github.com/Batfoxkid/FreakFortressBat) versions of FF2.

@@ -600,6 +600,10 @@ static void PrintThisAttrib(int client, int attrib, char value[16], char type[64
 					FormatValue(value, type, sizeof(type), "value_is_additive_percentage");
 					PrintToChat(client, "%t", desc, buffer2, key, type, value);
 				}
+				else
+				{
+					PrintToChat(client, desc, value);
+				}
 			}
 			else if(TF2ED_GetAttributeDefinitionString(attrib, "description_string", desc, sizeof(desc)))
 			{

@@ -439,7 +439,7 @@ void Preference_BossMenu(int client)
 static void BossMenu(int client)
 {
 	int blacklist = Cvar[PrefBlacklist].IntValue;
-	Menu menu = new Menu(Preference_BossMenuH);
+	Menu menu = new Menu(BossMenuH);
 	
 	SetGlobalTransTarget(client);
 	int lang = GetClientLanguage(client);
@@ -471,11 +471,12 @@ static void BossMenu(int client)
 			{
 				menu.SetTitle("%t\n%t\n ", "Boss Selection Command", "No Description");
 			}
+
+			ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
 			
 			if(access && blacklist != 0)
 			{
 				int count;
-				ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
 				if(BossListing[client] && BossListing[client].FindValue(ViewingBoss[client]) != -1)
 				{
 					if(blacklist > 0)
@@ -539,24 +540,23 @@ static void BossMenu(int client)
 			if(Cvar[RankingStyle].IntValue)
 			{
 				int special;
-				ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
-
 				if(cfg.GetInt("companion", special))
 				{
+					ConfigMap companion = cfg;
 					special = ViewingBoss[client];
 					for(int i; i < MAXTF2PLAYERS; i++)
 					{
-						Bosses_GetBossNameCfg(cfg, data, sizeof(data), _, "filename");
+						Bosses_GetBossNameCfg(companion, data, sizeof(data), _, "filename");
 						int rank = Ranking_GetRank(client, data);
 
-						Bosses_GetBossNameCfg(cfg, data, sizeof(data), lang);
+						Bosses_GetBossNameCfg(companion, data, sizeof(data), lang);
 						FormatEx(buffer, sizeof(buffer), "%t", "Boss Rank", data, rank);
 						menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
 						
-						if(!cfg.GetInt("companion", special))
+						if(!companion.GetInt("companion", special))
 							break;
 						
-						cfg = Bosses_GetConfig(special);
+						companion = Bosses_GetConfig(special);
 					}
 				}
 				else
@@ -565,6 +565,12 @@ static void BossMenu(int client)
 					FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", Ranking_GetRank(client, data));
 					menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
 				}
+			}
+
+			if(cfg.GetSection("creator"))
+			{
+				FormatEx(buffer, sizeof(buffer), "%t", "View Creators");
+				menu.AddItem("3", buffer, ITEMDRAW_DISABLED);
 			}
 			
 			menu.ExitBackButton = true;
@@ -707,7 +713,7 @@ static void BossMenu(int client)
 	}
 }
 
-static int Preference_BossMenuH(Menu menu, MenuAction action, int client, int choice)
+static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -747,6 +753,10 @@ static int Preference_BossMenuH(Menu menu, MenuAction action, int client, int ch
 			{
 				switch(value)
 				{
+					case 3:
+					{
+						CreatorMenu(client);
+					}
 					case 2:
 					{
 						CreateParty(client);
@@ -946,7 +956,7 @@ static void CreateParty(int client)
 	
 	Preference_ClientDisconnect(client);
 	
-	Menu menu = new Menu(Preference_CreatePartyH);
+	Menu menu = new Menu(CreatePartyH);
 	
 	SetGlobalTransTarget(client);
 	int lang = GetClientLanguage(client);
@@ -975,7 +985,7 @@ static void CreateParty(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-static int Preference_CreatePartyH(Menu menu, MenuAction action, int client, int choice)
+static int CreatePartyH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -1009,7 +1019,7 @@ static bool PartyMenu(int client)
 	if(!PartyLeader[client])
 		return InviteMenu(client);
 	
-	Menu menu = new Menu(Preference_PartyMenuH);
+	Menu menu = new Menu(PartyMenuH);
 	
 	SetGlobalTransTarget(client);
 	int lang = GetClientLanguage(client);
@@ -1062,7 +1072,7 @@ static bool PartyMenu(int client)
 	return true;
 }
 
-static int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int choice)
+static int PartyMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -1122,7 +1132,7 @@ static int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int c
 						
 						PartyInvite[client][client] = special;
 						
-						Menu menu2 = new Menu(Preference_PartyInviteH);
+						Menu menu2 = new Menu(PartyInviteH);
 						
 						Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client));
 						menu2.SetTitle("%t\n ", "Boss Party Menu", buffer);
@@ -1150,7 +1160,7 @@ static int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int c
 			{
 				SetGlobalTransTarget(client);
 				
-				Menu menu2 = new Menu(Preference_PartyInviteH);
+				Menu menu2 = new Menu(PartyInviteH);
 				if(Bosses_GetBossName(special, buffer, sizeof(buffer), GetClientLanguage(client), "description"))
 				{
 					menu2.SetTitle("%t\n%s\n ", "Boss Party Menu", NULL_STRING, buffer);
@@ -1170,7 +1180,7 @@ static int Preference_PartyMenuH(Menu menu, MenuAction action, int client, int c
 	return 0;
 }
 
-static int Preference_PartyInviteH(Menu menu, MenuAction action, int client, int choice)
+static int PartyInviteH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -1230,7 +1240,7 @@ static bool InviteMenu(int client)
 	{
 		if(client != target && PartyInvite[client][target] != -1)
 		{
-			Menu menu = new Menu(Preference_InviteMenuH);
+			Menu menu = new Menu(InviteMenuH);
 			
 			SetGlobalTransTarget(client);
 			int lang = GetClientLanguage(client);
@@ -1262,7 +1272,7 @@ static bool InviteMenu(int client)
 	return false;
 }
 
-static int Preference_InviteMenuH(Menu menu, MenuAction action, int client, int choice)
+static int InviteMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -1550,7 +1560,7 @@ static Action Preference_ForceBossCmd(int client, int args)
 
 static void ForceBossMenu(int client, int item)
 {
-	Menu menu = new Menu(Preference_ForceBossMenuH);
+	Menu menu = new Menu(ForceBossMenuH);
 	
 	SetGlobalTransTarget(client);
 	menu.SetTitle("%t", "Boss Override Command");
@@ -1576,7 +1586,7 @@ static void ForceBossMenu(int client, int item)
 	menu.DisplayAt(client, item/7*7, MENU_TIME_FOREVER);
 }
 
-static int Preference_ForceBossMenuH(Menu menu, MenuAction action, int client, int choice)
+static int ForceBossMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -1959,7 +1969,7 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 		ConfigMap cfg = Difficulties.GetSection(name);
 		if(cfg)
 		{
-			Menu menu = new Menu(Preference_DifficultyMenuItemH);
+			Menu menu = new Menu(DifficultyMenuItemH);
 			
 			int lang = GetClientLanguage(client);
 			
@@ -1992,7 +2002,7 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 	}
 	else
 	{
-		Menu menu = new Menu(Preference_DifficultyMenuH);
+		Menu menu = new Menu(DifficultyMenuH);
 		
 		menu.SetTitle("%t", "Difficulty Menu");
 		
@@ -2038,7 +2048,7 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 	}
 }
 
-static int Preference_DifficultyMenuH(Menu menu, MenuAction action, int client, int choice)
+static int DifficultyMenuH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -2078,7 +2088,7 @@ static int Preference_DifficultyMenuH(Menu menu, MenuAction action, int client, 
 	return 0;
 }
 
-static int Preference_DifficultyMenuItemH(Menu menu, MenuAction action, int client, int choice)
+static int DifficultyMenuItemH(Menu menu, MenuAction action, int client, int choice)
 {
 	switch(action)
 	{
@@ -2173,4 +2183,106 @@ static bool GetDiffByName(const char[] name, char[] buffer, int length, int lang
 	
 	delete snap;
 	return similarDiff != -1;
+}
+
+static void CreatorMenu(int client)
+{
+	ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
+	if(!cfg)
+		return;
+
+	Menu menu = new Menu(CreatorMenuH);
+
+	SetGlobalTransTarget(client);
+	int lang = GetClientLanguage(client);
+
+	char buffer1[64], buffer2[64];
+	if(!Bosses_GetBossNameCfg(cfg, buffer1, sizeof(buffer1), lang, "group"))
+		Bosses_GetBossNameCfg(cfg, buffer1, sizeof(buffer1), lang);
+	
+	if(ViewingPack[client] >= 0)
+	{
+		Bosses_GetCharset(ViewingPack[client], buffer2, sizeof(buffer2));
+		menu.SetTitle("%t%s\n%s\n%t\n ", "Boss Selection Command", buffer2, "Created By");
+	}
+	else
+	{
+		menu.SetTitle("%t%s\n%t\n ", "Boss Selection Command", buffer1, "Created By");
+	}
+
+	cfg = cfg.GetSection("creator");
+	if(cfg)
+	{
+		SortedSnapshot snap = CreateSortedSnapshot(cfg);
+
+		int entries = snap.Length;
+		for(int i; i < entries; i++)
+		{
+			snap.GetKey(i, buffer1, sizeof(buffer1));
+			cfg.Get(buffer1, buffer2, sizeof(buffer2));
+			menu.AddItem(buffer2, buffer1, buffer2[0] ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		}
+
+		delete snap;
+	}
+
+	menu.ExitBackButton = true;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+static int CreatorMenuH(Menu menu, MenuAction action, int client, int choice)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(choice == MenuCancel_ExitBack)
+				BossMenu(client);
+		}
+		case MenuAction_Select:
+		{
+			char buffer[64];
+			menu.GetItem(choice, buffer, sizeof(buffer));
+
+			if(buffer[0])
+			{
+				DataPack pack = new DataPack();
+				pack.WriteString(buffer);
+				QueryClientConVar(client, "cl_disablehtmlmotd", CreatorPageQuery, pack);
+			}
+
+			CreatorMenu(client);
+		}
+	}
+	return 0;
+}
+
+static void CreatorPageQuery(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any value)
+{
+	char buffer[PLATFORM_MAX_PATH];
+
+	ResetPack(value);
+	ReadPackString(value, buffer, sizeof(buffer));
+	CloseHandle(value);
+
+	Format(buffer, sizeof(buffer), "https://steamcommunity.com/profiles/%s", buffer);
+	
+	if(result == ConVarQuery_Okay && !StringToInt(cvarValue))
+	{
+		KeyValues kv = new KeyValues("data");
+		kv.SetString("title", "Creator Steam Profile");
+		kv.SetString("msg", buffer);
+		kv.SetNum("customsvr", 1);
+		kv.SetNum("type", MOTDPANEL_TYPE_URL);
+		ShowVGUIPanel(client, "info", kv, true);
+		delete kv;
+	}
+	else
+	{
+		PrintToChat(client, buffer);
+	}
 }

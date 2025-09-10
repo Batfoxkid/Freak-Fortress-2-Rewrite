@@ -228,6 +228,18 @@ void SDKCall_ChangeClientTeam(int client, int newTeam)
 		SetEntProp(client, Prop_Send, "m_lifeState", state);
 	}
 	
+	int entity, i;
+	while(TF2_GetItem(client, entity, i))
+	{
+		SetEntProp(entity, Prop_Send, "m_iTeamNum", newTeam);
+	}
+	
+	i = 0;
+	while(TF2U_GetWearable(client, entity, i))
+	{
+		SetEntProp(entity, Prop_Send, "m_iTeamNum", newTeam);
+	}
+	
 	if(Cvar[DisguiseModels].BoolValue)
 	{
 		if(newTeam % 2)

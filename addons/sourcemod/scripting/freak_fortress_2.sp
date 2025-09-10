@@ -121,7 +121,8 @@ enum SectionType
 	Section_Download,	// download
 	Section_Model,		// mod_download
 	Section_Material,	// mat_download
-	Section_FileNet		// filenetwork
+	Section_FileNet,	// filenetwork
+	Section_Creator		// creator
 };
 
 enum struct SoundEnum

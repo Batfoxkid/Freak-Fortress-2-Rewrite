@@ -31,12 +31,17 @@ void CustomAttrib_PluginLoad()
 	MarkNativeAsOptional("TF2CustAttr_GetFloat");
 	MarkNativeAsOptional("TF2CustAttr_SetString");
 	MarkNativeAsOptional("TF2CustAttr_GetString");
+	#endif
+	
+	#if defined IS_MAIN_FF2
+	#if defined __tf_econ_dyn_included
 	MarkNativeAsOptional("TF2EconDynAttribute.TF2EconDynAttribute");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetClass");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetName");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetDescriptionFormat");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetCustom");
 	MarkNativeAsOptional("TF2EconDynAttribute.Register");
+	#endif
 	#endif
 }
 

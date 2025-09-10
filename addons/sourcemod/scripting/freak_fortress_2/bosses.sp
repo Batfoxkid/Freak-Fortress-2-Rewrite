@@ -1821,6 +1821,32 @@ static void EquipBoss(int client, bool weapons)
 		case 1:
 			Attrib_Set(client, "reduced_healing_from_medics", 0.0, _, true);
 	}
+
+	// Creator Community Sparkle Effect
+	static char buffer1[PLATFORM_MAX_PATH];
+	ConfigMap creator = Client(client).Cfg.GetSection("creator");
+	if(creator && GetClientAuthId(client, AuthId_SteamID64, buffer1, sizeof(buffer1)))
+	{
+		StringMapSnapshot snap = creator.Snapshot();
+
+		int entries = snap.Length;
+		for(i = 0; i < entries; i++)
+		{
+			int length = snap.KeyBufferSize(i)+1;
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+
+			static char buffer2[64];
+			creator.Get(key, buffer2, sizeof(buffer2));
+			if(StrEqual(buffer1, buffer2))
+			{
+				Attrib_Set(client, "attach particle effect static", 4.0);
+				break;
+			}
+		}
+
+		delete snap;
+	}
 	
 	any class;
 	Client(client).Cfg.GetInt("class", class);
@@ -1860,12 +1886,10 @@ static void EquipBoss(int client, bool weapons)
 		}
 	}
 	
-	static char buffer[PLATFORM_MAX_PATH];
-	if (Client(client).Cfg.Get("model", buffer, sizeof(buffer)))
-		SetVariantString(buffer);
-	else
-		SetVariantString("");
-
+	if(!Client(client).Cfg.Get("model", buffer1, sizeof(buffer1)))
+		buffer1[0] = 0;
+	
+	SetVariantString(buffer1);
 	AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 	
 	if(weapons)
@@ -2067,6 +2091,7 @@ void Bosses_Remove(int client)
 		SetVariantString(NULL_STRING);
 		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 		
+		Attrib_Remove(client, "attach particle effect static");
 		Attrib_Remove(client, "major move speed bonus");
 		Attrib_Remove(client, "max health additive bonus");
 		Attrib_Remove(client, "healing received penalty");

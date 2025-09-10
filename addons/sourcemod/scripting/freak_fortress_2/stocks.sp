@@ -34,6 +34,9 @@ SectionType GetSectionType(const char[] buffer)
 	if(StrEqual(buffer, "download"))
 		return Section_Download;
 
+	if(StrEqual(buffer, "creator"))
+		return Section_Creator;
+
 	if(!StrContains(buffer, "filenet"))
 		return Section_FileNet;
 
