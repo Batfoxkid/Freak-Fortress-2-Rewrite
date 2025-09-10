@@ -570,7 +570,7 @@ static void BossMenu(int client)
 			if(cfg.GetSection("creator"))
 			{
 				FormatEx(buffer, sizeof(buffer), "%t", "View Creators");
-				menu.AddItem("3", buffer, ITEMDRAW_DISABLED);
+				menu.AddItem("3", buffer, ITEMDRAW_DEFAULT);
 			}
 			
 			menu.ExitBackButton = true;
@@ -2203,7 +2203,7 @@ static void CreatorMenu(int client)
 	if(ViewingPack[client] >= 0)
 	{
 		Bosses_GetCharset(ViewingPack[client], buffer2, sizeof(buffer2));
-		menu.SetTitle("%t%s\n%s\n%t\n ", "Boss Selection Command", buffer2, "Created By");
+		menu.SetTitle("%t%s\n%s\n%t\n ", "Boss Selection Command", buffer2, buffer1, "Created By");
 	}
 	else
 	{
