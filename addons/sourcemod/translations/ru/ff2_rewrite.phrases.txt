@@ -446,7 +446,15 @@
 	{
 		"ru"		"В чёрном списке находится {1} боссов."
 	}
-	
+	"View Creators"
+	{
+		"ru"		"Посмотреть создателей"
+	}
+	"Created By"
+	{
+		"ru"		"Создан"
+	}
+
 	"Now Playing"
 	{
 		"ru"		"Сейчас играет: {blue}{1}{default} - {orange}{2}{default}"
