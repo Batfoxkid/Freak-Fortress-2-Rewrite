@@ -120,6 +120,7 @@ void SDKCall_Setup()
 	delete gamedata;
 }
 
+/*
 bool SDKCall_CheckBlockBackstab(int client, int attacker)
 {
 	if(SDKCheckBlockBackstab)
@@ -127,6 +128,7 @@ bool SDKCall_CheckBlockBackstab(int client, int attacker)
 	
 	return false;
 }
+*/
 
 void SDKCall_EquipWearable(int client, int entity)
 {
