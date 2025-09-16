@@ -3050,8 +3050,6 @@ stock int SDKCall_GetMaxHealth(int client)
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
 {
-	//TODO: Find out if we need to check m_bDisguiseWeapon
-	
 	static int maxWeapons;
 	if(!maxWeapons)
 		maxWeapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
@@ -3065,7 +3063,12 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 		pos++;
 		
 		if(weapon != -1)
+		{
+			if(GetEntProp(weapon, Prop_Send, "m_bDisguiseWeapon"))
+				continue;
+			
 			return true;
+		}
 	}
 	return false;
 }

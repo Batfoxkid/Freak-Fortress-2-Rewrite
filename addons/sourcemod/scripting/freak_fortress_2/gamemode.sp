@@ -107,6 +107,7 @@ void Gamemode_MapStart()
 {
 	RoundStatus = -1;
 	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
+	PrecacheScriptSound("Announcer.AM_CapEnabledRandom");
 }
 
 void Gamemode_MapEnd()
@@ -634,7 +635,7 @@ void Gamemode_RoundEnd(int winteam)
 			totalMax[teams[i]] += maxhealth;
 			
 			// Show chat message version
-			if(alive)
+			if(alive && !Client(clients[i]).MinionType)
 			{
 				int health = Client(clients[i]).Health;
 				if(health > 0)

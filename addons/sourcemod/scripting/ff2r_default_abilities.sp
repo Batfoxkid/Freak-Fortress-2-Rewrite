@@ -1410,7 +1410,6 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 
 		int victims;
 		int[] victim = new int[MaxClients - 1];
-		SetVariantString(file);
 		for(int target = 1; target <= MaxClients; target++)
 		{
 			if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
@@ -1421,6 +1420,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				
 				delete OverlayTimer[target];
 
+				SetVariantString(file);
 				AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
 				OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
 				
@@ -2261,7 +2261,6 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 
 	char temp[128];
 	FormatEx(temp, sizeof(temp), "%s%d", file, phase);
-	SetVariantString(temp);
 	for(int target = 1; target <= MaxClients; target++)
 	{
 		if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
@@ -2272,6 +2271,7 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 			
 			delete OverlayTimer[target];
 
+			SetVariantString(temp);
 			AcceptEntityInput(target, "SetScriptOverlayMaterial", target, target);
 			
 			OverlayTimer[target] = CreateTimer(duration, Timer_RemoveOverlay, target);
@@ -3135,8 +3135,6 @@ void ConstrainDistance(const float[] startPoint, float[] endPoint, float distanc
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
 {
-	//TODO: Find out if we need to check m_bDisguiseWeapon
-	
 	static int maxWeapons;
 	if(!maxWeapons)
 		maxWeapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
@@ -3150,7 +3148,12 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 		pos++;
 		
 		if(weapon != -1)
+		{
+			if(GetEntProp(weapon, Prop_Send, "m_bDisguiseWeapon"))
+				continue;
+			
 			return true;
+		}
 	}
 	return false;
 }
