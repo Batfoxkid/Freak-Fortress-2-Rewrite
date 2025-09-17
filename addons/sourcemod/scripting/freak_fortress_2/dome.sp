@@ -402,7 +402,7 @@ static Action Dome_TimerBleed(Handle timer)
 				//Calculate damage, the longer the player is outside of the dome, the more damage it deals
 				float fdamage = Pow(2.0, DomePlayerTime[client]);
 				
-				if(fdamage < 65.0)
+				if((Client(client).IsBoss || Client(client).MinionType) && fdamage < 65.0)
 					fdamage = 65.0;
 				
 				//Deal damage
