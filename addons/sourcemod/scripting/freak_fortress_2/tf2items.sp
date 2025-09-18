@@ -5,6 +5,54 @@
 
 #define TF2ITEMS_LIBRARY	"tf2items"
 
+enum struct WeaponData
+{
+	char Classname[36];
+	int Index;
+	int Level;
+	int Quality;
+	int Rank;
+	bool Preserve;
+	bool Override;
+	TFClassType ForceClass;
+	char AttributeString[256];
+	char Clip[64];
+	char Ammo[64];
+	char MaxAmmo[64];
+	bool Show;
+	int Worldmodel;
+	int Alpha;
+	int Red;
+	int Green;
+	int Blue;
+	bool Equip;
+	bool Forumla;
+
+	void Setup(const char[] classname, int index, const char[] attributes = "", bool preserve = false, bool show = true, bool equip = true)
+	{
+		strcopy(this.Classname, sizeof(this.Classname), classname);
+		this.Index = index;
+		this.Level = -1;
+		this.Quality = 0;
+		this.Rank = -1;
+		this.Preserve = false;
+		this.Override = true;
+		this.ForceClass = TFClass_Unknown;
+		strcopy(this.AttributeString, sizeof(this.AttributeString), attributes);
+		this.Clip[0] = 0;
+		this.Ammo[0] = 0;
+		this.MaxAmmo[0] = 0;
+		this.Show = show;
+		this.Worldmodel = 0;
+		this.Alpha = 255;
+		this.Red = 255;
+		this.Green = 255;
+		this.Blue = 255;
+		this.Equip = equip;
+		this.Forumla = false;
+	}
+}
+
 void TF2Items_PluginLoad()
 {
 	#if defined _tf2items_included
@@ -267,10 +315,12 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 			delete snap;
 		}
 		
+		#if defined CUSTOMATTRIBFF2_INCLUDED
 		ConfigMap custom = cfg.GetSection("custom");
 		if(custom)
 			CustomAttrib_ApplyFromCfg(entity, custom);
-		
+		#endif
+
 		if(kills >= 0)
 		{
 			Attrib_SetInt(entity, "kill eater", kills);
@@ -339,8 +389,7 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 				}
 			}
 			
-			GetEntityNetClass(entity, classname2, sizeof(classname2));
-			int offset = FindSendPropInfo(classname2, "m_iItemIDHigh");
+			int offset = FindSendPropInfo(netclass, "m_iItemIDHigh");
 			
 			SetEntData(entity, offset - 8, 0);	// m_iItemID
 			SetEntData(entity, offset - 4, 0);	// m_iItemID
@@ -382,6 +431,272 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	{
 		TF2_SetPlayerClass(client, class, _, false);
 	}
+
+	Event event = CreateEvent("localplayer_pickup_weapon", true);
+	event.FireToClient(client);
+	event.Cancel();
+
+	return entity;
+}
+
+stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
+{
+	static char buffer[64];
+	
+	TFClassType class = TF2_GetPlayerClass(client);
+	GetClassWeaponClassname(class, data.Classname, sizeof(data.Classname));
+	bool wearable = StrContains(data.Classname, "tf_weap") != 0;
+	
+	int kills = -1;
+	if(data.Rank < 0 && data.Level == -1 && !data.Override)
+		kills = GetURandomInt() % 21;
+	
+	if(kills >= 0)
+		kills = wearable ? GetKillsOfCosmeticRank(kills, data.Index) : GetKillsOfWeaponRank(kills, data.Index);
+	
+	if(data.Level < 0 || data.Level > 127)
+		data.Level = 101;
+	
+	if(data.ForceClass != TFClass_Unknown)
+		TF2_SetPlayerClass(client, data.ForceClass, _, false);
+	
+	int slot = wearable ? -1 : TF2_GetClassnameSlot(data.Classname);
+
+	if(!wearable && !data.Override)
+	{
+		if(slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee && data.Equip)
+		{
+			if(data.AttributeString[0])
+			{
+				Format(data.AttributeString, sizeof(data.AttributeString), "2 ; 3.1 ; 275 ; 1 ; %s", data.AttributeString);
+			}
+			else
+			{
+				strcopy(data.AttributeString, sizeof(data.AttributeString), "2 ; 3.1 ; 275 ; 1");
+			}
+		}
+		else if(data.AttributeString[0])
+		{
+			Format(data.AttributeString, sizeof(data.AttributeString), "2 ; 3.1 ; %s", data.AttributeString);
+		}
+		else
+		{
+			strcopy(data.AttributeString, sizeof(data.AttributeString), "2 ; 3.1");
+		}
+	}
+	
+	static char buffers[40][16];
+	int count = ExplodeString(data.AttributeString[0], " ; ", buffers, sizeof(buffers), sizeof(buffers));
+	
+	if(count % 2)
+		count--;
+	
+	int attribs;
+	int entity = -1;
+
+#if defined IS_MAIN_FF2
+	int alive = TotalPlayersAliveEnemy(Cvar[FriendlyFire].BoolValue ? -1 : GetClientTeam(client));
+#else
+	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
+#endif
+
+	#if defined _tf2items_included
+	if(wearable || GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") != FeatureStatus_Available)
+	#endif
+	{
+		entity = CreateEntityByName(data.Classname);
+		if(IsValidEntity(entity))
+		{
+			SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", data.Index);
+			SetEntProp(entity, Prop_Send, "m_bInitialized", true);
+
+			GetEntityNetClass(entity, buffer, sizeof(buffer));
+			SetEntData(entity, FindSendPropInfo(buffer, "m_iEntityQuality"), data.Quality);
+			SetEntData(entity, FindSendPropInfo(buffer, "m_iEntityLevel"), data.Level);
+
+			SetEntProp(entity, Prop_Send, "m_iEntityQuality", data.Quality);
+			SetEntProp(entity, Prop_Send, "m_iEntityLevel", data.Level);
+			
+			DispatchSpawn(entity);
+
+			if(!data.Preserve)
+				SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
+		}
+		else
+		{
+			ThrowError("Invalid classname '%s'", data.Classname);
+		}
+	}
+	#if defined _tf2items_included
+	else
+	{
+		Handle item = TF2Items_CreateItem(data.Preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
+		TF2Items_SetClassname(item, data.Classname);
+		TF2Items_SetItemIndex(item, data.Index);
+		TF2Items_SetLevel(item, data.Level);
+		TF2Items_SetQuality(item, data.Quality);
+		TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
+		for(int a; attribs < count && a < 16; attribs += 2)
+		{
+			int attrib = StringToInt(buffers[attribs]);
+			if(attrib)
+			{
+				TF2Items_SetAttribute(item, a++, attrib, ParseFormula(buffers[attribs+1], alive));
+			}
+			else
+			{
+				ThrowError("Bad weapon attribute passed for '%s': %s ; %s", data.Classname, buffers[attribs], buffers[attribs+1]);
+			}
+		}
+		
+		entity = TF2Items_GiveNamedItem(client, item);
+		delete item;
+
+		GetEntityNetClass(entity, buffer, sizeof(buffer));
+	}
+	#endif
+	
+	if(entity != -1)
+	{
+		if(wearable)
+		{
+			TF2U_EquipPlayerWearable(client, entity);
+		}
+		else
+		{
+			EquipPlayerWeapon(client, entity);
+		}
+		
+		if(data.ForceClass != TFClass_Unknown)
+			TF2_SetPlayerClass(client, class, _, false);
+		
+		for(; attribs < count; attribs += 2)
+		{
+			int attrib = StringToInt(buffers[attribs]);
+			if(attrib)
+			{
+				if(TF2ED_GetAttributeName(attrib, buffer, sizeof(buffer)))
+				{
+					if(data.Forumla)
+					{
+						Attrib_Set(entity, buffer, ParseFormula(buffers[attribs+1], alive));
+					}
+					else
+					{
+						Attrib_SetString(entity, buffer, buffers[attribs+1]);
+					}
+				}
+			}
+			else
+			{
+				ThrowError("Bad weapon attribute passed for '%s' : %s ; %s", data.Classname, buffers[attribs], buffers[attribs+1]);
+			}
+		}
+
+		if(kills >= 0)
+		{
+			Attrib_SetInt(entity, "kill eater", kills);
+			if(wearable)
+				Attrib_SetInt(entity, "strange restriction type 1", 64);
+		}
+		
+		if(!wearable)
+		{
+			if(data.Clip[0])
+			{
+				kills = RoundFloat(ParseFormula(data.Clip, alive));
+				if(kills >= 0)
+					SetEntProp(entity, Prop_Data, "m_iClip1", kills);
+			}
+			
+			if(data.Ammo[0])
+			{
+				int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
+				if(type >= 0)
+				{
+					kills = RoundFloat(ParseFormula(data.Ammo, alive));
+
+					if(data.MaxAmmo[0])
+					{
+						int limit = RoundFloat(ParseFormula(data.MaxAmmo, alive));
+						if(limit >= 0 && kills > limit)
+							kills = limit;
+					}
+
+					SetEntProp(client, Prop_Data, "m_iAmmo", kills, _, type);
+				}
+			}
+			
+			if(data.Index != 735 && StrEqual(data.Classname, "tf_weapon_builder"))
+			{
+				for(kills = 0; kills < 4; kills++)
+				{
+					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", kills != 3, _, kills);
+				}
+			}
+			else if(data.Index == 735 || StrEqual(data.Classname, "tf_weapon_sapper"))
+			{
+				SetEntProp(entity, Prop_Send, "m_iObjectType", TFObject_Sapper);
+				SetEntProp(entity, Prop_Data, "m_iSubType", TFObject_Sapper);
+				
+				for(kills = 0; kills < 4; kills++)
+				{
+					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", kills == 3, _, kills);
+				}
+			}
+		}
+
+		if(data.Show)
+		{
+			if(data.Worldmodel)
+			{
+				if(!wearable)
+					SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", data.Worldmodel);
+				
+				for(kills = 0; kills < 4; kills++)
+				{
+					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", data.Worldmodel, _, kills);
+				}
+			}
+			
+			GetEntityNetClass(entity, buffer, sizeof(buffer));
+			int offset = FindSendPropInfo(buffer, "m_iItemIDHigh");
+			
+			SetEntData(entity, offset - 8, 0);	// m_iItemID
+			SetEntData(entity, offset - 4, 0);	// m_iItemID
+			SetEntData(entity, offset, 0);		// m_iItemIDHigh
+			SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
+			
+			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
+		}
+		else if(!wearable)
+		{
+			SetEntityRenderMode(entity, RENDER_ENVIRONMENTAL);
+		}
+		
+		if(data.Alpha != 255 && data.Red != 255 && data.Green != 255 && data.Blue != 255)
+		{
+			if(data.Alpha != 255)
+				SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
+			
+			SetEntityRenderColor(entity, data.Red, data.Green, data.Blue, data.Alpha);
+		}
+		
+		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
+		
+		if(!wearable && data.Equip && slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee)
+		{
+			TF2U_SetPlayerActiveWeapon(client, entity);
+		}
+	}
+	else if(data.ForceClass != TFClass_Unknown)
+	{
+		TF2_SetPlayerClass(client, class, _, false);
+	}
+
+	Event event = CreateEvent("localplayer_pickup_weapon", true);
+	event.FireToClient(client);
+	event.Cancel();
 
 	return entity;
 }

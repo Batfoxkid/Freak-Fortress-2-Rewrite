@@ -257,13 +257,14 @@ stock void Attrib_Set(int entity, const char[] name, float value, float duration
 		if(custom && 0 < entity <= MaxClients)
 		{
 			TF2Attrib_AddCustomPlayerAttribute(entity, name, value, duration);
-		}
-		else
-		{
-			TF2Attrib_SetByName(entity, name, value);
+			return;
 		}
 		
-		return;
+		if(duration < 0.0)
+		{
+			TF2Attrib_SetByName(entity, name, value);
+			return;
+		}
 	}
 	#endif
 	
@@ -284,13 +285,14 @@ stock void Attrib_SetInt(int entity, const char[] name, int value, float duratio
 		if(custom && 0 < entity <= MaxClients)
 		{
 			TF2Attrib_AddCustomPlayerAttribute(entity, name, view_as<float>(value), duration);
-		}
-		else
-		{
-			TF2Attrib_SetByName(entity, name, view_as<float>(value));
+			return;
 		}
 		
-		return;
+		if(duration < 0.0)
+		{
+			TF2Attrib_SetByName(entity, name, view_as<float>(value));
+			return;
+		}
 	}
 	#endif
 	

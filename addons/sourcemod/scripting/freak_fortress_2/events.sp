@@ -608,7 +608,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 									}
 								}
 								
-								if(!played && !Bosses_PlaySoundToAll(attacker, "sound_kill", "0", attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+								if(!played && !Bosses_PlaySoundToAll(attacker, "sound_kill", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
 									Bosses_PlaySoundToAll(attacker, "sound_hit", _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 							}
 						}

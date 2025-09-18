@@ -2524,19 +2524,28 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 				case KeyValType_Section:
 				{
 					if(required[0])
-					{	
+					{
 						if(!val.cfg.Get("key", buffer, sizeof(buffer)))
-							continue;
-						
+						{
+							if(!number)
+								continue;
+							
+							strcopy(buffer, sizeof(buffer), "0");
+						}
+
 						if(number)
 						{
 							if(num != StringToInt(buffer))
 								continue;
 						}
-						else if(StrContains(required, buffer, false) != 0)
+						else if(StrContains(required, buffer, false) == -1)
 						{
 							continue;
 						}
+					}
+					else if(val.cfg.Get("key", buffer, sizeof(buffer)))
+					{
+						continue;
 					}
 				}
 				case KeyValType_Value:
@@ -2552,17 +2561,26 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							strcopy(buffer, sizeof(buffer), val.data);
 							
 							if(!buffer[0])
+							{
+								if(!number)
+									continue;
+								
 								strcopy(buffer, sizeof(buffer), "0");
+							}
 							
 							if(number)
 							{
 								if(num != StringToInt(buffer))
 									continue;
 							}
-							else if(StrContains(required, buffer, false) != 0)
+							else if(StrContains(required, buffer, false) == -1)
 							{
 								continue;
 							}
+						}
+						else if(val.data[0])
+						{
+							continue;
 						}
 					}
 					else	// "1"	"example.mp3"
@@ -2585,7 +2603,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 								if(num != StringToInt(buffer))
 									continue;
 							}
-							else if(StrContains(required, buffer, false) != 0)
+							else if(StrContains(required, buffer, false) == -1)
 							{
 								continue;
 							}

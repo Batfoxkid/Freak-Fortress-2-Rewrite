@@ -86,7 +86,26 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 			SetEntityRenderColor(client, _, _, _, 128);
 			SetEntityHealth(client, 1);
 			
-			entity = CreateTeutonItem(client, "tf_weapon_sword", 132, false);
+			static WeaponData items[2];
+			if(!items[0].Index)
+			{
+				// Weapon
+				items[0].Setup("tf_weapon_sword", 132, "", false);
+				items[0].Quality = 6;
+				items[0].Level = 5;
+				items[0].Alpha = 128;
+			}
+
+			if(!items[1].Index)
+			{
+				// Hat
+				items[1].Setup("tf_wearable", 30969, "", false);
+				items[1].Quality = 6;
+				items[1].Level = 5;
+				items[1].Alpha = 128;
+			}
+			
+			entity = TF2Items_CreateFromStruct(client, items[0]);
 			if(entity != -1)
 			{
 				Attrib_Set(entity, "damage penalty", 0.3076);
@@ -100,54 +119,10 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 				Attrib_Set(entity, "voice pitch scale", 0.0);
 			}
 
-			CreateTeutonItem(client, "tf_wearable", 30969, true);
+			TF2Items_CreateFromStruct(client, items[1]);
 		}
 	}
 	return Plugin_Continue;
-}
-
-static int CreateTeutonItem(int client, const char[] classname, int index, bool wearable)
-{
-	int entity = CreateEntityByName(classname);
-	if(entity != -1)
-	{
-		SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-		SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-
-		char netclass[32];
-		GetEntityNetClass(entity, netclass, sizeof(netclass));
-		SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityQuality"), 6);
-		SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityLevel"), 5);
-
-		SetEntProp(entity, Prop_Send, "m_iEntityQuality", 6);
-		SetEntProp(entity, Prop_Send, "m_iEntityLevel", 5);
-		
-		DispatchSpawn(entity);
-
-		if(wearable)
-		{
-			TF2U_EquipPlayerWearable(client, entity);
-		}
-		else
-		{
-			SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
-			EquipPlayerWeapon(client, entity);
-		}
-		
-		int offset = FindSendPropInfo(netclass, "m_iItemIDHigh");
-		
-		SetEntData(entity, offset - 8, 0);	// m_iItemID
-		SetEntData(entity, offset - 4, 0);	// m_iItemID
-		SetEntData(entity, offset, 0);		// m_iItemIDHigh
-		SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
-		
-		SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-
-		SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-		SetEntityRenderColor(entity, _, _, _, 128);
-	}
-	return entity;
 }
 
 static Action Timer_RemoveRagdoll(Handle timer, any userid)
