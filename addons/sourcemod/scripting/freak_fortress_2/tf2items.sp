@@ -35,7 +35,7 @@ enum struct WeaponData
 		this.Level = -1;
 		this.Quality = 0;
 		this.Rank = -1;
-		this.Preserve = false;
+		this.Preserve = preserve;
 		this.Override = true;
 		this.ForceClass = TFClass_Unknown;
 		strcopy(this.AttributeString, sizeof(this.AttributeString), attributes);
