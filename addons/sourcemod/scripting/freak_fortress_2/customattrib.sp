@@ -50,7 +50,7 @@ void CustomAttrib_PluginStart()
 	#endif
 }
 
-void CustomAttrib_AllPluginsLoaded()
+stock void CustomAttrib_AllPluginsLoaded()
 {
 	#if defined __tf_econ_dyn_included
 	TFEYLoaded = GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") == FeatureStatus_Available;
