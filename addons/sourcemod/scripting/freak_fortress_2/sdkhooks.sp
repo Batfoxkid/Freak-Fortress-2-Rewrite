@@ -349,28 +349,42 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 		{
 			bool changed;
 			bool melee = ((damagetype & DMG_CLUB) || (damagetype & DMG_SLASH)) && damagecustom != TF_CUSTOM_BASEBALL;
-			if(melee && SDKCall_CheckBlockBackstab(victim, attacker))
+			if(melee)
 			{
-				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
-					TF2_RemoveCondition(victim, TFCond_RuneResist);
-				
-				float pos[3];
-				GetClientAbsOrigin(victim, pos);
-				ScreenShake(pos, 25.0, 150.0, 1.0, 50.0);
-				
-				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
-				
-				TF2_RemoveCondition(victim, TFCond_Zoomed);
-				
-				int entity = -1;
-				while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
+				bool shieldBlocked = false;
+	
+				if(SDKCall_CheckBlockBackstab(victim, attacker))
 				{
-					if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == victim && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
-						TF2_RemoveWearable(victim, entity);
+					shieldBlocked = true;
 				}
-				
-				damage = 0.0;
-				return Plugin_Handled;
+				else
+				{
+					int entity = -1;
+					while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
+					{
+						if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == victim && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+						{
+							TF2_RemoveWearable(victim, entity);
+							shieldBlocked = true;
+							break;
+						}
+					}
+				}
+	
+				if(shieldBlocked)
+				{
+					if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
+						TF2_RemoveCondition(victim, TFCond_RuneResist);
+
+					float pos[3];
+					GetClientAbsOrigin(victim, pos);
+					ScreenShake(pos, 25.0, 150.0, 1.0, 50.0);
+					EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
+					TF2_RemoveCondition(victim, TFCond_Zoomed);
+
+					damage = 0.0;
+					return Plugin_Handled;
+				}
 			}
 			
 			if(damage <= 160.0 && Client(attacker).Triple)
