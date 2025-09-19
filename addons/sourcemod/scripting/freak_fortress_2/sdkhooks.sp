@@ -364,7 +364,6 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					{
 						if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == victim && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
 						{
-							TF2Attrib_SetByDefIndex(entity, 52, 1.0);
 							TF2_RemoveWearable(victim, entity);
 							shieldBlocked = true;
 							break;
