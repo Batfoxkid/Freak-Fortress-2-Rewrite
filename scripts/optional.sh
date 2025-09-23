@@ -9,6 +9,6 @@ wget "https://raw.githubusercontent.com/nosoop/SM-TFEconData/master/scripting/in
 wget "https://raw.githubusercontent.com/nosoop/SMExt-TFEconDynamic/refs/heads/main/scripting/include/tf_econ_dynamic.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFOnTakeDamage/refs/heads/master/scripting/include/tf_ontakedamage.inc"
 wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/scripting/include/tf2attributes.inc"
-wget "https://raw.githubusercontent.com/asherkin/TF2Items/master/pawn/tf2items.inc"
+wget "https://raw.githubusercontent.com/asherkin/TF2Items/6c9c04529b7075bea7de03213ff8122630c7e1c4/pawn/tf2items.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFUtils/master/scripting/include/tf2utils.inc"
 wget "https://raw.githubusercontent.com/FortyTwoFortyTwo/VScript/refs/heads/main/scripting/include/vscript.inc"
