@@ -300,6 +300,7 @@ public void TF2_OnWaitingForPlayersStart()
 		if (GameRules_GetProp("m_nGameType") == 4)
 		{
 			int iArenaLogic = FindEntityByClassname(MaxClients + 1, "tf_logic_arena");
+
 			if (iArenaLogic != -1)
 			{
 				FireEntityOutput(iArenaLogic, "OnArenaRoundStart", iArenaLogic);
