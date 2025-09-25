@@ -296,6 +296,17 @@ public void TF2_OnWaitingForPlayersStart()
 
 		delete BackupTimer;
 		BackupTimer = CreateTimer(Cvar[WaitingTime].FloatValue + 5.0, Gamemode_BackupWaiting);
+
+		if (GameRules_GetProp("m_nGameType") == 4)
+		{
+			int iArenaLogic = FindEntityByClassname(MaxClients + 1, "tf_logic_arena");
+
+			if (iArenaLogic != -1)
+			{
+				FireEntityOutput(iArenaLogic, "OnArenaRoundStart", iArenaLogic);
+				FireEvent(CreateEvent("arena_round_start"));
+			}
+		}
 	}
 }
 
