@@ -189,6 +189,7 @@ enum
 	CaptureTime,
 	CaptureAlive,
 	CaptureDome,
+	CaptureDomeTime,
 	HealthBar,
 	RefreshDmg,
 	RefreshTime,
