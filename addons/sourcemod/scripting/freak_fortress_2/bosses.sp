@@ -1538,6 +1538,10 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int tea
 	
 	if(playing)
 	{
+		blocked = false;
+		if(cfg.GetBool("random", blocked, false) && blocked)
+			return false;
+		
 		// Don't select duo bosses at random
 		int duo = -1;
 		if(cfg.GetInt("companion", duo) && duo != -1)
