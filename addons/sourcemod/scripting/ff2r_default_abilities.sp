@@ -1938,7 +1938,7 @@ public void Hook_ProjectileSpawned(int entity)
 			AbilityData ability = boss.GetAbility("special_projectile_model");
 			if(ability.IsMyPlugin())
 			{
-				char buffer[64];
+				char buffer[255];
 				GetEntityClassname(entity, buffer, sizeof(buffer));
 				ConfigData cfg = ability.GetSection(buffer);
 				if(cfg)
