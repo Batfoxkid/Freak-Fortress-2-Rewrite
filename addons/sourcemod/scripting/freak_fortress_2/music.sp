@@ -124,7 +124,11 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 void Music_PlayerRunCmd(int client)
 {
 	if(RoundStatus != 2 && NextThemeAt[client] < GetGameTime())
+	{
+		// If theme expired by time out, don't run StopSound code
+		CurrentTheme[client][0] = 0;
 		Music_PlayNextSong(client);
+	}
 }
 
 void Music_PlayNextSong(int client = 0)
