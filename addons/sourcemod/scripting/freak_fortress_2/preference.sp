@@ -657,11 +657,11 @@ static void BossMenu(int client)
 								else if(BossListing[client] && BossListing[client].FindValue(index) != -1)
 								{
 									found = true;
-									Format(buffer, sizeof(buffer), "%sX%s %s", buffer, a ? "{" : "[", a ? "}" : "]");
+									Format(buffer, sizeof(buffer), "%sX%s %s", a ? "{" : "[", a ? "}" : "]", buffer);
 								}
 								else if(access)
 								{
-									Format(buffer, sizeof(buffer), "%s %s %s", buffer, a ? "{" : "[", a ? "}" : "]");
+									Format(buffer, sizeof(buffer), "%s %s %s", a ? "{" : "[", a ? "}" : "]", buffer);
 								}
 							}
 							

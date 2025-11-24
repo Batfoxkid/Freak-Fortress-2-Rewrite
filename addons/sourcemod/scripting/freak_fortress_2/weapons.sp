@@ -684,9 +684,10 @@ static void Weapons_SpawnFrame(int ref)
 	if(client < 1 || client > MaxClients || Client(client).IsBoss || Client(client).MinionType == 1)
 		return;
 	
+	bool temp;
 	char loadout[32];
 	Client(client).GetLoadout(loadout, sizeof(loadout));
-	ConfigMap cfg = FindWeaponSection(entity, loadout, _, client);
+	ConfigMap cfg = FindWeaponSection(entity, loadout, _, client, temp);
 	if(!cfg)
 		return;
 	
@@ -698,7 +699,7 @@ static void Weapons_SpawnFrame(int ref)
 	
 	if(cfg.GetInt("clip", current))
 	{
-		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+		temp = true;
 		
 		if(HasEntProp(entity, Prop_Data, "m_iClip1"))
 			SetEntProp(entity, Prop_Data, "m_iClip1", current);
@@ -706,7 +707,7 @@ static void Weapons_SpawnFrame(int ref)
 	
 	if(cfg.GetInt("ammo", current))
 	{
-		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
+		temp = true;
 		
 		if(HasEntProp(entity, Prop_Send, "m_iPrimaryAmmoType"))
 		{
@@ -715,6 +716,9 @@ static void Weapons_SpawnFrame(int ref)
 				SetEntProp(client, Prop_Data, "m_iAmmo", current, _, type);
 		}
 	}
+
+	if(temp)
+		SetEntProp(entity, Prop_Send, "m_iAccountID", 0);
 	
 	switch(cfg.GetKeyValType("attributes"))
 	{
@@ -805,7 +809,7 @@ static ConfigMap FindMatchingLoadout(const char[] loadou)
 	return cfg;
 }
 
-static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64] = "", int client = 0)
+static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64] = "", int client = 0, bool &temp = false)
 {
 	char buffer1[64];
 
@@ -817,7 +821,7 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 		Format(buffer1, sizeof(buffer1), "CWX.%s", cwx);
 		ConfigMap cfg = loadout.GetSection(buffer1);
 		if(cfg)
-			return FindClassSection(cfg, client);
+			return FindClassSection(cfg, client, temp);
 	}
 	#endif
 	
@@ -864,7 +868,7 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 						if(val.tag == KeyValType_Section)
 						{
 							delete snap;
-							return FindClassSection(val.cfg, client);
+							return FindClassSection(val.cfg, client, temp);
 						}
 						
 						break;
@@ -880,12 +884,12 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 	Format(buffer1, sizeof(buffer1), "Classnames.%s", buffer1);
 	cfg = loadout.GetSection(buffer1);
 	if(cfg)
-		return FindClassSection(cfg, client);
+		return FindClassSection(cfg, client, temp);
 	
 	return null;
 }
 
-static ConfigMap FindClassSection(ConfigMap cfg, int client)
+static ConfigMap FindClassSection(ConfigMap cfg, int client, bool &temp)
 {
 	if(client)
 	{
@@ -895,12 +899,19 @@ static ConfigMap FindClassSection(ConfigMap cfg, int client)
 		
 		ConfigMap section = cfg.GetSection(TFClassName[class]);
 		if(section)
+		{
+			temp = true;
 			return section;
+		}
 		
 		section = cfg.GetSection("other");
 		if(section)
+		{
+			temp = true;
 			return section;
+		}
 	}
 
+	temp = false;
 	return cfg;
 }
