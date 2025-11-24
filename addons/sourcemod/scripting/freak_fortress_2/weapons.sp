@@ -817,7 +817,7 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 		Format(buffer1, sizeof(buffer1), "CWX.%s", cwx);
 		ConfigMap cfg = loadout.GetSection(buffer1);
 		if(cfg)
-			return cfg;
+			return FindClassSection(cfg, client);
 	}
 	#endif
 	
@@ -864,7 +864,7 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 						if(val.tag == KeyValType_Section)
 						{
 							delete snap;
-							return val.cfg;
+							return FindClassSection(val.cfg, client);
 						}
 						
 						break;
@@ -880,7 +880,27 @@ static ConfigMap FindWeaponSection(int entity, const char[] loadou, char cwx[64]
 	Format(buffer1, sizeof(buffer1), "Classnames.%s", buffer1);
 	cfg = loadout.GetSection(buffer1);
 	if(cfg)
-		return cfg;
+		return FindClassSection(cfg, client);
 	
 	return null;
+}
+
+static ConfigMap FindClassSection(ConfigMap cfg, int client)
+{
+	if(client)
+	{
+		TFClassType class = Client(client).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(client);
+		if(view_as<int>(class) >= sizeof(TFClassName))
+			class = TFClass_Unknown;
+		
+		ConfigMap section = cfg.GetSection(TFClassName[class]);
+		if(section)
+			return section;
+		
+		section = cfg.GetSection("other");
+		if(section)
+			return section;
+	}
+
+	return cfg;
 }

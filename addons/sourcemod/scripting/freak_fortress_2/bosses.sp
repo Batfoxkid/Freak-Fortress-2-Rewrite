@@ -1538,14 +1538,13 @@ bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int tea
 	
 	if(playing)
 	{
+		// If random is disabled, blocks the boss being played without being selected
 		blocked = false;
-		if(cfg.GetBool("random", blocked, false) && blocked)
-			return false;
-		
-		// Don't select duo bosses at random
-		int duo = -1;
-		if(cfg.GetInt("companion", duo) && duo != -1)
-			return false;
+		if(cfg.GetBool("random", blocked, false) && !blocked)
+		{
+			if(!Preference_HasWhitelisted(client, special, false))
+				return false;
+		}
 	}
 	
 	cfg.GetBool("preview", preview, false);
@@ -1624,7 +1623,7 @@ bool Bosses_GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = 
 	return view_as<bool>(buffer[0]);
 }
 
-void Bosses_CreateFromSpecial(int client, int special, int team, int leader = 0)
+void Bosses_CreateFromSpecial(int client, int special, int team, int lead = 0)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -1634,12 +1633,12 @@ void Bosses_CreateFromSpecial(int client, int special, int team, int leader = 0)
 	cfg.Get("filename", buffer, sizeof(buffer));
 	Client(client).SetLastPlayed(buffer);
 	
-	Bosses_CreateFromConfig(client, cfg, team, leader);
+	Bosses_CreateFromConfig(client, cfg, team, lead);
 	
 	Client(client).Cfg.SetInt("special", special);
 }
 
-void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0)
+void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0)
 {
 	if(Client(client).Index < 0)
 	{
@@ -1725,18 +1724,25 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	Goomba_BossCreated(Client(client).Cfg);
 	Music_BossCreated(client);
 	
+	int leader = lead ? lead : client;
+
 	if(Client(client).Cfg.GetInt("companion", i))
 	{
-		bool disband;
-		int companion = Preference_GetCompanion(client, i, team, disband);
+		int consume;
+		int companion = Preference_GetCompanion(client, i, team, consume, leader);
 		if(companion)
 		{
-			Bosses_CreateFromSpecial(companion, i, team, client);
+			Bosses_CreateFromSpecial(companion, i, team, leader);
 			
-			if(disband)
+			if(consume == 2)
 			{
 				Preference_FinishParty(client);
 				Preference_FinishParty(companion);
+			}
+			else if(consume)
+			{
+				Client(client).Queue = 0;
+				Client(companion).Queue = 0;
 			}
 		}
 		else
@@ -1754,7 +1760,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int leader = 0
 	}
 	
 	if(!Client(client).MinionType && (!Client(client).Cfg.GetBool("nomods", value, false) || !value))
-		Preference_ApplyDifficulty(client, leader ? leader : client, !active);
+		Preference_ApplyDifficulty(client, leader, !active);
 }
 
 int Bosses_SetHealth(int client, int players)

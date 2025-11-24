@@ -595,15 +595,14 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 										}
 									}
 									
-									static const char classnames[][] = {"custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer"};
-									if(view_as<int>(class) >= sizeof(classnames))
+									if(view_as<int>(class) >= sizeof(TFClassName))
 										class = TFClass_Unknown;
 									
-									played = Bosses_PlaySoundToAll(attacker, "sound_kill", classnames[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+									played = Bosses_PlaySoundToAll(attacker, "sound_kill", TFClassName[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 									if(!played)
 									{
 										char buffer[20];
-										FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classnames[class]);
+										FormatEx(buffer, sizeof(buffer), "sound_kill_%s", TFClassName[class]);
 										played = Bosses_PlaySoundToAll(attacker, buffer, _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
 									}
 								}

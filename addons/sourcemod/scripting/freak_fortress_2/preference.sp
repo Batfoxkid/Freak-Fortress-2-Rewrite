@@ -101,7 +101,7 @@ bool Preference_ShouldUpdate(int client)
 	return UpdateDataBase[client];
 }
 
-bool Preference_GetBoss(int client, int index, char[] buffer, int length)
+bool Preference_GetBoss(int client, int index, char[] buffer = "", int length = 0)
 {
 	if(!BossListing[client] || index >= BossListing[client].Length)
 		return false;
@@ -143,6 +143,24 @@ bool Preference_DisabledBoss(int client, int charset)
 		if(BossListing[client].FindValue(-1-charset) != -1)
 			return true;
 	}
+	return false;
+}
+
+bool Preference_ValidBossSelection(int client, int team = -1)
+{
+	if(Preference_DisabledBoss(client, Charset))
+		return false;
+	
+	if(BossOverride != -1 || !BossListing[client] || Cvar[PrefBlacklist].IntValue >= 0)
+		return true;
+	
+	int length = BossListing[client].Length;
+	for(int i; i < length; i++)
+	{
+		if(Bosses_CanAccessBoss(client, BossListing[client].Get(i), true, team))
+			return true;
+	}
+
 	return false;
 }
 
@@ -477,6 +495,22 @@ static void BossMenu(int client)
 			if(access && blacklist != 0)
 			{
 				int count;
+				if(cfg.GetInt("companion", count))
+				{
+					if(!Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang, "group"))
+						Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
+					
+					if(blacklist < 0 && cfg.GetBool("enabled", preview) && preview)
+					{
+						FormatEx(buffer, sizeof(buffer), "%t", "Boss Party", data);
+						menu.AddItem("2", buffer);
+					}
+				}
+				else
+				{
+					Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
+				}
+				
 				if(BossListing[client] && BossListing[client].FindValue(ViewingBoss[client]) != -1)
 				{
 					if(blacklist > 0)
@@ -487,31 +521,14 @@ static void BossMenu(int client)
 						
 						count = GetBlacklistCount(client, charset);
 						
-						Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
 						FormatEx(buffer, sizeof(buffer), "%t (%d / %d)", "Boss Whitelist", data, count, blacklist);
 					}
 					else
 					{
-						Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
 						FormatEx(buffer, sizeof(buffer), "%t", "Boss Blacklist", data);
 					}
 					
 					menu.AddItem("0", buffer);
-				}
-				else if(cfg.GetInt("companion", count))
-				{
-					if(blacklist > 0 || !cfg.GetBool("enabled", preview) || !preview)
-					{
-						menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
-					}
-					else
-					{
-						if(!Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang, "group"))
-							Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
-						
-						FormatEx(buffer, sizeof(buffer), "%t", "Boss Party", data);
-						menu.AddItem("2", buffer);
-					}
 				}
 				else if(blacklist > 0)
 				{
@@ -521,13 +538,11 @@ static void BossMenu(int client)
 					
 					count = GetBlacklistCount(client, charset);
 					
-					Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
 					FormatEx(buffer, sizeof(buffer), "%t (%d / %d)", "Boss Blacklist", data, count, blacklist);
 					menu.AddItem(count >= blacklist ? "0" : "1", buffer, count >= blacklist ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 				}
 				else
 				{
-					Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
 					FormatEx(buffer, sizeof(buffer), "%t", "Boss Whitelist", data);
 					menu.AddItem("1", buffer);
 				}
@@ -595,6 +610,8 @@ static void BossMenu(int client)
 		if(Bosses_GetCharset(ViewingPack[client], data, sizeof(data)))
 		{
 			menu.SetTitle("%t%s\n ", "Boss Selection Command", data);
+
+			ArrayList list = new ArrayList();
 			
 			bool found;
 			int index;
@@ -603,33 +620,58 @@ static void BossMenu(int client)
 			{
 				if(cfg.GetInt("charset", index) && index == ViewingPack[client])
 				{
-					bool preview;
-					bool access = Bosses_CanAccessBoss(client, i, false, _, false, preview);
-					if(access || preview)
+					list.Push(i);
+				}
+			}
+
+			bool enabled;
+			int length = list.Length;
+			for(int a; a < 2; a++)	// Enabled characters first
+			{
+				for(int b; b < length; b++)
+				{
+					index = list.Get(b);
+					cfg = Bosses_GetConfig(index);
+
+					if((cfg.GetBool("enabled", enabled) && enabled) == !a)
 					{
-						Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
-						if(blacklist != 0)
+						bool preview;
+						bool access = Bosses_CanAccessBoss(client, index, false, _, false, preview);
+						if(access || preview)
 						{
-							if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == i)
+							IntToString(index, data, sizeof(data));
+
+							Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+							if(blacklist != 0)
 							{
-								Format(buffer, sizeof(buffer), "[&] %s", buffer);
+								if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == index)
+								{
+									Format(buffer, sizeof(buffer), "%s\n ", buffer);
+
+									if(menu.ItemCount)
+									{
+										menu.InsertItem(0, data, buffer);
+										continue;
+									}
+								}
+								else if(BossListing[client] && BossListing[client].FindValue(index) != -1)
+								{
+									found = true;
+									Format(buffer, sizeof(buffer), "%sX%s %s", buffer, a ? "{" : "[", a ? "}" : "]");
+								}
+								else if(access)
+								{
+									Format(buffer, sizeof(buffer), "%s %s %s", buffer, a ? "{" : "[", a ? "}" : "]");
+								}
 							}
-							else if(BossListing[client] && BossListing[client].FindValue(i) != -1)
-							{
-								found = true;
-								Format(buffer, sizeof(buffer), "[X] %s", buffer);
-							}
-							else if(access)
-							{
-								Format(buffer, sizeof(buffer), "[ ] %s", buffer);
-							}
+							
+							menu.AddItem(data, buffer);
 						}
-						
-						IntToString(i, data, sizeof(data));
-						menu.AddItem(data, buffer);
 					}
 				}
 			}
+
+			delete list;
 			
 			if(Preference_DisabledBoss(client, ViewingPack[client]))
 			{
@@ -1383,9 +1425,23 @@ void Preference_FinishParty(int client)
 	Client(client).Queue = 0;
 }
 
-int Preference_GetCompanion(int client, int special, int team, bool &disband)
+int Preference_GetCompanion(int client, int special, int team, int &consume, int leader)
 {
-	int count;
+	if(Enabled && PartyLeader[client])
+	{
+		int player = FindPartyMember(PartyLeader[client], special);
+		if(player && !Client(player).IsBoss)
+		{
+			consume = 2;
+			return player;
+		}
+	}
+
+	int leadSpecial = special;
+	Client(leader).Cfg.GetInt("special", leadSpecial);
+	
+	int size, total;
+	int[][] queue = new int[MaxClients][2];
 	int[] players = new int[MaxClients];
 	for(int player = 1; player <= MaxClients; player++)
 	{
@@ -1400,25 +1456,55 @@ int Preference_GetCompanion(int client, int special, int team, bool &disband)
 			{
 				continue;
 			}
+
+			players[total++] = player;
+
+			if(!Enabled || Preference_DisabledBoss(client, Charset) || !Preference_HasWhitelisted(client, leadSpecial))
+				continue;
 			
-			players[count++] = player;
+			queue[size][1] = Client(client).Queue;
+			queue[size++][0] = client;
 		}
 	}
 	
-	if(count < (Enabled ? 2 : 1))	// Prevent arena mode softlock when one-sided
+	if(total < (Enabled ? 2 : 1))	// Prevent arena mode softlock when one-sided
 		return 0;
-	
-	if(Enabled && PartyLeader[client])
+
+	if(size > 0)
 	{
-		int player = FindPartyMember(PartyLeader[client], special);
-		if(player && !Client(player).IsBoss)
-		{
-			disband = true;
-			return player;
-		}
+		if(size > 1)
+			SortCustom2D(queue, size, Preference_BossQueueSort);
+
+		consume = 1;
+		return queue[0][0];
 	}
 	
-	return players[GetURandomInt() % count];
+	consume = 0;
+	return players[GetURandomInt() % total];
+}
+
+// If the player has whitelisted (or not blacklisted) this boss
+bool Preference_HasWhitelisted(int client, int special, bool rules = true)
+{
+	if(!rules)
+		return BossListing[client].FindValue(special) != -1;
+	
+	int blacklist = Cvar[PrefBlacklist].IntValue;
+	if(BossListing[client] && blacklist != 0)
+	{
+		if(BossListing[client].FindValue(special) == -1)
+		{
+			// Not found
+			return blacklist > 0;
+		}
+		else
+		{
+			// Found
+			return blacklist < 0;
+		}
+	}
+
+	return true;
 }
 
 int Preference_GetFullQueuePoints(int client)
@@ -1442,7 +1528,8 @@ int Preference_GetFullQueuePoints(int client)
 				break;
 		}
 		
-		queue /= i;
+		if(i > 1)
+			queue = queue * 6 / i / 5;
 	}
 	
 	return queue;
@@ -1471,7 +1558,7 @@ int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team =
 				if(!display && PartyMainBoss[PartyLeader[client]] != PartyChoice[client])
 					continue;
 			}
-			else if(Preference_DisabledBoss(client, Charset))
+			else if(!Preference_ValidBossSelection(client, Charset))
 			{
 				continue;
 			}

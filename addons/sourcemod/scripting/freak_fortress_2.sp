@@ -157,6 +157,7 @@ enum struct SoundEnum
 }
 
 public const char SndExts[][] = { ".mp3", ".wav" };
+public const char TFClassName[][] = { "custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer" };
 
 public const int TeamColors[][] =
 {
