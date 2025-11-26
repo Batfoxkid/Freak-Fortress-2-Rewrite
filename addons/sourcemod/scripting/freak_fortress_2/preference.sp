@@ -1459,11 +1459,11 @@ int Preference_GetCompanion(int client, int special, int team, int &consume, int
 
 			players[total++] = player;
 
-			if(!Enabled || Preference_DisabledBoss(client, Charset) || !Preference_HasWhitelisted(client, leadSpecial))
+			if(!Enabled || Preference_DisabledBoss(player, Charset) || !Preference_HasWhitelisted(player, leadSpecial))
 				continue;
 			
-			queue[size][1] = Client(client).Queue;
-			queue[size++][0] = client;
+			queue[size][1] = Client(player).Queue;
+			queue[size++][0] = player;
 		}
 	}
 	
