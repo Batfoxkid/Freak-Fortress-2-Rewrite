@@ -20,6 +20,8 @@ void Native_PluginLoad()
 	CreateNative("FF2R_GetClientHud", Native_GetClientHud);
 	CreateNative("FF2R_SetClientHud", Native_SetClientHud);
 	CreateNative("FF2R_ClientHasFile", Native_ClientHasFile);
+	CreateNative("FF2R_GetClientAssist", Native_GetClientAssist);
+	CreateNative("FF2R_SetClientAssist", Native_SetClientAssist);
 	
 	RegPluginLibrary("ff2r");
 }
