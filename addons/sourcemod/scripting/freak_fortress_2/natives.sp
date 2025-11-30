@@ -274,3 +274,23 @@ static any Native_ClientHasFile(Handle plugin, int numParams)
 
 	return FileNet_HasFile(client, FileNet_FileProgress(file));
 }
+
+static any Native_GetClientAssist(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	return Client(client).Assist;
+}
+
+static any Native_SetClientAssist(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	Client(client).Assist = GetNativeCell(2);
+	Client(client).RefreshAt = 0.0;
+	return 0;
+}
