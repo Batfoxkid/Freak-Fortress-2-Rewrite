@@ -177,6 +177,33 @@ native void FF2R_SetClientHud(int client, bool status);
 native bool FF2R_ClientHasFile(int client, const char[] file);
 
 /**
+ * Gets the player's assist point in the current round
+ * 
+ * @note			Return value is not total assist.
+ * 
+ * @param client	Client index
+ * 
+ * @error			Invalid client index
+ * 
+ * @return			Assist point the player has
+ */
+native int FF2R_GetClientAssist(int client);
+
+/**
+ * Sets the player's assist point in the current round
+ * 
+ * @note			This doesn't set total assist.
+ * 
+ * @param client	Client index
+ * @param assist	Assist point to set
+ * 
+ * @error			Invalid client index
+ * 
+ * @noreturn
+ */
+native void FF2R_SetClientAssist(int client, int assist);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted

@@ -20,6 +20,8 @@ void Native_PluginLoad()
 	CreateNative("FF2R_GetClientHud", Native_GetClientHud);
 	CreateNative("FF2R_SetClientHud", Native_SetClientHud);
 	CreateNative("FF2R_ClientHasFile", Native_ClientHasFile);
+	CreateNative("FF2R_GetClientAssist", Native_GetClientAssist);
+	CreateNative("FF2R_SetClientAssist", Native_SetClientAssist);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -273,4 +275,24 @@ static any Native_ClientHasFile(Handle plugin, int numParams)
 	}
 
 	return FileNet_HasFile(client, FileNet_FileProgress(file));
+}
+
+static any Native_GetClientAssist(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	return Client(client).Assist;
+}
+
+static any Native_SetClientAssist(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	Client(client).Assist = GetNativeCell(2);
+	Client(client).RefreshAt = 0.0;
+	return 0;
 }
