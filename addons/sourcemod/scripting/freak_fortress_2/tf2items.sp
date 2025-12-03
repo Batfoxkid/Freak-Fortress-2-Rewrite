@@ -337,6 +337,10 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 					SetEntProp(entity, Prop_Data, "m_iClip1", level);
 			}
 			
+			level = 0;
+			if(cfg.GetInt("ammotype", level) && level > 0 && level < 7)
+				SetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType", level);
+			
 			if(cfg.Get("ammo", buffer, sizeof(buffer)))
 			{
 				quality = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
@@ -388,6 +392,10 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
 				}
 			}
+			
+			float scale = 1.0;
+			if(cfg.GetFloat("scale", scale) && scale != 1.0)
+				SetEntPropFloat(entity, Prop_Send, "m_flModelScale", scale);
 			
 			int offset = FindSendPropInfo(netclass, "m_iItemIDHigh");
 			
