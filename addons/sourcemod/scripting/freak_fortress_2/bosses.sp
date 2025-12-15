@@ -777,12 +777,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 									{
 										ConfigMap cfgsound = val.cfg;
 										if(cfgsound)
-										{
-											length2 = 0;
-											cfgsound.GetInt("time", length2);
-											if(length2)
-												music = true;
-										}
+											music = cfgsound.GetSize("time") > 0;
 									}
 									
 									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
