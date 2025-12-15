@@ -154,14 +154,20 @@ bool Preference_ValidBossSelection(int client, int team = -1)
 	if(BossOverride != -1 || !BossListing[client] || Cvar[PrefBlacklist].IntValue >= 0)
 		return true;
 	
+	bool foundBoss;
 	int length = BossListing[client].Length;
 	for(int i; i < length; i++)
 	{
-		if(Bosses_CanAccessBoss(client, BossListing[client].Get(i), true, team))
+		int index = BossListing[client].Get(i);
+		if(index < 0)
+			continue;
+		
+		foundBoss = true;
+		if(Bosses_CanAccessBoss(client, index, true, team))
 			return true;
 	}
 
-	return false;
+	return !foundBoss;
 }
 
 int Preference_PickBoss(int client, int team = -1)
