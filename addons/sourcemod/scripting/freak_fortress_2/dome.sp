@@ -93,6 +93,9 @@ void Dome_EntityCreated(int entity, const char[] classname)
 	if(!Dome_Enabled())
 		return;
 	
+	if(Cvar[CaptureDomeStyle].BoolValue)
+		return;
+	
 	if(StrEqual(classname, "team_control_point_master"))
 	{
 		SDKHook(entity, SDKHook_Spawn, Dome_MasterSpawn);
@@ -136,6 +139,9 @@ static Action Dome_OnCapEnabled(const char[] output, int caller, int activator, 
 static Action Dome_BlockOutput(const char[] output, int caller, int activator, float delay)
 {
 	if(!Dome_Enabled())
+		return Plugin_Continue;
+	
+	if(Cvar[CaptureDomeStyle].BoolValue)
 		return Plugin_Continue;
 
 	//Always block this function, maps may assume round ended
@@ -447,6 +453,9 @@ static Action Dome_TimerBleed(Handle timer)
 
 static void Dome_UpdateRadius()
 {
+	if(DomeRadius == Cvar[CaptureDomeRadius].FloatValue)
+		return;
+	
 	//Get current game time
 	float gameTime = GetGameTime();
 	float gameTimeDifference = gameTime - DomePreviousGameTime;
@@ -458,8 +467,8 @@ static void Dome_UpdateRadius()
 	float radius = DomeRadius - (speed * gameTimeDifference);
 	
 	//Check if we already reached min value
-	if(radius < 0.0)
-		radius = 0.0;
+	if(radius < Cvar[CaptureDomeRadius].FloatValue)
+		radius = Cvar[CaptureDomeRadius].FloatValue;
 	
 	//Update global variable
 	DomeRadius = radius;
