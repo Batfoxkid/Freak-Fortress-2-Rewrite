@@ -12,7 +12,7 @@
 #define DOME_FADE_ALPHA_MAX		64
 
 #define DOME_START_SOUND	"mvm/mvm_warning.wav"
-#define DOME_NEARBY_SOUND	"ui/medc_alert.wav"
+#define DOME_NEARBY_SOUND	"ui/medic_alert.wav"
 #define DOME_PERPARE_DURATION	4.5
 
 static const char Downloads[][] =
@@ -209,6 +209,8 @@ static bool Dome_Start(int entity = 0)
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 0.0);
 	DomeStart = GetGameTime();
+	
+	EmitSoundToAll(DOME_START_SOUND);
 	
 	DomeEntRef = EntIndexToEntRef(dome);
 	RequestFrame(Dome_Frame_Prepare);
