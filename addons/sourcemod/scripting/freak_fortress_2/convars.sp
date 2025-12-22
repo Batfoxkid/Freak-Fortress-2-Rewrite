@@ -48,6 +48,8 @@ void ConVar_PluginStart()
 	Cvar[RankingLose] = CreateConVar("ff2_game_ranks_lose", "0", "Rank loss method when losing as a boss, 0 = None, 0.0-1.0 = When Less Then Players Killed Ratio, # = Ranks Loss", _, true, 0.0);
 	Cvar[RankingStats] = CreateConVar("ff2_game_ranks_stats", "0.0", "Boss health precentage multiplicative decrease per rank", _, true, 0.0, true, 0.9);
 	Cvar[CaptureDomeTime] = CreateConVar("ff2_game_capture_dome_time", "0.0", "Override control point capture time, 0 for map default", _, true, 0.0);
+	Cvar[CaptureDomeStyle] = CreateConVar("ff2_game_capture_dome_style", "1.0", "Determines how the capture would work when dome activated.\n0 = capturing the dome only changes the team owning the control point\n1 = capturing the dome results in victory of the team that captured the control point", _, true, 0.0, true, 1.0);
+	Cvar[CaptureDomeRadius] = CreateConVar("ff2_game_capture_dome_radius", "0.0", "How much radius of dome closes in. 0 for default", _, true, 0.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

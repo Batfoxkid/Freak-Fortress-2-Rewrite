@@ -12,7 +12,7 @@
 #define DOME_FADE_ALPHA_MAX		64
 
 #define DOME_START_SOUND	"mvm/mvm_warning.wav"
-#define DOME_NEARBY_SOUND	"ui/medc_alert.wav"
+#define DOME_NEARBY_SOUND	"ui/medic_alert.wav"
 #define DOME_PERPARE_DURATION	4.5
 
 static const char Downloads[][] =
@@ -93,6 +93,9 @@ void Dome_EntityCreated(int entity, const char[] classname)
 	if(!Dome_Enabled())
 		return;
 	
+	if(Cvar[CaptureDomeStyle].BoolValue)
+		return;
+	
 	if(StrEqual(classname, "team_control_point_master"))
 	{
 		SDKHook(entity, SDKHook_Spawn, Dome_MasterSpawn);
@@ -136,6 +139,9 @@ static Action Dome_OnCapEnabled(const char[] output, int caller, int activator, 
 static Action Dome_BlockOutput(const char[] output, int caller, int activator, float delay)
 {
 	if(!Dome_Enabled())
+		return Plugin_Continue;
+	
+	if(Cvar[CaptureDomeStyle].BoolValue)
 		return Plugin_Continue;
 
 	//Always block this function, maps may assume round ended
@@ -203,6 +209,8 @@ static bool Dome_Start(int entity = 0)
 	
 	GameRules_SetPropFloat("m_flCapturePointEnableTime", 0.0);
 	DomeStart = GetGameTime();
+	
+	EmitSoundToAll(DOME_START_SOUND);
 	
 	DomeEntRef = EntIndexToEntRef(dome);
 	RequestFrame(Dome_Frame_Prepare);
@@ -447,6 +455,9 @@ static Action Dome_TimerBleed(Handle timer)
 
 static void Dome_UpdateRadius()
 {
+	if(DomeRadius == Cvar[CaptureDomeRadius].FloatValue)
+		return;
+	
 	//Get current game time
 	float gameTime = GetGameTime();
 	float gameTimeDifference = gameTime - DomePreviousGameTime;
@@ -458,8 +469,8 @@ static void Dome_UpdateRadius()
 	float radius = DomeRadius - (speed * gameTimeDifference);
 	
 	//Check if we already reached min value
-	if(radius < 0.0)
-		radius = 0.0;
+	if(radius < Cvar[CaptureDomeRadius].FloatValue)
+		radius = Cvar[CaptureDomeRadius].FloatValue;
 	
 	//Update global variable
 	DomeRadius = radius;
