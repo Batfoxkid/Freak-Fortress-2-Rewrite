@@ -385,7 +385,7 @@ static MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 	if(!Client(client).IsBoss || Attrib_FindOnPlayer(client, "increase player capture value"))
 		return MRES_Ignored;
 	
-	if(Dome_Enabled())
+	if(Dome_Enabled() && !Cvar[CaptureDomeStyle].BoolValue)
 	{
 		ret.Value = 1;
 		return MRES_Override;
