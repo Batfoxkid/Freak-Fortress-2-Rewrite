@@ -1493,7 +1493,7 @@ int Preference_GetCompanion(int client, int special, int team, int &consume, int
 bool Preference_HasWhitelisted(int client, int special, bool rules = true)
 {
 	if(!rules)
-		return BossListing[client].FindValue(special) != -1;
+		return (BossListing[client] && BossListing[client].FindValue(special) != -1);
 	
 	int blacklist = Cvar[PrefBlacklist].IntValue;
 	if(BossListing[client] && blacklist != 0)

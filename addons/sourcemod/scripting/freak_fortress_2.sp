@@ -186,6 +186,7 @@ enum
 	BossKnockback,
 	
 	BossVsBoss,
+	BossTeam,
 	SpecTeam,
 	CaptureTime,
 	CaptureAlive,

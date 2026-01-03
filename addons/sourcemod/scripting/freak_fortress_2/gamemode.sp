@@ -50,10 +50,9 @@ void Gamemode_MapInit()
 				if(index != -1)
 				{
 					entry.Get(index, _, _, buffer, sizeof(buffer));
-					if(StrEqual(buffer, "vssaxtonhale/vsh.nut", false))
+					if(StrEqual(buffer, "vsh/vsh.nut", false) || StrEqual(buffer, "vssaxtonhale/vsh.nut", false))
 					{
 						entry.Update(index, NULL_STRING, "");
-						PrintToServer("Found VScripts");
 
 						entry.Update(classname, NULL_STRING, "tf_logic_arena");
 
@@ -225,7 +224,7 @@ void Gamemode_RoundSetup()
 							}
 							default:
 							{
-								team = TFTeam_Blue;
+								team = Cvar[BossTeam].IntValue;
 							}
 						}
 						
@@ -432,6 +431,10 @@ static Action Gamemode_SetControlPoint(Handle timer)
 
 void Gamemode_RoundStart()
 {
+	// Rare map instances of round start being called multiple times
+	if(RoundStatus == 1)
+		return;
+	
 	RoundStatus = 1;
 	
 	Events_CheckAlivePlayers(_, _, true);
