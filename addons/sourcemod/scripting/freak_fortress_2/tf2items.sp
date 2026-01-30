@@ -258,16 +258,13 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				if(TF2ED_GetAttributeName(attrib, buffer, sizeof(buffer)))
+				if(forumla)
 				{
-					if(forumla)
-					{
-						Attrib_Set(entity, buffer, ParseFormula(buffers[attribs+1], alive));
-					}
-					else
-					{
-						Attrib_SetString(entity, buffer, buffers[attribs+1]);
-					}
+					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], alive));
+				}
+				else
+				{
+					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
 				}
 			}
 			else
@@ -303,11 +300,11 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 				{
 					if(forumla)
 					{
-						Attrib_Set(entity, key, ParseFormula(val.data, alive));
+						Attrib_Set(entity, key, _, ParseFormula(val.data, alive));
 					}
 					else
 					{
-						Attrib_SetString(entity, key, val.data);
+						Attrib_SetString(entity, key, _, val.data);
 					}
 				}
 			}
@@ -323,9 +320,9 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 
 		if(kills >= 0)
 		{
-			Attrib_SetInt(entity, "kill eater", kills);
+			Attrib_SetInt(entity, "kill eater", 214, kills);
 			if(wearable)
-				Attrib_SetInt(entity, "strange restriction type 1", 64);
+				Attrib_SetInt(entity, "strange restriction type 1", 454, 64);
 		}
 		
 		if(!wearable)
@@ -583,16 +580,13 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				if(TF2ED_GetAttributeName(attrib, buffer, sizeof(buffer)))
+				if(data.Forumla)
 				{
-					if(data.Forumla)
-					{
-						Attrib_Set(entity, buffer, ParseFormula(buffers[attribs+1], alive));
-					}
-					else
-					{
-						Attrib_SetString(entity, buffer, buffers[attribs+1]);
-					}
+					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], alive));
+				}
+				else
+				{
+					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
 				}
 			}
 			else
@@ -603,9 +597,9 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 
 		if(kills >= 0)
 		{
-			Attrib_SetInt(entity, "kill eater", kills);
+			Attrib_SetInt(entity, "kill eater", 214, kills);
 			if(wearable)
-				Attrib_SetInt(entity, "strange restriction type 1", 64);
+				Attrib_SetInt(entity, "strange restriction type 1", 454, 64);
 		}
 		
 		if(!wearable)

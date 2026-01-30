@@ -193,7 +193,7 @@ bool Weapons_ConfigsExecuted(bool force = false)
 
 bool Weapons_ConfigEnabled()
 {
-	return LoadoutList && (Attrib_Loaded() || VScript_Loaded());
+	return view_as<bool>(LoadoutList);
 }
 
 void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
@@ -548,6 +548,9 @@ void Weapons_ShowChanges(int client, int entity)
 		}
 	}
 
+	if(!CustomAttrib_Loaded())
+		return;
+
 	cfg = cfg.GetSection("custom");
 
 	if(cfg)
@@ -725,7 +728,7 @@ static void Weapons_SpawnFrame(int ref)
 		case KeyValType_Value:
 		{
 			current = 0;
-			char value[16], key[64];
+			char value[16];
 
 			char attributes[512];
 			cfg.Get("attributes", attributes, sizeof(attributes));
@@ -749,14 +752,7 @@ static void Weapons_SpawnFrame(int ref)
 				else
 					strcopy(value, sizeof(value), attributes[current]);
 				
-				if(TF2ED_GetAttributeName(attrib, key, sizeof(key)))
-				{
-					Attrib_Set(entity, key, StringToFloat(value));
-				}
-				else
-				{
-					LogError("[Config] Attribute %d is invalid/unloaded in weapons config", attrib);
-				}
+				Attrib_Set(entity, _, attrib, StringToFloat(value));
 				
 			} while(found);
 		}
@@ -780,7 +776,7 @@ static void Weapons_SpawnFrame(int ref)
 
 				if(attributeValue.tag == KeyValType_Value)
 				{
-					if(!Attrib_SetString(entity, key, attributeValue.data))
+					if(!Attrib_SetString(entity, key, _, attributeValue.data))
 						LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config", key);
 				}
 			}

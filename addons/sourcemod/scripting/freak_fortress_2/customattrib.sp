@@ -118,7 +118,7 @@ stock void CustomAttrib_PrintStatus()
 	#endif
 }
 
-void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
+stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 {
 	StringMapSnapshot snap = cfg.Snapshot();
 	
@@ -151,23 +151,23 @@ void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 			{
 				if(StrEqual(key, "damage vs bosses"))
 				{
-					Attrib_Set(entity, "damage bonus HIDDEN", StringToFloat(attribute.data));
+					Attrib_Set(entity, "damage bonus HIDDEN", 476, StringToFloat(attribute.data));
 					continue;
 				}
 				else if(StrEqual(key, "mod crit type on bosses"))
 				{
-					Attrib_Set(entity, "crit vs burning players", 1.0);
-					Attrib_Set(entity, "crit vs non burning players", 1.0);
+					Attrib_Set(entity, "crit vs burning players", 20, 1.0);
+					Attrib_Set(entity, "crit vs non burning players", 408, 1.0);
 
 					if(StringToInt(attribute.data) == 1)
-						Attrib_Set(entity, "crits_become_minicrits", 1.0);
+						Attrib_Set(entity, "crits_become_minicrits", 869, 1.0);
 					
 					continue;
 				}
 			}
 			#endif
 			
-			Attrib_SetString(entity, key, attribute.data);
+			Attrib_SetString(entity, key, _, attribute.data);
 		}
 	}
 	
@@ -205,7 +205,7 @@ stock float CustomAttrib_FindOnPlayer(int client, const char[] name, bool multi 
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 	while(TF2_GetItem(client, entity, i))
 	{
-		if(active != entity && Attrib_Get(entity, "provide on active", value) && value)
+		if(active != entity && Attrib_Get(entity, "provide on active", 128, value) && value)
 			continue;
 		
 		if(CustomAttrib_Get(entity, name, value))
@@ -298,7 +298,7 @@ stock bool CustomAttrib_Get(int weapon, const char[] name, float &value = 0.0)
 	}
 	#endif
 
-	return Attrib_Get(weapon, name, value);
+	return Attrib_Get(weapon, name, _, value);
 }
 
 stock bool CustomAttrib_GetString(int weapon, const char[] name, char[] buffer, int length)
@@ -311,7 +311,7 @@ stock bool CustomAttrib_GetString(int weapon, const char[] name, char[] buffer, 
 	}
 	#endif
 
-	return Attrib_GetString(weapon, name, buffer, length);
+	return Attrib_GetString(weapon, name, _, buffer, length);
 }
 
 #if !defined IS_MAIN_FF2
@@ -657,11 +657,8 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 				SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 				
 				float initial = 1.0;
-				if(TF2ED_GetAttributeName(attrib, buffer, sizeof(buffer)))
-				{
-					Attrib_Get(weapon, buffer, initial);
-					Attrib_Set(weapon, buffer, initial + StringToFloat(buffers[1]));
-				}
+				Attrib_Get(weapon, _, attrib, initial);
+				Attrib_Set(weapon, _, attrib, initial + StringToFloat(buffers[1]));
 			}
 		}
 		
@@ -671,8 +668,8 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 			SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 			
 			float initial = 1.0;
-			Attrib_Get(weapon, "fire rate penalty", initial);
-			Attrib_Set(weapon, "fire rate penalty", initial + value);
+			Attrib_Get(weapon, "fire rate penalty", 5, initial);
+			Attrib_Set(weapon, "fire rate penalty", 5, initial + value);
 		}
 
 		value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod reload time hit stale");
@@ -681,8 +678,8 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 			SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 			
 			float initial = 1.0;
-			Attrib_Get(weapon, "Reload time increased", initial);
-			Attrib_Set(weapon, "Reload time increased", initial + value);
+			Attrib_Get(weapon, "Reload time increased", 96, initial);
+			Attrib_Set(weapon, "Reload time increased", 96, initial + value);
 		}
 
 		if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
@@ -717,8 +714,8 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 		}
 	}
 	
-	if((!critType && !(damagetype & DMG_CRIT)) && ((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attrib_FindOnWeapon(attacker, weapon, "rocketjump attackrate bonus")) ||
-	   ((TF2_IsPlayerInCondition(attacker, TFCond_Disguised) || TF2_IsPlayerInCondition(attacker, TFCond_DisguiseRemoved)) && Attrib_FindOnWeapon(attacker, weapon, "damage bonus while disguised"))))
+	if((!critType && !(damagetype & DMG_CRIT)) && ((TF2_IsPlayerInCondition(attacker, TFCond_BlastJumping) && Attrib_FindOnWeapon(attacker, weapon, "rocketjump attackrate bonus", 621)) ||
+	   ((TF2_IsPlayerInCondition(attacker, TFCond_Disguised) || TF2_IsPlayerInCondition(attacker, TFCond_DisguiseRemoved)) && Attrib_FindOnWeapon(attacker, weapon, "damage bonus while disguised", 410))))
 	{
 		critType = 1;
 	}
@@ -772,8 +769,8 @@ void CustomAttrib_OnAirblastBoss(int victim, int attacker)
 			SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
 			
 			float initial = 1.0;
-			Attrib_Get(weapon, "mult airblast refire time", initial);
-			Attrib_Set(weapon, "mult airblast refire time", initial + value);
+			Attrib_Get(weapon, "mult airblast refire time", 256, initial);
+			Attrib_Set(weapon, "mult airblast refire time", 256, initial + value);
 		}
 
 		if(CustomAttrib_Get(weapon, "mod airblast rage", value))

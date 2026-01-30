@@ -129,11 +129,13 @@
 */
 
 #include <sourcemod>
+#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <dhooks>
 #include <adt_trie_sort>
 #include <cfgmap>
+#include <tf_econ_data>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <ff2r>
@@ -252,7 +254,6 @@ float WallJumpMulti[MAXTF2PLAYERS] = {1.0, ...};
 float WallAirMulti[MAXTF2PLAYERS] = {1.0, ...};
 
 #define OTD_LIBRARY	"tf_ontakedamage"
-#include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/subplugin.sp"
 #include "freak_fortress_2/tf2attributes.sp"
@@ -272,7 +273,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	Attrib_PluginLoad();
 	TF2U_PluginLoad();
-	TFED_PluginLoad();
+	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -293,21 +294,6 @@ public void OnPluginStart()
 	
 	delete gamedata;
 	
-	gamedata = new GameData("tf2.items");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GiveNamedItem");
-	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKGiveNamedItem = EndPrepSDKCall();
-	if(!SDKGiveNamedItem)
-		LogError("[Gamedata] Could not find GiveNamedItem");
-	
-	delete gamedata;
-	
 	gamedata = new GameData("ff2");
 	
 	StartPrepSDKCall(SDKCall_Static);
@@ -316,7 +302,11 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+#if defined _virtual_address_included
+	PrepSDKCall_AddParameter(SDKType_VirtualAddress, SDKPass_Plain);
+#else
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+#endif
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKCreate = EndPrepSDKCall();
 	if(!SDKCreate)
@@ -347,6 +337,17 @@ public void OnPluginStart()
 	if(!SDKCanAirDash)
 		LogError("[Gamedata] Could not find CTFPlayer::CanAirDash");
 	
+	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer:GiveNamedItem");
+	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKGiveNamedItem = EndPrepSDKCall();
+	if(!SDKGiveNamedItem)
+		LogError("[Gamedata] Could not find CTFPlayer:GiveNamedItem");
+	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
 	SDKSetSpeed = EndPrepSDKCall();
@@ -360,7 +361,6 @@ public void OnPluginStart()
 	
 	Attrib_PluginStart();
 	TF2U_PluginStart();
-	TFED_PluginStart();
 	VScript_PluginStart();
 	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
@@ -380,12 +380,24 @@ public void OnPluginStart()
 
 void CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
 {
+#if defined CHECK_DETOUR_CRASHES
+	PrintToServer("DynamicDetour %s", name);
+#endif
+
 	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
 	if(detour)
 	{
+#if defined CHECK_DETOUR_CRASHES
+		if(preCallback != INVALID_FUNCTION)
+			PrintToServer("Hook_Pre %s", name);
+#endif
 		if(preCallback != INVALID_FUNCTION && !detour.Enable(Hook_Pre, preCallback))
 			LogError("[Gamedata] Failed to enable pre detour: %s", name);
 		
+#if defined CHECK_DETOUR_CRASHES
+		if(postCallback != INVALID_FUNCTION)
+			PrintToServer("Hook_Post %s", name);
+#endif
 		if(postCallback != INVALID_FUNCTION && !detour.Enable(Hook_Post, postCallback))
 			LogError("[Gamedata] Failed to enable post detour: %s", name);
 		
@@ -766,9 +778,9 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 				
 				EquipPlayerWeapon(client, weapon);
 				
-				Attrib_Set(weapon, "provide on active", 1.0);
-				Attrib_Set(weapon, "mod max primary clip override", -1.0);
-				Attrib_Set(weapon, "no_attack", 1.0);
+				Attrib_Set(weapon, "provide on active", 128, 1.0);
+				Attrib_Set(weapon, "mod max primary clip override", 303, -1.0);
+				Attrib_Set(weapon, "no_attack", 821, 1.0);
 				
 				RazorbackRef[client] = EntIndexToEntRef(weapon);
 				
@@ -822,7 +834,6 @@ public void OnLibraryAdded(const char[] name)
 	Attrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
-	TFED_LibraryAdded(name);
 	VScript_LibraryAdded(name);
 
 	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
@@ -842,7 +853,6 @@ public void OnLibraryRemoved(const char[] name)
 	Attrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
-	TFED_LibraryRemoved(name);
 	VScript_LibraryRemoved(name);
 
 	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
@@ -932,8 +942,8 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 	{
 		if(GetEntityFlags(client) & FL_ONGROUND)
 		{
-			JumperAttribRestore(client, "move speed bonus", WallSpeedMulti[client]);
-			JumperAttribRestore(client, "major increased jump height", WallJumpMulti[client]);
+			JumperAttribRestore(client, "move speed bonus", 107, WallSpeedMulti[client]);
+			JumperAttribRestore(client, "major increased jump height", 443, WallJumpMulti[client]);
 			WallStale[client] = 0;
 		}
 	}
@@ -944,7 +954,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 		if(value < 1.0)
 			value = 1.0;
 		
-		JumperAttribApply(client, "increased air control", WallAirMulti[client], value);
+		JumperAttribApply(client, "increased air control", 610, WallAirMulti[client], value);
 	}
 	
 	if(HasAbility[client] && IsPlayerAlive(client))
@@ -2280,9 +2290,9 @@ Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &dam
 					}
 					
 					float value = 1.0;
-					Attrib_Get(weapon, "damage bonus", value);
-					Attrib_Set(weapon, "damage bonus", value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
-					Attrib_Set(weapon, "crit mod disabled hidden", 0.1);
+					Attrib_Get(weapon, "damage bonus", 2, value);
+					Attrib_Set(weapon, "damage bonus", 2, value * FF2R_GetBossData(attacker).GetFloat("bvbdmgmulti", 1.0));
+					Attrib_Set(weapon, "crit mod disabled hidden", 28, 0.1);
 					
 					int entity = CreateEntityByName("item_ammopack_medium");
 					if(entity != -1)
@@ -2362,7 +2372,7 @@ Action StealingTraceAttack(int victim, int &attacker, int &inflictor, float &dam
 								EquipPlayerWeapon(victim, index);
 								
 								if(StrContains(classname, "tf_weapon_fists") == -1)
-									Attrib_Set(index, "dmg penalty vs players", 0.5);
+									Attrib_Set(index, "dmg penalty vs players", 138, 0.5);
 								
 								TF2U_SetPlayerActiveWeapon(victim, index);
 							}
@@ -2649,11 +2659,11 @@ bool JumperTestJump(int client, bool success)
 							EmitSoundToAll(WALL_JUMP, client, SNDCHAN_BODY, SNDLEVEL_DRYER, _, _, 90 + GetURandomInt() % 15, client, pos);
 						}
 						
-						JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
+						JumperAttribApply(client, "increased air control", 610, WallAirMulti[client], ability.GetFloat("wall_air", 1.0));
 					}
 					
-					JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
-					JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
+					JumperAttribApply(client, "move speed bonus", 107, WallSpeedMulti[client], ability.GetFloat("wall_speed", 1.0));
+					JumperAttribApply(client, "major increased jump height", 443, WallJumpMulti[client], ability.GetFloat("wall_jump", 1.0));
 				}
 				
 				delete trace;
@@ -2665,11 +2675,11 @@ bool JumperTestJump(int client, bool success)
 		
 		if(!jumped)
 		{
-			JumperAttribApply(client, "move speed bonus", WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
-			JumperAttribApply(client, "major increased jump height", WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
+			JumperAttribApply(client, "move speed bonus", 107, WallSpeedMulti[client], ability.GetFloat("double_speed", 1.0));
+			JumperAttribApply(client, "major increased jump height", 443, WallJumpMulti[client], ability.GetFloat("double_jump", 1.0));
 			
 			if(!WallInLagComp)
-				JumperAttribApply(client, "increased air control", WallAirMulti[client], ability.GetFloat("double_air", 1.0));
+				JumperAttribApply(client, "increased air control", 610, WallAirMulti[client], ability.GetFloat("double_air", 1.0));
 		}
 		else if(!WallInLagComp)
 		{
@@ -2683,48 +2693,48 @@ bool JumperTestJump(int client, bool success)
 	return false;
 }
 
-void JumperAttribApply(int client, const char[] name, float &current, float multi)
+void JumperAttribApply(int client, const char[] name, int index, float &current, float multi)
 {
 	if(multi != current)
 	{
 		float value = 1.0;
-		bool found = Attrib_Get(client, name, value);
+		bool found = Attrib_Get(client, name, index, value);
 		
 		value *= multi / current;
 		if(value > 1.01 || value < 0.99)
 		{
-			Attrib_Set(client, name, value);
+			Attrib_Set(client, name, index, value);
 		}
 		else if(found)
 		{
-			Attrib_Remove(client, name);
+			Attrib_Remove(client, name, index);
 		}
 		
 		current = multi;
-		if(StrEqual(name, "move speed bonus"))
+		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
 	}
 }
 
-void JumperAttribRestore(int client, const char[] name, float &current)
+void JumperAttribRestore(int client, const char[] name, int index, float &current)
 {
 	if(current != 1.0)
 	{
 		float value = 1.0;
-		bool found = Attrib_Get(client, name, value);
+		bool found = Attrib_Get(client, name, index, value);
 		
 		value /= current;
 		if(value > 1.01 || value < 0.99)
 		{
-			Attrib_Set(client, name, value);
+			Attrib_Set(client, name, index, value);
 		}
 		else if(found)
 		{
-			Attrib_Remove(client, name);
+			Attrib_Remove(client, name, index);
 		}
 		
 		current = 1.0;
-		if(StrEqual(name, "move speed bonus"))
+		if(index == 107)
 			SDKCall(SDKSetSpeed, client);
 	}
 }

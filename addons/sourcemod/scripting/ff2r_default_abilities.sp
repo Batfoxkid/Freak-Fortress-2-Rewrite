@@ -343,6 +343,7 @@
 */
 
 #include <sourcemod>
+#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <morecolors>
@@ -437,6 +438,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
+	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -643,7 +645,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					
 					MatrixDelay[client] = gameTime + (GetFormula(ability, "delay", alive, 2.0) * timescale);
 					
-					FF2R_StartLagCompensation(client);
+					TF2U_StartLagCompensation(client);
 					
 					float pos[3], vec[3];
 					GetClientEyePosition(client, pos);
@@ -680,7 +682,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 									if(friendly)	// Lag compenstated location only if they damaged attack
 									{
 										finished = true;
-										FF2R_FinishLagCompensation(client);
+										TF2U_FinishLagCompensation(client);
 									}
 									
 									GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos);
@@ -688,7 +690,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 									if(!finished)
 									{
 										finished = true;
-										FF2R_FinishLagCompensation(client);
+										TF2U_FinishLagCompensation(client);
 									}
 
 									if(friendly || FF2R_GetGamemodeType() == 2 || !TF2U_IsInRespawnRoom(target))	// Don't teleport in spawn rooms on non-arena
@@ -711,7 +713,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 					delete trace;
 					
 					if(!finished)
-						FF2R_FinishLagCompensation(client);
+						TF2U_FinishLagCompensation(client);
 				}
 				else
 				{
@@ -774,10 +776,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							if(AnchorLastAttrib[client] == -69.42)
 							{
 								AnchorLastAttrib[client] = 1.0;
-								Attrib_Get(client, "damage force reduction", AnchorLastAttrib[client]);
+								Attrib_Get(client, "damage force reduction", 252, AnchorLastAttrib[client]);
 							}
 							
-							Attrib_Set(client, "damage force reduction", 0.0);
+							Attrib_Set(client, "damage force reduction", 252, 0.0);
 							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
 							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
@@ -805,8 +807,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	if(AnchorLastAttrib[client] != -69.42 && AnchorStartTime[client] <= 1.0)
 	{
 		float value;
-		if(!Attrib_Get(client, "damage force reduction", value) || !value)
-			Attrib_Set(client, "damage force reduction", AnchorLastAttrib[client]);
+		if(!Attrib_Get(client, "damage force reduction", 252, value) || !value)
+			Attrib_Set(client, "damage force reduction", 252, AnchorLastAttrib[client]);
 		
 		AnchorLastAttrib[client] = -69.42;
 	}
@@ -898,7 +900,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 
 							if(!emergency)
 							{
-								FF2R_StartLagCompensation(client);
+								TF2U_StartLagCompensation(client);
 								
 								GetClientEyePosition(client, pos1);
 								
@@ -959,7 +961,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							if(!emergency)
 							{
-								FF2R_FinishLagCompensation(client);
+								TF2U_FinishLagCompensation(client);
 							}
 							
 							if(target != -1)
@@ -1570,10 +1572,10 @@ void RemoveCloneCfg(int userid)
 		SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
 		SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
 		SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
-		Attrib_Remove(client, "major move speed bonus");
-		Attrib_Remove(client, "max health additive bonus");
-		Attrib_Remove(client, "healing received penalty");
-		Attrib_Remove(client, "reduced_healing_from_medics");
+		Attrib_Remove(client, "major move speed bonus", 442, true);
+		Attrib_Remove(client, "max health additive bonus", 26, true);
+		Attrib_Remove(client, "healing received penalty", 734, true);
+		Attrib_Remove(client, "reduced_healing_from_medics", 740 , true);
 	}
 }
 
@@ -1598,11 +1600,11 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			else
 			{
 				float hp;
-				Attrib_Get(client, "max health additive bonus", hp);
+				Attrib_Get(client, "max health additive bonus", 26, hp);
 				
 				hp += float(SDKCall_GetMaxHealth(client) * (lives - 1));
 				
-				Attrib_Set(client, "max health additive bonus", hp);
+				Attrib_Set(client, "max health additive bonus", 26, hp, _, true);
 			}
 			
 			SetEntityHealth(client, GetClientHealth(client) * lives);
@@ -1621,11 +1623,11 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 		else
 		{
 			float hp;
-			Attrib_Get(client, "max health additive bonus", hp);
+			Attrib_Get(client, "max health additive bonus", 26, hp);
 			
 			hp += float(SDKCall_GetMaxHealth(client)) * (multi - 1.0);
 			
-			Attrib_Set(client, "max health additive bonus", hp);
+			Attrib_Set(client, "max health additive bonus", 26, hp, _, true);
 		}
 		
 		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));
@@ -2004,7 +2006,7 @@ Action Timer_RageStun(Handle timer, DataPack pack)
 		char particle[48];
 		cfg.GetString("particle", particle, sizeof(particle), "yikes_fx");
 		
-		FF2R_StartLagCompensation(client);
+		TF2U_StartLagCompensation(client);
 		
 		float pos1[3], pos2[3];
 		GetClientEyePosition(client, pos1);
@@ -2041,7 +2043,7 @@ Action Timer_RageStun(Handle timer, DataPack pack)
 			victim[victims++] = target;
 		}
 		
-		FF2R_FinishLagCompensation(client);
+		TF2U_FinishLagCompensation(client);
 		
 		if(victims == 0)
 		{
@@ -2983,16 +2985,16 @@ float GetPlayerStunMulti(int client)
 	multi = 1.15 - (multi * 0.001);
 	
 	// Ranged damage attributes
-	multi *= Attrib_FindOnPlayer(client, "dmg taken from fire reduced", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken from fire increased", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken from blast reduced", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken from blast increased", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken from bullets reduced", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken from bullets increased", true) *
-			 Attrib_FindOnPlayer(client, "dmg taken increased", true) *
-			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from fire reduced set bonus", true) *
-			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from bullets increased", true) *
-			 Attrib_FindOnPlayer(client, "CARD: dmg taken from bullets reduced", true);
+	multi *= Attrib_FindOnPlayer(client, "dmg taken from fire reduced", 60, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from fire increased", 61, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast reduced", 64, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from blast increased", 65, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets reduced", 66, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken from bullets increased", 67, true) *
+			 Attrib_FindOnPlayer(client, "dmg taken increased", 412, true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from fire reduced set bonus", 492, true) *
+			 Attrib_FindOnPlayer(client, "SET BONUS: dmg taken from bullets increased", 516, true) *
+			 Attrib_FindOnPlayer(client, "CARD: dmg taken from bullets reduced", 1001, true);
 	
 	// Mark-for-Death = x1.35
 	if(TF2_IsPlayerInCondition(client, TFCond_MarkedForDeath) ||
@@ -3002,12 +3004,12 @@ float GetPlayerStunMulti(int client)
 	
 	// Ranged damage attributes
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	multi *= Attrib_FindOnWeapon(client, active, "dmg from ranged reduced", true) *
-			 Attrib_FindOnWeapon(client, active, "dmg taken from fire reduced on active", true) *
-			 Attrib_FindOnWeapon(client, active, "mult_dmgtaken_active", true);
+	multi *= Attrib_FindOnWeapon(client, active, "dmg from ranged reduced", 205, true) *
+			 Attrib_FindOnWeapon(client, active, "dmg taken from fire reduced on active", 794, true) *
+			 Attrib_FindOnWeapon(client, active, "mult_dmgtaken_active", 852, true);
 	
 	if(TF2_IsPlayerInCondition(client, TFCond_Slowed) && health < SDKCall_GetMaxHealth(client) / 2)
-		multi *= Attrib_FindOnWeapon(client, active, "spunup_damage_resistance", true);
+		multi *= Attrib_FindOnWeapon(client, active, "spunup_damage_resistance", 738, true);
 	
 	return multi;
 }

@@ -105,32 +105,6 @@ native Handle FF2R_GetPluginHandle();
 native int FF2R_GetGamemodeType();
 
 /**
- * Calls CLagCompensationManager::StartLagCompensation
- * 
- * @note			Make sure to call FF2R_FinishLagCompensation afterwards
- * 
- * @param client	Client index
- * 
- * @error			Invalid client index or client is not in game
- * 
- * @noreturn
- */
-native void FF2R_StartLagCompensation(int client);
-
-/**
- * Calls CLagCompensationManager::FinishLagCompensation
- * 
- * @note			Make sure to call FF2R_StartLagCompensation first
- * 
- * @param client	Client index
- * 
- * @error			Invalid client index or client is not in game
- * 
- * @noreturn
- */
-native void FF2R_FinishLagCompensation(int client);
-
-/**
  * Updates max health, speed attributes, and the health bar
  * 
  * @param boss	Boss's client index
@@ -933,6 +907,12 @@ forward void FF2R_OnAbilityPost(int client, const char[] ability);
 forward void FF2R_OnBossModifier(int client);
 
 #endif
+
+#pragma deprecated Use TF2Util_StartLagCompensation
+native void FF2R_StartLagCompensation(int client);
+
+#pragma deprecated Use TF2Util_FinishLagCompensation
+native void FF2R_FinishLagCompensation(int client);
 
 public SharedPlugin __pl_ff2r =
 {

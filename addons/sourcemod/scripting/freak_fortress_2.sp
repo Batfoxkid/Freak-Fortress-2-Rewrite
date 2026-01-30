@@ -4,6 +4,7 @@
 */
 
 #include <sourcemod>
+#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <clientprefs>
@@ -28,7 +29,6 @@
 #define GITHUB_URL	"github.com/Batfoxkid/Freak-Fortress-2-Rewrite"
 
 #define FAR_FUTURE	100000000.0
-#define MAXENTITIES	2048
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 
 #define TFTeam_Unassigned	0
@@ -296,6 +296,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
+	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -337,6 +338,17 @@ public void OnPluginStart()
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
+
+	char classname[64];
+	if(GetCurrentMap(classname, sizeof(classname)))
+	{
+		int entity = -1;
+		while((entity = FindEntityByClassname(entity, "*")) != -1)
+		{
+			GetEntityClassname(entity, classname, sizeof(classname));
+			OnEntityCreated(entity, classname);
+		}
+	}
 }
 
 public void OnAllPluginsLoaded()
@@ -344,11 +356,8 @@ public void OnAllPluginsLoaded()
 	Configs_AllPluginsLoaded();
 	CustomAttrib_AllPluginsLoaded();
 
-	if(!Attrib_Loaded() && !VScript_Loaded())
-		LogError("[!!!] No attribute manager is loaded, make sure either TF2Attributes or VScript is loaded on the server and compiled into FF2");
-	
-	if(!TFED_Loaded() && !VScript_Loaded())
-		LogError("[!!!] Static attribute and weapons config will have problems, make sure either TFEconData or VScript is loaded on the server and compiled into FF2");
+	if(!Attrib_Loaded() && (!VScript_Loaded() || !TFED_Loaded()))
+		LogError("[!!!] No attribute manager is loaded, make sure either TF2Attributes or TFEconData/VScript is loaded on the server and compiled into FF2");
 	
 	if(!CustomAttrib_Loaded())
 		LogError("[!!!] No custom attribute manager is loaded, make sure either TFCustAttr or TFEconDynamic is loaded on the server and compiled into FF2");

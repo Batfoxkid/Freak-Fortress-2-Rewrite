@@ -20,7 +20,7 @@ void Gamemode_PluginStart()
 
 void Gamemode_PluginEnd()
 {
-	if(Enabled && GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	if(Enabled && FindEntityByClassname(-1, "tf_gamerules") != -1 && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		ServerCommand("mp_waitingforplayers_cancel 1");
 		TF2_OnWaitingForPlayersEnd();
@@ -480,7 +480,7 @@ void Gamemode_RoundStart()
 						
 						int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 						if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-							SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max"));
+							SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max", 811));
 					}
 				}
 			}

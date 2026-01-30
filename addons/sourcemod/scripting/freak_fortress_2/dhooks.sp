@@ -3,6 +3,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+//#define CHECK_DETOUR_CRASHES
+
 #define DHOOKS_LIBRARY	"dhooks"
 
 enum struct RawHooks
@@ -22,11 +24,9 @@ static DynamicHook ApplyOnInjured;
 static DynamicHook ApplyPostHit;
 static ArrayList RawEntityHooks;
 static Address CTFGameStats;
-static Address CLagCompensationManager;
 static int DamageTypeOffset = -1;
 
 static int ChangeTeamPreHook[MAXTF2PLAYERS];
-static int ChangeTeamPostHook[MAXTF2PLAYERS];
 static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 
@@ -74,23 +74,12 @@ static void SetupDHook()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
-	CreateDetour(gamedata, "CLagCompensationManager::StartLagCompensation", _, DHook_StartLagCompensation);
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
-	// CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
-	
-	// Sorry, we can't use CreateDetour to handle clone function.
-	DynamicDetour detour_CanPickupDroppedWeapon = DynamicDetour.FromConf(gamedata, "CTFPlayer::CanPickupDroppedWeapon");
-	if(detour_CanPickupDroppedWeapon)
-	{
-		detour_CanPickupDroppedWeapon.Enable(Hook_Pre, DHook_CanPickupDroppedWeaponPre);
-	}
-	else
-	{
-		detour_CanPickupDroppedWeapon = DynamicDetour.FromConf(gamedata, "CTFPlayer::CanPickupDroppedWeapon.part.0");
-		detour_CanPickupDroppedWeapon.Enable(Hook_Pre, DHook_CanPickupDroppedWeaponInlinePre);
-	}
+
+	if(!CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon.part.0", DHook_CanPickupDroppedWeaponInlinePre, _, true))
+		CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ShouldTransmit = CreateHook(gamedata, "CBaseEntity::ShouldTransmit");
@@ -115,23 +104,37 @@ static DynamicHook CreateHook(GameData gamedata, const char[] name)
 	return hook;
 }
 
-static void CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION)
+static DynamicDetour CreateDetour(GameData gamedata, const char[] name, DHookCallback preCallback = INVALID_FUNCTION, DHookCallback postCallback = INVALID_FUNCTION, bool noError = false)
 {
+#if defined CHECK_DETOUR_CRASHES
+	PrintToServer("DynamicDetour %s", name);
+#endif
+
 	DynamicDetour detour = DynamicDetour.FromConf(gamedata, name);
 	if(detour)
 	{
+#if defined CHECK_DETOUR_CRASHES
+		if(preCallback != INVALID_FUNCTION)
+			PrintToServer("Hook_Pre %s", name);
+#endif
 		if(preCallback != INVALID_FUNCTION && !detour.Enable(Hook_Pre, preCallback))
 			LogError("[Gamedata] Failed to enable pre detour: %s", name);
 		
+#if defined CHECK_DETOUR_CRASHES
+		if(postCallback != INVALID_FUNCTION)
+			PrintToServer("Hook_Post %s", name);
+#endif
 		if(postCallback != INVALID_FUNCTION && !detour.Enable(Hook_Post, postCallback))
 			LogError("[Gamedata] Failed to enable post detour: %s", name);
 		
 		delete detour;
 	}
-	else
+	else if(!noError)
 	{
 		LogError("[Gamedata] Could not find %s", name);
 	}
+	
+	return detour;
 }
 
 void DHook_MapStart()
@@ -153,9 +156,6 @@ void DHook_HookClient(int client)
 		ForceRespawnPreHook[client] = ForceRespawn.HookEntity(Hook_Pre, client, DHook_ForceRespawnPre);
 		ForceRespawnPostHook[client] = ForceRespawn.HookEntity(Hook_Post, client, DHook_ForceRespawnPost);
 	}
-	
-	if(ChangeTeam)
-		ChangeTeamPostHook[client] = ChangeTeam.HookEntity(Hook_Post, client, DHook_ChangeTeamPost);
 }
 
 void DHook_HookBoss(int client)
@@ -235,9 +235,6 @@ void DHook_UnhookClient(int client)
 		DynamicHook.RemoveHook(ForceRespawnPreHook[client]);
 		DynamicHook.RemoveHook(ForceRespawnPostHook[client]);
 	}
-	
-	if(ChangeTeamPostHook[client])
-		DynamicHook.RemoveHook(ChangeTeamPostHook[client]);
 }
 
 void DHook_UnhookBoss(int client)
@@ -254,11 +251,6 @@ Address DHook_GetGameStats()
 	return CTFGameStats;
 }
 
-Address DHook_GetLagCompensationManager()
-{
-	return CLagCompensationManager;
-}
-
 static void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 {
 	DHook_RoundRespawn();	// Back up plan
@@ -272,35 +264,19 @@ static void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 
 static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
 {
-	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
-	{
-		case Plugin_Continue:
-		{
-			if(Client(client).IsBoss || Client(client).MinionType)
-			{
-				ret.Value = false;
-				return MRES_Supercede;
-			}
-		}
-		case Plugin_Handled:
-		{
-			ret.Value = true;
-			return MRES_Supercede;
-		}
-		case Plugin_Stop:
-		{
-			ret.Value = false;
-			return MRES_Supercede;
-		}
-	}
-	
-	return MRES_Ignored;
+	int weapon = param.Get(1);
+	return CanPickupDroppedWeapon(ret, client, weapon);
 }
 
 static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookParam param)
 {
 	int client = param.Get(1);
 	int weapon = param.Get(2);
+	return CanPickupDroppedWeapon(ret, client, weapon);
+}
+
+static MRESReturn CanPickupDroppedWeapon(DHookReturn ret, int client, int weapon)
+{
 	switch(Forward_OnPickupDroppedWeapon(client, weapon))
 	{
 		case Plugin_Continue:
@@ -329,24 +305,6 @@ static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookPa
 static MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)
 {
 	return MRES_Supercede;
-}
-
-static MRESReturn DHook_ChangeTeamPost(int client, DHookParam param)
-{
-	if(Cvar[DisguiseModels].BoolValue)
-	{
-		if(param.Get(1) % 2)
-		{
-			Attrib_Remove(client, "vision opt in flags");
-		}
-		else
-		{
-			Attrib_Set(client, "vision opt in flags", 4.0);
-		}
-	}
-
-	Events_CheckAlivePlayers();
-	return MRES_Ignored;
 }
 
 static MRESReturn DHook_DropAmmoPackPre(int client, DHookParam param)
@@ -382,7 +340,7 @@ static MRESReturn DHook_ForceRespawnPost(int client)
 static MRESReturn DHook_GetCaptureValue(DHookReturn ret, DHookParam param)
 {
 	int client = param.Get(1);
-	if(!Client(client).IsBoss || Attrib_FindOnPlayer(client, "increase player capture value"))
+	if(!Client(client).IsBoss || Attrib_FindOnPlayer(client, "increase player capture value", 68))
 		return MRES_Ignored;
 	
 	if(Dome_Enabled() && !Cvar[CaptureDomeStyle].BoolValue)
@@ -420,12 +378,6 @@ static MRESReturn DHook_ResetRoundStats(Address address)
 static MRESReturn DHook_RoundRespawn()
 {
 	Gamemode_RoundSetup();
-	return MRES_Ignored;
-}
-
-static MRESReturn DHook_StartLagCompensation(Address address)
-{
-	CLagCompensationManager = address;
 	return MRES_Ignored;
 }
 
@@ -483,7 +435,7 @@ static MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 {
 	if(DamageTypeOffset != -1 && !param.IsNull(2) && Client(param.Get(2)).IsBoss)
 	{
-		Address address = view_as<Address>(param.Get(3) + DamageTypeOffset);
+		Address address = param.GetAddress(3) + view_as<Address>(DamageTypeOffset);
 		int damagetype = LoadFromAddress(address, NumberType_Int32);
 		if(!(damagetype & DMG_BURN))
 		{
@@ -499,7 +451,7 @@ static MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 {
 	if(KnifeWasChanged != -1)
 	{
-		StoreToAddress(view_as<Address>(param.Get(3) + DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
+		StoreToAddress(param.GetAddress(3) + view_as<Address>(DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
 		KnifeWasChanged = -1;
 	}
 

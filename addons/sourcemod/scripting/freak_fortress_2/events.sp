@@ -18,7 +18,7 @@ void Events_PluginStart()
 	HookEvent("player_healed", Events_PlayerHealed, EventHookMode_Post);
 	HookEvent("player_hurt", Events_PlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", Events_PlayerDeath, EventHookMode_Post);
-	HookEvent("player_team", Events_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_team", Events_PlayerTeam, EventHookMode_Post);
 	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
@@ -230,6 +230,27 @@ static void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcas
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(client && Cvar[DisguiseModels].BoolValue)
 	{
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+	}
+	
+	Events_CheckAlivePlayers();
+}
+
+static void Events_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if(client && Cvar[DisguiseModels].BoolValue)
+	{
+		if(event.GetInt("team") % 2)
+		{
+			Attrib_Remove(client, "vision opt in flags", 406);
+		}
+		else
+		{
+			Attrib_Set(client, "vision opt in flags", 406, 4.0);
+		}
+
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
 	}

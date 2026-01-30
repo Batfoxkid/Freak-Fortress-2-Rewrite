@@ -17,6 +17,7 @@ void TFED_PluginLoad()
 	MarkNativeAsOptional("TF2Econ_GetAttributeDefinitionString");
 	MarkNativeAsOptional("TF2Econ_TranslateAttributeNameToDefinitionIndex");
 	MarkNativeAsOptional("TF2Econ_GetAttributeName");
+	MarkNativeAsOptional("TF2Econ_GetItemClassName");
 	#endif
 }
 
@@ -52,13 +53,24 @@ stock bool TFED_Loaded()
 	#endif
 }
 
-stock void TFED_PrintStatus()
+stock void TFED_PrintStatus(bool error = false)
 {
-	#if defined __tf_econ_data_included
-	PrintToServer("'%s' is %sloaded", TFED_LIBRARY, Loaded ? "" : "not ");
-	#else
-	PrintToServer("'%s' not compiled", TFED_LIBRARY);
-	#endif
+	if(error)
+	{
+		#if defined __tf_econ_data_included
+		LogError("'%s' is %sloaded", TFED_LIBRARY, Loaded ? "" : "not ");
+		#else
+		LogError("'%s' not compiled", TFED_LIBRARY);
+		#endif
+	}
+	else
+	{
+		#if defined __tf_econ_data_included
+		PrintToServer("'%s' is %sloaded", TFED_LIBRARY, Loaded ? "" : "not ");
+		#else
+		PrintToServer("'%s' not compiled", TFED_LIBRARY);
+		#endif
+	}
 }
 
 stock bool TFED_GetItemDefinitionString(int itemdef, const char[] key, char[] buffer, int maxlen, const char[] defaultValue = NULL_STRING)

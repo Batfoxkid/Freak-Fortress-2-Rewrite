@@ -387,7 +387,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				changed = true;
 			}
 			
-			if(!Attrib_FindOnWeapon(attacker, weapon, "dmg pierces resists absorbs"))
+			if(!Attrib_FindOnWeapon(attacker, weapon, "dmg pierces resists absorbs", 797))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_Disguised))
 				{

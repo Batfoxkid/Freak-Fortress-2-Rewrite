@@ -8,21 +8,22 @@
 Use `New Install Package` for installing for the first time  
 Use `Update Package` to update your current version of Rewrite
 
-Required:
+Recommended:
 
-1. **[VScript](https://github.com/FortyTwoFortyTwo/VScript)** or [TF2Attributes](https://github.com/FlaminSarge/tf2attributes)
-2. **[SM-TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)** or [SMExt-TFEconDynamic](https://github.com/nosoop/SMExt-TFEconDynamic)
-3. **[SM-TFEconData](https://github.com/nosoop/SM-TFEconData)** or [VScript](https://github.com/FortyTwoFortyTwo/VScript)
+- **[TF2Attributes](https://github.com/FlaminSarge/tf2attributes)**
+- **[SM-TFEconData](https://github.com/nosoop/SM-TFEconData)**
+- **[SMExt-TFEconDynamic](https://github.com/nosoop/SMExt-TFEconDynamic)** or [SM-TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
+- **[SM-TFUtils](https://github.com/nosoop/SM-TFUtils)** (Ability Lag Compensation)
+- **[TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)** (Corrected Mini-Crits)
 
 Supported:
 
-- **[TFOnTakeDamage](https://github.com/nosoop/SM-TFOnTakeDamage)** (Corrected Mini-Crits)
+- [SM-VScript-Comms](https://github.com/Bradasparky/sm_vscript_comms) or [VScript](https://github.com/FortyTwoFortyTwo/VScript) (Attributes Alterative)
 - [TF2Items](https://github.com/nosoop/SMExt-TF2Items) (Improved Weapon Generation)
-- [SM-TFUtils](https://github.com/nosoop/SM-TFUtils) (Improved Weapon Equipping)
 - [SteamWorks](https://github.com/ExperimentFailed/SteamWorks) (Server Game Description)
 - [File Network](https://github.com/Batfoxkid/File-Network) (Late Download Support)
-- [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX) (Weapon Config Support)
-- [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons) (Boss Support)
+- [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX) (Weapon Config Section)
+- [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons) (Boss Supported)
 
 ## Credits
 

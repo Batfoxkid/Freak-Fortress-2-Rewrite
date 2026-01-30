@@ -211,7 +211,7 @@ static any Native_StartLagCompensation(Handle plugin, int params)
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
 	
-	SDKCall_StartLagCompensation(client);
+	TF2U_StartLagCompensation(client);
 	return 0;
 }
 
@@ -221,7 +221,7 @@ static any Native_FinishLagCompensation(Handle plugin, int params)
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is not in-game", client);
 	
-	SDKCall_FinishLagCompensation(client);
+	TF2U_FinishLagCompensation(client);
 	return 0;
 }
 

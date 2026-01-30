@@ -108,15 +108,15 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 			entity = TF2Items_CreateFromStruct(client, items[0]);
 			if(entity != -1)
 			{
-				Attrib_Set(entity, "damage penalty", 0.3076);
-				Attrib_Set(entity, "fire rate penalty", 1.3);
-				Attrib_Set(entity, "crit mod disabled", 0.0);
-				Attrib_Set(entity, "move speed bonus", 1.25);
-				Attrib_Set(entity, "max health additive penalty", -999.0);
-				Attrib_Set(entity, "dmg taken increased", 0.0);
-				Attrib_Set(entity, "dmg penalty vs buildings", 0.0);
-				Attrib_Set(entity, "no_duck", 1.0);
-				Attrib_Set(entity, "voice pitch scale", 0.0);
+				Attrib_Set(entity, "damage penalty", 1, 0.3076);
+				Attrib_Set(entity, "fire rate penalty", 5, 1.3);
+				Attrib_Set(entity, "crit mod disabled", 15, 0.0);
+				Attrib_Set(entity, "move speed bonus", 107, 1.25);
+				Attrib_Set(entity, "max health additive penalty", 125, -999.0);
+				Attrib_Set(entity, "dmg taken increased", 412, 0.0);
+				Attrib_Set(entity, "dmg penalty vs buildings", 775, 0.0);
+				Attrib_Set(entity, "no_duck", 820, 1.0);
+				Attrib_Set(entity, "voice pitch scale", 2048, 0.0);
 			}
 
 			TF2Items_CreateFromStruct(client, items[1]);

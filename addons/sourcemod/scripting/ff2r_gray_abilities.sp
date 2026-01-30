@@ -89,6 +89,7 @@
 */
 
 #include <sourcemod>
+#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <morecolors>
@@ -216,6 +217,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	Attrib_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
+	VScript_PluginLoad();
 	MarkNativeAsOptional("FF2_SetClientGlow");
 	return APLRes_Success;
 }
@@ -827,8 +829,8 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	// Explode the bomb on win
 	if(event && event.GetInt("winreason") == 1 && IsValidEntity(BombRef) && BombCarrier)
 	{
-		Attrib_Remove(BombCarrier, "move speed penalty");
-		Attrib_Remove(BombCarrier, "increase player capture value");
+		Attrib_Remove(BombCarrier, "move speed penalty", 54, true);
+		Attrib_Remove(BombCarrier, "increase player capture value", 68, true);
 
 		float pos[3];
 		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
@@ -1129,8 +1131,8 @@ void OnBombPickup(const char[] output, int caller, int activator, float delay)
 		}
 		else
 		{
-			Attrib_Set(activator, "move speed penalty", 0.5);
-			Attrib_Set(activator, "increase player capture value", 1.01);
+			Attrib_Set(activator, "move speed penalty", 54, 0.5, _, true);
+			Attrib_Set(activator, "increase player capture value", 68, 1.01, _, true);
 			TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
 
 			ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_PICKUP");
@@ -1146,8 +1148,8 @@ void OnBombDropped(const char[] output, int caller, int activator, float delay)
 
 	if(activator > 0 && activator <= MaxClients)
 	{
-		Attrib_Remove(activator, "move speed penalty");
-		Attrib_Remove(activator, "increase player capture value");
+		Attrib_Remove(activator, "move speed penalty", 54, true);
+		Attrib_Remove(activator, "increase player capture value", 68, true);
 		TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
 
 		ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_DROPPED");

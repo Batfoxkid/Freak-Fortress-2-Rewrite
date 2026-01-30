@@ -1821,10 +1821,10 @@ static void EquipBoss(int client, bool weapons)
 	switch(i)
 	{
 		case 0:
-			Attrib_Set(client, "healing received penalty", 0.0, _, true);
+			Attrib_Set(client, "healing received penalty", 734, 0.0, _, true);
 								
 		case 1:
-			Attrib_Set(client, "reduced_healing_from_medics", 0.0, _, true);
+			Attrib_Set(client, "reduced_healing_from_medics", 740, 0.0, _, true);
 	}
 
 	// Creator Community Sparkle Effect
@@ -1845,7 +1845,7 @@ static void EquipBoss(int client, bool weapons)
 			creator.Get(key, buffer2, sizeof(buffer2));
 			if(StrEqual(buffer1, buffer2))
 			{
-				Attrib_Set(client, "attach particle effect static", 4.0);
+				Attrib_Set(client, "attach particle effect static", 370, 4.0, _, true);
 				break;
 			}
 		}
@@ -1950,11 +1950,11 @@ void Bosses_UpdateHealth(int client)
 				defaul = 150;
 		}
 		
-		Attrib_Set(client, "max health additive bonus", float(maxhealth-defaul), _, true);
+		Attrib_Set(client, "max health additive bonus", 26, float(maxhealth-defaul), _, true);
 	}
 	else
 	{
-		Attrib_Set(client, "max health additive bonus", 0.0, _, true);
+		Attrib_Set(client, "max health additive bonus", 26, 0.0, _, true);
 	}
 }
 
@@ -2012,12 +2012,12 @@ void Bosses_SetSpeed(int client)
 			}
 		}
 		
-		Attrib_Set(client, "major move speed bonus", speed / defaul, _, true);
+		Attrib_Set(client, "major move speed bonus", 442, speed / defaul, _, true);
 		SDKCall_SetSpeed(client);
 	}
 	else
 	{
-		Attrib_Set(client, "major move speed bonus", 1.0, _, true);
+		Attrib_Set(client, "major move speed bonus", 442, 1.0, _, true);
 	}
 }
 
@@ -2096,11 +2096,11 @@ void Bosses_Remove(int client)
 		SetVariantString(NULL_STRING);
 		AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 		
-		Attrib_Remove(client, "attach particle effect static");
-		Attrib_Remove(client, "major move speed bonus");
-		Attrib_Remove(client, "max health additive bonus");
-		Attrib_Remove(client, "healing received penalty");
-		Attrib_Remove(client, "reduced_healing_from_medics");
+		Attrib_Remove(client, "attach particle effect static", 370, true);
+		Attrib_Remove(client, "major move speed bonus", 442, true);
+		Attrib_Remove(client, "max health additive bonus", 26, true);
+		Attrib_Remove(client, "healing received penalty", 734, true);
+		Attrib_Remove(client, "reduced_healing_from_medics", 740 , true);
 		
 		TF2_RemoveAllItems(client);
 		if(IsPlayerAlive(client))

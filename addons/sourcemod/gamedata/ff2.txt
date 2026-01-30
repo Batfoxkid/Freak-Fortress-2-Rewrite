@@ -4,24 +4,6 @@
 	{
 		"Signatures"
 		{
-			"CLagCompensationManager::StartLagCompensation"
-			{
-				// "Trying to start a new lag compensation "
-				"library"	"server"
-				"linux"		"@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
-				"linux64"	"@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayerP8CUserCmd"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x28\x57\x8B\xF9\x89\x7D\xE4"
-				"windows64"	"\x40\x55\x57\x41\x55\x48\x81\xEC\xA0\x00\x00\x00"
-			}
-			"CLagCompensationManager::FinishLagCompensation"
-			{
-				// "FinishLagCompensation"
-				"library"	"server"
-				"linux"		"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
-				"linux64"	"@_ZN23CLagCompensationManager21FinishLagCompensationEP11CBasePlayer"
-				"windows"	"\x55\x8B\xEC\x83\xEC\x44\x8B\x15\x2A\x2A\x2A\x2A"
-				"windows64"	"\x4C\x8B\xDC\x49\x89\x4B\x08\x53\x48\x81\xEC\xD0\x00\x00\x00"
-			}
 			"CTFDroppedWeapon::Create"
 			{
 				// "tf_dropped_weapon" Single Large Function
@@ -33,7 +15,7 @@
 			}
 			"CTFDroppedWeapon::InitDroppedWeapon"
 			{
-				// "ChargeLevelDegradeThink" Called by 3 Funcs
+				// "ChargeLevelDegradeThink" Called by 3 Funcs (CTFPlayer::DropAmmoPack)
 				"library"	"server"
 				"linux"		"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
 				"linux64"	"@_ZN16CTFDroppedWeapon17InitDroppedWeaponEP9CTFPlayerP13CTFWeaponBasebb"
@@ -64,6 +46,7 @@
 				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"linux64"	"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
+				"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
 			}
 			"CTFPlayer::CanAirDash"
 			{
@@ -72,6 +55,7 @@
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
 				"linux64"	"@_ZNK9CTFPlayer10CanAirDashEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x57\x8B\xF9\x8B\x87\xBC\x1B\x00\x00"
+				"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xDC\x1E\x00\x00"
 			}
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
@@ -92,10 +76,11 @@
 				"linux"		"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
 				"linux64"	"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x14\x53\x56\x57\x8B\xF9\x8D\x8F\xE8\x1A\x00\x00"
+				"windows64"	"\x40\x55\x41\x55\x41\x57\x48\x81\xEC\xA0\x00\x00\x00"
 			}
 			"CTFPlayer::DropAmmoPack"
 			{
-				// "models/items/ammopack_medium.mdl"
+				// "models/items/ammopack_medium.mdl", next to CTFDroppedWeapon funcs
 				"library"	"server"
 				"linux"		"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
 				"linux64"	"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
@@ -135,7 +120,7 @@
 				"linux"		"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"linux64"	"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x24\xA1\x2A\x2A\x2A\x2A\x56\x8B\xF1\x89\x75\xF0"
-				"windows64"	"\x40\x55\x48\x83\xEC\x70\x48\x8B\x05\xBB\x98\x7A\x00"
+				"windows64"	"\x40\x55\x48\x83\xEC\x70\x48\x8B\x05\x4B\xC4\x7A\x00"
 			}
 			"CTFPowerup::DropSingleInstance"
 			{
@@ -153,6 +138,7 @@
 				"linux"		"@_ZN9CTFPlayer17SetBlastJumpStateEib"
 				"linux64"	"@_ZN9CTFPlayer17SetBlastJumpStateEib"
 				"windows"	"\x55\x8B\xEC\x8B\x45\x08\x56\x8B\xF1\x09\x86\x8C\x21\x00\x00"
+				"windows64"	"\x48\x89\x5C\x24\x10\x56\x48\x83\xEC\x20\x09\x91\x6C\x25\x00\x00"
 			}
 		}
 		"Offsets"
@@ -213,6 +199,13 @@
 				"windows"	"158"
 				"windows64"	"158"
 			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"linux"		"494"
+				"linux64"	"494"
+				"windows"	"487"
+				"windows64"	"487"
+			}
 			"CTFWeaponBase::ApplyPostHitEffects"
 			{
 				"linux"		"427"
@@ -230,12 +223,9 @@
 			"m_bitsDamageType"
 			{
 				"linux"		"60"
+				"linux64"	"60"
 				"windows"	"60"
-			}
-			"GetCurrentCommand"
-			{
-				"linux"		"3512"
-				"windows"	"3512"
+				"windows64"	"60"
 			}
 		}
 		"Functions"
@@ -267,24 +257,6 @@
 				"hooktype"	"entity"
 				"return"	"void"
 				"this"		"entity"
-			}
-			"CLagCompensationManager::StartLagCompensation"
-			{
-				"signature"	"CLagCompensationManager::StartLagCompensation"
-				"callconv"	"thiscall"
-				"return"	"void"
-				"this"		"address"
-				"arguments"
-				{
-					"player"
-					{
-						"type"	"cbaseentity"
-					}
-					"cmd"
-					{
-						"type"	"objectptr"
-					}
-				}
 			}
 			"CTeamplayRoundBasedRules::RoundRespawn"
 			{
@@ -467,7 +439,7 @@
 					}
 					"info"
 					{
-						"type"	"int"
+						"type"	"objectptr"
 					}
 				}
 			}

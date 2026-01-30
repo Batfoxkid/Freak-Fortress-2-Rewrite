@@ -74,6 +74,7 @@
 */
 
 #include <sourcemod>
+#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <adt_trie_sort>

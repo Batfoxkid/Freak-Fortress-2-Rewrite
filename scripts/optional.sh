@@ -11,4 +11,5 @@ wget "https://raw.githubusercontent.com/nosoop/SM-TFOnTakeDamage/refs/heads/mast
 wget "https://raw.githubusercontent.com/FlaminSarge/tf2attributes/master/scripting/include/tf2attributes.inc"
 wget "https://raw.githubusercontent.com/asherkin/TF2Items/6c9c04529b7075bea7de03213ff8122630c7e1c4/pawn/tf2items.inc"
 wget "https://raw.githubusercontent.com/nosoop/SM-TFUtils/master/scripting/include/tf2utils.inc"
-wget "https://raw.githubusercontent.com/FortyTwoFortyTwo/VScript/refs/heads/main/scripting/include/vscript.inc"
+wget "https://raw.githubusercontent.com/FortyTwoFortyTwo/VScript/main/scripting/include/vscript.inc"
+wget "https://raw.githubusercontent.com/Bradasparky/sm_vscript_comms/main/addons/sourcemod/scripting/include/sm_vscript_comms.inc"
