@@ -801,7 +801,7 @@ native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards);
  * 
  * @return			ConfigMap handle if found, null otherwise
  */
-native BossData FF2R_GetSpecialData(int client);
+native BossData FF2R_GetSpecialData(int special);
 
 /**
  * Creates or removes a boss on a player
@@ -908,6 +908,14 @@ forward void FF2R_OnBossModifier(int client);
 
 #endif
 
+/**
+ * Gets the current loaded bosses count.
+ * Useful for loops with FF2R_GetSpecialData.
+ *
+ * @return			Loaded bosses count
+ */
+native int FF2R_GetSpecialCount();
+
 #pragma deprecated Use TF2Util_StartLagCompensation
 native void FF2R_StartLagCompensation(int client);
 
@@ -943,6 +951,7 @@ public void __pl_ff2r_SetNTVOptional()
 	MarkNativeAsOptional("FF2R_GetBossData");
 	MarkNativeAsOptional("FF2R_SetBossData");
 	MarkNativeAsOptional("FF2R_GetSpecialData");
+	MarkNativeAsOptional("FF2R_GetSpecialCount");
 	MarkNativeAsOptional("FF2R_CreateBoss");
 }
 #endif
