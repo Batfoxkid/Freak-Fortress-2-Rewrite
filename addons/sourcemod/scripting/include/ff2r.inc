@@ -801,7 +801,7 @@ native void FF2R_SetBossData(int client, ConfigMap cfg = null, bool forwards);
  * 
  * @return			ConfigMap handle if found, null otherwise
  */
-native BossData FF2R_GetSpecialData(int client);
+native BossData FF2R_GetSpecialData(int special);
 
 /**
  * Creates or removes a boss on a player
