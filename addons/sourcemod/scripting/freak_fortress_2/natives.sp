@@ -8,6 +8,7 @@ void Native_PluginLoad()
 	CreateNative("FF2R_EmitBossSound", Native_EmitBossSound);
 	CreateNative("FF2R_DoBossSlot", Native_DoBossSlot);
 	CreateNative("FF2R_GetSpecialData", Native_GetSpecialData);
+	CreateNative("FF2R_GetSpecialCount", Native_GetSpecialCount);
 	CreateNative("FF2R_CreateBoss", Native_CreateBoss);
 	CreateNative("FF2R_GetClientMinion", Native_GetClientMinion);
 	CreateNative("FF2R_SetClientMinion", Native_SetClientMinion);
@@ -142,6 +143,11 @@ static any Native_DoBossSlot(Handle plugin, int params)
 static any Native_GetSpecialData(Handle plugin, int params)
 {
 	return Bosses_GetConfig(GetNativeCell(1));
+}
+
+static int Native_GetSpecialCount(Handle plugin, int params)
+{
+	return Bosses_GetConfigLength();
 }
 
 static any Native_CreateBoss(Handle plugin, int params)
