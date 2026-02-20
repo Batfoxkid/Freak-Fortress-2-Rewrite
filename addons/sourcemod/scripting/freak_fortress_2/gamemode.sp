@@ -770,36 +770,39 @@ void Gamemode_RoundEnd(int winteam)
 		}
 	}
 	
-	// Gather who hears global and play locals
-	int globalCount;
-	int[] globalSound = new int[total];
-	for(int i; i < total; i++)
+	if(total)
 	{
-		if(clients[i] != globalBoss && Client(clients[i]).IsBoss)
+		// Gather who hears global and play locals
+		int globalCount;
+		int[] globalSound = new int[total];
+		for(int i; i < total; i++)
 		{
-			if(winner == teams[i])
+			if(clients[i] != globalBoss && Client(clients[i]).IsBoss)
 			{
-				// Play sound_win for themself if they are on the winning team
-				if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win", _, _, _, _, _, 2.0))
-					continue;
-			}
-			else if(globalTeam != winner)
-			{
-				// Play sound_fail for themself if: Global sound wasn't a sound_win, Global sound didn't exist or they're alive
-				if(!globalBoss || IsPlayerAlive(clients[i]))
+				if(winner == teams[i])
 				{
-					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail", _, _, _, _, _, 2.0))
+					// Play sound_win for themself if they are on the winning team
+					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win", _, _, _, _, _, 2.0))
 						continue;
 				}
+				else if(globalTeam != winner)
+				{
+					// Play sound_fail for themself if: Global sound wasn't a sound_win, Global sound didn't exist or they're alive
+					if(!globalBoss || IsPlayerAlive(clients[i]))
+					{
+						if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail", _, _, _, _, _, 2.0))
+							continue;
+					}
+				}
 			}
+			
+			globalSound[globalCount++] = clients[i];
 		}
 		
-		globalSound[globalCount++] = clients[i];
+		// Play global sound
+		if(globalBoss)
+			Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail", _, _, _, _, _, 2.0);
 	}
-	
-	// Play global sound
-	if(globalBoss)
-		Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail", _, _, _, _, _, 2.0);
 	
 	// Give Queue Points
 	if(Enabled && total)

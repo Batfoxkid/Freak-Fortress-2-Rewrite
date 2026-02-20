@@ -60,14 +60,16 @@ void Dome_PluginStart()
 void Dome_MapStart()
 {
 	DomeAssets = true;
-
+	
+	bool enabled = Cvar[CaptureDome].FloatValue > 0.0
+	bool check = (!enabled || Cvar[FileCheck].BoolValue);
 	for(int i; i < sizeof(Downloads); i++)
 	{
-		if(!FileExists(Downloads[i], true))
+		if(check && !FileExists(Downloads[i], true))
 		{
 			DomeAssets = false;
 
-			if(Cvar[CaptureDome].FloatValue > 0.0)
+			if(enabled)
 				LogError("[Dome] File '%s' does not exist", Downloads[i]);
 			
 			break;
