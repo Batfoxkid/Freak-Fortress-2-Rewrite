@@ -61,7 +61,7 @@ void Dome_MapStart()
 {
 	DomeAssets = true;
 	
-	bool enabled = Cvar[CaptureDome].FloatValue > 0.0
+	bool enabled = Cvar[CaptureDome].FloatValue > 0.0;
 	bool check = (!enabled || Cvar[FileCheck].BoolValue);
 	for(int i; i < sizeof(Downloads); i++)
 	{
