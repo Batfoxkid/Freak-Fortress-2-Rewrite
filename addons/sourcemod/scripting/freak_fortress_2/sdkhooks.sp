@@ -500,7 +500,7 @@ static Action SDKHook_NormalSHook(int clients[MAXPLAYERS], int &numClients, char
 				
 				numClients = amount;
 				
-				if(sound.Entity == SOUND_FROM_LOCAL_PLAYER)
+				if(sound.Entity < 0)
 					sound.Entity = entity;
 				
 				int count = RoundToCeil(sound.Volume);

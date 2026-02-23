@@ -48,9 +48,20 @@ int Ranking_ApplyEffects(int client, float &multi)
 		multi = 1.0;
 		return 0;
 	}
+
+	if(TotalPlayersAlive() < 8)
+	{
+		// Don't enable ranks with low player count
+		multi = 1.0;
+		return 0;
+	}
 	
 	char name[64];
-	Bosses_GetBossNameCfg(Client(client).Cfg, name, sizeof(name), _, "filename");
+	if(!Bosses_GetBossNameCfg(Client(client).Cfg, name, sizeof(name), _, "filename"))
+	{
+		multi = 1.0;
+		return 0;
+	}
 
 	int rank = Ranking_GetRank(client, name);
 	multi = Ranking_GetHealthMulti(rank);
@@ -80,8 +91,7 @@ void Ranking_BossRemoved(int client, bool disconnect)
 		if(Enabled && disconnect && Cvar[RankingLose].FloatValue > 0.0)
 		{
 			char name[64];
-			Bosses_GetBossNameCfg(Client(client).Cfg, name, sizeof(name), _, "filename");
-			if(name[0])
+			if(Bosses_GetBossNameCfg(Client(client).Cfg, name, sizeof(name), _, "filename"))
 			{
 				int rank = Ranking_GetRank(client, name);
 				if(rank > 0)
@@ -115,26 +125,31 @@ void Ranking_RoundEnd(int[] clients, int amount, int winner)
 		if(ActiveRanking[clients[i]] && Client(clients[i]).IsBoss)
 		{
 			ActiveRanking[clients[i]] = false;
+			if(!Bosses_GetBossNameCfg(Client(clients[i]).Cfg, file, sizeof(file), _, "filename"))
+				continue;
+			
 			Bosses_GetBossNameCfg(Client(clients[i]).Cfg, name, sizeof(name), GetClientLanguage(clients[i]));
-			Bosses_GetBossNameCfg(Client(clients[i]).Cfg, file, sizeof(file), _, "filename");
 			int team = GetClientTeam(clients[i]);
+			int oldRank = Ranking_GetRank(clients[i], file);
+			int newRank = oldRank;
+			bool decrease = true;
 
 			if(winner == team)
 			{
 				// Won the round, increase by 1
-				int rank = Ranking_GetRank(clients[i], file) + 1;
-				Ranking_AddBoss(clients[i], file, rank);
+				newRank = Ranking_GetRank(clients[i], file) + 1;
+				Ranking_AddBoss(clients[i], file, newRank);
 				UpdateDataBase[clients[i]] = true;
 				
 				if(display)
-					CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Increased", name, rank);
+					CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Increased", name, newRank);
 				
-				continue;
+				decrease = false;
 			}
 			else if(lose <= 0.0)
 			{
 				// No penalty
-				continue;
+				decrease = false;
 			}
 			else if(lose < 1.0)
 			{
@@ -160,34 +175,38 @@ void Ranking_RoundEnd(int[] clients, int amount, int winner)
 						if(rank > 0)
 							CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Saved Score", name, rank, kills, par);
 					}
-					
-					continue;
+
+					decrease = false;
 				}
 			}
 			
-			// Lost the round, decrease by X
-			int rank = Ranking_GetRank(clients[i], file);
-			if(rank > 0)
+			if(decrease)
 			{
-				rank -= RoundToCeil(lose - 0.01);
-				if(rank < 0)
-					rank = 0;
-				
-				Ranking_AddBoss(clients[i], file, rank);
-				UpdateDataBase[clients[i]] = true;
-
-				if(display)
+				// Lost the round, decrease by X
+				if(newRank > 0)
 				{
-					if(par)
+					newRank -= RoundToCeil(lose - 0.01);
+					if(newRank < 0)
+						newRank = 0;
+					
+					Ranking_AddBoss(clients[i], file, newRank);
+					UpdateDataBase[clients[i]] = true;
+
+					if(display)
 					{
-						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased Score", name, rank, kills, par);
-					}
-					else
-					{
-						CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased", name, rank);
+						if(par)
+						{
+							CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased Score", name, newRank, kills, par);
+						}
+						else
+						{
+							CPrintToChatEx(clients[i], clients[i], "%t", "Boss Rank Decreased", name, newRank);
+						}
 					}
 				}
 			}
+
+			Forward_OnRankChange(clients[i], file, oldRank, newRank);
 		}
 	}
 }

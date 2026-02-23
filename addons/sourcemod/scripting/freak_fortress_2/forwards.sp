@@ -12,6 +12,7 @@ static GlobalForward BossPrecachePre;
 static GlobalForward BossPrecachePost;
 static GlobalForward PickupDroppedWeaponPre;
 static GlobalForward BossEquippedPost;
+static GlobalForward RankChangePost;
 
 void Forward_PluginLoad()
 {
@@ -26,6 +27,7 @@ void Forward_PluginLoad()
 	BossPrecachePost = new GlobalForward("FF2R_OnBossPrecached", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	PickupDroppedWeaponPre = new GlobalForward("FF2R_OnPickupDroppedWeapon", ET_Event, Param_Cell, Param_Cell, Param_CellByRef);
 	BossEquippedPost = new GlobalForward("FF2R_OnBossEquipped", ET_Ignore, Param_Cell, Param_Cell);
+	RankChangePost = new GlobalForward("FF2R_OnRankChange", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -202,5 +204,15 @@ void Forward_OnBossEquipped(int client, bool weapons)
 	Call_StartForward(BossEquippedPost);
 	Call_PushCell(client);
 	Call_PushCell(weapons);
+	Call_Finish();
+}
+
+void Forward_OnRankChange(int client, const char[] filename, int oldRank, int newRank)
+{
+	Call_StartForward(RankChangePost);
+	Call_PushCell(client);
+	Call_PushString(filename);
+	Call_PushCell(oldRank);
+	Call_PushCell(newRank);
 	Call_Finish();
 }

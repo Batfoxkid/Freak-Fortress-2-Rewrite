@@ -338,15 +338,19 @@ public void OnPluginStart()
 		LogError("[Gamedata] Could not find CTFPlayer::CanAirDash");
 	
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer:GiveNamedItem");
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+#if defined _virtual_address_included
+	PrepSDKCall_AddParameter(SDKType_VirtualAddress, SDKPass_Plain);
+#else
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+#endif
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKGiveNamedItem = EndPrepSDKCall();
 	if(!SDKGiveNamedItem)
-		LogError("[Gamedata] Could not find CTFPlayer:GiveNamedItem");
+		LogError("[Gamedata] Could not find CTFPlayer::GiveNamedItem");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");

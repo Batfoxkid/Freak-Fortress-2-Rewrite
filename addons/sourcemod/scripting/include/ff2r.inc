@@ -178,6 +178,14 @@ native int FF2R_GetClientAssist(int client);
 native void FF2R_SetClientAssist(int client, int assist);
 
 /**
+ * Gets the current loaded bosses count.
+ * Useful for loops with FF2R_GetSpecialData.
+ *
+ * @return			Loaded bosses count
+ */
+native int FF2R_GetSpecialCount();
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted
@@ -231,6 +239,20 @@ forward Action FF2R_OnPickupDroppedWeapon(int client, int weapon);
  * @noreturn
  */
 forward void FF2R_OnBossEquipped(int client, bool weapons);
+
+/**
+ * Called when a player's boss rank gets updated
+ * 
+ * @note			Old and new rank can be the same
+ * 
+ * @param client	Client index
+ * @param filename	Boss's filename key
+ * @param oldRank	Previous rank value
+ * @param newRank	New rank value
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnRankChange(int client, const char[] filename, int oldRank, int newRank);
 
 /**
  * Wrapper to emit sound to one client.
@@ -907,14 +929,6 @@ forward void FF2R_OnAbilityPost(int client, const char[] ability);
 forward void FF2R_OnBossModifier(int client);
 
 #endif
-
-/**
- * Gets the current loaded bosses count.
- * Useful for loops with FF2R_GetSpecialData.
- *
- * @return			Loaded bosses count
- */
-native int FF2R_GetSpecialCount();
 
 #pragma deprecated Use TF2Util_StartLagCompensation
 native void FF2R_StartLagCompensation(int client);
