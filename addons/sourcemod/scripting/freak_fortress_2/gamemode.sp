@@ -234,7 +234,7 @@ void Gamemode_RoundSetup()
 					else
 					{
 						char buffer[64];
-						Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+						Bosses_GetCharsetName(Charset, buffer, sizeof(buffer));
 						LogError("[!!!] Failed to find a valid boss in %s (#%d)", buffer, Charset);
 					}
 					
@@ -296,7 +296,7 @@ public void TF2_OnWaitingForPlayersStart()
 		delete BackupTimer;
 		BackupTimer = CreateTimer(Cvar[WaitingTime].FloatValue + 5.0, Gamemode_BackupWaiting);
 
-		if (GameRules_GetProp("m_nGameType") == 4)
+		if(SDKAllow_FireEntityOutput() && GameRules_GetProp("m_nGameType") == 4)
 		{
 			int iArenaLogic = FindEntityByClassname(MaxClients + 1, "tf_logic_arena");
 

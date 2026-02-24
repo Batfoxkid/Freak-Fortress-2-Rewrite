@@ -79,27 +79,6 @@ public void CustomAttrib_LibraryRemoved(const char[] name)
 	#endif
 }
 
-stock bool CustomAttrib_Loaded()
-{
-	#if defined __tf_econ_dyn_included
-	if(TFEYLoaded)
-	{
-		if(GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") != FeatureStatus_Available)
-			TFEYLoaded = false;
-		
-		if(TFEYLoaded)
-			return TFEYLoaded;
-	}
-	#endif
-
-	#if defined __tf_custom_attributes_included
-	if(TCALoaded)
-		return TCALoaded;
-	#endif
-
-	return false;
-}
-
 stock void CustomAttrib_PrintStatus()
 {
 	#if defined __tf_econ_dyn_included
@@ -136,35 +115,7 @@ stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 		{
 			#if defined __tf_custom_attributes_included
 			if(TCALoaded)
-			{
 				TF2CustAttr_SetString(entity, key, attribute.data);
-				
-				#if defined __tf_econ_dyn_included
-				if(!TFEYLoaded)
-					continue;
-				#endif
-			}
-			#endif
-			
-			#if defined __tf_econ_dyn_included
-			if(!TFEYLoaded)
-			{
-				if(StrEqual(key, "damage vs bosses"))
-				{
-					Attrib_Set(entity, "damage bonus HIDDEN", 476, StringToFloat(attribute.data));
-					continue;
-				}
-				else if(StrEqual(key, "mod crit type on bosses"))
-				{
-					Attrib_Set(entity, "crit vs burning players", 20, 1.0);
-					Attrib_Set(entity, "crit vs non burning players", 408, 1.0);
-
-					if(StringToInt(attribute.data) == 1)
-						Attrib_Set(entity, "crits_become_minicrits", 869, 1.0);
-					
-					continue;
-				}
-			}
 			#endif
 			
 			Attrib_SetString(entity, key, _, attribute.data);
@@ -459,6 +410,12 @@ static void AddAttributes()
 	attrib.SetClass("ff2.mod_melee_climb");
 	attrib.SetDescriptionFormat("additive");
 	attrib.SetCustom("description_ff2_string", "melee sickle climb");
+	attrib.Register();
+
+	attrib.SetName("boost on damage drain multi");
+	attrib.SetClass("ff2.mod_boost_decay");
+	attrib.SetDescriptionFormat("value_is_percentage");
+	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
 
 	attrib.SetName("milk limit DISPLAY ONLY");

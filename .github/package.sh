@@ -21,10 +21,11 @@ cp addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx Gray-Mann/addons/s
 rm addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx
 
 # Update Package
-mkdir -p Update-Package
-cp -r addons/sourcemod/scripting/plugins Update-Package
-cp -r addons/sourcemod/translations Update-Package
-cp -r addons/sourcemod/gamedata Update-Package
+mkdir -p Update-Package/addons/sourcemod
+cp -r addons/sourcemod/scripting/plugins Update-Package/addons/sourcemod
+cp -r addons/sourcemod/translations Update-Package/addons/sourcemod
+cp -r addons/sourcemod/gamedata Update-Package/addons/sourcemod
+cp -r scripts Update-Package
 
 # Full Package
 rmdir addons/sourcemod/configs/freak_fortress_2/non-default
@@ -37,3 +38,4 @@ cp -r addons/sourcemod/translations New-Install-Package/addons/sourcemod
 cp -r addons/sourcemod/gamedata New-Install-Package/addons/sourcemod
 cp -r addons/sourcemod/data New-Install-Package/addons/sourcemod
 cp -r addons/sourcemod/configs New-Install-Package/addons/sourcemod
+cp -r scripts New-Install-Package

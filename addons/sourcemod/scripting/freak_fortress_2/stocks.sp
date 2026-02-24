@@ -828,11 +828,14 @@ void SetControlPoint(bool enable)
 	{
 		Debug("Unlocked Control Point");
 		
-		int entity = FindEntityByClassname(-1, "tf_logic_arena");
-		if(entity != -1)
-			FireEntityOutput(entity, "OnCapEnabled", entity);
+		if(SDKAllow_FireEntityOutput())
+		{
+			int entity = FindEntityByClassname(-1, "tf_logic_arena");
+			if(entity != -1)
+				FireEntityOutput(entity, "OnCapEnabled", entity);
+		}
 		
-		entity = MaxClients + 1;
+		int entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "team_control_point")) != -1)
 		{
 			AcceptEntityInput(entity, "ShowModel");
@@ -958,7 +961,7 @@ void FPrintToChatEx(int client, int author, const char[] message, any ...)
 	CSendMessage(client, buffer2, author);
 }
 
-void FPrintToChatAll(const char[] message, any ...)
+stock void FPrintToChatAll(const char[] message, any ...)
 {
 	CCheckTrie();
 	char buffer[MAX_BUFFER_LENGTH], buffer2[MAX_BUFFER_LENGTH];

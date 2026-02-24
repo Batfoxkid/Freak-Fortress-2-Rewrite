@@ -273,7 +273,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	Attrib_PluginLoad();
 	TF2U_PluginLoad();
-	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -353,10 +352,12 @@ public void OnPluginStart()
 		LogError("[Gamedata] Could not find CTFPlayer::GiveNamedItem");
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
-	SDKSetSpeed = EndPrepSDKCall();
-	if(!SDKSetSpeed)
-		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed"))
+	{
+		SDKSetSpeed = EndPrepSDKCall();
+		if(!SDKSetSpeed)
+			LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	}
 	
 	CreateDetour(gamedata, "CTFPlayer::CanAirDash", CanAirDashPre, CanAirDashPost);
 	CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", PickupWeaponFromOtherPre);
@@ -570,7 +571,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 								
 								float delay = SetFloatFromFormula(spell, "delay", players);
 								if(delay > 0.0)
-									spell.SetFloat("delay", delay + gameTime);
+									spell.SetFloat("delayfor", delay + gameTime);
 								
 								if(medic && !i)
 									boss.SetFloat("ragemin", cost);
@@ -838,7 +839,6 @@ public void OnLibraryAdded(const char[] name)
 	Attrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
-	VScript_LibraryAdded(name);
 
 	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
 	{
@@ -857,7 +857,6 @@ public void OnLibraryRemoved(const char[] name)
 	Attrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
-	VScript_LibraryRemoved(name);
 
 	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
 	{
@@ -1172,7 +1171,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 									}
 									else
 									{
-										float delay = cfg.GetFloat("delay");
+										float delay = cfg.GetFloat("delayfor");
 										if(delay > gameTime)
 										{
 											Format(val.data, sizeof(val.data), "%s (%t)", val.data, "Ability Delay", delay - gameTime + 0.1);
@@ -1326,7 +1325,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 								if(ability.GetInt("slot") == 0 && GetBossCharge(boss, "0") >= fcost)
 									blocked = false;
 								
-								float delay = cfg.GetFloat("delay");
+								float delay = cfg.GetFloat("delayfor");
 								if(delay > gameTime)
 								{
 									Format(buffer, sizeof(buffer), "%s (%t)", buffer, "Ability Delay", delay - gameTime + 0.1);
@@ -1805,7 +1804,7 @@ bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapsho
 	if(val.tag == KeyValType_Section && val.cfg)
 	{
 		ConfigData cfg = view_as<ConfigData>(val.cfg);
-		if(cfg.GetFloat("delay") < gameTime)
+		if(cfg.GetFloat("delayfor") < gameTime)
 		{
 			int flags = cfg.GetInt("flags");
 			if((flags & MAG_SUMMON) && GetDeadCount(client, summonable, allies) && !summonable)
@@ -1835,7 +1834,7 @@ bool ActivateAbility(int client, BossData boss, ConfigData spells, SortedSnapsho
 						SetBossCharge(boss, "0", rage);
 					}
 					
-					cfg.SetFloat("delay", gameTime + cfg.GetFloat("cooldown"));
+					cfg.SetFloat("delayfor", gameTime + cfg.GetFloat("cooldown"));
 					
 					int slot = cfg.GetInt("cast_high", cfg.GetInt("cast_low"));
 					FF2R_DoBossSlot(client, cfg.GetInt("cast_low", slot), slot);

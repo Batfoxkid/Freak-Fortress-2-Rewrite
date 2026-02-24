@@ -185,23 +185,27 @@ stock float Attrib_FindOnWeapon(int client, int entity, const char[] name = "", 
 
 stock bool Attrib_Get(int entity, const char[] name = "", int index = -1, float &value = 0.0)
 {
-	float result = DEFAULT_VALUE_TEST;
-	if(VScript_GetAttribute(entity, name, result))
+	char buffer[64];
+	if(name[0])
 	{
-		if(result == DEFAULT_VALUE_TEST)
-			return false;
-		
-		value = result;
-		return true;
+		strcopy(buffer, sizeof(buffer), name);
 	}
+	else
+	{
+		#if defined TFED_LIBRARY
+		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
+		#elseif defined __tf_econ_data_included
+		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
+		#endif
+	}
+	
+	if(buffer[0])
+		return VScript_GetAttribute(entity, buffer, value);
 
 	#if defined _tf2attributes_included
 	if(Loaded)
 	{
-		if(name[0] && !TF2Attrib_IsValidAttributeName(name))
-			return false;
-		
-		Address attrib = name[0] ? TF2Attrib_GetByName(entity, name) : TF2Attrib_GetByDefIndex(entity, index);
+		Address attrib = TF2Attrib_GetByDefIndex(entity, index);
 		if(attrib != Address_Null)
 		{
 			value = TF2Attrib_GetValue(attrib);
@@ -212,22 +216,12 @@ stock bool Attrib_Get(int entity, const char[] name = "", int index = -1, float 
 		if(entity <= MaxClients)
 			return false;
 		
-		#if defined TFED_LIBRARY
-		int defindex = index == -1 ? TF2ED_TranslateAttributeNameToDefinitionIndex(name) : index;
-		#elseif defined __tf_econ_data_included
-		int defindex = index == -1 ? TF2Econ_TranslateAttributeNameToDefinitionIndex(name) : index;
-		#else
-		int defindex = index;
-		#endif
-		if(defindex == -1)
-			return false;
-		
 		static int indexes[20];
 		static float values[20];
 		int count = TF2Attrib_GetSOCAttribs(entity, indexes, values, 20);
 		for(int i; i < count; i++)
 		{
-			if(indexes[i] == defindex)
+			if(indexes[i] == index)
 			{
 				value = values[i];
 				return true;
@@ -239,7 +233,7 @@ stock bool Attrib_Get(int entity, const char[] name = "", int index = -1, float 
 			count = TF2Attrib_GetStaticAttribs(GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex"), indexes, values, 20);
 			for(int i; i < count; i++)
 			{
-				if(indexes[i] == defindex)
+				if(indexes[i] == index)
 				{
 					value = values[i];
 					return true;
@@ -254,9 +248,13 @@ stock bool Attrib_Get(int entity, const char[] name = "", int index = -1, float 
 	static bool DoneWarning;
 	if(!DoneWarning)
 	{
-		LogError("[!!!] Could not get attribute value, missing dependencies");
+		LogError("[!!!] Could not get attribute with definition index \"%d\", use named attributes or add missing dependencies", index);
 		Attrib_PrintStatus(true);
-		VScript_PrintStatus(true);
+
+		#if defined TFED_LIBRARY
+		TFED_PrintStatus(true);
+		#endif
+
 		DoneWarning = true;
 	}
 	return false;
@@ -285,14 +283,12 @@ stock bool Attrib_GetString(int entity, const char[] name = "", int index = -1, 
 	}
 	#endif
 
-	static bool DoneWarning;
-	if(!DoneWarning)
-	{
-		LogError("[!!!] Could not get attribute as a string value, missing dependencies");
-		Attrib_PrintStatus(true);
-		DoneWarning = true;
-	}
-	return false;
+	float value;
+	if(!Attrib_Get(entity, name, index, value))
+		return false;
+	
+	FloatToString(value, buffer, length);
+	return true;
 }
 
 static void ErrorDefIndex(int index)
@@ -300,7 +296,7 @@ static void ErrorDefIndex(int index)
 	static bool DoneWarning;
 	if(!DoneWarning)
 	{
-		LogError("[!!!] Could not set attribute using definition index %d", index);
+		LogError("[!!!] Could not set attribute using definition index %d, use named attributes or add missing dependencies", index);
 		Attrib_PrintStatus(true);
 		
 		#if defined TFED_LIBRARY
@@ -311,18 +307,42 @@ static void ErrorDefIndex(int index)
 	}
 }
 
-stock void Attrib_Set(int entity, const char[] name = "", int index = -1, float value, float duration = -1.0, bool custom = false)
+stock void Attrib_Set(int entity, const char[] name = "", int index = -1, float value)
 {
+	char buffer[64];
+	if(name[0])
+	{
+		strcopy(buffer, sizeof(buffer), name);
+	}
+	else
+	{
+		#if defined TFED_LIBRARY
+		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
+		#elseif defined __tf_econ_data_included
+		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
+		#endif
+	}
+	
+	if(buffer[0])
+	{
+		VScript_SetAttribute(entity, buffer, value);
+		return;
+	}
+	
 	#if defined _tf2attributes_included
-	if(Loaded && index != -1 && (entity > MaxClients || !custom) && duration < 0.0)
+	if(Loaded && index != -1)
 	{
 		TF2Attrib_SetByDefIndex(entity, index, value);
 		return;
 	}
 	#endif
 
-	static char buffer[256];
+	ErrorDefIndex(index);
+}
 
+stock void Attrib_SetInt(int entity, const char[] name = "", int index = -1, int value)
+{
+	char buffer[64];
 	if(name[0])
 	{
 		strcopy(buffer, sizeof(buffer), name);
@@ -335,182 +355,84 @@ stock void Attrib_Set(int entity, const char[] name = "", int index = -1, float 
 		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
 		#endif
 	}
-
+	
 	if(buffer[0])
 	{
-		#if defined _tf2attributes_included
-		if(Loaded)
-		{
-			if(!TF2Attrib_IsValidAttributeName(buffer))
-				return;
-			
-			if(custom && entity <= MaxClients)
-			{
-				TF2Attrib_AddCustomPlayerAttribute(entity, buffer, value, duration);
-				return;
-			}
-			
-			if(duration < 0.0)
-			{
-				TF2Attrib_SetByName(entity, buffer, value);
-				return;
-			}
-		}
-		#endif
-
-		Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, %f)", entity > MaxClients ? "" : "Custom", buffer, value, duration);
-		SetVariantString(buffer);
-		AcceptEntityInput(entity, "RunScriptCode");
+		VScript_SetAttributeInt(entity, buffer, value);
 		return;
 	}
-
-	ErrorDefIndex(index);
-}
-
-stock void Attrib_SetInt(int entity, const char[] name = "", int index = -1, int value, float duration = -1.0, bool custom = false)
-{
+	
 	#if defined _tf2attributes_included
-	if(Loaded && index != -1 && (entity > MaxClients || !custom) && duration < 0.0)
+	if(Loaded && index != -1)
 	{
 		TF2Attrib_SetByDefIndex(entity, index, view_as<float>(value));
 		return;
 	}
 	#endif
 
-	static char buffer[256];
-
-	if(name[0])
-	{
-		strcopy(buffer, sizeof(buffer), name);
-	}
-	else
-	{
-		#if defined TFED_LIBRARY
-		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
-		#elseif defined __tf_econ_data_included
-		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
-		#endif
-	}
-
-	if(buffer[0])
-	{
-		#if defined _tf2attributes_included
-		if(Loaded)
-		{
-			if(!TF2Attrib_IsValidAttributeName(buffer))
-				return;
-			
-			if(custom && entity <= MaxClients)
-			{
-				TF2Attrib_AddCustomPlayerAttribute(entity, buffer, view_as<float>(value), duration);
-				return;
-			}
-			
-			if(duration < 0.0)
-			{
-				TF2Attrib_SetByName(entity, buffer, view_as<float>(value));
-				return;
-			}
-		}
-		#endif
-
-		Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", casti2f(%d), %f)", entity > MaxClients ? "" : "Custom", buffer, value, duration);
-		SetVariantString(buffer);
-		AcceptEntityInput(entity, "RunScriptCode");
-		return;
-	}
-
 	ErrorDefIndex(index);
 }
 
-stock bool Attrib_SetString(int entity, const char[] name = "", int index = -1, const char[] value)
-{
-	static char buffer[256];
-
-	if(name[0])
-	{
-		strcopy(buffer, sizeof(buffer), name);
-	}
-	else
-	{
-		#if defined TFED_LIBRARY
-		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
-		#elseif defined __tf_econ_data_included
-		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
-		#endif
-	}
-
-	if(buffer[0])
-	{
-		#if defined _tf2attributes_included
-		if(Loaded)
-		{
-			if(!TF2Attrib_IsValidAttributeName(buffer))
-				return false;
-			
-			return TF2Attrib_SetFromStringValue(entity, buffer, value);
-		}
-		#endif
-
-		Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, -1)", entity > MaxClients ? "" : "Custom", buffer, StringToFloat(value));
-		SetVariantString(buffer);
-		AcceptEntityInput(entity, "RunScriptCode");
-		return true;
-	}
-
-	ErrorDefIndex(index);
-	return false;
-}
-
-stock void Attrib_Remove(int entity, const char[] name = "", int index = -1, bool custom = false)
+stock void Attrib_SetString(int entity, const char[] name = "", int index = -1, const char[] value)
 {
 	#if defined _tf2attributes_included
-	if(Loaded && index != -1 && (entity > MaxClients || !custom))
+	char buffer[64];
+	if(name[0])
+	{
+		strcopy(buffer, sizeof(buffer), name);
+	}
+	else
+	{
+		#if defined TFED_LIBRARY
+		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
+		#elseif defined __tf_econ_data_included
+		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
+		#endif
+	}
+
+	if(buffer[0])
+	{
+		if(Loaded)
+		{
+			if(TF2Attrib_SetFromStringValue(entity, buffer, value))
+				return;
+		}
+	}
+	Attrib_Set(entity, buffer, index, StringToFloat(value));
+	#else
+	Attrib_Set(entity, name, index, StringToFloat(value));
+	#endif
+}
+
+stock void Attrib_Remove(int entity, const char[] name = "", int index = -1)
+{
+	char buffer[64];
+	if(name[0])
+	{
+		strcopy(buffer, sizeof(buffer), name);
+	}
+	else
+	{
+		#if defined TFED_LIBRARY
+		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
+		#elseif defined __tf_econ_data_included
+		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
+		#endif
+	}
+	
+	if(buffer[0])
+	{
+		VScript_RemoveAttribute(entity, buffer);
+		return;
+	}
+	
+	#if defined _tf2attributes_included
+	if(Loaded && index != -1)
 	{
 		TF2Attrib_RemoveByDefIndex(entity, index);
 		return;
 	}
 	#endif
-
-	static char buffer[256];
-
-	if(name[0])
-	{
-		strcopy(buffer, sizeof(buffer), name);
-	}
-	else
-	{
-		#if defined TFED_LIBRARY
-		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
-		#elseif defined __tf_econ_data_included
-		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
-		#endif
-	}
-
-	if(buffer[0])
-	{
-		#if defined _tf2attributes_included
-		if(Loaded)
-		{
-			if(!TF2Attrib_IsValidAttributeName(buffer))
-				return;
-			
-			if(custom && entity <= MaxClients)
-			{
-				TF2Attrib_RemoveCustomPlayerAttribute(entity, buffer);
-				return;
-			}
-			
-			TF2Attrib_RemoveByName(entity, buffer);
-			return;
-		}
-		#endif
-
-		Format(buffer, sizeof(buffer), "self.Remove%sAttribute(\"%s\")", entity > MaxClients ? "" : "Custom", buffer);
-		SetVariantString(buffer);
-		AcceptEntityInput(entity, "RunScriptCode");
-		return;
-	}
 
 	ErrorDefIndex(index);
 }

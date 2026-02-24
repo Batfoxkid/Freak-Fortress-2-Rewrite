@@ -438,7 +438,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
-	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -473,18 +472,22 @@ public void OnPluginStart()
 	gamedata = new GameData("ff2");
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
-	SDKSetSpeed = EndPrepSDKCall();
-	if(!SDKSetSpeed)
-		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed"))
+	{
+		SDKSetSpeed = EndPrepSDKCall();
+		if(!SDKSetSpeed)
+			LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	}
 	
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::SetBlastJumpState");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	SDKSetBlastJumpState = EndPrepSDKCall();
-	if (!SDKSetBlastJumpState)
-		LogError("[Gamedata] Could not find CTFPlayer::SetBlastJumpState");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::SetBlastJumpState"))
+	{
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		SDKSetBlastJumpState = EndPrepSDKCall();
+		if(!SDKSetBlastJumpState)
+			LogError("[Gamedata] Could not find CTFPlayer::SetBlastJumpState");
+	}
 	
 	delete gamedata;
 	
@@ -566,7 +569,6 @@ public void OnLibraryAdded(const char[] name)
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
-	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -576,7 +578,6 @@ public void OnLibraryRemoved(const char[] name)
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
-	VScript_LibraryRemoved(name);
 }
 
 public void OnClientPutInServer(int client)
@@ -824,7 +825,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 				float gameTime = GetGameTime();
 				bool emergency = ability.GetFloat("emergencyfor") > gameTime;
 				bool cooldown = ability.GetBool("incooldown", true);
-				float timeIn = ability.GetFloat("delay");
+				float timeIn = ability.GetFloat("delayfor");
 				bool hud;
 				
 				if(cooldown)
@@ -835,7 +836,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						timeIn = 0.0;
 						
 						ability.SetBool("incooldown", cooldown);
-						ability.SetFloat("delay", timeIn);
+						ability.SetFloat("delayfor", timeIn);
 						
 						hud = true;
 					}
@@ -860,7 +861,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						if(timeIn)
 						{
 							timeIn = 0.0;
-							ability.SetFloat("delay", 0.0);
+							ability.SetFloat("delayfor", 0.0);
 							
 							hud = true;
 						}
@@ -870,7 +871,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 						if(!timeIn)
 						{
 							timeIn = gameTime;
-							ability.SetFloat("delay", timeIn);
+							ability.SetFloat("delayfor", timeIn);
 							
 							hud = true;
 						}
@@ -976,12 +977,12 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 								ability.SetBool("incooldown", cooldown);
 								
 								timeIn = gameTime + ability.GetFloat("cooldown", 5.0);
-								ability.SetFloat("delay", timeIn);
+								ability.SetFloat("delayfor", timeIn);
 							}
 							else
 							{
 								timeIn = 0.0;
-								ability.SetFloat("delay", 0.0);
+								ability.SetFloat("delayfor", 0.0);
 							}
 						}
 						else if(jump && angles[0] < -20.0)
@@ -1020,12 +1021,12 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							ability.SetBool("incooldown", cooldown);
 							
 							timeIn = gameTime + ability.GetFloat("cooldown", 5.0);
-							ability.SetFloat("delay", timeIn);
+							ability.SetFloat("delayfor", timeIn);
 						}
 						else
 						{
 							timeIn = 0.0;
-							ability.SetFloat("delay", 0.0);
+							ability.SetFloat("delayfor", 0.0);
 						}
 					}
 				}
@@ -1260,7 +1261,7 @@ public void OnTakeDamagePost(int victim, int attacker, int inflictor, float dama
 			if(boss && (ability = boss.GetAbility("special_mobility")))
 			{
 				ability.SetBool("incooldown", true);
-				ability.SetFloat("delay", 0.0);
+				ability.SetFloat("delayfor", 0.0);
 				ability.SetFloat("emergencyfor", GetGameTime() + 1.5);
 				return;
 			}
@@ -1320,7 +1321,7 @@ public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 			if(ability.IsMyPlugin())
 			{
 				MobilityEnabled[client] = true;
-				ability.SetFloat("delay", GetGameTime() + ability.GetFloat("delay", 5.0));
+				ability.SetFloat("delayfor", GetGameTime() + ability.GetFloat("delay", 5.0));
 				SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 			}
 		}
@@ -1572,10 +1573,10 @@ void RemoveCloneCfg(int userid)
 		SetEntProp(client, Prop_Send, "m_bForcedSkin", false);
 		SetEntProp(client, Prop_Send, "m_nForcedSkin", 0);
 		SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
-		Attrib_Remove(client, "major move speed bonus", 442, true);
-		Attrib_Remove(client, "max health additive bonus", 26, true);
-		Attrib_Remove(client, "healing received penalty", 734, true);
-		Attrib_Remove(client, "reduced_healing_from_medics", 740 , true);
+		Attrib_Remove(client, "major move speed bonus", 442);
+		Attrib_Remove(client, "max health additive bonus", 26);
+		Attrib_Remove(client, "healing received penalty", 734);
+		Attrib_Remove(client, "reduced_healing_from_medics", 740);
 	}
 }
 
@@ -1604,7 +1605,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 				
 				hp += float(SDKCall_GetMaxHealth(client) * (lives - 1));
 				
-				Attrib_Set(client, "max health additive bonus", 26, hp, _, true);
+				Attrib_Set(client, "max health additive bonus", 26, hp);
 			}
 			
 			SetEntityHealth(client, GetClientHealth(client) * lives);
@@ -1627,7 +1628,7 @@ public void FF2R_OnBossModifier(int client, ConfigData cfg)
 			
 			hp += float(SDKCall_GetMaxHealth(client)) * (multi - 1.0);
 			
-			Attrib_Set(client, "max health additive bonus", 26, hp, _, true);
+			Attrib_Set(client, "max health additive bonus", 26, hp);
 		}
 		
 		SetEntityHealth(client, RoundToZero(float(GetClientHealth(client)) * multi));

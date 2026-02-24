@@ -302,6 +302,9 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			if(critType == CritType_None && (damagetype & DMG_CRIT))
 				critType = CritType_Crit;
 			
+			if(!OTDLoaded && critType == CritType_MiniCrit)
+				TF2_AddCondition(attacker, TFCond_Buffed, 0.001);
+			
 			if(Client(attacker).IsBoss)
 			{
 				if(damage <= 160.0 && Client(attacker).Triple)

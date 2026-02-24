@@ -29,8 +29,8 @@ jobs:
 
       - name: Install Misc
         run: |
-          bash scripts/setup.sh
-          bash scripts/optional.sh
+          bash .github/setup.sh
+          bash .github/optional.sh
         working-directory: ./
       
       - name: Full Compile
@@ -44,7 +44,7 @@ jobs:
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Setup Package
-        run: bash scripts/package.sh
+        run: bash .github/package.sh
       
       - name: Package Full
         uses: montudor/action-zip@v1.0.0
@@ -101,8 +101,8 @@ jobs:
       
       - name: Install Misc
         run: |
-          bash scripts/setup.sh
-          bash scripts/optional.sh
+          bash .github/setup.sh
+          bash .github/optional.sh
         working-directory: ./
       
       - name: Full Compile
@@ -116,7 +116,7 @@ jobs:
         working-directory: ${{ env.SCRIPTS_PATH }}
       
       - name: Setup Package
-        run: bash scripts/package.sh
+        run: bash .github/package.sh
       
       - name: Upload Full
         uses: actions/upload-artifact@master

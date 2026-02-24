@@ -256,7 +256,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 							
 							float delay = SetFloatFromFormula(spell, "delay", players);
 							if(delay > 0.0)
-								spell.SetFloat("delay", delay + gameTime);
+								spell.SetFloat("delayfor", delay + gameTime);
 							
 							if(manas)
 							{
@@ -704,7 +704,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				
 				if(SetupMode[client])
 				{
-					float cooldown = spell.GetFloat("delay");
+					float cooldown = spell.GetFloat("delayfor") - gameTime;
 					if(cooldown < 0.0)
 						cooldown = 0.0;
 					
@@ -715,7 +715,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 				}
 				else
 				{
-					float cooldown = spell.GetFloat("delay") - gameTime;
+					float cooldown = spell.GetFloat("delayfor") - gameTime;
 					if(cooldown > 0.0)
 					{
 						if(cooldown < 1000.0)
@@ -884,7 +884,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 							if(spell)
 							{
 								float gameTime = GetGameTime();
-								if(spell.GetFloat("delay") < gameTime)
+								if(spell.GetFloat("delayfor") < gameTime)
 								{
 									bool blocked;
 									var1 = spell.GetInt("flags");
@@ -991,7 +991,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 											
 											if(!blocked)
 											{
-												spell.SetFloat("delay", gameTime + spell.GetFloat("cooldown"));
+												spell.SetFloat("delayfor", gameTime + spell.GetFloat("cooldown"));
 												
 												int slot = spell.GetInt("high", spell.GetInt("low"));
 												FF2R_DoBossSlot(client, spell.GetInt("low", slot), slot);
@@ -1016,8 +1016,8 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 
 														if(spell2)
 														{
-															if(spell2.GetFloat("delay") < gameTime + globalCooldown)
-																spell2.SetFloat("delay", gameTime + globalCooldown);
+															if(spell2.GetFloat("delayfor") < gameTime + globalCooldown)
+																spell2.SetFloat("delayfor", gameTime + globalCooldown);
 														}
 													}
 													delete snap;
@@ -1107,7 +1107,7 @@ public void RefreshSpells(int client, BossData boss, AbilityData ability)
 					if((flags & MAG_LASTLIFE) && boss.GetInt("livesleft", 1) != 1)
 						continue;
 					
-					if(spell.GetFloat("delay") > gameTime)
+					if(spell.GetFloat("delayfor") > gameTime)
 						continue;
 					
 					spell.SetBool("disabled", false);

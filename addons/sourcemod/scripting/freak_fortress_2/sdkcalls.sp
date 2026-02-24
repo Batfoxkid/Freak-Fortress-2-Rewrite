@@ -6,6 +6,8 @@
 #define SDKType_VirtualAddress SDKType_PlainOldData
 #endif
 
+static bool UseFireEntityOutput;
+
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
 static Handle SDKTeamAddPlayer;
@@ -42,65 +44,86 @@ void SDKCall_Setup()
 	delete gamedata;
 	
 	
+	char buffer[4];
 	gamedata = new GameData("ff2");
+
+	UseFireEntityOutput = !gamedata.GetKeyValue("Use_FireEntityOutput", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	SDKTeamAddPlayer = EndPrepSDKCall();
-	if(!SDKTeamAddPlayer)
-		LogError("[Gamedata] Could not find CTeam::AddPlayer");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer"))
+	{
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+		SDKTeamAddPlayer = EndPrepSDKCall();
+		if(!SDKTeamAddPlayer)
+			LogError("[Gamedata] Could not find CTeam::AddPlayer");
+	}
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::RemovePlayer");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	SDKTeamRemovePlayer = EndPrepSDKCall();
-	if(!SDKTeamRemovePlayer)
-		LogError("[Gamedata] Could not find CTeam::RemovePlayer");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::RemovePlayer"))
+	{
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+		SDKTeamRemovePlayer = EndPrepSDKCall();
+		if(!SDKTeamRemovePlayer)
+			LogError("[Gamedata] Could not find CTeam::RemovePlayer");
+	}
 	
 	StartPrepSDKCall(SDKCall_VirtualAddress);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFGameStats::IncrementStat");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	SDKIncrementStat = EndPrepSDKCall();
-	if(!SDKIncrementStat)
-		LogError("[Gamedata] Could not find CTFGameStats::IncrementStat");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFGameStats::IncrementStat"))
+	{
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		SDKIncrementStat = EndPrepSDKCall();
+		if(!SDKIncrementStat)
+			LogError("[Gamedata] Could not find CTFGameStats::IncrementStat");
+	}
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::CheckBlockBackstab");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
-	SDKCheckBlockBackstab = EndPrepSDKCall();
-	if(!SDKCheckBlockBackstab)
-		LogError("[Gamedata] Could not find CTFPlayer::CheckBlockBackstab");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::CheckBlockBackstab"))
+	{
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
+		SDKCheckBlockBackstab = EndPrepSDKCall();
+		if(!SDKCheckBlockBackstab)
+			LogError("[Gamedata] Could not find CTFPlayer::CheckBlockBackstab");
+	}
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetMaxAmmo");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
-	SDKGetMaxAmmo = EndPrepSDKCall();
-	if(!SDKGetMaxAmmo)
-		LogError("[Gamedata] Could not find CTFPlayer::GetMaxAmmo");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::GetMaxAmmo"))
+	{
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
+		SDKGetMaxAmmo = EndPrepSDKCall();
+		if(!SDKGetMaxAmmo)
+			LogError("[Gamedata] Could not find CTFPlayer::GetMaxAmmo");
+	}
 
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed");
-	SDKSetSpeed = EndPrepSDKCall();
-	if(!SDKSetSpeed)
-		LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::TeamFortress_SetSpeed"))
+	{
+		SDKSetSpeed = EndPrepSDKCall();
+		if(!SDKSetSpeed)
+			LogError("[Gamedata] Could not find CTFPlayer::TeamFortress_SetSpeed");
+	}
 	
 	StartPrepSDKCall(SDKCall_Entity);
-	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPowerup::DropSingleInstance");
-	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
-	SDKDropSingleInstance = EndPrepSDKCall();
-	if(!SDKDropSingleInstance)
-		LogError("[Gamedata] Could not find CTFPowerup::DropSingleInstance");
+	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPowerup::DropSingleInstance"))
+	{
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_ByValue);
+		SDKDropSingleInstance = EndPrepSDKCall();
+		if(!SDKDropSingleInstance)
+			LogError("[Gamedata] Could not find CTFPowerup::DropSingleInstance");
+	}
 	
 	delete gamedata;
+}
+
+bool SDKAllow_FireEntityOutput()
+{
+	return UseFireEntityOutput;
 }
 
 bool SDKCall_CheckBlockBackstab(int client, int attacker)

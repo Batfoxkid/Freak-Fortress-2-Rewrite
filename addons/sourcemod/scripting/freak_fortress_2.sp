@@ -296,7 +296,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
-	VScript_PluginLoad();
 	return APLRes_Success;
 }
 
@@ -305,7 +304,7 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
-	if(!TranslationPhraseExists("Sapper Cooldown"))
+	if(!TranslationPhraseExists("View Creators"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	PlayerHud = CreateHudSynchronizer();
@@ -355,12 +354,6 @@ public void OnAllPluginsLoaded()
 {
 	Configs_AllPluginsLoaded();
 	CustomAttrib_AllPluginsLoaded();
-
-	if(!Attrib_Loaded() && (!VScript_Loaded() || !TFED_Loaded()))
-		LogError("[!!!] No attribute manager is loaded, make sure either TF2Attributes or TFEconData/VScript is loaded on the server and compiled into FF2");
-	
-	if(!CustomAttrib_Loaded())
-		LogError("[!!!] No custom attribute manager is loaded, make sure either TFCustAttr or TFEconDynamic is loaded on the server and compiled into FF2");
 }
 
 public void OnMapInit()
@@ -375,6 +368,7 @@ public void OnMapStart()
 	Dome_MapStart();
 	Gamemode_MapStart();
 	Teuton_MapStart();
+	ServerCommand("script_execute ff2r");
 }
 
 public void OnConfigsExecuted()
@@ -425,7 +419,6 @@ public void OnLibraryAdded(const char[] name)
 	SteamWorks_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
-	VScript_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
 }
 
@@ -439,7 +432,6 @@ public void OnLibraryRemoved(const char[] name)
 	SteamWorks_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
-	VScript_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);
 }
 

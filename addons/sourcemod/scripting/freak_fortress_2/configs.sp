@@ -148,7 +148,7 @@ bool Configs_SetMap(const char[] mapname)
 
 static void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
-	if(!VotedPack && Cvar[PackVotes].BoolValue && Bosses_GetCharsetLength() > 1)
+	if(!VotedPack && Cvar[PackVotes].BoolValue && Bosses_MultipleCharsets(false))
 	{
 		char mapname[64];
 		GetMapDisplayName(newValue, mapname, sizeof(mapname));
@@ -181,7 +181,8 @@ static void Configs_PackVoteFrame()
 		if(start < 0)
 			start = 0;
 		
-		char buffer[64], num[12];
+		char buffer[12];
+		bool hidden;
 		
 		int i = start + 1;
 		for(int a; a < 8; a++)
@@ -189,11 +190,15 @@ static void Configs_PackVoteFrame()
 			if(i >= length)
 				i = 0;
 			
-			if(Bosses_GetCharset(i, buffer, sizeof(buffer)))
+			ConfigMap pack = Bosses_GetCharset(i);
+			if(pack.GetBool("hidden", hidden, false) && hidden)
 			{
-				IntToString(i, num, sizeof(num));
-				menu.AddItem(num, buffer);
+				a--;
+				continue;
 			}
+
+			IntToString(i, buffer, sizeof(buffer));
+			menu.AddItem(buffer, buffer);
 			
 			if(i == start)
 				break;
@@ -222,17 +227,34 @@ static int Configs_PackVoteH(Menu menu, MenuAction action, int param1, int param
 		{
 			menu.SetTitle("%t", "Next Pack Vote", param1);
 		}
+		case MenuAction_DisplayItem:
+		{
+			char buffer[64];
+			menu.GetItem(param2, buffer, sizeof(buffer));
+			
+			if(Bosses_GetCharsetName(StringToInt(buffer), buffer, sizeof(buffer), GetClientLanguage(param1)))
+				return RedrawMenuItem(buffer);
+		}
 		case MenuAction_VoteCancel:
 		{
 			VotedPack = false;
 		}
 		case MenuAction_VoteEnd:
 		{
-			char buffer1[12], buffer2[64];
-			menu.GetItem(param1, buffer1, sizeof(buffer1), _, buffer2, sizeof(buffer2));
-			
-			Cvar[NextCharset].SetString(buffer1);
-			FPrintToChatAll("%t", "Next Pack Voted", buffer2);
+			char buffer[64];
+			menu.GetItem(param1, buffer, sizeof(buffer));
+
+			int charset = StringToInt(buffer);
+			Cvar[NextCharset].IntValue = charset;
+
+			for(int client = 1; client <= MaxClients; client++)
+			{
+				if(IsClientInGame(client) && !IsFakeClient(client))
+				{
+					Bosses_GetCharsetName(charset, buffer, sizeof(buffer), GetClientLanguage(client));
+					FPrintToChat(client, "%t", "Next Pack Voted", buffer);
+				}
+			}
 		}
 	}
 	return 0;

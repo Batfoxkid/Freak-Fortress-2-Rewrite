@@ -548,9 +548,6 @@ void Weapons_ShowChanges(int client, int entity)
 		}
 	}
 
-	if(!CustomAttrib_Loaded())
-		return;
-
 	cfg = cfg.GetSection("custom");
 
 	if(cfg)
@@ -775,10 +772,7 @@ static void Weapons_SpawnFrame(int ref)
 				cfg.GetArray(key, attributeValue, sizeof(attributeValue));
 
 				if(attributeValue.tag == KeyValType_Value)
-				{
-					if(!Attrib_SetString(entity, key, _, attributeValue.data))
-						LogError("[Config] Attribute '%s' is invalid/unloaded in weapons config", key);
-				}
+					Attrib_SetString(entity, key, _, attributeValue.data);
 			}
 
 			delete snap;

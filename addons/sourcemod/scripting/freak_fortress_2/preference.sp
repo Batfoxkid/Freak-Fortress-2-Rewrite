@@ -282,7 +282,7 @@ int Preference_PickBoss(int client, int team = -1)
 			}
 			else
 			{
-				Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+				Bosses_GetCharsetName(Charset, buffer, sizeof(buffer));
 				LogError("[!!!] Could not find a valid boss in %s (#%d)", buffer, Charset);
 			}
 			
@@ -452,7 +452,7 @@ static Action Preference_BossMenuCmd(int client, int args)
 
 void Preference_BossMenu(int client)
 {
-	ViewingPack[client] = Bosses_GetCharsetLength() > 1 ? -1 : 0;
+	ViewingPack[client] = Bosses_MultipleCharsets() ? -1 : Charset;
 	ViewingPage[client] = 0;
 	ViewingBoss[client] = -1;
 	
@@ -477,7 +477,7 @@ static void BossMenu(int client)
 		{
 			if(ViewingPack[client] >= 0)
 			{
-				Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
+				Bosses_GetCharsetName(ViewingPack[client], data, sizeof(data), lang);
 				if(Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description"))
 				{
 					menu.SetTitle("%t%s\n \n%s\n ", "Boss Selection Command", data, buffer);
@@ -598,7 +598,7 @@ static void BossMenu(int client)
 		}
 		else if(ViewingPack[client] >= 0)
 		{
-			Bosses_GetCharset(ViewingPack[client], data, sizeof(data));
+			Bosses_GetCharsetName(ViewingPack[client], data, sizeof(data), lang);
 			menu.SetTitle("%t%s\n%t", "Boss Selection Command", data, "Boss No View");
 			menu.AddItem("0", NULL_STRING, ITEMDRAW_NOTEXT);
 		}
@@ -613,7 +613,7 @@ static void BossMenu(int client)
 	}
 	else if(ViewingPack[client] >= 0)
 	{
-		if(Bosses_GetCharset(ViewingPack[client], data, sizeof(data)))
+		if(Bosses_GetCharsetName(ViewingPack[client], data, sizeof(data), lang))
 		{
 			menu.SetTitle("%t%s\n ", "Boss Selection Command", data);
 
@@ -703,7 +703,7 @@ static void BossMenu(int client)
 			menu.AddItem("-3", buffer, ITEMDRAW_RAWLINE);
 		}
 		
-		menu.ExitBackButton = (Menu_BackButton(client) || Bosses_GetCharsetLength() > 1);
+		menu.ExitBackButton = (Menu_BackButton(client) || Bosses_MultipleCharsets());
 		menu.DisplayAt(client, ViewingPage[client], MENU_TIME_FOREVER);
 	}
 	else
@@ -746,11 +746,20 @@ static void BossMenu(int client)
 			menu.AddItem("-1", data);
 		}
 		
+		bool hidden;
 		for(int i; i < length; i++)
 		{
-			Bosses_GetCharset(i, buffer, sizeof(buffer));
+			ConfigMap pack = Bosses_GetCharset(i);
+			
+			Bosses_GetCharsetName(i, buffer, sizeof(buffer), lang);
 			if(Enabled && i == Charset)
+			{
 				Format(buffer, sizeof(buffer), "%s ✓", buffer);
+			}
+			else if(pack.GetBool("hidden", hidden, false) && hidden)
+			{
+				continue;
+			}
 			
 			IntToString(i, data, sizeof(data));
 			menu.AddItem(data, buffer);
@@ -779,7 +788,7 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 					BossMenu(client);
 					ViewingPage[client] = 0;
 				}
-				else if(ViewingPack[client] >= 0 && Bosses_GetCharsetLength() > 1)
+				else if(ViewingPack[client] >= 0 && Bosses_MultipleCharsets())
 				{
 					ViewingPack[client] = -1;
 					BossMenu(client);
@@ -2295,12 +2304,12 @@ static void CreatorMenu(int client)
 	
 	if(ViewingPack[client] >= 0)
 	{
-		Bosses_GetCharset(ViewingPack[client], buffer2, sizeof(buffer2));
-		menu.SetTitle("%t%s\n%s\n%t\n ", "Boss Selection Command", buffer2, buffer1, "Created By");
+		Bosses_GetCharsetName(ViewingPack[client], buffer2, sizeof(buffer2), lang);
+		menu.SetTitle("%t%s\n %s\n %t\n ", "Boss Selection Command", buffer2, buffer1, "Created By");
 	}
 	else
 	{
-		menu.SetTitle("%t%s\n%t\n ", "Boss Selection Command", buffer1, "Created By");
+		menu.SetTitle("%t%s\n %t\n ", "Boss Selection Command", buffer1, "Created By");
 	}
 
 	cfg = cfg.GetSection("creator");

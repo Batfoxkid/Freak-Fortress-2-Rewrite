@@ -2,6 +2,16 @@
 {
 	"tf"
 	{
+		"Keys"
+		{
+			"Use_FireEntityOutput"
+			{
+				"linux"		"yes"
+				"linux64"	"yes"
+				"windows"	"yes"
+				"windows64"	"no" // SM Crash
+			}
+		}
 		"Signatures"
 		{
 			"CTFDroppedWeapon::Create"
@@ -38,7 +48,8 @@
 				"linux"		"@_ZN12CTFGameStats15ResetRoundStatsEv"
 				"linux64"	"@_ZN12CTFGameStats15ResetRoundStatsEv"
 				"windows"	"\x53\x8B\xD9\x56\xBE\x66\x00\x00\x00"
-				"windows64"	"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x33\xC9\x44\x8B\xC1"
+				//"windows64"	"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x33\xC9\x44\x8B\xC1"
+				// DHook Crash
 			}
 			"CTFGameStats::IncrementStat"
 			{
@@ -46,7 +57,8 @@
 				"linux"		"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"linux64"	"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x8B\x0D\x2A\x2A\x2A\x2A\x85\xC9\x74\x2A\xE8\x2A\x2A\x2A\x2A"
-				"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
+				//"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
+				// DHook Crash
 			}
 			"CTFPlayer::CanAirDash"
 			{
@@ -55,7 +67,8 @@
 				"linux"		"@_ZNK9CTFPlayer10CanAirDashEv"
 				"linux64"	"@_ZNK9CTFPlayer10CanAirDashEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x57\x8B\xF9\x8B\x87\xBC\x1B\x00\x00"
-				"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xDC\x1E\x00\x00"
+				//"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xDC\x1E\x00\x00"
+				// DHook Crash
 			}
 			"CTFPlayer::CanPickupDroppedWeapon"
 			{
@@ -112,7 +125,8 @@
 				"linux"		"@_ZN9CTFPlayer10RegenThinkEv"
 				"linux64"	"@_ZN9CTFPlayer10RegenThinkEv"
 				"windows"	"\x55\x8B\xEC\x83\xEC\x7C\x56\x8B\xF1"
-				"windows64"	"\x40\x53\x48\x81\xEC\x30\x01\x00\x00\x48\x8B\x01"
+				//"windows64"	"\x40\x53\x48\x81\xEC\x30\x01\x00\x00\x48\x8B\x01"
+				// DHook Crash
 			}
 			"CTFPlayer::TeamFortress_SetSpeed"
 			{
@@ -228,6 +242,9 @@
 				"windows64"	"60"
 			}
 		}
+	}
+	"#default"
+	{
 		"Functions"
 		{
 			"CBaseEntity::ChangeTeam"

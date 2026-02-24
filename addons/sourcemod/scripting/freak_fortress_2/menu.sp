@@ -48,7 +48,7 @@ static Action Menu_MainMenuCmd(int client, int args)
 		else
 		{
 			char buffer[48];
-			Bosses_GetCharset(Charset, buffer, sizeof(buffer));
+			Bosses_GetCharsetName(Charset, buffer, sizeof(buffer));
 			PrintToServer("Boss Pack: %s (%d)", buffer, Charset);
 		}
 		
@@ -62,7 +62,6 @@ static Action Menu_MainMenuCmd(int client, int args)
 		TF2Items_PrintStatus();
 		TF2U_PrintStatus();
 		TFED_PrintStatus();
-		VScript_PrintStatus();
 		Weapons_PrintStatus();
 		
 		int amount, ready;
