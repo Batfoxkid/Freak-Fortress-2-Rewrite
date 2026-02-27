@@ -195,12 +195,12 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 						
 						if(!MultiBosses())
 						{
-							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, 2.0))
-								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, 2.0);
+							if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, _, _, _, _, SNDVOL_BOSS))
+								Bosses_PlaySoundToAll(victim, "sound_stabbed", _, _, _, _, _, SNDVOL_BOSS);
 						}
-						else if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0))
+						else if(!Client(attacker).IsBoss || !Bosses_PlaySoundToAll(victim, "sound_stabbed_boss", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS))
 						{
-							Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+							Bosses_PlaySoundToAll(victim, "sound_stabbed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 						}
 					}
 					
@@ -289,11 +289,11 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 					
 					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_telefraged", _, _, _, _, _, SNDVOL_BOSS);
 					}
 					return Plugin_Changed;
 				}

@@ -350,14 +350,14 @@ static Action Gamemode_IntroTimer(Handle timer)
 	{
 		if(IsClientInGame(client))
 		{
-			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || (!Bosses_PlaySoundToClient(client, client, "sound_intro", _, _, _, _, _, 2.0) && !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, 2.0)))
+			if(!Client(client).IsBoss || !ForwardOld_OnMusicPerBoss(client) || (!Bosses_PlaySoundToClient(client, client, "sound_intro", _, _, _, _, _, SNDVOL_BOSS) && !Bosses_PlaySoundToClient(client, client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS)))
 			{
 				int team = GetClientTeam(client);
 				int i;
 				for(; i < MaxClients; i++)
 				{
 					int boss = FindClientOfBossIndex(i);
-					if(boss != -1 && GetClientTeam(boss) != team && (Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, 2.0) || Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0)))
+					if(boss != -1 && GetClientTeam(boss) != team && (Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, SNDVOL_BOSS) || Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS)))
 						break;
 				}
 				
@@ -366,8 +366,8 @@ static Action Gamemode_IntroTimer(Handle timer)
 					int boss = FindClientOfBossIndex(0);
 					if(boss != -1)
 					{
-						if(!Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, 2.0))
-							Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, 2.0);
+						if(!Bosses_PlaySoundToClient(boss, client, "sound_intro", _, _, _, _, _, SNDVOL_BOSS))
+							Bosses_PlaySoundToClient(boss, client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS);
 					}
 				}
 			}
@@ -782,7 +782,7 @@ void Gamemode_RoundEnd(int winteam)
 				if(winner == teams[i])
 				{
 					// Play sound_win for themself if they are on the winning team
-					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win", _, _, _, _, _, 2.0))
+					if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_win", _, _, _, _, _, SNDVOL_BOSS))
 						continue;
 				}
 				else if(globalTeam != winner)
@@ -790,7 +790,7 @@ void Gamemode_RoundEnd(int winteam)
 					// Play sound_fail for themself if: Global sound wasn't a sound_win, Global sound didn't exist or they're alive
 					if(!globalBoss || IsPlayerAlive(clients[i]))
 					{
-						if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail", _, _, _, _, _, 2.0))
+						if(Bosses_PlaySoundToClient(clients[i], clients[i], "sound_fail", _, _, _, _, _, SNDVOL_BOSS))
 							continue;
 					}
 				}
@@ -801,7 +801,7 @@ void Gamemode_RoundEnd(int winteam)
 		
 		// Play global sound
 		if(globalBoss)
-			Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail", _, _, _, _, _, 2.0);
+			Bosses_PlaySound(globalBoss, globalSound, globalCount, globalTeam == winner ? "sound_win" : "sound_fail", _, _, _, _, _, SNDVOL_BOSS);
 	}
 	
 	// Give Queue Points

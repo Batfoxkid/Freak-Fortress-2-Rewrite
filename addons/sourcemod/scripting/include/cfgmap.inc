@@ -842,11 +842,11 @@ static stock bool ConfigMapToFile(const ConfigMap cfg, const char[] sec_name, co
 {
 	StringMapSnapshot snap = cfg.Snapshot();
 	
-	char[] tab = new char[deep];
+	char[] tab = new char[deep == 0 ? 1 : deep];
 	for( int i; i<deep; i++ ) {
 		tab[i]='\t';
 	}
-	file.WriteLine("%s\"%s\" {", tab, sec_name);
+	file.WriteLine("%s\"%s\" {", deep == 0 ? "" : tab, sec_name);
 	
 	int size = snap.Length;
 	for( int i; i<size; i++ ) {

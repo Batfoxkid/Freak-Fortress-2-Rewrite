@@ -256,6 +256,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	
 	DownloadTable = FindStringTable("downloadables");
 	bool save = LockStringTables(false);
+	ArrayList vscripts = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
 	
 	char filepath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, filepath, sizeof(filepath), FILE_CHARACTERS);
@@ -366,11 +367,11 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							length = ReplaceString(bossname, length, "*", NULL_STRING);
 							if(length)
 							{
-								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1);
+								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 							}
 							else
 							{
-								LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1);
+								LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 							}
 						}
 						case KeyValType_Value:
@@ -382,11 +383,11 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 									length = ReplaceString(bossname, length, "*", NULL_STRING);
 									if(length)
 									{
-										LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1);
+										LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 									}
 									else
 									{
-										LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1);
+										LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 									}
 								}
 							}
@@ -395,11 +396,11 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 								length = ReplaceString(val.data, sizeof(val.data), "*", NULL_STRING);
 								if(length)
 								{
-									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, choosen.FindValue(a) != -1);
+									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 								}
 								else
 								{
-									LoadCharacter(val.data, pack, mapname, choosen.FindValue(a) != -1);
+									LoadCharacter(val.data, pack, mapname, choosen.FindValue(a) != -1, vscripts);
 								}
 							}
 						}
@@ -436,15 +437,29 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 
 		PackList.Push(cfg);
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
-		LoadCharacterDirectory(filepath, NULL_STRING, true, 0, mapname, charset>=0);
+		LoadCharacterDirectory(filepath, NULL_STRING, true, 0, mapname, charset>=0, vscripts);
 		if(Enabled && charset >= 0)
 			SteamWorks_SetGameTitle();
 	}
 	
 	LockStringTables(save);
+
+	int length = vscripts.Length;
+	if(length)
+	{
+		for(int i; i < length; i++)
+		{
+			vscripts.GetString(i, filepath, sizeof(filepath));
+			InsertServerCommand("script_execute %s", filepath);
+		}
+
+		ServerExecute();
+	}
+
+	delete vscripts;
 	
 	PackVal val;
-	int length = BossList.Length;
+	length = BossList.Length;
 	for(int i; i < length; i++)
 	{
 		ConfigMap cfg = BossList.Get(i);
@@ -490,7 +505,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	}
 }
 
-static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, const char[] current = NULL_STRING)
+static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, ArrayList vscripts, const char[] current = NULL_STRING)
 {
 	char filepath[PLATFORM_MAX_PATH];
 	if(current[0])
@@ -520,7 +535,7 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 					Format(filepath, sizeof(filepath), "%s/%s", current, filepath);
 				
 				if(!matching[0] || (full && StrContains(filepath, matching) != -1) || (!full && !StrContains(filepath, matching)))
-					LoadCharacter(filepath, charset, map, precache);
+					LoadCharacter(filepath, charset, map, precache, vscripts);
 				
 				continue;
 			}
@@ -532,7 +547,7 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 				if(current[0])
 					Format(filepath, sizeof(filepath), "%s/%s", current, filepath);
 				
-				LoadCharacterDirectory(basepath, matching, full, charset, map, precache, filepath);
+				LoadCharacterDirectory(basepath, matching, full, charset, map, precache, vscripts, filepath);
 			}
 		}
 	}
@@ -540,7 +555,7 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 	delete listing;
 }
 
-static void LoadCharacter(const char[] character, int charset, const char[] map, bool precached)
+static void LoadCharacter(const char[] character, int charset, const char[] map, bool precached, ArrayList vscripts)
 {
 	char buffer[PLATFORM_MAX_PATH];
 	FormatEx(buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, character);
@@ -782,6 +797,19 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 							cfgsub.DeleteSection("name");
 							cfg.Remove(section);
 							cfg.SetArray(buffer, val, sizeof(val));
+						}
+
+						if(cfgsub.Get("script_name", buffer, sizeof(buffer)))
+						{
+							if(vscripts.FindString(buffer) == -1 && !StrEqual(buffer, "freak_fortress_2", false))
+							{
+								vscripts.PushString(buffer);
+								Format(buffer, sizeof(buffer), "scripts/vscripts/%s.nut", buffer);
+								if(!FileExists(buffer, true))
+									LogError("[Boss] '%s' is missing file '%s' in '%s'", character, buffer, section);
+							}
+
+							cfgsub.Set("plugin_name", "vscript");
 						}
 					}
 					case Section_Weapon:
@@ -1718,7 +1746,7 @@ void Bosses_CreateFromSpecial(int client, int special, int team, int lead = 0)
 	Client(client).Cfg.SetInt("special", special);
 }
 
-void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0)
+void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, bool copy = true)
 {
 	if(Client(client).Index < 0)
 	{
@@ -1732,18 +1760,19 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0)
 		}
 	}
 
-	ConfigMap copy = cfg.Clone(ThisPlugin);
+	ConfigMap cloneCfg = copy ? cfg.Clone(ThisPlugin) : cfg;
 	
 	if(Client(client).Cfg)
 	{
 		Forward_OnBossRemoved(client);
+		VScript_Call("_FF2_BossRemoved", client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 	}
 	
 	EnableSubplugins();
 	
-	Client(client).Cfg = copy;
+	Client(client).Cfg = cloneCfg;
 	
 	if(GetClientTeam(client) != team)
 		SDKCall_ChangeClientTeam(client, team);
@@ -1796,7 +1825,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0)
 	
 	if(active)
 	{
-		Bosses_PlaySoundToAll(client, "sound_begin", _, _, _, _, _, 2.0);
+		Bosses_PlaySoundToAll(client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS);
 		Music_RoundStart();
 	}
 	
@@ -1841,6 +1870,8 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0)
 	
 	if(!Client(client).MinionType && (!Client(client).Cfg.GetBool("nomods", value, false) || !value))
 		Preference_ApplyDifficulty(client, leader, !active);
+	
+	VScript_CreateBoss(client);
 }
 
 int Bosses_SetHealth(int client, int players)
@@ -2012,6 +2043,9 @@ static void EquipBoss(int client, bool weapons)
 	Bosses_SetSpeed(client);
 	Gamemode_UpdateHUD(GetClientTeam(client));
 	Forward_OnBossEquipped(client, weapons);
+
+	if(weapons)
+		VScript_Call("_FF2_BossEquipped", client);
 }
 
 void Bosses_UpdateHealth(int client)
@@ -2125,6 +2159,7 @@ void Bosses_ClientDisconnect(int client)
 		Ranking_BossRemoved(client, true);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
+		VScript_Call("_FF2_BossRemoved", client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 		
@@ -2154,6 +2189,7 @@ void Bosses_Remove(int client)
 		Ranking_BossRemoved(client, false);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
+		VScript_Call("_FF2_BossRemoved", client);
 		
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
@@ -2330,13 +2366,13 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, 2.0) && !MultiBosses())
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, SNDVOL_BOSS) && !MultiBosses())
 			{
-				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, 2.0);
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, SNDVOL_BOSS);
 			}
 			else
 			{
-				Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, client, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 			}
 		}
 	}
@@ -2426,8 +2462,14 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 			}
 		} while(result);
 	}
-	
-	if(plugin[0])
+
+	bool vscript;
+	if(StrContains(plugin, "vscript", false) == 0)
+	{
+		vscript = true;
+		strcopy(buffer1, sizeof(buffer1), "vscript");
+	}
+	else if(plugin[0])
 	{
 		FormatEx(buffer1, sizeof(buffer1), "%s.smx", plugin);
 	}
@@ -2446,7 +2488,7 @@ static void UseAbility(int client, ConfigMap cfg, const char[] plugin, const cha
 		return;
 	
 	int status = 3;
-	if(slot > 0 && slot < 4)
+	if(!vscript && slot > 0 && slot < 4)
 	{
 		int button = IN_ATTACK2;
 		switch(buttonmode)

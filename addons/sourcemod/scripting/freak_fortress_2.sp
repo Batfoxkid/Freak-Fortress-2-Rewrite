@@ -37,6 +37,8 @@
 #define TFTeam_Blue		3
 #define TFTeam_MAX		4
 
+#define SNDVOL_BOSS	2.0
+
 enum TFStatType_t
 {
 	TFSTAT_UNDEFINED = 0,
@@ -368,7 +370,7 @@ public void OnMapStart()
 	Dome_MapStart();
 	Gamemode_MapStart();
 	Teuton_MapStart();
-	ServerCommand("script_execute ff2r");
+	ServerCommand("script_execute freak_fortress_2");
 }
 
 public void OnConfigsExecuted()

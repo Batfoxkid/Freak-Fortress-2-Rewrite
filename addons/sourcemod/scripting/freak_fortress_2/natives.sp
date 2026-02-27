@@ -63,7 +63,10 @@ static any Native_SetBossData(Handle plugin, int params)
 	if(wasBoss)
 	{
 		if(forwards || !cfg)
+		{
 			Forward_OnBossRemoved(client);
+			VScript_Call("_FF2_BossRemoved", client);
+		}
 		
 		DeleteCfg(Client(client).Cfg);
 	}
@@ -94,7 +97,10 @@ static any Native_SetBossData(Handle plugin, int params)
 	}
 
 	if(forwards && Client(client).Cfg)
+	{
 		Forward_OnBossCreated(client, cfg, GetRoundStatus() == 1);
+		VScript_CreateBoss(client);
+	}
 
 	return 0;
 }

@@ -72,6 +72,13 @@ bool Forward_OnAbilityPre(int client, const char[] ability, ConfigMap cfg, bool 
 
 void Forward_OnAbility(int client, const char[] ability, ConfigMap cfg, const char[] plugin)
 {
+	if(!plugin[0] || StrEqual(plugin, "vscript"))
+	{
+		VScript_UseAbility(client, ability);
+		if(plugin[0])
+			return;
+	}
+
 	if(plugin[0])
 	{
 		char buffer[PLATFORM_MAX_PATH];

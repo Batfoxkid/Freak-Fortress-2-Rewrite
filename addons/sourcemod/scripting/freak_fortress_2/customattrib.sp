@@ -551,11 +551,11 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 					
 					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_marketed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_marketed", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_marketed", _, _, _, _, _, SNDVOL_BOSS);
 					}
 				}
 				
@@ -660,11 +660,11 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 					
 					if(MultiBosses())
 					{
-						Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, 2.0);
+						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, SNDVOL_BOSS);
 					}
 				}
 			}
@@ -871,7 +871,7 @@ static void ApplyRage(int victim, int attacker, float amount)
 			rage += amount;
 			if(rage > maxrage)
 			{
-				Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, 2.0);
+				Bosses_PlaySoundToAll(victim, "sound_full_rage", _, victim, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 				rage = maxrage;
 			}
 			else if(rage < 0.0)
