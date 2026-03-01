@@ -81,6 +81,7 @@ void SDKCall_Setup()
 	StartPrepSDKCall(SDKCall_Entity);
 	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::CheckBlockBackstab"))
 	{
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
 		SDKCheckBlockBackstab = EndPrepSDKCall();
 		if(!SDKCheckBlockBackstab)
