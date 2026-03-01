@@ -544,7 +544,7 @@ public void OnPluginEnd()
 			if(OverlayTimer[client])
 				TriggerTimer(OverlayTimer[client]);
 			
-			if(FF2R_GetBossData(client))
+			if(Subplugin_Enabled() && FF2R_GetBossData(client))
 				FF2R_OnBossRemoved(client);
 		}
 	}

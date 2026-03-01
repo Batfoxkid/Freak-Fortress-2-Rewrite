@@ -279,10 +279,13 @@ void FF2R_PluginLoaded()
 
 public void OnPluginEnd()
 {
-	for(int client = 1; client <= MaxClients; client++)
+	if(Subplugin_Enabled())
 	{
-		if(IsClientInGame(client) && FF2R_GetBossData(client))
-			FF2R_OnBossRemoved(client);
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client) && FF2R_GetBossData(client))
+				FF2R_OnBossRemoved(client);
+		}
 	}
 }
 
