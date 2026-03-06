@@ -22,6 +22,7 @@ void Events_PluginStart()
 	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
+	HookEvent("scorestats_accumulated_update", Events_RoundReset, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
@@ -166,6 +167,11 @@ static Action Events_RoundStart(Event event, const char[] name, bool dontBroadca
 static void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	Gamemode_RoundEnd(event.GetInt("team"));
+}
+
+static void Events_RoundReset(Event event, const char[] name, bool dontBroadcast)
+{
+	Gamemode_RoundReset();
 }
 
 static Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)

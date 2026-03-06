@@ -201,6 +201,7 @@ enum
 	RefreshTime,
 	DisguiseModels,
 	PlayerGlow,
+	MusicPlaylist,
 	RankingStats,
 	RankingLose,
 	RankingStyle,

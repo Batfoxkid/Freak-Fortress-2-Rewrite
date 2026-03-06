@@ -119,21 +119,8 @@ void Gamemode_RoundSetup()
 	HealingFor = 0.0;
 	RoundStatus = 0;
 	WinnerOverride = -1;
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client))
-		{
-			Client(client).ResetByRound();
-			if(GetClientTeam(client) > TFTeam_Spectator)
-				Bosses_Remove(client);
-			
-			for(int i; i < TFTeam_MAX; i++)
-			{
-				ClearSyncHud(client, TeamSyncHud[i]);
-			}
-		}
-	}
 	
+	Gamemode_RoundReset();
 	Events_RoundSetup();
 	
 	if(Enabled)
@@ -818,6 +805,24 @@ void Gamemode_RoundEnd(int winteam)
 			for(int i; i < total; i++)
 			{
 				Client(clients[i]).Queue += points[clients[i]];
+			}
+		}
+	}
+}
+
+void Gamemode_RoundReset()
+{
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client))
+		{
+			Client(client).ResetByRound();
+			if(GetClientTeam(client) > TFTeam_Spectator)
+				Bosses_Remove(client);
+			
+			for(int i; i < TFTeam_MAX; i++)
+			{
+				ClearSyncHud(client, TeamSyncHud[i]);
 			}
 		}
 	}

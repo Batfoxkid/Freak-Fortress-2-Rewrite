@@ -220,7 +220,7 @@ stock int TF2U_GetPlayerLoadoutEntity(int client, int loadoutSlot, bool includeW
 	return entity;
 }
 
-stock void TF2U_StartLagCompensation(int client)
+public void TF2U_StartLagCompensation(int client)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)
@@ -228,7 +228,7 @@ stock void TF2U_StartLagCompensation(int client)
 	#endif
 }
 
-stock void TF2U_FinishLagCompensation(int client)
+public void TF2U_FinishLagCompensation(int client)
 {
 	#if defined __nosoop_tf2_utils_included
 	if(Loaded)

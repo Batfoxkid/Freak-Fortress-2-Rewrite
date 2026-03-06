@@ -136,8 +136,9 @@ void Music_PlayNextSong(int client = 0)
 	if(client)
 	{
 		NextThemeAt[client] = FAR_FUTURE;
+		bool shuffle = Cvar[MusicPlaylist].BoolValue && Client(client).MusicShuffle;
 
-		if(!Client(client).MusicShuffle)
+		if(!shuffle)
 		{
 			DeniedByFileNet[client] = false;
 
@@ -153,7 +154,7 @@ void Music_PlayNextSong(int client = 0)
 		}
 
 		// If we have shuffle enabled, or we tried to play a music that client doesn't have yet
-		if(Client(client).MusicShuffle || DeniedByFileNet[client])
+		if(shuffle || DeniedByFileNet[client])
 		{
 			int length = Playlist.Length;
 			if(length > 0)
@@ -315,7 +316,24 @@ static Action Music_Command(int client, int args)
 			char buffer[16];
 			GetCmdArg(1, buffer, sizeof(buffer));
 			
-			if(StrContains(buffer, "#", false) == 0)
+			if(StrContains(buffer, "on", false) != -1 || StrEqual(buffer, "1") || StrContains(buffer, "enable", false) != -1)
+			{
+				Client(client).NoMusic = false;
+				if(Enabled && RoundStatus == 1)
+					Music_PlayNextSong(client);
+			}
+			else if(StrContains(buffer, "off", false) != -1 || StrEqual(buffer, "0") || StrContains(buffer, "disable", false) != -1)
+			{
+				Client(client).NoMusic = true;
+				Music_PlaySongToClient(client);
+				FReplyToCommand(client, "%t", "Music Disabled");
+			}
+			else if(!Cvar[MusicPlaylist].BoolValue)
+			{
+				Menu_Command(client);
+				Music_MainMenu(client);
+			}
+			else if(StrContains(buffer, "#", false) == 0)
 			{
 				int index = StringToInt(buffer[1]);
 				if(index >= 0 && index < Playlist.Length)
@@ -344,18 +362,6 @@ static Action Music_Command(int client, int args)
 					FReplyToCommand(client, "%t", "Music Unknown Arg", buffer);
 				}
 			}
-			else if(StrContains(buffer, "on", false) != -1 || StrEqual(buffer, "1") || StrContains(buffer, "enable", false) != -1)
-			{
-				Client(client).NoMusic = false;
-				if(Enabled && RoundStatus == 1)
-					Music_PlayNextSong(client);
-			}
-			else if(StrContains(buffer, "off", false) != -1 || StrEqual(buffer, "0") || StrContains(buffer, "disable", false) != -1)
-			{
-				Client(client).NoMusic = true;
-				Music_PlaySongToClient(client);
-				FReplyToCommand(client, "%t", "Music Disabled");
-			}
 			else if(StrContains(buffer, "skip", false) != -1 || StrContains(buffer, "next", false) != -1)
 			{
 				Client(client).MusicShuffle = false;
@@ -376,38 +382,7 @@ static Action Music_Command(int client, int args)
 			}
 			else if(StrContains(buffer, "track", false) != -1 || StrContains(buffer, "list", false) != -1)
 			{
-				if(!client)
-				{
-					MusicEnum music;
-					int length = Playlist.Length;
-					for(int i; i < length; i++)
-					{
-						Playlist.GetArray(i, music);
-						
-						ConfigMap cfg = Bosses_GetConfig(music.Special);
-						if(cfg)
-						{
-							SoundEnum sound;
-							sound.Default();
-							if(Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound) && FileNet_HasFile(client, sound.FileNet))
-							{
-								IntToString(i, music.Section, sizeof(music.Section));
-								
-								if(!sound.Name[0])
-									Format(sound.Name, sizeof(sound.Name), "%T", "Unknown Song", client);
-								
-								if(!sound.Artist[0])
-									Format(sound.Artist, sizeof(sound.Artist), "%T", "Unknown Artist", client);
-								
-								int time = RoundToFloor(sound.Time);
-								CRemoveTags(sound.Artist, sizeof(sound.Artist));
-								CRemoveTags(sound.Name, sizeof(sound.Name));
-								PrintToServer("#%d %s - %s (%d:%02d)", i, sound.Artist, sound.Name, time / 60, time % 60);
-							}
-						}
-					}
-				}
-				else if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
+				if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 				{
 					DataPack pack = new DataPack();
 					pack.WriteCell(GetClientUserId(client));
@@ -475,17 +450,20 @@ void Music_MainMenu(int client)
 	menu.SetTitle("%t", "Music Menu");
 	
 	char buffer[64];
-	FormatEx(buffer, sizeof(buffer), "%t", !Client(client).NoMusic ? Client(client).MusicShuffle ? "Music Disable" : "Music Random" : "Music Enable");
-	menu.AddItem(NULL_STRING, buffer);
-	
-	FormatEx(buffer, sizeof(buffer), "%t", "Music Skip");
-	menu.AddItem(NULL_STRING, buffer);
-	
-	FormatEx(buffer, sizeof(buffer), "%t", "Music Shuffle");
+	FormatEx(buffer, sizeof(buffer), "%t", !Client(client).NoMusic ? (!Cvar[MusicPlaylist].BoolValue || Client(client).MusicShuffle) ? "Music Disable" : "Music Random" : "Music Enable");
 	menu.AddItem(NULL_STRING, buffer);
 	
 	FormatEx(buffer, sizeof(buffer), "%t", "Music List");
 	menu.AddItem(NULL_STRING, buffer);
+	
+	if(Cvar[MusicPlaylist].BoolValue)
+	{
+		FormatEx(buffer, sizeof(buffer), "%t", "Music Skip");
+		menu.AddItem(NULL_STRING, buffer);
+		
+		FormatEx(buffer, sizeof(buffer), "%t", "Music Shuffle");
+		menu.AddItem(NULL_STRING, buffer);
+	}
 	
 	menu.ExitButton = true;
 	menu.ExitBackButton = Menu_BackButton(client);
@@ -516,7 +494,7 @@ static int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 						Client(client).NoMusic = false;
 						Music_PlayNextSong(client);
 					}
-					else if(Client(client).MusicShuffle)
+					else if(Client(client).MusicShuffle || !Cvar[MusicPlaylist].BoolValue)
 					{
 						Client(client).MusicShuffle = false;
 						Client(client).NoMusic = true;
@@ -532,6 +510,10 @@ static int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 				}
 				case 1:
 				{
+					PlaylistMenu(client);
+				}
+				case 2:
+				{
 					bool toggle = Client(client).NoMusic;
 					bool shuffle = Client(client).MusicShuffle;
 					
@@ -545,7 +527,7 @@ static int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 					
 					Music_MainMenu(client);
 				}
-				case 2:
+				case 3:
 				{
 					bool toggle = Client(client).NoMusic;
 					bool shuffle = Client(client).MusicShuffle;
@@ -559,10 +541,6 @@ static int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 					Client(client).MusicShuffle = shuffle;
 					
 					Music_MainMenu(client);
-				}
-				case 3:
-				{
-					PlaylistMenu(client);
 				}
 			}
 		}
@@ -594,6 +572,8 @@ static void PlaylistMenu(int client, int page = 0)
 	}
 	
 	menu.AddItem("-1", " --- ", ITEMDRAW_DISABLED);
+
+	bool playlists = Cvar[MusicPlaylist].BoolValue;
 	
 	MusicEnum music;
 	int length = Playlist.Length;
@@ -629,14 +609,14 @@ static void PlaylistMenu(int client, int page = 0)
 				{
 					Format(music.Key, sizeof(music.Key), "%s - %s (%T)", sound.Artist, sound.Name, "Music Downloading", client);
 				}
-
+				
 				if(music.Special == special1 || music.Special == special2)
 				{
 					menu.InsertItem(0, music.Section, music.Key, hasFile ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 				}
 				else
 				{
-					menu.AddItem(music.Section, music.Key, hasFile ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+					menu.AddItem(music.Section, music.Key, (playlists && hasFile) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
 				}
 			}
 		}
