@@ -196,6 +196,7 @@ native int FF2R_GetSpecialCount();
  * @return		Plugin_Changed if the count was changed, Plugin_Handled to also prevent lastman and control point logic, Plugin_Stop to also prevent post forwards from being called
  */
 forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
+forward Action FF2R_OnAliveChange2(int[] alive, int[] total, int teams);
 
 /**
  * Called when a player spawns, dies, disconnects, etc.
@@ -208,6 +209,7 @@ forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
  * @noreturn
  */
 forward void FF2R_OnAliveChanged(const int alive[4], const int total[4]);
+forward void FF2R_OnAliveChanged2(const int[] alive, const int[] total, int teams);
 
 /**
  * Called when a boss gets removed

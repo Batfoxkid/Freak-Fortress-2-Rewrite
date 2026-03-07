@@ -680,7 +680,7 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 					}
 					else
 					{
-						Bosses_PlaySoundToAll(victim, "sound_cabered", _, _, _, _, _, SNDVOL_BOSS);
+						Bosses_PlaySoundToAll(victim, "sound_cabered", .volume = SNDVOL_BOSS);
 					}
 				}
 			}

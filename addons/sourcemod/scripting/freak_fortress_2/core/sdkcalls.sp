@@ -7,6 +7,8 @@
 #endif
 
 static bool UseFireEntityOutput;
+static bool UseWaitingForPlayers;
+static bool UseWeaponPickups;
 static char ScriptDataFolder[32];
 
 static Handle SDKEquipWearable;
@@ -21,19 +23,21 @@ static Handle SDKDropSingleInstance;
 
 void SDKCall_Setup()
 {
-	GameData gamedata = new GameData("sm-tf2.games");
+	if(TF2Tools_Loaded())
+	{
+		GameData gamedata = new GameData("sm-tf2.games");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find RemoveWearable");
+		
+		delete gamedata;
+	}
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(!SDKEquipWearable)
-		LogError("[Gamedata] Could not find RemoveWearable");
-	
-	delete gamedata;
-	
-	
-	gamedata = new GameData("sdkhooks.games");
+	GameData gamedata = new GameData("sdkhooks.games");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GetMaxHealth");
@@ -49,11 +53,13 @@ void SDKCall_Setup()
 	gamedata = new GameData("ff2");
 
 	UseFireEntityOutput = !gamedata.GetKeyValue("Use_FireEntityOutput", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
-	
+	UseWaitingForPlayers = !gamedata.GetKeyValue("Use_WaitingForPlayers", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
+	UseWeaponPickups = !gamedata.GetKeyValue("Use_WeaponPickups", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
+
 	gamedata.GetKeyValue("ScriptDataFolder", ScriptDataFolder, sizeof(ScriptDataFolder));
 	if(!ScriptDataFolder[0])
 		strcopy(ScriptDataFolder, sizeof(ScriptDataFolder), "scriptdata");
-
+	
 	StartPrepSDKCall(SDKCall_Entity);
 	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer"))
 	{
@@ -124,15 +130,35 @@ void SDKCall_Setup()
 			LogError("[Gamedata] Could not find CTFPowerup::DropSingleInstance");
 	}
 	
+	if(!TF2Tools_Loaded())
+	{
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("CBasePlayer::EquipWearable"));
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find CBasePlayer::EquipWearable");
+	}
+
 	delete gamedata;
 }
 
-bool SDKAllow_FireEntityOutput()
+bool SDK_FireEntityOutput()
 {
 	return UseFireEntityOutput;
 }
 
-int SDKKey_ScriptDataFolder(char[] buffer, int length)
+bool SDK_WaitingForPlayers()
+{
+	return UseWaitingForPlayers;
+}
+
+bool SDK_WeaponPickups()
+{
+	return UseWeaponPickups;
+}
+
+int SDK_ScriptDataFolder(char[] buffer, int length)
 {
 	return strcopy(buffer, length, ScriptDataFolder);
 }

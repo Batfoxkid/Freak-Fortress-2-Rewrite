@@ -210,7 +210,7 @@ stock void VScript_CreateBoss(int client)
 stock void VScript_ExportConfig(ConfigMap cfg)
 {
 	char filepath[64];
-	SDKKey_ScriptDataFolder(filepath, sizeof(filepath));
+	SDK_ScriptDataFolder(filepath, sizeof(filepath));
 	StrCat(filepath, sizeof(filepath), "/ff2bosscache.dat");
 
 	if(cfg == null)
@@ -269,7 +269,7 @@ static void CfgToString(char file[16384], ConfigMap cfg)
 stock ConfigMap VScript_ImportConfig()
 {
 	char filepath[64];
-	SDKKey_ScriptDataFolder(filepath, sizeof(filepath));
+	SDK_ScriptDataFolder(filepath, sizeof(filepath));
 	StrCat(filepath, sizeof(filepath), "/ff2bosscache.dat");
 
 	File file = OpenFile(filepath, "r");

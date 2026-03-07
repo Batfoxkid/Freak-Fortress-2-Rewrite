@@ -969,7 +969,7 @@ static any NativeOld_MakeBoss(Handle plugin, int params)
 			else
 			{
 				team = -1 - team;
-				if(team < 0 || team > TFTeam_Blue)
+				if(team < 0 || team >= (TFTeam_Red + Configs_TeamCount()))
 					team = 0;
 			}
 			

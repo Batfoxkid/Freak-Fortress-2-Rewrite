@@ -122,17 +122,18 @@ void GetClassWeaponClassname(TFClassType class, char[] name, int length)
 
 int TotalPlayersAlive()
 {
-	int amount = PlayersAlive[TFTeam_Red] + PlayersAlive[TFTeam_Blue];
-	if(Cvar[SpecTeam].BoolValue)
-		amount += PlayersAlive[TFTeam_Unassigned] + PlayersAlive[TFTeam_Spectator];
-	
+	int amount;
+	for(int i = Cvar[SpecTeam].BoolValue ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
+	{
+		amount += PlayersAlive[i];
+	}
 	return amount;
 }
 
 int TotalPlayersAliveEnemy(int team)
 {
 	int amount;
-	for(int i = Cvar[SpecTeam].BoolValue ? 0 : 2; i < sizeof(PlayersAlive); i++)
+	for(int i = Cvar[SpecTeam].BoolValue ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
 	{
 		if(i != team)
 			amount += PlayersAlive[i];
@@ -837,7 +838,7 @@ void SetControlPoint(bool enable)
 	{
 		Debug("Unlocked Control Point");
 		
-		if(SDKAllow_FireEntityOutput())
+		if(SDK_FireEntityOutput())
 		{
 			int entity = FindEntityByClassname(-1, "tf_logic_arena");
 			if(entity != -1)

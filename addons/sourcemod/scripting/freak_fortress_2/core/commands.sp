@@ -159,42 +159,7 @@ static Action Command_AutoTeam(int client, const char[] command, int args)
 	if((!Client(client).IsBoss && Client(client).MinionType != 1 && (!Enabled || GameRules_GetProp("m_bInWaitingForPlayers", 1))) || IsEmptyServer())
 		return Plugin_Continue;
 	
-	int reds, blus;
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(client != i && IsClientInGame(i))
-		{
-			int team = GetClientTeam(i);
-			if(team == 3)
-			{
-				blus++;
-			}
-			else if(team == 2)
-			{
-				reds++;
-			}
-		}
-	}
-	
-	int team;
-	if(reds > blus)
-	{
-		team = TFTeam_Blue;
-	}
-	else if(reds < blus)
-	{
-		team = TFTeam_Red;
-	}
-	else if(GetClientTeam(client) == TFTeam_Red)
-	{
-		team = TFTeam_Blue;
-	}
-	else
-	{
-		team = TFTeam_Red;
-	}
-	
-	return SwapTeam(client, team);
+	return SwapTeam(client, GetClientTeam(client) == TFTeam_Red ? TFTeam_Blue : TFTeam_Red);
 }
 
 static Action Command_JoinTeam(int client, const char[] command, int args)
@@ -213,6 +178,14 @@ static Action Command_JoinTeam(int client, const char[] command, int args)
 	else if(StrEqual(buffer, "blue", false))
 	{
 		team = TFTeam_Blue;
+	}
+	else if(StrEqual(buffer, "green", false))
+	{
+		team = TFTeam_Green;
+	}
+	else if(StrEqual(buffer, "yellow", false))
+	{
+		team = TFTeam_Yellow;
 	}
 	else if(StrEqual(buffer, "auto", false))
 	{
@@ -263,7 +236,7 @@ static Action SwapTeam(int client, int wantTeam)
 			
 			// Manage which team we should assign
 			if(newTeam > TFTeam_Spectator)
-				newTeam = Bosses_GetBossTeam() == TFTeam_Red ? TFTeam_Blue : TFTeam_Red;
+				newTeam = Gamemode_MercTeam();
 		}
 	}
 	else if(Client(client).IsBoss)
@@ -286,7 +259,22 @@ static Action SwapTeam(int client, int wantTeam)
 		ForcePlayerSuicide(client);
 		ChangeClientTeam(client, newTeam);
 		if(newTeam > TFTeam_Spectator)
-			ShowVGUIPanel(client, newTeam == TFTeam_Red ? "class_red" : "class_blue");
+		{
+			switch(newTeam)
+			{
+				case TFTeam_Blue:
+					ShowVGUIPanel(client, "class_blue");
+				
+				case TFTeam_Green:
+					ShowVGUIPanel(client, "class_green");
+				
+				case TFTeam_Yellow:
+					ShowVGUIPanel(client, "class_yellow");
+				
+				default:
+					ShowVGUIPanel(client, "class_red");
+			}
+		}
 		
 		if(Cvar[AggressiveSwap].BoolValue)
 		{

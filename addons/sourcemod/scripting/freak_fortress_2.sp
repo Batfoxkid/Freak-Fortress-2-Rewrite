@@ -226,6 +226,7 @@ public void OnPluginStart()
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	TF2Tools_PluginStart();
+	SDKCall_Setup();
 
 	PlayerHud = CreateHudSynchronizer();
 	
@@ -244,7 +245,6 @@ public void OnPluginStart()
 	Menu_PluginStart();
 	Music_PluginStart();
 	Preference_PluginStart();
-	SDKCall_Setup();
 	SDKHook_PluginStart();
 	SteamWorks_PluginStart();
 	TF2U_PluginStart();

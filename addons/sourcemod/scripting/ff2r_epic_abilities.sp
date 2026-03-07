@@ -135,7 +135,7 @@
 #include <dhooks>
 #include <adt_trie_sort>
 #include <cfgmap>
-//#include <tf_econ_data>
+#include <tf_econ_data>
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <ff2r>

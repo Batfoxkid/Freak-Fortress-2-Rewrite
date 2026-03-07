@@ -172,7 +172,7 @@ static const char LoopingRawSounds[][] =
 native void FF2_SetClientGlow(int client, float add, float set=-1.0);
 
 Handle SDKEquipWearable;
-int PlayersAlive[4];
+int PlayersAlive[TFTeam_MAXLimit];
 
 ConVar CvarFriendlyFire;
 ConVar CvarTags;
@@ -185,7 +185,7 @@ Handle RobotRemoveTimer[MAXTF2PLAYERS];
 int PlayingRobotLoop[MAXTF2PLAYERS] = {-1, ...};
 bool Teleporters[MAXTF2PLAYERS];
 ArrayList TeleporterList;
-int BombEnabled[4];
+int BombEnabled[TFTeam_MAXLimit];
 int BombRef = -1;
 int BombCarrier;
 int BombLevel;
@@ -230,20 +230,32 @@ public void OnPluginStart()
 	
 	TF2Tools_PluginStart();
 	
-	GameData gamedata = new GameData("sm-tf2.games");
-	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(!SDKEquipWearable)
-		LogError("[Gamedata] Could not find RemoveWearable");
-	
-	delete gamedata;
-	
-	gamedata = new GameData("ff2");
-	
-	delete gamedata;
+	if(TF2Tools_Loaded())
+	{
+		GameData gamedata = new GameData("sm-tf2.games");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find RemoveWearable");
+		
+		delete gamedata;
+	}
+	else
+	{
+		GameData gamedata = new GameData("ff2");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("CBasePlayer::EquipWearable"));
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find CBasePlayer::EquipWearable");
+		
+		delete gamedata;
+	}
 	
 	Attrib_PluginStart();
 	TF2U_PluginStart();
@@ -392,7 +404,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			if(ability.IsMyPlugin())
 			{
 				int players;
-				for(int i; i < 4; i++)
+				for(int i; i < TFTeam_MAX; i++)
 				{
 					players += PlayersAlive[i];
 				}
@@ -574,9 +586,9 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	}
 }
 
-public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
+public void FF2R_OnAliveChanged2(const int[] alive, const int[] total, int teams)
 {
-	for(int i; i < 4; i++)
+	for(int i; i < teams && i < sizeof(PlayersAlive); i++)
 	{
 		PlayersAlive[i] = alive[i];
 	}
@@ -1315,7 +1327,7 @@ Action Interval_Timer(Handle timer, int client)
 		}
 
 		int players;
-		for(int i; i < 4; i++)
+		for(int i; i < TFTeam_MAX; i++)
 		{
 			players += PlayersAlive[i];
 		}

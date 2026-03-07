@@ -370,7 +370,7 @@ Handle SDKSetSpeed;
 Handle SDKSetBlastJumpState;
 Handle SyncHud;
 
-int PlayersAlive[4];
+int PlayersAlive[TFTeam_MAXLimit];
 bool SpecTeam;
 
 ArrayList BossTimers[MAXTF2PLAYERS];
@@ -451,18 +451,21 @@ public void OnPluginStart()
 	
 	TF2Tools_PluginStart();
 	
-	GameData gamedata = new GameData("sm-tf2.games");
+	if(TF2Tools_Loaded())
+	{
+		GameData gamedata = new GameData("sm-tf2.games");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find RemoveWearable");
+		
+		delete gamedata;
+	}
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(!SDKEquipWearable)
-		LogError("[Gamedata] Could not find RemoveWearable");
-	
-	delete gamedata;
-	
-	gamedata = new GameData("sdkhooks.games");
+	GameData gamedata = new GameData("sdkhooks.games");
 	
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "GetMaxHealth");
@@ -491,6 +494,16 @@ public void OnPluginStart()
 		SDKSetBlastJumpState = EndPrepSDKCall();
 		if(!SDKSetBlastJumpState)
 			LogError("[Gamedata] Could not find CTFPlayer::SetBlastJumpState");
+	}
+	
+	if(!TF2Tools_Loaded())
+	{
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("CBasePlayer::EquipWearable"));
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find CBasePlayer::EquipWearable");
 	}
 	
 	delete gamedata;
@@ -681,7 +694,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 						if(target > 0 && target <= MaxClients)
 						{
 							int team2 = GetClientTeam(target);
-							if(SpecTeam || team2 > view_as<int>(TFTeam_Spectator))
+							if(SpecTeam || team2 > TFTeam_Spectator)
 							{
 								bool friendly = (team1 == team2);
 								if(friendly || !IsInvuln(target))
@@ -945,7 +958,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 								if(team1 != team2 && !arena && TF2U_IsInRespawnRoom(target))
 									continue;
 
-								if(team1 > view_as<int>(TFTeam_Spectator) && !SpecTeam && team2 <= view_as<int>(TFTeam_Spectator))
+								if(team1 > TFTeam_Spectator && !SpecTeam && team2 <= TFTeam_Spectator)
 									continue;
 								
 								if(scale < GetEntPropFloat(i, Prop_Send, "m_flModelScale"))
@@ -1471,7 +1484,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 				continue;
 			
 			int team2 = GetClientTeam(target);
-			if(!SpecTeam && team2 <= view_as<int>(TFTeam_Spectator))
+			if(!SpecTeam && team2 <= TFTeam_Spectator)
 				continue;
 			
 			if(friendly)
@@ -1502,7 +1515,7 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 					continue;
 				
 				int team2 = GetClientTeam(target);
-				if(!SpecTeam && team2 <= view_as<int>(TFTeam_Spectator))
+				if(!SpecTeam && team2 <= TFTeam_Spectator)
 					continue;
 				
 				if(team1 != team2 && !arena && TF2U_IsInRespawnRoom(target))
@@ -1549,9 +1562,9 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	}
 }
 
-public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
+public void FF2R_OnAliveChanged2(const int[] alive, const int[] total, int teams)
 {
-	for(int i; i < 4; i++)
+	for(int i; i < teams && i < sizeof(PlayersAlive); i++)
 	{
 		PlayersAlive[i] = alive[i];
 	}
@@ -2509,7 +2522,7 @@ void Rage_CloneAttack(int client, ConfigData cfg)
 			else
 			{
 				// Don't summon dead spectators
-				if(team2 <= view_as<int>(TFTeam_Spectator))
+				if(team2 <= TFTeam_Spectator)
 					continue;
 				
 				// +2 for being dead already
@@ -2979,7 +2992,7 @@ Action Timer_RestoreCollision(Handle timer, DataPack pack)
 int TotalPlayersAliveEnemy(int team = -1)
 {
 	int amount;
-	for(int i = SpecTeam ? 0 : 2; i < sizeof(PlayersAlive); i++)
+	for(int i = Cvar[SpecTeam].BoolValue ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
 	{
 		if(i != team)
 			amount += PlayersAlive[i];

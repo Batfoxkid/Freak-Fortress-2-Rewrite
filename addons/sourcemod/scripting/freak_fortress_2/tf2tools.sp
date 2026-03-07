@@ -9,6 +9,8 @@
 #define TFTeam_Spectator	1
 #define TFTeam_Red		2
 #define TFTeam_Blue		3
+#define TFTeam_Green	4
+#define TFTeam_Yellow	5
 #define TFTeam_MAXLimit	6
 
 enum TFStatType_t
@@ -83,18 +85,11 @@ enum
 	WINREASON_CUSTOM_OUT_OF_TIME
 };
 
-public int TeamColors[][] =
-{
-	{255, 255, 100, 255},
-	{100, 255, 100, 255},
-	{255, 100, 100, 255},
-	{100, 100, 255, 255}
-};
-
 public int TFTeam_MAX = 4;
 
 static bool Loaded;
 static ArrayList ClassNames;
+static ArrayList TeamColors;
 
 void TF2Tools_PluginStart()
 {
@@ -112,11 +107,19 @@ void TF2Tools_PluginStart()
 	ClassNames.PushString("spy");
 	ClassNames.PushString("engineer");
 
+	TeamColors = new ArrayList(3);
+	TeamColors.PushArray({255, 255, 100});
+	TeamColors.PushArray({100, 255, 100});
+	TeamColors.PushArray({255, 100, 100});
+	TeamColors.PushArray({100, 100, 255});
+
 	char folder[16];
 	GetGameFolderName(folder, sizeof(folder));
 	if(StrEqual(folder, "tf2classified"))
 	{
 		ClassNames.PushString("civilian");
+		TeamColors.PushArray({100, 255, 100});
+		TeamColors.PushArray({255, 255, 100});
 		TFTeam_MAX = 6;
 	}
 }
@@ -136,6 +139,28 @@ void TF2Tools_LibraryRemoved(const char[] name)
 stock bool TF2Tools_Loaded()
 {
 	return Loaded;
+}
+
+stock void TF2Tools_GetTeamColor(int team, int color[3])
+{
+	int team2 = team;
+	if(team2 < 0 || team2 >= TeamColors.Length)
+		team2 = 0;
+	
+	TeamColors.GetArray(team2, color);
+}
+
+stock void TF2Tools_GetTeamColor4(int team, int color4[4])
+{
+	int color3[3];
+	TF2Tools_GetTeamColor(team, color3);
+
+	for(int i; i < 3; i++)
+	{
+		color4[i] = color3[i];
+	}
+
+	color4[3] = 255;
 }
 
 stock void TF2Tools_RespawnPlayer(int client)

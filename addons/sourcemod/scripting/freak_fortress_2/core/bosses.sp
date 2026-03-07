@@ -1787,15 +1787,31 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
 	
 	int i = 1;
-	bool value = Cvar[SpecTeam].BoolValue;
-	for(int t = Cvar[SpecTeam].BoolValue ? 0 : 2; t < 4; t++)
+	ArrayList teams = new ArrayList();
+	for(int t = Cvar[SpecTeam].BoolValue ? 0 : 2; t < TFTeam_MAX; t++)
 	{
 		if(team != t)
+		{
 			i += PlayersAlive[t];
+
+			if(teams.FindValue(t) == -1)
+				teams.Push(t);
+		}
+	}
+	
+	// Divide health with number of teams in BvB
+	if(Enabled && Cvar[BossVsBoss].IntValue > 0)
+	{
+		int count = teams.Length;
+		if(count > 1)
+			i /= count;
 	}
 	
 	Bosses_SetHealth(client, i);
+
+	delete teams;
 	
+	bool value = false;
 	if(!Client(client).Cfg.GetInt("fversion", i) || i != 2)
 	{
 		if(!Client(client).Cfg.GetBool("triple", value, false))
@@ -1827,7 +1843,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	
 	if(active)
 	{
-		Bosses_PlaySoundToAll(client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS);
+		Bosses_PlaySoundToAll(client, "sound_begin", .volume = SNDVOL_BOSS);
 		Music_RoundStart();
 	}
 	
@@ -2368,9 +2384,9 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, SNDVOL_BOSS) && !MultiBosses())
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, .volume = SNDVOL_BOSS) && !MultiBosses())
 			{
-				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, SNDVOL_BOSS);
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, .volume = SNDVOL_BOSS);
 			}
 			else
 			{

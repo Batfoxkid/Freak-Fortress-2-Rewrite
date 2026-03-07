@@ -70,6 +70,14 @@
 	{
 		"en"		"BLU Team"
 	}
+	"Team 4"
+	{
+		"en"		"GRN Team"
+	}
+	"Team 5"
+	{
+		"en"		"YLW Team"
+	}
 	"Point Unlocked"
 	{
 		"en"		"Control Point Unlocked"

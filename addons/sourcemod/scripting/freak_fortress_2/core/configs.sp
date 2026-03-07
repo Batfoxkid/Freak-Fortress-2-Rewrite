@@ -4,6 +4,7 @@
 #define FILE_MAPS	"data/freak_fortress_2/maps.cfg"
 
 static bool VotedPack;
+static int TeamCount = 2;
 
 void Configs_AllPluginsLoaded()
 {
@@ -20,6 +21,7 @@ void Configs_MapStart()
 bool Configs_MapIsGamemode(const char[] mapname)
 {
 	int enableResult = 1;
+	TeamCount = 2;
 	
 	ConfigMap cfg = new ConfigMap(FILE_MAPS);
 	if(cfg)
@@ -73,6 +75,11 @@ bool Configs_MapIsGamemode(const char[] mapname)
 	return enableResult == 1;
 }
 
+int Configs_TeamCount()
+{
+	return TeamCount;
+}
+
 bool Configs_SetMap(const char[] mapname)
 {
 	int enableResult = 1;
@@ -117,8 +124,23 @@ bool Configs_SetMap(const char[] mapname)
 				}
 				
 				int current = -1;
-				if(val.cfg.GetInt("enable", current) && current > enableResult)
-					enableResult = current;
+				if(val.cfg.GetInt("enable", current))
+				{
+					if(current > enableResult)
+						enableResult = current;
+					
+					if(current > 0 && val.cfg.GetInt("teams", TeamCount))
+					{
+						if(TeamCount < 2)
+						{
+							TeamCount = 2;
+						}
+						else if(TeamCount > (TFTeam_MAX - TFTeam_Red))
+						{
+							TeamCount = (TFTeam_MAX - TFTeam_Red);
+						}
+					}
+				}
 			}
 		}
 		
