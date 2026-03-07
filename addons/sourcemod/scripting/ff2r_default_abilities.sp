@@ -2992,7 +2992,7 @@ Action Timer_RestoreCollision(Handle timer, DataPack pack)
 int TotalPlayersAliveEnemy(int team = -1)
 {
 	int amount;
-	for(int i = Cvar[SpecTeam].BoolValue ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
+	for(int i = SpecTeam ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
 	{
 		if(i != team)
 			amount += PlayersAlive[i];
