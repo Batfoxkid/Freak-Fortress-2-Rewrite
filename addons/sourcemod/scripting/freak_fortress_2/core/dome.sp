@@ -367,12 +367,12 @@ static void Dome_Frame_Shrink()
 				
 				//give bleed if havent been given one
 				if(!TF2_IsPlayerInCondition(client, TFCond_Bleeding))
-					TF2_MakeBleed(client, client, 9999.0);	//Does no damage, ty sourcemod
+					TF2Tools_MakeBleed(client, client, 9999.0);	//Does no damage, ty sourcemod
 			}
 			else if(DomePlayerOutside[client])
 			{
 				//Client is not outside of dome, remove bleed
-				TF2_RemoveCondition(client, TFCond_Bleeding);
+				TF2Tools_RemoveCondition(client, TFCond_Bleeding);
 				DomePlayerOutside[client] = false;
 			}
 			

@@ -360,7 +360,6 @@ public void OnPluginStart()
 	}
 	
 	CreateDetour(gamedata, "CTFPlayer::CanAirDash", CanAirDashPre, CanAirDashPost);
-	CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", PickupWeaponFromOtherPre);
 	
 	delete gamedata;
 	
@@ -833,8 +832,18 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 
 public Action FF2R_OnPickupDroppedWeapon(int client, int weapon)
 {
-	Debug("FF2R_OnPickupDroppedWeapon::%N", client);
-	return CanPickup[client] ? (ClassSwap[client] ? Plugin_Handled : Plugin_Changed) : Plugin_Continue;
+	if(!CanPickup[client])	// Default Logic
+		return Plugin_Continue;
+	
+	if(!ClassSwap[client])	// Always Pickup
+		return Plugin_Changed;
+	
+	if(!PickupWeaponEntity(client, weapon))
+	{
+		RegenerateSupply(client);
+		ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
+	}
+	return Plugin_Handled;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -906,6 +915,36 @@ public Action OnClientCommandKeyValues(int client, KeyValues kv)
 	{
 		PressedInspectKey[client] = command[0] == '+';
 		return Plugin_Handled;
+	}
+
+	if(CanPickup[client] && ClassSwap[client])
+	{
+		int pos = StrContains(command, "use_action_slot_item_server");
+		if(pos == 0 || (pos == 1 && command[0] == '+'))
+		{
+			int entity = GetClientAimTarget(client, false);
+			if(entity > MaxClients)
+			{
+				char classname[32];
+				if(GetEntityClassname(entity, classname, sizeof(classname)) && !StrContains(classname, "tf_dropped_weapon"))
+				{
+					float pos1[3], pos2[3];
+					GetClientEyePosition(client, pos1);
+					GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos2);
+					if(GetVectorDistance(pos1, pos2, true) < 30000.0)
+					{
+						if(!PickupWeaponEntity(client, entity))
+						{
+							RegenerateSupply(client);
+							ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
+						}
+
+						RemoveEntity(entity);
+						return Plugin_Handled;
+					}
+				}
+			}
+		}
 	}
 	
 	return Plugin_Continue;
@@ -1727,22 +1766,6 @@ public MRESReturn CanAirDashPost(int client, DHookReturn ret)
 			ret.Value = true;
 			return MRES_Override;
 		}
-	}
-	return MRES_Ignored;
-}
-
-public MRESReturn PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookParam param)
-{
-	if(CanPickup[client] && ClassSwap[client])
-	{
-		if(!PickupWeaponEntity(client, param.Get(1)))
-		{
-			RegenerateSupply(client);
-			ClientCommand(client, "playgamesound weapons/ball_buster_hit_02.wav");
-		}
-		
-		ret.Value = true;
-		return MRES_Supercede;
 	}
 	return MRES_Ignored;
 }

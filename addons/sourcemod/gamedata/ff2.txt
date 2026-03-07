@@ -4,13 +4,9 @@
 	{
 		"Keys"
 		{
-			"Use_FireEntityOutput"
-			{
-				"linux"		"yes"
-				"linux64"	"yes"
-				"windows"	"yes"
-				"windows64"	"no" // SM Crash
-			}
+			"Use_WaitingForPlayers"	"yes"
+			"Use_WeaponPickups"		"yes"
+			"ScriptDataFolder"		"scriptdata"
 		}
 		"Signatures"
 		{
@@ -69,18 +65,6 @@
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x57\x8B\xF9\x8B\x87\xBC\x1B\x00\x00"
 				//"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xDC\x1E\x00\x00"
 				// DHook Crash
-			}
-			"CTFPlayer::CanPickupDroppedWeapon"
-			{
-				"library"	"server"
-				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x08\x53\x56\x57\x80\xB8\x04\x05\x00\x00\x00"
-				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x56\x57\x41\x56\x48\x83\xEC\x20\x80\xBA\x54\x06\x00\x00\x00"
-			}
-			"CTFPlayer::CanPickupDroppedWeapon.part.0"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
-				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -243,8 +227,168 @@
 			}
 		}
 	}
+	"tf2classified"
+	{
+		"Keys"
+		{
+			"Use_WaitingForPlayers"	"no"
+			"Use_WeaponPickups"		"no"
+			"ScriptDataFolder"		"vscript_io"
+		}
+		"Signatures"
+		{
+			"CTFGameStats::ResetRoundStats"
+			{
+				// "stats_resetround"
+				"library"	"server"
+				"linux64"	"@_ZN12CTFGameStats15ResetRoundStatsEv"
+				//"windows64"	"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x33\xC9\x8B\xD1"
+				// DHook Crash
+			}
+			"CTFGameStats::IncrementStat"
+			{
+				"library"	"server"
+				"linux64"	"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
+				//"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
+			}
+			"CTFPlayer::CheckBlockBackstab"
+			{
+				// "set_blockbackstab_once"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer18CheckBlockBackstabEPS_"
+				"windows64"	"\x40\x55\x57\x41\x56\x48\x83\xEC\x60"
+			}
+			"CTFPlayer::DropAmmoPack"
+			{
+				// "models/items/ammopack_medium.mdl", next to CTFDroppedWeapon funcs
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer12DropAmmoPackERK15CTakeDamageInfobb"
+				"windows64"	"\x48\x89\x5C\x24\x08\x44\x88\x4C\x24\x20"
+			}
+			"CTFPlayer::GetMaxAmmo"
+			{
+				// "mult_maxammo_primary"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer10GetMaxAmmoEii"
+				"windows64"	"\x40\x56\x41\x54\x48\x83\xEC\x48\x48\x89\x5C\x24\x68"
+			}
+			"CTFPlayer::GetMaxAmmo"
+			{
+				// "mult_maxammo_primary"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer10GetMaxAmmoEii"
+				"windows64"	"\x40\x56\x41\x54\x48\x83\xEC\x48\x48\x89\x5C\x24\x68"
+			}
+			"CTFPlayer::RegenThink"
+			{
+				// "add_health_regen"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer10RegenThinkEv"
+				//"windows64"	"\x40\x57\x48\x81\xEC\x60\x01\x00\x00\x48\x8B\x01"
+			}
+			"CTFPlayer::TeamFortress_SetSpeed"
+			{
+				// "mult_player_movespeed_cloaked"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer21TeamFortress_SetSpeedEv"
+				"windows64"	"\x40\x56\x48\x81\xEC\x90\x00\x00\x00"
+			}
+			"CTFPowerup::DropSingleInstance"
+			{
+				// "PowerupRemoveThink"
+				"library"	"server"
+				"linux64"	"@_ZN10CTFPowerup18DropSingleInstanceER6VectorP20CBaseCombatCharacterff"
+				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x49\x8B\xE8\x0F\x29\x74\x24\x20"
+			}
+			"CTFPlayer::SetBlastJumpState"
+			{
+				// unique xref to string "rocket_jump" and "sticky_jump"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer17SetBlastJumpStateEib"
+				"windows64"	"\x48\x89\x5C\x24\x10\x56\x48\x83\xEC\x20\x09\x91\x0C\x27\x00\x00"
+			}
+		}
+		"Offsets"
+		{
+			"CBaseEntity::ChangeTeam"
+			{
+				"linux64"	"110"
+				"windows64"	"109"
+			}
+			"CBaseEntity::ShouldTransmit"
+			{
+				"linux64"	"21"
+				"windows64"	"20"
+			}
+			"CBasePlayer::EquipWearable"
+			{
+				"linux64"	"482"
+				"windows64"	"481"
+			}
+			"CBasePlayer::ForceRespawn"
+			{
+				"linux64"	"375"
+				"windows64"	"374"
+			}
+			"CTeamplayRoundBasedRules::RoundRespawn"
+			{
+				"linux64"	"237"
+				"windows64"	"235"
+			}
+			"CTeamplayRules::SetWinningTeam"
+			{
+				"linux64"	"171"
+				"windows64"	"170"
+			}
+			"CTeam::AddPlayer"
+			{
+				"linux64"	"231"
+				"windows64"	"230"
+			}
+			"CTeam::RemovePlayer"
+			{
+				"linux64"	"232"
+				"windows64"	"231"
+			}
+			"CTFGameRules::GetCaptureValueForPlayer"
+			{
+				"linux64"	"164"
+				"windows64"	"163"
+			}
+			"CTFPlayer::GiveNamedItem"
+			{
+				"linux64"	"543"
+				"windows64"	"535"
+			}
+			"CTFWeaponBase::ApplyPostHitEffects"
+			{
+				"linux64"	"468"
+				"windows64"	"461"
+			}
+			"CTFWeaponBase::ApplyOnInjuredAttributes"
+			{
+				"linux64"	"469"
+				"windows64"	"462"
+			}
+			"m_bitsDamageType"
+			{
+				"linux64"	"60"
+				"windows64"	"60"
+			}
+		}
+	}
 	"#default"
 	{
+		"Keys"
+		{
+			"Use_FireEntityOutput"
+			{
+				"linux"		"yes"
+				"linux64"	"yes"
+				"windows"	"yes"
+				"windows64"	"no" // SM Crash
+			}
+		}
 		"Functions"
 		{
 			"CBaseEntity::ChangeTeam"
@@ -343,39 +487,6 @@
 				"callconv"	"thiscall"
 				"return"	"bool"
 				"this"		"entity"
-			}
-			"CTFPlayer::CanPickupDroppedWeapon"
-			{
-				"signature"	"CTFPlayer::CanPickupDroppedWeapon"
-				"callconv"	"thiscall"
-				"return"	"bool"
-				"this"		"entity"
-				"arguments"
-				{
-					"pWeapon"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-			"CTFPlayer::CanPickupDroppedWeapon.part.0"
-			{
-				"signature"    "CTFPlayer::CanPickupDroppedWeapon.part.0"
-				"callconv"    "cdecl"
-				"return"    "bool"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"    "cbaseentity"
-						"register"    "eax"
-					}
-					"pWeapon"
-					{
-						"type"    "cbaseentity"
-						"register"    "edx"
-					}
-				}
 			}
 			"CTFPlayer::DropAmmoPack"
 			{

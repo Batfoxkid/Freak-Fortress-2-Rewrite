@@ -70,6 +70,14 @@
 	{
 		"en"		"BLU Team"
 	}
+	"Team 4"
+	{
+		"en"		"GRN Team"
+	}
+	"Team 5"
+	{
+		"en"		"YLW Team"
+	}
 	"Point Unlocked"
 	{
 		"en"		"Control Point Unlocked"
@@ -899,6 +907,11 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Successive hits on a boss increases reload time by {3}%%"
+	}
+	"mod recharge time hit stale"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Successive hits on a boss increases recharge time by {3}%%"
 	}
 	"mod stun boss on hit"
 	{

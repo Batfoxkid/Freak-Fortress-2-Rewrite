@@ -54,7 +54,7 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 		if(client && !IsPlayerAlive(client) && GetClientTeam(client) > TFTeam_Spectator)
 		{
 			ChangeClientTeam(client, MercTeam);
-			TF2_RespawnPlayer(client);
+			TF2Tools_RespawnPlayer(client);
 			TF2_SetPlayerClass(client, TFClass_DemoMan);
 			TF2_RemoveAllItems(client);
 			Client(client).MinionType = 2;
@@ -71,7 +71,7 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 					default:
 					{
 						// Wearables
-						TF2_RemoveWearable(client, entity);
+						TF2Tools_RemoveWearable(client, entity);
 					}
 				}
 			}
@@ -81,7 +81,7 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 			
 			SetEntPropFloat(client, Prop_Send, "m_flModelScale", 0.6);
 			SetEntityCollisionGroup(client, 1);
-			TF2_AddCondition(client, TFCond_DisguisedAsDispenser);	// Makes Sentries ignore the player
+			TF2Tools_AddCondition(client, TFCond_DisguisedAsDispenser);	// Makes Sentries ignore the player
 			SetEntityRenderMode(client, RENDER_TRANSCOLOR);
 			SetEntityRenderColor(client, _, _, _, 128);
 			SetEntityHealth(client, 1);

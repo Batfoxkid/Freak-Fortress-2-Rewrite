@@ -67,8 +67,8 @@ static void ReapplyMilk(DataPack pack)
 	int victim = GetClientOfUserId(pack.ReadCell());
 	if(victim)
 	{
-		TF2_RemoveCondition(victim, TFCond_Milked);
-		TF2_AddCondition(victim, TFCond_Milked, 5.0, GetClientOfUserId(pack.ReadCell()));
+		TF2Tools_RemoveCondition(victim, TFCond_Milked);
+		TF2Tools_AddCondition(victim, TFCond_Milked, 5.0, GetClientOfUserId(pack.ReadCell()));
 	}
 	
 	delete pack;
@@ -92,13 +92,13 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 			ApplySelfHealEvent(attacker, maxoverheal - health);
 			
 			if(TF2_IsPlayerInCondition(attacker, TFCond_OnFire))
-				TF2_RemoveCondition(attacker, TFCond_OnFire);
+				TF2Tools_RemoveCondition(attacker, TFCond_OnFire);
 			
 			if(TF2_IsPlayerInCondition(attacker, TFCond_Bleeding))
-				TF2_RemoveCondition(attacker, TFCond_Bleeding);
+				TF2Tools_RemoveCondition(attacker, TFCond_Bleeding);
 			
 			if(TF2_IsPlayerInCondition(attacker, TFCond_Plague))
-				TF2_RemoveCondition(attacker, TFCond_Plague);
+				TF2Tools_RemoveCondition(attacker, TFCond_Plague);
 		}
 	}
 	
@@ -186,7 +186,7 @@ static void Attributes_RedisguiseFrame(DataPack pack)
 	int client = GetClientOfUserId(pack.ReadCell());
 	if(client)
 	{
-		TF2_AddCondition(client, TFCond_Disguised, -1.0);
+		TF2Tools_AddCondition(client, TFCond_Disguised, -1.0);
 		SetEntProp(client, Prop_Send, "m_nDisguiseTeam", pack.ReadCell());
 		SetEntProp(client, Prop_Send, "m_nDisguiseClass", pack.ReadCell());
 		SetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget", pack.ReadCell());
@@ -365,7 +365,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 	
 		value = Attrib_FindOnWeapon(attacker, weapon, "critboost on kill", 31);
 		if(value)
-			TF2_AddCondition(attacker, TFCond_CritOnKill, value);
+			TF2Tools_AddCondition(attacker, TFCond_CritOnKill, value);
 		
 		value = Attrib_FindOnWeapon(attacker, weapon, "add cloak on kill", 158);
 		if(value)
@@ -406,7 +406,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			}
 			
 			if(JarateDamage[victim] <= 0.0)
-				TF2_RemoveCondition(victim, TFCond_Jarated);
+				TF2Tools_RemoveCondition(victim, TFCond_Jarated);
 		}
 		else if(TF2_IsPlayerInCondition(victim, TFCond_MarkedForDeath))
 		{
@@ -418,7 +418,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 			}
 			
 			if(MarkDamage[victim] <= 0.0)
-				TF2_RemoveCondition(victim, TFCond_MarkedForDeath);
+				TF2Tools_RemoveCondition(victim, TFCond_MarkedForDeath);
 		}
 		
 		value = Attrib_FindOnWeapon(attacker, weapon, "heal on kill", 180);
@@ -445,7 +445,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		if(Attrib_FindOnWeapon(attacker, weapon, "decapitate type", 219) && !StrContains(classname, "tf_weapon_sword"))	// Eyelander
 		{
 			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);
-			TF2_AddCondition(attacker, TFCond_DemoBuff);
+			TF2Tools_AddCondition(attacker, TFCond_DemoBuff);
 			SDKCall_SetSpeed(attacker);
 			
 			int maxoverheal = TF2U_GetMaxOverheal(attacker);
@@ -496,11 +496,11 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		}
 		
 		if(Attrib_FindOnWeapon(attacker, weapon, "kill forces attacker to laugh", 409))
-			TF2_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
+			TF2Tools_StunPlayer(attacker, 2.0, 1.0, TF_STUNFLAGS_NORMALBONK);
 		
 		value = Attrib_FindOnWeapon(attacker, weapon, "minicritboost on kill", 613);
 		if(value)
-			TF2_AddCondition(attacker, TFCond_MiniCritOnKill, value);
+			TF2Tools_AddCondition(attacker, TFCond_MiniCritOnKill, value);
 		
 		if(Attrib_FindOnWeapon(attacker, weapon, "clipsize increase on kill", 644))
 		{
@@ -511,7 +511,7 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		
 		value = Attrib_FindOnWeapon(attacker, weapon, "speed_boost_on_kill", 736);
 		if(value)
-			TF2_AddCondition(attacker, TFCond_SpeedBuffAlly, value);
+			TF2Tools_AddCondition(attacker, TFCond_SpeedBuffAlly, value);
 		
 		if(Attrib_FindOnWeapon(attacker, weapon, "add_head_on_kill", 807))
 			SetEntProp(attacker, Prop_Send, "m_iDecapitations", GetEntProp(attacker, Prop_Send, "m_iDecapitations")+1);

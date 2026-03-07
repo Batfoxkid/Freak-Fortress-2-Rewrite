@@ -209,16 +209,20 @@ stock void VScript_CreateBoss(int client)
 
 stock void VScript_ExportConfig(ConfigMap cfg)
 {
+	char filepath[64];
+	SDK_ScriptDataFolder(filepath, sizeof(filepath));
+	StrCat(filepath, sizeof(filepath), "/ff2bosscache.dat");
+
 	if(cfg == null)
 	{
-		DeleteFile("scriptdata/ff2bosscache.dat");
+		DeleteFile(filepath);
 		return;
 	}
 
 	char buffer[16384];
 	CfgToString(buffer, cfg);
 
-	File file = OpenFile("scriptdata/ff2bosscache.dat", "w");
+	File file = OpenFile(filepath, "w");
 	if(file)
 	{
 		file.WriteString(buffer, true);
@@ -264,7 +268,11 @@ static void CfgToString(char file[16384], ConfigMap cfg)
 
 stock ConfigMap VScript_ImportConfig()
 {
-	File file = OpenFile("scriptdata/ff2bosscache.dat", "r");
+	char filepath[64];
+	SDK_ScriptDataFolder(filepath, sizeof(filepath));
+	StrCat(filepath, sizeof(filepath), "/ff2bosscache.dat");
+
+	File file = OpenFile(filepath, "r");
 	if(!file)
 		return null;
 	

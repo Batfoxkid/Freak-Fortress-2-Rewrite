@@ -359,7 +359,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					length = snapBosses.KeyBufferSize(a)+1;
 					char[] bossname = new char[length];
 					snapBosses.GetKey(a, bossname, length);
-					cfgPack.GetArray(bossname, val, sizeof(val));
+					cfgBosses.GetArray(bossname, val, sizeof(val));
 					switch(val.tag)
 					{
 						case KeyValType_Section:
@@ -1787,15 +1787,31 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	SetEntProp(client, Prop_Send, "m_iPlayerSkinOverride", 0);
 	
 	int i = 1;
-	bool value = Cvar[SpecTeam].BoolValue;
-	for(int t = Cvar[SpecTeam].BoolValue ? 0 : 2; t < 4; t++)
+	ArrayList teams = new ArrayList();
+	for(int t = Cvar[SpecTeam].BoolValue ? 0 : 2; t < TFTeam_MAX; t++)
 	{
 		if(team != t)
+		{
 			i += PlayersAlive[t];
+
+			if(teams.FindValue(t) == -1)
+				teams.Push(t);
+		}
+	}
+	
+	// Divide health with number of teams in BvB
+	if(Enabled && Cvar[BossVsBoss].IntValue > 0)
+	{
+		int count = teams.Length;
+		if(count > 1)
+			i /= count;
 	}
 	
 	Bosses_SetHealth(client, i);
+
+	delete teams;
 	
+	bool value = false;
 	if(!Client(client).Cfg.GetInt("fversion", i) || i != 2)
 	{
 		if(!Client(client).Cfg.GetBool("triple", value, false))
@@ -1823,11 +1839,11 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
 	
-	TF2_RegeneratePlayer(client);
+	TF2Tools_RegeneratePlayer(client);
 	
 	if(active)
 	{
-		Bosses_PlaySoundToAll(client, "sound_begin", _, _, _, _, _, SNDVOL_BOSS);
+		Bosses_PlaySoundToAll(client, "sound_begin", .volume = SNDVOL_BOSS);
 		Music_RoundStart();
 	}
 	
@@ -1931,7 +1947,7 @@ static Action Bosses_EquipTimer(Handle timer, int userid)
 
 static void EquipBoss(int client, bool weapons)
 {
-	TF2_RemovePlayerDisguise(client);
+	TF2Tools_RemovePlayerDisguise(client);
 	TF2_RemoveAllItems(client);
 	
 	int i;
@@ -1998,13 +2014,13 @@ static void EquipBoss(int client, bool weapons)
 			case 57, 131, 133, 231, 405, 406, 444, 608, 642, 1099, 1144:
 			{
 				// Wearable weapons
-				TF2_RemoveWearable(client, index);
+				TF2Tools_RemoveWearable(client, index);
 			}
 			default:
 			{
 				// Wearable cosmetics
 				if(!value)
-					TF2_RemoveWearable(client, index);
+					TF2Tools_RemoveWearable(client, index);
 			}
 		}
 	}
@@ -2229,7 +2245,7 @@ void Bosses_Remove(int client)
 		if(IsPlayerAlive(client))
 		{
 			SetEntityHealth(client, 1);
-			TF2_RegeneratePlayer(client);
+			TF2Tools_RegeneratePlayer(client);
 		}
 	}
 }
@@ -2274,7 +2290,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 							GetClientAbsOrigin(target, pos2);
 							if (GetVectorDistance(pos1, pos2, true) < SAPPER_MAX_DISTANCE_SQAURE)
 							{
-								TF2_AddCondition(target, TFCond_Sapped, 4.0);
+								TF2Tools_AddCondition(target, TFCond_Sapped, 4.0);
 								Client(client).SapperCooldownFor = time + 15.0;
 							}
 						}
@@ -2368,9 +2384,9 @@ void Bosses_UseSlot(int client, int low, int high)
 		{
 			IntToString(slot, buffer, sizeof(buffer));
 			
-			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, _, _, _, _, SNDVOL_BOSS) && !MultiBosses())
+			if(!Bosses_PlaySoundToAll(client, "sound_ability_serverwide", buffer, .volume = SNDVOL_BOSS) && !MultiBosses())
 			{
-				Bosses_PlaySoundToAll(client, "sound_ability", buffer, _, _, _, _, SNDVOL_BOSS);
+				Bosses_PlaySoundToAll(client, "sound_ability", buffer, .volume = SNDVOL_BOSS);
 			}
 			else
 			{

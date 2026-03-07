@@ -50,7 +50,7 @@ void ConVar_PluginStart()
 	Cvar[CaptureDomeTime] = CreateConVar("ff2_game_capture_dome_time", "0.0", "Override control point capture time, 0 for map default", _, true, 0.0);
 	Cvar[CaptureDomeStyle] = CreateConVar("ff2_game_capture_dome_style", "0", "Determines how the capture would work when dome activated.\n0 = capturing the dome only changes the team owning the control point\n1 = capturing the dome results in victory of the team that captured the control point", _, true, 0.0, true, 1.0);
 	Cvar[CaptureDomeRadius] = CreateConVar("ff2_game_capture_dome_radius", "0.0", "How much radius of dome closes in. 0 for default", _, true, 0.0);
-	Cvar[BossTeam] = CreateConVar("ff2_game_bossteam", "3", "Default team to use for bosses, 2 = RED, 3 = BLU", _, true, 2.0, true, 3.0);
+	Cvar[BossTeam] = CreateConVar("ff2_game_bossteam", "3", "Default team to use for bosses, 2 = RED, 3 = BLU", _, true, 2.0, true, float(TFTeam_MAX - 1));
 	Cvar[MusicPlaylist] = CreateConVar("ff2_game_playlist", "1", "If to allow players to select any boss theme to listen to", _, true, 0.0, true, 1.0);
 
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

@@ -74,12 +74,10 @@ static void SetupDHook()
 	if(DamageTypeOffset == -1)
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
-	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats);
+	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats, true);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
-	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost);
-
-	if(!CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon.part.0", DHook_CanPickupDroppedWeaponInlinePre, _, true))
-		CreateDetour(gamedata, "CTFPlayer::CanPickupDroppedWeapon", DHook_CanPickupDroppedWeaponPre);
+	CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", DHook_PickupWeaponFromOtherPre, _, !SDK_WeaponPickups());
+	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost, true);
 	
 	ChangeTeam = CreateHook(gamedata, "CBaseEntity::ChangeTeam");
 	ShouldTransmit = CreateHook(gamedata, "CBaseEntity::ShouldTransmit");
@@ -258,26 +256,13 @@ static void DHook_RoundSetup(Event event, const char[] name, bool dontBroadcast)
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) > TFTeam_Spectator)
-			TF2_RespawnPlayer(client);
+			TF2Tools_RespawnPlayer(client);
 	}
 }
 
-static MRESReturn DHook_CanPickupDroppedWeaponPre(int client, DHookReturn ret, DHookParam param)
+static MRESReturn DHook_PickupWeaponFromOtherPre(int client, DHookReturn ret, DHookParam param)
 {
-	int weapon = param.Get(1);
-	return CanPickupDroppedWeapon(ret, client, weapon);
-}
-
-static MRESReturn DHook_CanPickupDroppedWeaponInlinePre(DHookReturn ret, DHookParam param)
-{
-	int client = param.Get(1);
-	int weapon = param.Get(2);
-	return CanPickupDroppedWeapon(ret, client, weapon);
-}
-
-static MRESReturn CanPickupDroppedWeapon(DHookReturn ret, int client, int weapon)
-{
-	switch(Forward_OnPickupDroppedWeapon(client, weapon))
+	switch(Forward_OnPickupDroppedWeapon(client, param.Get(1)))
 	{
 		case Plugin_Continue:
 		{

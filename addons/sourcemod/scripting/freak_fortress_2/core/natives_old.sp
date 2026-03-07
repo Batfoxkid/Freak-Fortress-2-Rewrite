@@ -905,14 +905,14 @@ static any NativeOld_RemoveClientShield(Handle plugin, int params)
 		while((entity = FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
-				TF2_RemoveWearable(client, entity);
+				TF2Tools_RemoveWearable(client, entity);
 		}
 		
 		entity = MaxClients + 1;
 		while((entity = FindEntityByClassname(entity, "tf_wearable_razorback")) != -1)
 		{
 			if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == client && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
-				TF2_RemoveWearable(client, entity);
+				TF2Tools_RemoveWearable(client, entity);
 		}
 	}
 	
@@ -969,7 +969,7 @@ static any NativeOld_MakeBoss(Handle plugin, int params)
 			else
 			{
 				team = -1 - team;
-				if(team < 0 || team > TFTeam_Blue)
+				if(team < 0 || team >= (TFTeam_Red + Configs_TeamCount()))
 					team = 0;
 			}
 			

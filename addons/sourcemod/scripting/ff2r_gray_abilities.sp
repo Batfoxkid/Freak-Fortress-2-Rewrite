@@ -91,7 +91,7 @@
 #include <sourcemod>
 #tryinclude <virtual_address>
 #include <sdkhooks>
-#include <tf2_stocks>
+#include <sdktools>
 #include <morecolors>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -105,6 +105,8 @@
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
+
+#include "freak_fortress_2/tf2tools.sp"
 
 enum
 {
@@ -170,7 +172,7 @@ static const char LoopingRawSounds[][] =
 native void FF2_SetClientGlow(int client, float add, float set=-1.0);
 
 Handle SDKEquipWearable;
-int PlayersAlive[4];
+int PlayersAlive[TFTeam_MAXLimit];
 
 ConVar CvarFriendlyFire;
 ConVar CvarTags;
@@ -183,7 +185,7 @@ Handle RobotRemoveTimer[MAXTF2PLAYERS];
 int PlayingRobotLoop[MAXTF2PLAYERS] = {-1, ...};
 bool Teleporters[MAXTF2PLAYERS];
 ArrayList TeleporterList;
-int BombEnabled[4];
+int BombEnabled[TFTeam_MAXLimit];
 int BombRef = -1;
 int BombCarrier;
 int BombLevel;
@@ -226,20 +228,34 @@ public void OnPluginStart()
 	if(!TranslationPhraseExists("Gray Mann Sentry Buster Spawned"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
-	GameData gamedata = new GameData("sm-tf2.games");
+	TF2Tools_PluginStart();
 	
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	SDKEquipWearable = EndPrepSDKCall();
-	if(!SDKEquipWearable)
-		LogError("[Gamedata] Could not find RemoveWearable");
-	
-	delete gamedata;
-	
-	gamedata = new GameData("ff2");
-	
-	delete gamedata;
+	if(TF2Tools_Loaded())
+	{
+		GameData gamedata = new GameData("sm-tf2.games");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("RemoveWearable") - 1);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find RemoveWearable");
+		
+		delete gamedata;
+	}
+	else
+	{
+		GameData gamedata = new GameData("ff2");
+		
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetVirtual(gamedata.GetOffset("CBasePlayer::EquipWearable"));
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		SDKEquipWearable = EndPrepSDKCall();
+		if(!SDKEquipWearable)
+			LogError("[Gamedata] Could not find CBasePlayer::EquipWearable");
+		
+		delete gamedata;
+	}
 	
 	Attrib_PluginStart();
 	TF2U_PluginStart();
@@ -388,7 +404,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 			if(ability.IsMyPlugin())
 			{
 				int players;
-				for(int i; i < 4; i++)
+				for(int i; i < TFTeam_MAX; i++)
 				{
 					players += PlayersAlive[i];
 				}
@@ -511,7 +527,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 	if(ability.IsMyPlugin())
 	{
 		if(ability.GetBool("death", true))
-			TF2_AddCondition(client, TFCond_PreventDeath);
+			TF2Tools_AddCondition(client, TFCond_PreventDeath);
 
 		if(ability.GetBool("thirdperson"))
 		{
@@ -570,9 +586,9 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 	}
 }
 
-public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
+public void FF2R_OnAliveChanged2(const int[] alive, const int[] total, int teams)
 {
-	for(int i; i < 4; i++)
+	for(int i; i < teams && i < sizeof(PlayersAlive); i++)
 	{
 		PlayersAlive[i] = alive[i];
 	}
@@ -593,6 +609,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
+	TF2Tools_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 }
@@ -601,6 +618,7 @@ public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
+	TF2Tools_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 }
@@ -635,7 +653,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 {
 	switch(condition)
 	{
-		case TFCond_HalloweenKartNoTurn:
+		case TFCond_DisguisedAsDispenser:
 		{
 			if(TeleporterList && FF2R_GetClientMinion(client) && !FF2R_GetBossData(client))
 			{
@@ -651,8 +669,8 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 					SetEntProp(client, Prop_Send, "m_bDucked", 1);
 					SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
 
-					TF2_RemoveCondition(client, TFCond_MegaHeal);
-					TF2_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
+					TF2Tools_RemoveCondition(client, TFCond_MegaHeal);
+					TF2Tools_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
 					EmitGameSoundToClient(client, "MVM.Robot_Teleporter_Deliver");
 				}
 			}
@@ -763,7 +781,7 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						for(int target = 1; target <= MaxClients; target++)
 						{
 							if(IsClientInGame(target) && IsPlayerAlive(target) && team == GetClientTeam(target) && FF2R_GetClientMinion(target))
-								TF2_StunPlayer(target, stun, 1.0, TF_STUNFLAGS_NORMALBONK);
+								TF2Tools_StunPlayer(target, stun, 1.0, TF_STUNFLAGS_NORMALBONK);
 						}
 					}
 				}
@@ -1132,7 +1150,7 @@ void OnBombPickup(const char[] output, int caller, int activator, float delay)
 		{
 			Attrib_Set(activator, "move speed penalty", 54, 0.5);
 			Attrib_Set(activator, "increase player capture value", 68, 1.01);
-			TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+			TF2Tools_AddCondition(activator, TFCond_Dazed, 0.01);
 
 			ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_PICKUP");
 		}
@@ -1149,7 +1167,7 @@ void OnBombDropped(const char[] output, int caller, int activator, float delay)
 	{
 		Attrib_Remove(activator, "move speed penalty", 54);
 		Attrib_Remove(activator, "increase player capture value", 68);
-		TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+		TF2Tools_AddCondition(activator, TFCond_Dazed, 0.01);
 
 		ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_DROPPED");
 	}
@@ -1207,7 +1225,7 @@ Action Timer_BombThink(Handle timer)
 				BombLevel++;
 
 				FakeClientCommand(BombCarrier, "taunt");
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenKartNoTurn, 3.0);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenKartNoTurn, 3.0);
 				EmitGameSoundToAll("MVM.Warning");
 			}
 		}
@@ -1223,15 +1241,15 @@ Action Timer_BombThink(Handle timer)
 				{
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos2);
 					if(GetVectorDistance(pos1, pos2, true) < 90000.0)
-						TF2_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
+						TF2Tools_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
 				}
 			}
 
 			if(BombLevel > 1)
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenQuickHeal, 1.1);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenQuickHeal, 1.1);
 
 			if(BombLevel > 2)
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenCritCandy, 1.1);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenCritCandy, 1.1);
 		}
 	}
 	return Plugin_Continue;
@@ -1309,7 +1327,7 @@ Action Interval_Timer(Handle timer, int client)
 		}
 
 		int players;
-		for(int i; i < 4; i++)
+		for(int i; i < TFTeam_MAX; i++)
 		{
 			players += PlayersAlive[i];
 		}
@@ -1431,8 +1449,8 @@ void DoSentryBuster(int client)
 {
 	if(!IsInvuln(client))
 	{
-		TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, 10.0);
-		TF2_AddCondition(client, TFCond_HalloweenKartNoTurn, 15.0);
+		TF2Tools_AddCondition(client, TFCond_UberchargedOnTakeDamage, 10.0);
+		TF2Tools_AddCondition(client, TFCond_HalloweenKartNoTurn, 15.0);
 
 		SetEntityHealth(client, 1);
 		SDKHook(client, SDKHook_PreThink, SentryBusterDelay);

@@ -76,7 +76,7 @@
 #include <sourcemod>
 #tryinclude <virtual_address>
 #include <sdkhooks>
-#include <tf2_stocks>
+#include <sdktools>
 #include <adt_trie_sort>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -89,6 +89,9 @@
 #define PLUGIN_VERSION	"Custom"
 
 #define ABILITY_NAME	"special_menu_manager"
+
+#define TFTeam_Spectator		1
+#define TF_DEATHFLAG_DEADRINGER	(1 << 5)
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
@@ -469,7 +472,7 @@ public bool ShowMenuAll(int client, bool ticked)
 				if(client != i && IsClientInGame(i) && IsClientObserver(i) && GetEntPropEnt(i, Prop_Send, "m_hObserverTarget") == client && (ViewingMenu[i] || (enabled && GetClientMenu(i) == MenuSource_None)))
 				{
 					int team2 = GetClientTeam(i);
-					if(team2 == view_as<int>(TFTeam_Spectator) || team1 == team2)
+					if(team2 == TFTeam_Spectator || team1 == team2)
 						ShowMenu(i, client, boss, ability, enabled, false);
 				}
 			}
@@ -615,7 +618,7 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 					if(IsPlayerAlive(i) && team1 == team2)
 						allies++;
 				}
-				else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
+				else if(team1 == team2 || team2 > TFTeam_Spectator)
 				{
 					if(team1 == team2 || !IsPlayerAlive(i))
 						summonable++;
@@ -903,7 +906,7 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 													if(IsPlayerAlive(i) && team1 == team2)
 														allies++;
 												}
-												else if(team1 == team2 || team2 > view_as<int>(TFTeam_Spectator))
+												else if(team1 == team2 || team2 > TFTeam_Spectator)
 												{
 													if(team1 == team2 || !IsPlayerAlive(i))
 														summonable++;

@@ -196,6 +196,7 @@ native int FF2R_GetSpecialCount();
  * @return		Plugin_Changed if the count was changed, Plugin_Handled to also prevent lastman and control point logic, Plugin_Stop to also prevent post forwards from being called
  */
 forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
+forward Action FF2R_OnAliveChange2(int[] alive, int[] total, int teams);
 
 /**
  * Called when a player spawns, dies, disconnects, etc.
@@ -208,6 +209,7 @@ forward Action FF2R_OnAliveChange(int alive[4], int total[4]);
  * @noreturn
  */
 forward void FF2R_OnAliveChanged(const int alive[4], const int total[4]);
+forward void FF2R_OnAliveChanged2(const int[] alive, const int[] total, int teams);
 
 /**
  * Called when a boss gets removed
@@ -226,7 +228,7 @@ forward void FF2R_OnBossRemoved(int client);
  * @param client	Client index
  * @param weapon	Entity index of dropped weapon
  * 
- * @return		Plugin_Changed to let the game decide, Plugin_Handled to allow pickup, Plugin_Stop to block pickup
+ * @return		Plugin_Changed for normal logic, Plugin_Handled for deleting the weapon, Plugin_Stop for blocking all logic
  */
 forward Action FF2R_OnPickupDroppedWeapon(int client, int weapon);
 
