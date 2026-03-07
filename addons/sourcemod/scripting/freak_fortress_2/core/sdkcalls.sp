@@ -7,6 +7,7 @@
 #endif
 
 static bool UseFireEntityOutput;
+static char ScriptDataFolder[32];
 
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
@@ -49,6 +50,10 @@ void SDKCall_Setup()
 
 	UseFireEntityOutput = !gamedata.GetKeyValue("Use_FireEntityOutput", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
 	
+	gamedata.GetKeyValue("ScriptDataFolder", ScriptDataFolder, sizeof(ScriptDataFolder));
+	if(!ScriptDataFolder[0])
+		strcopy(ScriptDataFolder, sizeof(ScriptDataFolder), "scriptdata");
+
 	StartPrepSDKCall(SDKCall_Entity);
 	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer"))
 	{
@@ -127,6 +132,11 @@ bool SDKAllow_FireEntityOutput()
 	return UseFireEntityOutput;
 }
 
+int SDKKey_ScriptDataFolder(char[] buffer, int length)
+{
+	return strcopy(buffer, length, ScriptDataFolder);
+}
+
 bool SDKCall_CheckBlockBackstab(int client, int attacker)
 {
 	if(SDKCheckBlockBackstab)
@@ -176,7 +186,7 @@ void SDKCall_SetSpeed(int client)
 	}
 	else
 	{
-		TF2_AddCondition(client, TFCond_SpeedBuffAlly, 0.001);
+		TF2Tools_AddCondition(client, TFCond_Dazed, 0.001);
 	}
 }
 

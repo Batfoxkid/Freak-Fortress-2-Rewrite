@@ -345,7 +345,7 @@
 #include <sourcemod>
 #tryinclude <virtual_address>
 #include <sdkhooks>
-#include <tf2_stocks>
+#include <sdktools>
 #include <morecolors>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -361,6 +361,8 @@
 #define FAR_FUTURE		100000000.0
 
 #define TF_PLAYER_ENEMY_BLASTED_ME (1 << 2)
+
+#include "freak_fortress_2/tf2tools.sp"
 
 Handle SDKEquipWearable;
 Handle SDKGetMaxHealth;
@@ -446,6 +448,8 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	if(!TranslationPhraseExists("Boss Demo Charge 13"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
+	
+	TF2Tools_PluginStart();
 	
 	GameData gamedata = new GameData("sm-tf2.games");
 	
@@ -567,6 +571,7 @@ public void OnLibraryAdded(const char[] name)
 	Attrib_LibraryAdded(name);
 	CustomAttrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
+	TF2Tools_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 }
@@ -576,6 +581,7 @@ public void OnLibraryRemoved(const char[] name)
 	Attrib_LibraryRemoved(name);
 	CustomAttrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
+	TF2Tools_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 }
@@ -742,9 +748,9 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	{
 		if(!TF2_IsPlayerInCondition(client, TFCond_HalloweenKartNoTurn))
 		{
-			TF2_RemoveCondition(client, TFCond_DisguisedAsDispenser);
-			TF2_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
-			TF2_RemoveCondition(client, TFCond_MegaHeal);
+			TF2Tools_RemoveCondition(client, TFCond_DisguisedAsDispenser);
+			TF2Tools_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
+			TF2Tools_RemoveCondition(client, TFCond_MegaHeal);
 		}
 	}
 	
@@ -768,7 +774,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					{
 						if(AnchorStartTime[client] < (gameTime - ability.GetFloat("full", 3.5)))
 						{
-							TF2_AddCondition(client, TFCond_MegaHeal, 0.05, client);
+							TF2Tools_AddCondition(client, TFCond_MegaHeal, 0.05, client);
 							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 						}
@@ -781,7 +787,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							}
 							
 							Attrib_Set(client, "damage force reduction", 252, 0.0);
-							TF2_AddCondition(client, TFCond_InHealRadius, 0.05, client);
+							TF2Tools_AddCondition(client, TFCond_InHealRadius, 0.05, client);
 							if(SDKSetSpeed && GetEntPropFloat(client, Prop_Send, "m_flMaxspeed") > 5.0)
 								SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", ability.GetFloat("speed", 175.0) * 3.0);
 						}
@@ -1393,8 +1399,10 @@ public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 		float duration = GetFormula(cfg, "duration", TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)), 5.0);
 		
 		SpecialUber[client] = GetGameTime() + duration;
-		SetEntProp(client, Prop_Data, "m_takedamage", 0);
-		TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, duration, client);
+		TF2Tools_AddCondition(client, TFCond_UberchargedOnTakeDamage, duration, client);
+
+		if(TF2Tools_Loaded())
+			SetEntProp(client, Prop_Data, "m_takedamage", 0);
 	}
 	else if(!StrContains(ability, "rage_overlay", false))
 	{
@@ -1881,11 +1889,11 @@ void OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
 			float duration = SpecialUber[client] + 1.5;
 			
 			SpecialUber[client] = 0.0;
-			TF2_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
+			TF2Tools_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
 			
 			SpecialUber[client] = duration;
 			duration -= GetGameTime();
-			TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, duration, client);
+			TF2Tools_AddCondition(client, TFCond_UberchargedOnTakeDamage, duration, client);
 		}
 	}
 }
@@ -2053,14 +2061,18 @@ Action Timer_RageStun(Handle timer, DataPack pack)
 		else if(victims == 1)
 		{
 			duration = soloduration;
-			SoloVictim[victim[0]] = true;
 			
-			for(int target = 1; target <= MaxClients; target++)
+			if(TF2Tools_Loaded())
 			{
-				if(IsClientInGame(target))
+				SoloVictim[victim[0]] = true;
+				
+				for(int target = 1; target <= MaxClients; target++)
 				{
-					GetBossNameCfg(boss, buffer, sizeof(buffer), GetClientLanguage(target));
-					CPrintToChatEx(target, client, "%t%t", "Prefix", "Boss Solo Rage", buffer);
+					if(IsClientInGame(target))
+					{
+						GetBossNameCfg(boss, buffer, sizeof(buffer), GetClientLanguage(target));
+						CPrintToChatEx(target, client, "%t%t", "Prefix", "Boss Solo Rage", buffer);
+					}
 				}
 			}
 		}
@@ -2076,9 +2088,9 @@ Action Timer_RageStun(Handle timer, DataPack pack)
 			for(int i; i<victims; i++)
 			{
 				if(basejumper)
-					TF2_RemoveCondition(victim[i], TFCond_Parachute);
+					TF2Tools_RemoveCondition(victim[i], TFCond_Parachute);
 				
-				TF2_StunPlayer(victim[i], duration * GetPlayerStunMulti(victim[i]), slowdown, flags, sound ? client : 0);
+				TF2Tools_StunPlayer(victim[i], duration * GetPlayerStunMulti(victim[i]), slowdown, flags, sound ? client : 0);
 				
 				if(particle[0])
 					AttachParticle(victim[i], particle, duration);
@@ -2322,7 +2334,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	
 	TFClassType class = TF2_GetPlayerClass(client);
 	GetClassWeaponClassname(class, classname, sizeof(classname));
-	bool wearable = StrContains(classname, "tf_weap") != 0;
+	bool wearable = StrContains(classname, "tf_weap") != 0 && StrContains(classname, "tf2c_weap") != 0;
 
 	float lifetime = cfg.GetFloat("lifetime");
 
@@ -2333,7 +2345,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 	if(!wearable && lifetime <= 0.0)
 	{
 		if(slot >= 0 && slot < 6)
-			TF2_RemoveWeaponSlot(client, slot);
+			TF2Tools_RemoveWeaponSlot(client, slot);
 	}
 	
 	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, true);
@@ -2412,7 +2424,7 @@ Action Timer_RemoveItem(Handle timer, DataPack pack)
 		{
 			if(pack.ReadCell())
 			{
-				TF2_RemoveWearable(client, entity);
+				TF2Tools_RemoveWearable(client, entity);
 			}
 			else
 			{
@@ -2430,7 +2442,7 @@ Action Timer_RemoveItem(Handle timer, DataPack pack)
 							if(HasEntProp(entity, Prop_Send, "m_iWeaponState")) //Reset minigun-like weapons
 							{
 								SetEntProp(entity, Prop_Send, "m_iWeaponState", 0);
-								TF2_RemoveCondition(client, TFCond_Slowed);
+								TF2Tools_RemoveCondition(client, TFCond_Slowed);
 							}
 
 							TF2U_SetPlayerActiveWeapon(client, other);
@@ -2579,7 +2591,7 @@ void SpawnCloneList(int[][] clients, int amount, ConfigData cfg, int owner, int 
 		vel[1] = GetRandomFloat(-500.0, 500.0);
 		vel[2] = GetRandomFloat(300.0, 500.0);
 		
-		TF2_RespawnPlayer(client);
+		TF2Tools_RespawnPlayer(client);
 		SetEntProp(client, Prop_Send, "m_bDucked", true);
 		SetEntityFlags(client, GetEntityFlags(client) | FL_DUCKING);
 
@@ -2587,11 +2599,14 @@ void SpawnCloneList(int[][] clients, int amount, ConfigData cfg, int owner, int 
 			TeleportEntity(client, pos, _, vel);
 		
 		// Lessen the strength cap between active and AFK players
-		CloneIdle[client] = true;
-		TF2_AddCondition(client, TFCond_HalloweenKartNoTurn, 2.0);
-		TF2_AddCondition(client, TFCond_DisguisedAsDispenser, 20.0);
-		TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, 20.0);
-		TF2_AddCondition(client, TFCond_MegaHeal, 15.0);
+		if(TF2Tools_Loaded())
+		{
+			CloneIdle[client] = true;
+			TF2Tools_AddCondition(client, TFCond_HalloweenKartNoTurn, 2.0);
+			TF2Tools_AddCondition(client, TFCond_DisguisedAsDispenser, 20.0);
+			TF2Tools_AddCondition(client, TFCond_UberchargedOnTakeDamage, 20.0);
+			TF2Tools_AddCondition(client, TFCond_MegaHeal, 15.0);
+		}
 		
 		if(owner > 0)
 			SDKHook(client, SDKHook_OnTakeDamage, CloneTakeDamage);
@@ -2867,12 +2882,12 @@ void Rage_TeleportToTarget(int client, int target, ConfigData cfg)
 		bool sound = cfg.GetBool("sound");
 
 		if(slowdown > 0.0)
-			TF2_RemoveCondition(client, TFCond_MegaHeal);
+			TF2Tools_RemoveCondition(client, TFCond_MegaHeal);
 		
-		TF2_StunPlayer(client, stun, slowdown, flags, sound ? client : 0);
+		TF2Tools_StunPlayer(client, stun, slowdown, flags, sound ? client : 0);
 		SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + stun);
 
-		TF2_AddCondition(target, TFCond_UberchargedHidden, 0.2, client);
+		TF2Tools_AddCondition(target, TFCond_UberchargedHidden, 0.2, client);
 
 		char particle[48];
 		if(cfg.GetString("particle", particle, sizeof(particle)))
@@ -3165,7 +3180,7 @@ TFClassType GetClassOfName(const char[] buffer)
 {
 	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
 	if(class == TFClass_Unknown)
-		class = TF2_GetClass(buffer);
+		class = TF2Tools_GetClass(buffer);
 	
 	return class;
 }
@@ -3202,11 +3217,11 @@ void TF2_RemoveItem(int client, int weapon)
 {
 	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
 	if(entity != -1)
-		TF2_RemoveWearable(client, entity);
+		TF2Tools_RemoveWearable(client, entity);
 
 	entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearableViewModel");
 	if(entity != -1)
-		TF2_RemoveWearable(client, entity);
+		TF2Tools_RemoveWearable(client, entity);
 
 	RemovePlayerItem(client, weapon);
 	RemoveEntity(weapon);

@@ -139,7 +139,7 @@ void Forward_OnAbilityPost(int client, const char[] ability, ConfigMap cfg)
 
 Action Forward_OnAliveChange()
 {
-	int alive[TFTeam_MAX], maxalive[TFTeam_MAX];
+	int alive[TFTeam_MAXLimit], maxalive[TFTeam_MAXLimit];
 	for(int i; i < TFTeam_MAX; i++)
 	{
 		alive[i] = PlayersAlive[i];

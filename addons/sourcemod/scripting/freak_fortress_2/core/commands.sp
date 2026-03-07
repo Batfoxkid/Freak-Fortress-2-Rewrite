@@ -324,7 +324,7 @@ static Action Command_JoinClass(int client, const char[] command, int args)
 		{
 			char class[16];
 			GetCmdArg(1, class, sizeof(class));
-			TFClassType num = TF2_GetClass(class);
+			TFClassType num = TF2Tools_GetClass(class);
 			if(num != TFClass_Unknown)
 				SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", num);
 		

@@ -1,6 +1,6 @@
 "Games"
 {
-	"tf"
+	"#default"
 	{
 		"Keys"
 		{
@@ -11,7 +11,19 @@
 				"windows"	"yes"
 				"windows64"	"no" // SM Crash
 			}
+
+			"ScriptDataFolder"	"scriptdata"
 		}
+	}
+	"tf2classified"
+	{
+		"Keys"
+		{
+			"ScriptDataFolder"	"vscript_io"
+		}
+	}
+	"tf"
+	{
 		"Signatures"
 		{
 			"CTFDroppedWeapon::Create"
@@ -69,18 +81,6 @@
 				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x57\x8B\xF9\x8B\x87\xBC\x1B\x00\x00"
 				//"windows64"	"\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x8B\x81\xDC\x1E\x00\x00"
 				// DHook Crash
-			}
-			"CTFPlayer::CanPickupDroppedWeapon"
-			{
-				"library"	"server"
-				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x08\x53\x56\x57\x80\xB8\x04\x05\x00\x00\x00"
-				"windows64"	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x18\x56\x57\x41\x56\x48\x83\xEC\x20\x80\xBA\x54\x06\x00\x00\x00"
-			}
-			"CTFPlayer::CanPickupDroppedWeapon.part.0"
-			{
-				"library"	"server"
-				"linux"		"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
-				"linux64"	"@_ZN9CTFPlayer22CanPickupDroppedWeaponEPK16CTFDroppedWeapon.part.0"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -343,39 +343,6 @@
 				"callconv"	"thiscall"
 				"return"	"bool"
 				"this"		"entity"
-			}
-			"CTFPlayer::CanPickupDroppedWeapon"
-			{
-				"signature"	"CTFPlayer::CanPickupDroppedWeapon"
-				"callconv"	"thiscall"
-				"return"	"bool"
-				"this"		"entity"
-				"arguments"
-				{
-					"pWeapon"
-					{
-						"type"	"cbaseentity"
-					}
-				}
-			}
-			"CTFPlayer::CanPickupDroppedWeapon.part.0"
-			{
-				"signature"    "CTFPlayer::CanPickupDroppedWeapon.part.0"
-				"callconv"    "cdecl"
-				"return"    "bool"
-				"arguments"
-				{
-					"pPlayer"
-					{
-						"type"    "cbaseentity"
-						"register"    "eax"
-					}
-					"pWeapon"
-					{
-						"type"    "cbaseentity"
-						"register"    "edx"
-					}
-				}
 			}
 			"CTFPlayer::DropAmmoPack"
 			{

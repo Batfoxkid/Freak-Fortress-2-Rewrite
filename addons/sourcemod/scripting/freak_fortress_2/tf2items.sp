@@ -82,6 +82,7 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	strcopy(classname2, sizeof(classname2), classname);
 	
 	if(StrContains(classname2, "tf_") != 0 &&
+		StrContains(classname2, "tf2c_") != 0 &&
 		!StrEqual(classname2, "saxxy"))
 	{
 		if(!cfg.Get("name", classname2, sizeof(classname2)))
@@ -90,7 +91,7 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	
 	TFClassType class = TF2_GetPlayerClass(client);
 	GetClassWeaponClassname(class, classname2, sizeof(classname2));
-	bool wearable = StrContains(classname2, "tf_weap") != 0;
+	bool wearable = StrContains(classname2, "tf_weap") != 0 && StrContains(classname2, "tf2c_weap") != 0;
 	
 	int index = 0;
 	cfg.GetInt("index", index);
@@ -450,7 +451,7 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 	
 	TFClassType class = TF2_GetPlayerClass(client);
 	GetClassWeaponClassname(class, data.Classname, sizeof(data.Classname));
-	bool wearable = StrContains(data.Classname, "tf_weap") != 0;
+	bool wearable = StrContains(data.Classname, "tf_weap") != 0 && StrContains(data.Classname, "tf2c_weap") != 0;
 	
 	int kills = -1;
 	if(data.Rank < 0 && data.Level == -1 && !data.Override)

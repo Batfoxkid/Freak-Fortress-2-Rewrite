@@ -43,7 +43,7 @@ SectionType GetSectionType(const char[] buffer)
 	if(!StrContains(buffer, "map_"))
 		return Section_Map;
 
-	if(!StrContains(buffer, "weapon") || !StrContains(buffer, "wearable") || !StrContains(buffer, "tf_") || StrEqual(buffer, "saxxy"))
+	if(!StrContains(buffer, "weapon") || !StrContains(buffer, "wearable") || !StrContains(buffer, "tf_") || !StrContains(buffer, "tf2c_") || StrEqual(buffer, "saxxy"))
 		return Section_Weapon;
 
 	return Section_Ability;
@@ -87,7 +87,7 @@ TFClassType GetClassOfName(const char[] buffer)
 {
 	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
 	if(class == TFClass_Unknown)
-		class = TF2_GetClass(buffer);
+		class = TF2Tools_GetClass(buffer);
 	
 	return class;
 }
@@ -694,11 +694,11 @@ void TF2_RemoveItem(int client, int weapon)
 {
 	int entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearable");
 	if(entity != -1)
-		TF2_RemoveWearable(client, entity);
+		TF2Tools_RemoveWearable(client, entity);
 
 	entity = GetEntPropEnt(weapon, Prop_Send, "m_hExtraWearableViewModel");
 	if(entity != -1)
-		TF2_RemoveWearable(client, entity);
+		TF2Tools_RemoveWearable(client, entity);
 
 	RemovePlayerItem(client, weapon);
 	RemoveEntity(weapon);
@@ -740,7 +740,7 @@ bool TF2_IsCritBoosted(int client)
 
 int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 {
-	if(StrContains(classname, "tf_weapon_"))
+	if(StrContains(classname, "tf_weapon_") == -1 && StrContains(classname, "tf2c_weapon_") == -1)
 	{
 		return -1;
 	}
@@ -761,7 +761,12 @@ int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 	  !StrContains(classname, "tf_weapon_syringegun_medic") ||
 	  !StrContains(classname, "tf_weapon_crossbow") ||
 	  !StrContains(classname, "tf_weapon_sniperrifle") ||
-	  !StrContains(classname, "tf_weapon_compound_bow"))
+	  !StrContains(classname, "tf_weapon_compound_bow") ||
+	  !StrContains(classname, "tf2c_weapon_nailgun") ||
+	  !StrContains(classname, "tf2c_weapon_hunting_revolver") ||
+	  !StrContains(classname, "tf2c_weapon_tranq") ||
+	  !StrContains(classname, "tf2c_weapon_aagun") ||
+	  !StrContains(classname, "tf2c_weapon_cyclops"))
 	{
 		return TFWeaponSlot_Primary;
 	}
@@ -780,7 +785,11 @@ int TF2_GetClassnameSlot(const char[] classname, bool econ = false)
 	  !StrContains(classname, "tf_weapon_mechanical_arm") ||
 	  !StrContains(classname, "tf_weapon_medigun") ||
 	  !StrContains(classname, "tf_weapon_smg") ||
-	  !StrContains(classname, "tf_weapon_charged_smg"))
+	  !StrContains(classname, "tf_weapon_charged_smg") ||
+	  !StrContains(classname, "tf2c_weapon_coilgun") ||
+	  !StrContains(classname, "tf2c_weapon_doubleshotgun") ||
+	  !StrContains(classname, "tf2c_weapon_brick") ||
+	  !StrContains(classname, "tf2c_weapon_heallauncher"))
 	{
 		return TFWeaponSlot_Secondary;
 	}

@@ -22,7 +22,6 @@ void Events_PluginStart()
 	HookEvent("player_chargedeployed", Events_UberDeployed, EventHookMode_Post);
 	HookEvent("post_inventory_application", Events_InventoryApplication, EventHookMode_Pre);
 	HookEvent("rps_taunt_event", Events_RPSTaunt, EventHookMode_Post);
-	HookEvent("scorestats_accumulated_update", Events_RoundReset, EventHookMode_Post);
 	HookEvent("teamplay_broadcast_audio", Events_BroadcastAudio, EventHookMode_Pre);
 	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
@@ -47,7 +46,7 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		PlayersAlive[i] = 0;
 	}
 	
-	bool nonTeuton[TFTeam_MAX];
+	bool nonTeuton[TFTeam_MAXLimit];
 	bool spec = Cvar[SpecTeam].BoolValue;
 	int redBoss, bluBoss;
 	for(int i = 1; i <= MaxClients; i++)
@@ -169,11 +168,6 @@ static void Events_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 	Gamemode_RoundEnd(event.GetInt("team"));
 }
 
-static void Events_RoundReset(Event event, const char[] name, bool dontBroadcast)
-{
-	Gamemode_RoundReset();
-}
-
 static Action Events_BroadcastAudio(Event event, const char[] name, bool dontBroadcast)
 {
 	if(Enabled)
@@ -213,7 +207,7 @@ static Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 			{
 				//TODO: Check for m_bIsTeleportingUsingEurekaEffect instead
 				if(TF2_IsPlayerInCondition(client, TFCond_Taunting))
-					TF2_RemoveCondition(client, TFCond_Taunting);
+					TF2Tools_RemoveCondition(client, TFCond_Taunting);
 			}
 		}
 	}
@@ -299,7 +293,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
 					{
 						Debug("Found Bad Wearable");
-						TF2_RemoveWearable(client, entity);
+						TF2Tools_RemoveWearable(client, entity);
 						found = true;
 					}
 				}*/
@@ -308,7 +302,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 				{
 					InRegen = true;
 					Debug("Regenerating");
-					TF2_RegeneratePlayer(client);
+					TF2Tools_RegeneratePlayer(client);
 					InRegen = false;
 					// If it finds bad weapons twice, we can assume it's some other plugin doing this
 					return Plugin_Continue;
@@ -540,7 +534,7 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				while(TF2U_GetWearable(victim, entity, i))
 				{
 					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
-						TF2_RemoveWearable(victim, entity);
+						TF2Tools_RemoveWearable(victim, entity);
 				}
 			}
 			
@@ -622,14 +616,14 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 										}
 									}
 									
-									if(view_as<int>(class) >= sizeof(TFClassName))
-										class = TFClass_Unknown;
+									char classname[16];
+									TF2Tools_GetClassName(class, classname, sizeof(classname));
 									
-									played = Bosses_PlaySoundToAll(attacker, "sound_kill", TFClassName[class], attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
+									played = Bosses_PlaySoundToAll(attacker, "sound_kill", classname, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 									if(!played)
 									{
 										char buffer[20];
-										FormatEx(buffer, sizeof(buffer), "sound_kill_%s", TFClassName[class]);
+										FormatEx(buffer, sizeof(buffer), "sound_kill_%s", classname);
 										played = Bosses_PlaySoundToAll(attacker, buffer, _, attacker, SNDCHAN_AUTO, SNDLEVEL_AIRCRAFT, _, SNDVOL_BOSS);
 									}
 								}

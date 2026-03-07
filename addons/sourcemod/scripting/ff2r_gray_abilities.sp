@@ -91,7 +91,7 @@
 #include <sourcemod>
 #tryinclude <virtual_address>
 #include <sdkhooks>
-#include <tf2_stocks>
+#include <sdktools>
 #include <morecolors>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -105,6 +105,8 @@
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
+
+#include "freak_fortress_2/tf2tools.sp"
 
 enum
 {
@@ -225,6 +227,8 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	if(!TranslationPhraseExists("Gray Mann Sentry Buster Spawned"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
+	
+	TF2Tools_PluginStart();
 	
 	GameData gamedata = new GameData("sm-tf2.games");
 	
@@ -511,7 +515,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 	if(ability.IsMyPlugin())
 	{
 		if(ability.GetBool("death", true))
-			TF2_AddCondition(client, TFCond_PreventDeath);
+			TF2Tools_AddCondition(client, TFCond_PreventDeath);
 
 		if(ability.GetBool("thirdperson"))
 		{
@@ -593,6 +597,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
+	TF2Tools_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 }
@@ -601,6 +606,7 @@ public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
+	TF2Tools_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 }
@@ -635,7 +641,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 {
 	switch(condition)
 	{
-		case TFCond_HalloweenKartNoTurn:
+		case TFCond_DisguisedAsDispenser:
 		{
 			if(TeleporterList && FF2R_GetClientMinion(client) && !FF2R_GetBossData(client))
 			{
@@ -651,8 +657,8 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 					SetEntProp(client, Prop_Send, "m_bDucked", 1);
 					SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
 
-					TF2_RemoveCondition(client, TFCond_MegaHeal);
-					TF2_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
+					TF2Tools_RemoveCondition(client, TFCond_MegaHeal);
+					TF2Tools_RemoveCondition(client, TFCond_UberchargedOnTakeDamage);
 					EmitGameSoundToClient(client, "MVM.Robot_Teleporter_Deliver");
 				}
 			}
@@ -763,7 +769,7 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						for(int target = 1; target <= MaxClients; target++)
 						{
 							if(IsClientInGame(target) && IsPlayerAlive(target) && team == GetClientTeam(target) && FF2R_GetClientMinion(target))
-								TF2_StunPlayer(target, stun, 1.0, TF_STUNFLAGS_NORMALBONK);
+								TF2Tools_StunPlayer(target, stun, 1.0, TF_STUNFLAGS_NORMALBONK);
 						}
 					}
 				}
@@ -1132,7 +1138,7 @@ void OnBombPickup(const char[] output, int caller, int activator, float delay)
 		{
 			Attrib_Set(activator, "move speed penalty", 54, 0.5);
 			Attrib_Set(activator, "increase player capture value", 68, 1.01);
-			TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+			TF2Tools_AddCondition(activator, TFCond_Dazed, 0.01);
 
 			ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_PICKUP");
 		}
@@ -1149,7 +1155,7 @@ void OnBombDropped(const char[] output, int caller, int activator, float delay)
 	{
 		Attrib_Remove(activator, "move speed penalty", 54);
 		Attrib_Remove(activator, "increase player capture value", 68);
-		TF2_AddCondition(activator, TFCond_SpeedBuffAlly, 0.01);
+		TF2Tools_AddCondition(activator, TFCond_Dazed, 0.01);
 
 		ReactConceptEnemy(GetClientTeam(activator), "TLK_MVM_BOMB_DROPPED");
 	}
@@ -1207,7 +1213,7 @@ Action Timer_BombThink(Handle timer)
 				BombLevel++;
 
 				FakeClientCommand(BombCarrier, "taunt");
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenKartNoTurn, 3.0);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenKartNoTurn, 3.0);
 				EmitGameSoundToAll("MVM.Warning");
 			}
 		}
@@ -1223,15 +1229,15 @@ Action Timer_BombThink(Handle timer)
 				{
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos2);
 					if(GetVectorDistance(pos1, pos2, true) < 90000.0)
-						TF2_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
+						TF2Tools_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
 				}
 			}
 
 			if(BombLevel > 1)
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenQuickHeal, 1.1);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenQuickHeal, 1.1);
 
 			if(BombLevel > 2)
-				TF2_AddCondition(BombCarrier, TFCond_HalloweenCritCandy, 1.1);
+				TF2Tools_AddCondition(BombCarrier, TFCond_HalloweenCritCandy, 1.1);
 		}
 	}
 	return Plugin_Continue;
@@ -1431,8 +1437,8 @@ void DoSentryBuster(int client)
 {
 	if(!IsInvuln(client))
 	{
-		TF2_AddCondition(client, TFCond_UberchargedOnTakeDamage, 10.0);
-		TF2_AddCondition(client, TFCond_HalloweenKartNoTurn, 15.0);
+		TF2Tools_AddCondition(client, TFCond_UberchargedOnTakeDamage, 10.0);
+		TF2Tools_AddCondition(client, TFCond_HalloweenKartNoTurn, 15.0);
 
 		SetEntityHealth(client, 1);
 		SDKHook(client, SDKHook_PreThink, SentryBusterDelay);

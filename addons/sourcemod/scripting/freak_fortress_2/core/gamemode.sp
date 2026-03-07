@@ -6,9 +6,9 @@ static float HealingFor;
 static int WinnerOverride;
 static int PointUnlock;
 static Handle BackupTimer;
-static Handle TeamSyncHud[TFTeam_MAX];
-static Handle HudTimer[TFTeam_MAX];
-static bool HasBoss[TFTeam_MAX];
+static Handle TeamSyncHud[TFTeam_MAXLimit];
+static Handle HudTimer[TFTeam_MAXLimit];
+static bool HasBoss[TFTeam_MAXLimit];
 
 void Gamemode_PluginStart()
 {
@@ -20,7 +20,7 @@ void Gamemode_PluginStart()
 
 void Gamemode_PluginEnd()
 {
-	if(Enabled && FindEntityByClassname(-1, "tf_gamerules") != -1 && GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	if(Enabled && TF2Tools_Loaded() && FindEntityByClassname(-1, "tf_gamerules") != -1 && GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		ServerCommand("mp_waitingforplayers_cancel 1");
 		TF2_OnWaitingForPlayersEnd();
@@ -105,7 +105,7 @@ void Gamemode_MapInit()
 void Gamemode_MapStart()
 {
 	RoundStatus = -1;
-	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
+	Waiting = TF2Tools_Loaded() && GameRules_GetRoundState() < RoundState_StartGame;
 	PrecacheScriptSound("Announcer.AM_CapEnabledRandom");
 }
 
@@ -311,7 +311,7 @@ static Action Gamemode_TimerRespawn(Handle timer)
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsPlayerAlive(client) && GetClientTeam(client) > 1 && GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))
-			TF2_RespawnPlayer(client);
+			TF2Tools_RespawnPlayer(client);
 	}
 	GameRules_SetProp("m_bInWaitingForPlayers", true, 1);
 	return Plugin_Continue;
@@ -461,7 +461,7 @@ void Gamemode_RoundStart()
 						}
 						else
 						{
-							TF2_RegeneratePlayer(client);
+							TF2Tools_RegeneratePlayer(client);
 							TF2_RefillMaxAmmo(client);
 						}
 						
@@ -607,7 +607,7 @@ void Gamemode_RoundEnd(int winteam)
 	*/
 	
 	char buffer[64];
-	int bosses[TFTeam_MAX], totalHealth[TFTeam_MAX], totalMax[TFTeam_MAX], lastBoss[TFTeam_MAX], lowestBoss[TFTeam_MAX], lowestIndex[TFTeam_MAX], teamName[TFTeam_MAX], teamIndex[TFTeam_MAX];
+	int bosses[TFTeam_MAXLimit], totalHealth[TFTeam_MAXLimit], totalMax[TFTeam_MAXLimit], lastBoss[TFTeam_MAXLimit], lowestBoss[TFTeam_MAXLimit], lowestIndex[TFTeam_MAXLimit], teamName[TFTeam_MAXLimit], teamIndex[TFTeam_MAXLimit];
 	for(int i; i < total; i++)
 	{
 		if(Client(clients[i]).IsBoss)
@@ -1129,11 +1129,11 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 		{
 			int team = GetClientTeam(client);
 			if(PlayersAlive[team] < 3)
-				TF2_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
+				TF2Tools_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
 			
 			if(PlayersAlive[team] < 2) 
 			{
-				TF2_AddCondition(client, TFCond_CritOnDamage, 0.5);
+				TF2Tools_AddCondition(client, TFCond_CritOnDamage, 0.5);
 				if(Cvar[PlayerGlow].BoolValue)
 					Gamemode_SetClientGlow(client, 5.0);
 			}
@@ -1222,40 +1222,38 @@ void Gamemode_ConditionAdded(int client, TFCond cond)
 		TriggerTimer(CreateTimer(0.1, Gamemode_DisguiseTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT));
 }
 
-void Gamemode_ConditionRemoved(int client, TFCond cond)
-{
-	if(cond == TFCond_Disguised && Cvar[DisguiseModels].BoolValue)
-	{
-		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
-		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
-	}
-}
-
 static Action Gamemode_DisguiseTimer(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
-	if(client && TF2_IsPlayerInCondition(client, TFCond_Disguised))
+	if(client)
 	{
-		int target = GetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget");
-		if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+		if(TF2_IsPlayerInCondition(client, TFCond_Disguised))
 		{
-			bool team = view_as<bool>(GetClientTeam(client) % 2);
-			
-			static char model[PLATFORM_MAX_PATH];
-			GetEntPropString(team ? client : target, Prop_Data, "m_ModelName", model, sizeof(model));
-			if(model[0])
-				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 0);
-			
-			GetEntPropString(team ? target : client, Prop_Data, "m_ModelName", model, sizeof(model));
-			if(model[0])
-				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 3);
+			int target = GetEntPropEnt(client, Prop_Send, "m_hDisguiseTarget");
+			if(target != -1 && GetEntProp(target, Prop_Send, "m_iClass") == GetEntProp(client, Prop_Send, "m_nDisguiseClass"))
+			{
+				bool team = view_as<bool>(GetClientTeam(client) % 2);
+				
+				static char model[PLATFORM_MAX_PATH];
+				GetEntPropString(team ? client : target, Prop_Data, "m_ModelName", model, sizeof(model));
+				if(model[0])
+					SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 0);
+				
+				GetEntPropString(team ? target : client, Prop_Data, "m_ModelName", model, sizeof(model));
+				if(model[0])
+					SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", PrecacheModel(model), _, 3);
+			}
+			else
+			{
+				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+				SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
+			}
+
+			return Plugin_Continue;
 		}
-		else
-		{
-			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
-			SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
-		}
-		return Plugin_Continue;
+		
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
+		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
 	}
 	return Plugin_Stop;
 }

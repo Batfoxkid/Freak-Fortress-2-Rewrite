@@ -212,7 +212,7 @@ stock float CustomAttrib_FindOnWeapon(int client, int entity, const char[] name,
 	{
 		char classname[18];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!StrContains(classname, "tf_w") || StrEqual(classname, "tf_powerup_bottle"))
+		if(!StrContains(classname, "tf_wea") || !StrContains(classname, "tf2c_wea") || StrEqual(classname, "tf_powerup_bottle"))
 		{
 			if(CustomAttrib_Get(entity, name, value))
 			{
@@ -314,6 +314,12 @@ static void AddAttributes()
 	attrib.SetClass("ff2.stale_boss_hit_reload");
 	attrib.SetDescriptionFormat("additive");
 	attrib.SetCustom("description_ff2_string", "mod reload time hit stale");
+	attrib.Register();
+
+	attrib.SetName("mod recharge time hit stale");
+	attrib.SetClass("ff2.stale_boss_hit_charge");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "mod recharge time hit stale");
 	attrib.Register();
 
 	attrib.SetName("primary damage vs bosses");
@@ -568,7 +574,7 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 	
 	value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod stun boss on hit");
 	if(value)
-		TF2_StunPlayer(victim, value, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, attacker);
+		TF2Tools_StunPlayer(victim, value, 0.0, TF_STUNFLAGS_SMALLBONK|TF_STUNFLAG_NOSOUNDOREFFECT, attacker);
 	
 	value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod rage loss on hit");
 	if(value)
@@ -637,6 +643,16 @@ void CustomAttrib_OnHitBossPre(int attacker, int victim, float &damage, int &dam
 			float initial = 1.0;
 			Attrib_Get(weapon, "Reload time increased", 96, initial);
 			Attrib_Set(weapon, "Reload time increased", 96, initial + value);
+		}
+
+		value = CustomAttrib_FindOnWeapon(attacker, weapon, "mod recharge time hit stale");
+		if(value != 0.0)
+		{
+			SetEntProp(weapon, Prop_Send, "m_iAccountID", 0);
+			
+			float initial = 1.0;
+			Attrib_Get(weapon, "effect bar recharge rate increased", 278, initial);
+			Attrib_Set(weapon, "effect bar recharge rate increased", 278, initial + value);
 		}
 
 		if(GetEntityClassname(weapon, buffer, sizeof(buffer)))
@@ -782,11 +798,11 @@ static void WeaponSwitchFrame(int userid)
 			{
 				case 1:
 				{
-					TF2_RemoveCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
+					TF2Tools_RemoveCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
 				}
 				case 2:
 				{
-					TF2_RemoveCondition(client, TFCond_CritOnDamage);
+					TF2Tools_RemoveCondition(client, TFCond_CritOnDamage);
 				}
 			}
 			
@@ -796,12 +812,12 @@ static void WeaponSwitchFrame(int userid)
 			{
 				case 1:
 				{
-					TF2_AddCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
+					TF2Tools_AddCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola);
 					HasCritGlow[client] = 1;
 				}
 				case 2:
 				{
-					TF2_AddCondition(client, TFCond_CritOnDamage);
+					TF2Tools_AddCondition(client, TFCond_CritOnDamage);
 					HasCritGlow[client] = 2;
 				}
 				default:
@@ -842,13 +858,13 @@ static Action UberTimer(Handle timer, int ref)
 			{
 				if(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == weapon)
 				{
-					TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
+					TF2Tools_AddCondition(client, TFCond_HalloweenCritCandy, 0.5, client);
 
 					if(GetEntProp(weapon, Prop_Send, "m_bHealing"))
 					{
 						int target = GetEntPropEnt(weapon, Prop_Send, "m_hHealingTarget");
 						if(target != -1)
-							TF2_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
+							TF2Tools_AddCondition(target, TFCond_HalloweenCritCandy, 0.5, client);
 					}
 				}
 

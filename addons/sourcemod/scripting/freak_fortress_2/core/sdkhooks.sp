@@ -303,7 +303,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				critType = CritType_Crit;
 			
 			if(!OTDLoaded && critType == CritType_MiniCrit)
-				TF2_AddCondition(attacker, TFCond_Buffed, 0.001);
+				TF2Tools_AddCondition(attacker, TFCond_Buffed, 0.001);
 			
 			if(Client(attacker).IsBoss)
 			{
@@ -355,7 +355,7 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			if(melee && SDKCall_CheckBlockBackstab(victim, attacker))
 			{
 				if(TF2_IsPlayerInCondition(victim, TFCond_RuneResist))
-					TF2_RemoveCondition(victim, TFCond_RuneResist);
+					TF2Tools_RemoveCondition(victim, TFCond_RuneResist);
 				
 				float pos[3];
 				GetClientAbsOrigin(victim, pos);
@@ -363,13 +363,13 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 				
 				EmitGameSoundToAll("Player.Spy_Shield_Break", victim, _, victim, pos);
 				
-				TF2_RemoveCondition(victim, TFCond_Zoomed);
+				TF2Tools_RemoveCondition(victim, TFCond_Zoomed);
 				
 				int entity = -1;
 				while((entity=FindEntityByClassname(entity, "tf_wearable_demoshield")) != -1)
 				{
 					if(GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity") == victim && !GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
-						TF2_RemoveWearable(victim, entity);
+						TF2Tools_RemoveWearable(victim, entity);
 				}
 				
 				damage = 0.0;

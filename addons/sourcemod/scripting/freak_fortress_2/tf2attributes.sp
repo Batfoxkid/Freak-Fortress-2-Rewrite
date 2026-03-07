@@ -160,7 +160,7 @@ stock float Attrib_FindOnWeapon(int client, int entity, const char[] name = "", 
 	{
 		char classname[18];
 		GetEntityClassname(entity, classname, sizeof(classname));
-		if(!StrContains(classname, "tf_w") || StrEqual(classname, "tf_powerup_bottle"))
+		if(!StrContains(classname, "tf_wea") || !StrContains(classname, "tf2c_wea") || StrEqual(classname, "tf_powerup_bottle"))
 		{
 			if(Attrib_Get(entity, name, index, value))
 			{

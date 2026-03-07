@@ -59,10 +59,10 @@ static Action Weapons_DebugRefresh(int client, int args)
 		int entity, i;
 		while(TF2U_GetWearable(client, entity, i))
 		{
-			TF2_RemoveWearable(client, entity);
+			TF2Tools_RemoveWearable(client, entity);
 		}
 		
-		TF2_RegeneratePlayer(client);
+		TF2Tools_RegeneratePlayer(client);
 	}
 	else
 	{
@@ -86,10 +86,10 @@ static Action Weapons_DebugReload(int client, int args)
 				int entity, i;
 				while(TF2U_GetWearable(target, entity, i))
 				{
-					TF2_RemoveWearable(target, entity);
+					TF2Tools_RemoveWearable(target, entity);
 				}
 				
-				TF2_RegeneratePlayer(target);
+				TF2Tools_RegeneratePlayer(target);
 			}
 		}
 	}
@@ -368,7 +368,7 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 					else if(RoundStatus < 1)
 					{
 						TF2_RemoveAllItems(client);
-						TF2_RespawnPlayer(client);
+						TF2Tools_RespawnPlayer(client);
 					}
 					else
 					{
@@ -394,7 +394,7 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 							}
 							else
 							{
-								TF2_RemoveWearable(client, entity);
+								TF2Tools_RemoveWearable(client, entity);
 							}
 						}
 
@@ -658,7 +658,7 @@ static void FormatValue(const char[] value, char[] buffer, int length, const cha
 
 void Weapons_EntityCreated(int entity, const char[] classname)
 {
-	if(Weapons_ConfigEnabled() && (!StrContains(classname, "tf_wea") || !StrContains(classname, "tf_powerup_bottle")))
+	if(Weapons_ConfigEnabled() && (!StrContains(classname, "tf_wea") || !StrContains(classname, "tf2c_wea") || !StrContains(classname, "tf_powerup_bottle")))
 		SDKHook(entity, SDKHook_SpawnPost, Weapons_Spawn);
 }
 
@@ -884,10 +884,11 @@ static ConfigMap FindClassSection(ConfigMap cfg, int client, bool &temp)
 	if(client)
 	{
 		TFClassType class = Client(client).IsBoss ? TFClass_Unknown : TF2_GetPlayerClass(client);
-		if(view_as<int>(class) >= sizeof(TFClassName))
-			class = TFClass_Unknown;
+
+		char classname[16];
+		TF2Tools_GetClassName(class, classname, sizeof(classname));
 		
-		ConfigMap section = cfg.GetSection(TFClassName[class]);
+		ConfigMap section = cfg.GetSection(classname);
 		if(section)
 		{
 			temp = true;

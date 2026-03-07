@@ -359,7 +359,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					length = snapBosses.KeyBufferSize(a)+1;
 					char[] bossname = new char[length];
 					snapBosses.GetKey(a, bossname, length);
-					cfgPack.GetArray(bossname, val, sizeof(val));
+					cfgBosses.GetArray(bossname, val, sizeof(val));
 					switch(val.tag)
 					{
 						case KeyValType_Section:
@@ -1823,7 +1823,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	if(active && Client(client).Cfg.Get("command", buffer, sizeof(buffer)))
 		ServerCommand(buffer);
 	
-	TF2_RegeneratePlayer(client);
+	TF2Tools_RegeneratePlayer(client);
 	
 	if(active)
 	{
@@ -1931,7 +1931,7 @@ static Action Bosses_EquipTimer(Handle timer, int userid)
 
 static void EquipBoss(int client, bool weapons)
 {
-	TF2_RemovePlayerDisguise(client);
+	TF2Tools_RemovePlayerDisguise(client);
 	TF2_RemoveAllItems(client);
 	
 	int i;
@@ -1998,13 +1998,13 @@ static void EquipBoss(int client, bool weapons)
 			case 57, 131, 133, 231, 405, 406, 444, 608, 642, 1099, 1144:
 			{
 				// Wearable weapons
-				TF2_RemoveWearable(client, index);
+				TF2Tools_RemoveWearable(client, index);
 			}
 			default:
 			{
 				// Wearable cosmetics
 				if(!value)
-					TF2_RemoveWearable(client, index);
+					TF2Tools_RemoveWearable(client, index);
 			}
 		}
 	}
@@ -2229,7 +2229,7 @@ void Bosses_Remove(int client)
 		if(IsPlayerAlive(client))
 		{
 			SetEntityHealth(client, 1);
-			TF2_RegeneratePlayer(client);
+			TF2Tools_RegeneratePlayer(client);
 		}
 	}
 }
@@ -2274,7 +2274,7 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 							GetClientAbsOrigin(target, pos2);
 							if (GetVectorDistance(pos1, pos2, true) < SAPPER_MAX_DISTANCE_SQAURE)
 							{
-								TF2_AddCondition(target, TFCond_Sapped, 4.0);
+								TF2Tools_AddCondition(target, TFCond_Sapped, 4.0);
 								Client(client).SapperCooldownFor = time + 15.0;
 							}
 						}
