@@ -128,8 +128,8 @@
 	}
 */
 
-#include <sourcemod>
 #tryinclude <virtual_address>
+#include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <dhooks>

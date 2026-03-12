@@ -73,8 +73,8 @@
 	}
 */
 
-#include <sourcemod>
 #tryinclude <virtual_address>
+#include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>
 #include <adt_trie_sort>
