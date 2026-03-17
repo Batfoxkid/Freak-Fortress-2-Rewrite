@@ -1767,7 +1767,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	if(Client(client).Cfg)
 	{
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 	}
@@ -2063,7 +2063,7 @@ static void EquipBoss(int client, bool weapons)
 	Forward_OnBossEquipped(client, weapons);
 
 	if(weapons)
-		VScript_Call("_FF2_BossEquipped", client);
+		VScript_BossEquipped(client);
 }
 
 void Bosses_UpdateHealth(int client)
@@ -2177,7 +2177,7 @@ void Bosses_ClientDisconnect(int client)
 		Ranking_BossRemoved(client, true);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 		
@@ -2207,7 +2207,7 @@ void Bosses_Remove(int client)
 		Ranking_BossRemoved(client, false);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
@@ -3040,7 +3040,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 	return size;
 }
 
-bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3] = NULL_VECTOR, const float dir[3] = NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	SoundEnum sound;
 	sound.Entity = entity;

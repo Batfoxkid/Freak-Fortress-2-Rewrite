@@ -341,6 +341,7 @@ public void OnLibraryAdded(const char[] name)
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
 	Weapons_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -355,6 +356,7 @@ public void OnLibraryRemoved(const char[] name)
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
 	Weapons_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 }
 
 public void OnClientPutInServer(int client)

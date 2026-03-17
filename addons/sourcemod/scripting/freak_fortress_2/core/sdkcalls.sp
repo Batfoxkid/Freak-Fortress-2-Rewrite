@@ -9,7 +9,6 @@
 static bool UseFireEntityOutput;
 static bool UseWaitingForPlayers;
 static bool UseWeaponPickups;
-static char ScriptDataFolder[32];
 
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
@@ -56,10 +55,6 @@ void SDKCall_Setup()
 	UseWaitingForPlayers = !gamedata.GetKeyValue("Use_WaitingForPlayers", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
 	UseWeaponPickups = !gamedata.GetKeyValue("Use_WeaponPickups", buffer, sizeof(buffer)) || StrContains(buffer, "no", false) == -1;
 
-	gamedata.GetKeyValue("ScriptDataFolder", ScriptDataFolder, sizeof(ScriptDataFolder));
-	if(!ScriptDataFolder[0])
-		strcopy(ScriptDataFolder, sizeof(ScriptDataFolder), "scriptdata");
-	
 	StartPrepSDKCall(SDKCall_Entity);
 	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTeam::AddPlayer"))
 	{
@@ -156,11 +151,6 @@ bool SDK_WaitingForPlayers()
 bool SDK_WeaponPickups()
 {
 	return UseWeaponPickups;
-}
-
-int SDK_ScriptDataFolder(char[] buffer, int length)
-{
-	return strcopy(buffer, length, ScriptDataFolder);
 }
 
 bool SDKCall_CheckBlockBackstab(int client, int attacker)

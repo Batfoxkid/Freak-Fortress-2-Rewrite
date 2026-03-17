@@ -65,7 +65,7 @@ static any Native_SetBossData(Handle plugin, int params)
 		if(forwards || !cfg)
 		{
 			Forward_OnBossRemoved(client);
-			VScript_Call("_FF2_BossRemoved", client);
+			VScript_BossRemoved(client);
 		}
 		
 		DeleteCfg(Client(client).Cfg);
