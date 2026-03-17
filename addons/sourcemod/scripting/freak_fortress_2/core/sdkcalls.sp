@@ -1,11 +1,6 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#if !defined _virtual_address_included
-#define SDKCall_VirtualAddress SDKCall_Raw
-#define SDKType_VirtualAddress SDKType_PlainOldData
-#endif
-
 static bool UseFireEntityOutput;
 static bool UseWaitingForPlayers;
 static bool UseWeaponPickups;
@@ -78,7 +73,7 @@ void SDKCall_Setup()
 			LogError("[Gamedata] Could not find CTeam::RemovePlayer");
 	}
 	
-	StartPrepSDKCall(SDKCall_VirtualAddress);
+	StartPrepSDKCall(SDKCall_Raw);
 	if(PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFGameStats::IncrementStat"))
 	{
 		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);

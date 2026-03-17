@@ -3,7 +3,6 @@
 		-Batfoxkid
 */
 
-#tryinclude <virtual_address>
 #include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>

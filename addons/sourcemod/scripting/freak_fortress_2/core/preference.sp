@@ -7,7 +7,7 @@ static ConfigMap Difficulties;
 static int BossOverride = -1;
 static int ViewingPack[MAXTF2PLAYERS];
 static int ViewingPage[MAXTF2PLAYERS];
-static int ViewingBoss[MAXTF2PLAYERS];
+static ArrayList ViewingBoss[MAXTF2PLAYERS];
 static int PartyLeader[MAXTF2PLAYERS];
 static int PartyChoice[MAXTF2PLAYERS];
 static int PartyMainBoss[MAXTF2PLAYERS];
@@ -303,7 +303,7 @@ static Action Preference_BossMenuLegacy(int client, int args)
 	{
 		ViewingPack[client] = Enabled ? Charset : -1;
 		ViewingPage[client] = 0;
-		ViewingBoss[client] = -1;
+		delete ViewingBoss[client];
 		BossMenu(client);
 	}
 	return Plugin_Handled;
@@ -364,7 +364,9 @@ static Action Preference_BossMenuCmd(int client, int args)
 					}
 					else
 					{
-						ViewingBoss[client] = special;
+						delete ViewingBoss[client];
+						ViewingBoss[client] = new ArrayList();
+						ViewingBoss[client].Push(special);
 						CreateParty(client);
 					}
 				}
@@ -427,11 +429,15 @@ static Action Preference_BossMenuCmd(int client, int args)
 		
 		if(buffer[0] == '#')
 		{
-			ViewingBoss[client] = StringToInt(buffer[1]);
+			delete ViewingBoss[client];
+			ViewingBoss[client] = new ArrayList();
+			ViewingBoss[client].Push(StringToInt(buffer[1]));
 		}
 		else
 		{
-			ViewingBoss[client] = Bosses_GetByName(buffer, false, false, GetClientLanguage(client));
+			delete ViewingBoss[client];
+			ViewingBoss[client] = new ArrayList();
+			ViewingBoss[client].Push(Bosses_GetByName(buffer, false, false, GetClientLanguage(client)));
 		}
 		
 		Menu_Command(client);
@@ -441,7 +447,7 @@ static Action Preference_BossMenuCmd(int client, int args)
 	{
 		ViewingPack[client] = Enabled ? Charset : -1;
 		ViewingPage[client] = 0;
-		ViewingBoss[client] = -1;
+		delete ViewingBoss[client];
 		
 		Menu_Command(client);
 		if(!PartyMenu(client))
@@ -454,7 +460,7 @@ void Preference_BossMenu(int client)
 {
 	ViewingPack[client] = Bosses_MultipleCharsets() ? -1 : Charset;
 	ViewingPage[client] = 0;
-	ViewingBoss[client] = -1;
+	delete ViewingBoss[client];
 	
 	if(!PartyMenu(client))
 		BossMenu(client);
@@ -469,16 +475,19 @@ static void BossMenu(int client)
 	int lang = GetClientLanguage(client);
 	
 	char data[64], buffer[512];
-	if(ViewingBoss[client] >= 0)
+	if(ViewingBoss[client])
 	{
+		int mainboss =  ViewingBoss[client].Get(0);
+		int subboss = ViewingBoss[client].Get(ViewingBoss[client].Length - 1);
+		
 		bool preview;
-		bool access = Bosses_CanAccessBoss(client, ViewingBoss[client], false, _, false, preview);
+		bool access = Bosses_CanAccessBoss(client, mainboss, false, _, false, preview);
 		if(access || preview)
 		{
 			if(ViewingPack[client] >= 0)
 			{
 				Bosses_GetCharsetName(ViewingPack[client], data, sizeof(data), lang);
-				if(Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description"))
+				if(Bosses_GetBossName(subboss, buffer, sizeof(buffer), lang, "description"))
 				{
 					menu.SetTitle("%t%s\n \n%s\n ", "Boss Selection Command", data, buffer);
 				}
@@ -487,7 +496,7 @@ static void BossMenu(int client)
 					menu.SetTitle("%t%s\n \n%t\n ", "Boss Selection Command", data, "No Description");
 				}
 			}
-			else if(Bosses_GetBossName(ViewingBoss[client], buffer, sizeof(buffer), lang, "description"))
+			else if(Bosses_GetBossName(subboss, buffer, sizeof(buffer), lang, "description"))
 			{
 				menu.SetTitle("%t\n%s\n ", "Boss Selection Command", buffer);
 			}
@@ -496,28 +505,24 @@ static void BossMenu(int client)
 				menu.SetTitle("%t\n%t\n ", "Boss Selection Command", "No Description");
 			}
 
-			ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
+			ConfigMap cfg = Bosses_GetConfig(mainboss);
 			
 			if(access && blacklist != 0)
 			{
+				if(!Bosses_GetBossName(mainboss, data, sizeof(data), lang, "group"))
+					Bosses_GetBossName(subboss, data, sizeof(data), lang);
+				
 				int count;
 				if(cfg.GetInt("companion", count))
 				{
-					if(!Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang, "group"))
-						Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
-					
 					if(blacklist < 0 && cfg.GetBool("enabled", preview) && preview)
 					{
 						FormatEx(buffer, sizeof(buffer), "%t", "Boss Party", data);
 						menu.AddItem("2", buffer);
 					}
 				}
-				else
-				{
-					Bosses_GetBossName(ViewingBoss[client], data, sizeof(data), lang);
-				}
 				
-				if(BossListing[client] && BossListing[client].FindValue(ViewingBoss[client]) != -1)
+				if(BossListing[client] && BossListing[client].FindValue(mainboss) != -1)
 				{
 					if(blacklist > 0)
 					{
@@ -560,38 +565,30 @@ static void BossMenu(int client)
 
 			if(Cvar[RankingStyle].IntValue)
 			{
-				int special;
-				if(cfg.GetInt("companion", special))
-				{
-					ConfigMap companion = cfg;
-					special = ViewingBoss[client];
-					for(int i; i < MAXTF2PLAYERS; i++)
-					{
-						Bosses_GetBossNameCfg(companion, data, sizeof(data), _, "filename");
-						int rank = Ranking_GetRank(client, data);
+				Bosses_GetBossName(subboss, data, sizeof(data), _, "filename");
+				int rank = Ranking_GetRank(client, data);
 
-						Bosses_GetBossNameCfg(companion, data, sizeof(data), lang);
-						FormatEx(buffer, sizeof(buffer), "%t", "Boss Rank", data, rank);
-						menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
-						
-						if(!companion.GetInt("companion", special))
-							break;
-						
-						companion = Bosses_GetConfig(special);
-					}
-				}
-				else
-				{
-					Bosses_GetBossNameCfg(cfg, data, sizeof(data), _, "filename");
-					FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", Ranking_GetRank(client, data));
-					menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
-				}
+				Bosses_GetBossName(subboss, data, sizeof(data), lang);
+				FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", rank);
+				menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
 			}
 
 			if(cfg.GetSection("creator"))
 			{
 				FormatEx(buffer, sizeof(buffer), "%t", "View Creators");
-				menu.AddItem("3", buffer, ITEMDRAW_DEFAULT);
+				menu.AddItem("3", buffer);
+			}
+
+			int count;
+			if(Bosses_GetConfig(subboss).GetInt("companion", count))
+			{
+				for(int i = menu.ItemCount; i < 6; i++)
+				{
+					menu.AddItem("4", buffer, ITEMDRAW_SPACER);
+				}
+
+				FormatEx(buffer, sizeof(buffer), "%t", "Next");
+				menu.AddItem("4", buffer);
 			}
 			
 			menu.ExitBackButton = true;
@@ -646,8 +643,9 @@ static void BossMenu(int client)
 						if(access || preview)
 						{
 							IntToString(index, data, sizeof(data));
-
-							Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+							if(!Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang, "group"))
+								Bosses_GetBossNameCfg(cfg, buffer, sizeof(buffer), lang);
+							
 							if(blacklist != 0)
 							{
 								if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == index)
@@ -782,11 +780,20 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 		{
 			if(choice == MenuCancel_ExitBack)
 			{
-				if(ViewingBoss[client] >= 0)
+				if(ViewingBoss[client])
 				{
-					ViewingBoss[client] = -1;
-					BossMenu(client);
-					ViewingPage[client] = 0;
+					int length = ViewingBoss[client].Length;
+					if(length > 1)
+					{
+						ViewingBoss[client].Erase(length - 1);
+						BossMenu(client);
+					}
+					else
+					{
+						delete ViewingBoss[client];
+						BossMenu(client);
+						ViewingPage[client] = 0;
+					}
 				}
 				else if(ViewingPack[client] >= 0 && Bosses_MultipleCharsets())
 				{
@@ -806,10 +813,19 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 			menu.GetItem(choice, buffer, sizeof(buffer));
 			int value = StringToInt(buffer);
 			
-			if(ViewingBoss[client] >= 0)
+			if(ViewingBoss[client])
 			{
 				switch(value)
 				{
+					case 4:
+					{
+						int length = ViewingBoss[client].Length;
+						if(Bosses_GetConfig(ViewingBoss[client].Get(length - 1)).GetInt("companion", length))
+						{
+							ViewingBoss[client].Push(length);
+							BossMenu(client);
+						}
+					}
 					case 3:
 					{
 						CreatorMenu(client);
@@ -825,15 +841,15 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
-						BossListing[client].Push(ViewingBoss[client]);
-						ViewingBoss[client] = -1;
+						BossListing[client].Push(ViewingBoss[client].Get(0));
+						delete ViewingBoss[client];
 						BossMenu(client);
 					}
 					default:
 					{
 						if(BossListing[client])
 						{
-							value = BossListing[client].FindValue(ViewingBoss[client]);
+							value = BossListing[client].FindValue(ViewingBoss[client].Get(0));
 							if(value != -1)
 							{
 								UpdateDataBase[client] = true;
@@ -841,7 +857,7 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 							}
 						}
 						
-						ViewingBoss[client] = -1;
+						delete ViewingBoss[client];
 						BossMenu(client);
 					}
 				}
@@ -893,7 +909,9 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 					}
 					default:
 					{
-						ViewingBoss[client] = value;
+						delete ViewingBoss[client];
+						ViewingBoss[client] = new ArrayList();
+						ViewingBoss[client].Push(value);
 					}
 				}
 				
@@ -1005,7 +1023,7 @@ bool Preference_ClientDisconnect(int client)
 
 static void CreateParty(int client)
 {
-	if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == ViewingBoss[client])
+	if(PartyLeader[client] && PartyMainBoss[PartyLeader[client]] == ViewingBoss[client].Get(0))
 	{
 		PartyMenu(client);
 		return;
@@ -1018,7 +1036,7 @@ static void CreateParty(int client)
 	SetGlobalTransTarget(client);
 	int lang = GetClientLanguage(client);
 	
-	int special = ViewingBoss[client];
+	int special = ViewingBoss[client].Get(0);
 	
 	char data[12], buffer[64];
 	if(!Bosses_GetBossName(special, buffer, sizeof(buffer), lang, "group"))
@@ -2289,7 +2307,7 @@ static bool GetDiffByName(const char[] name, char[] buffer, int length, int lang
 
 static void CreatorMenu(int client)
 {
-	ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client]);
+	ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client].Get(0));
 	if(!cfg)
 		return;
 

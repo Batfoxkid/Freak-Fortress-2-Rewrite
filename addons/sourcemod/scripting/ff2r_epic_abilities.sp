@@ -128,7 +128,6 @@
 	}
 */
 
-#tryinclude <virtual_address>
 #include <sourcemod>
 #include <sdkhooks>
 #include <tf2_stocks>
@@ -148,6 +147,10 @@
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
+
+#if SOURCEMOD_V_REV < 7302
+#define SDKType_Address	view_as<SDKType>(9)
+#endif
 
 #define	HITGROUP_GENERIC	0
 #define	HITGROUP_HEAD		1
@@ -301,11 +304,7 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-#if defined _virtual_address_included
-	PrepSDKCall_AddParameter(SDKType_VirtualAddress, SDKPass_Plain);
-#else
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-#endif
+	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKCreate = EndPrepSDKCall();
 	if(!SDKCreate)
@@ -341,11 +340,7 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-#if defined _virtual_address_included
-	PrepSDKCall_AddParameter(SDKType_VirtualAddress, SDKPass_Plain);
-#else
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-#endif
+	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKGiveNamedItem = EndPrepSDKCall();
 	if(!SDKGiveNamedItem)
