@@ -25,6 +25,7 @@ enum struct WeaponData
 	int Red;
 	int Green;
 	int Blue;
+	int Skin;
 	bool Equip;
 	bool Forumla;
 
@@ -48,6 +49,7 @@ enum struct WeaponData
 		this.Red = 255;
 		this.Green = 255;
 		this.Blue = 255;
+		this.Skin = -1;
 		this.Equip = equip;
 		this.Forumla = false;
 	}
@@ -424,6 +426,9 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 			SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
 			SetEntityRenderColor(entity, index, kills, count, level);
 		}
+
+		if(cfg.GetInt("skin", level))
+			SetEntProp(entity, Prop_Send, "m_nSkin", level);
 		
 		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 		
@@ -684,6 +689,9 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 			
 			SetEntityRenderColor(entity, data.Red, data.Green, data.Blue, data.Alpha);
 		}
+
+		if(data.Skin >= 0)
+			SetEntProp(entity, Prop_Send, "m_nSkin", data.Skin);
 		
 		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
 		

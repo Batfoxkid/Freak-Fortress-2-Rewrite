@@ -89,7 +89,6 @@
 */
 
 #include <sourcemod>
-#tryinclude <virtual_address>
 #include <sdkhooks>
 #include <sdktools>
 #include <morecolors>

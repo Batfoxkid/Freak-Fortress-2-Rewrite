@@ -75,6 +75,7 @@ static void SetupDHook()
 		LogError("[Gamedata] Could not find m_bitsDamageType");
 	
 	CreateDetour(gamedata, "CTFGameStats::ResetRoundStats", _, DHook_ResetRoundStats, true);
+	CreateDetour(gamedata, "CTFPlayer::ApplyPunchImpulseX", DHook_ApplyPunchImpulsePre);
 	CreateDetour(gamedata, "CTFPlayer::DropAmmoPack", DHook_DropAmmoPackPre);
 	CreateDetour(gamedata, "CTFPlayer::PickupWeaponFromOther", DHook_PickupWeaponFromOtherPre, _, !SDK_WeaponPickups());
 	CreateDetour(gamedata, "CTFPlayer::RegenThink", DHook_RegenThinkPre, DHook_RegenThinkPost, true);
@@ -285,6 +286,15 @@ static MRESReturn DHook_PickupWeaponFromOtherPre(int client, DHookReturn ret, DH
 	}
 	
 	return MRES_Ignored;
+}
+
+static MRESReturn DHook_ApplyPunchImpulsePre(int client, DHookReturn ret, DHookParam param)
+{
+	if(!Client(client).IsBoss)
+		return MRES_Ignored;
+	
+	ret.Value = false;
+	return MRES_Supercede;
 }
 
 static MRESReturn DHook_ChangeTeamPre(int client, DHookParam param)

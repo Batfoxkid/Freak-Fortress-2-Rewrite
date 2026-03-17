@@ -56,6 +56,15 @@
 				//"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
 				// DHook Crash
 			}
+			"CTFPlayer::ApplyPunchImpulseX"
+			{
+				// "aiming_no_flinch"
+				"library"	"server"
+				"linux"		"@_ZN9CTFPlayer18ApplyPunchImpulseXEf"
+				"linux64"	"@_ZN9CTFPlayer18ApplyPunchImpulseXEf"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x08\x53\x56\x8B\xF1\xB3\x01"
+				"windows64"	"\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x40\x48\x8D\x81\x30\x27\x00\x00"
+			}
 			"CTFPlayer::CanAirDash"
 			{
 				// "set_scout_doublejump_disabled"
@@ -250,6 +259,13 @@
 				"library"	"server"
 				"linux64"	"@_ZN12CTFGameStats13IncrementStatEP9CTFPlayer12TFStatType_ti"
 				//"windows64"	"\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x41\xB9\x01\x00\x00\x00\x48\x8B\xDA\x48\x8B\xF9\x45\x8D\x41\x10"
+			}
+			"CTFPlayer::ApplyPunchImpulseX"
+			{
+				// "aiming_no_flinch"
+				"library"	"server"
+				"linux64"	"@_ZN9CTFPlayer18ApplyPunchImpulseXEf"
+				"windows64"	"\x40\x53\x56\x57\x41\x56\x41\x57\x48\x83\xEC\x40\x48\x8D\x81\xD0\x28\x00\x00"
 			}
 			"CTFPlayer::CheckBlockBackstab"
 			{
@@ -480,6 +496,20 @@
 				"callconv"	"thiscall"
 				"return"	"void"
 				"this"		"address"
+			}
+			"CTFPlayer::ApplyPunchImpulseX"
+			{
+				"signature"	"CTFPlayer::ApplyPunchImpulseX"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"flImpulse"
+					{
+						"type"	"float"
+					}
+				}
 			}
 			"CTFPlayer::CanAirDash"
 			{
