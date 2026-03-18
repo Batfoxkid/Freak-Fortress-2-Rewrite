@@ -11,18 +11,16 @@ static float ReturnFloat;
 
 #if defined _vscript_ext_included
 static bool Loaded;
-static VScriptCall ScriptGetAttribute;
-static VScriptCall ScriptSetAttribute;
-static VScriptCall ScriptRemoveAttribute;
+static ScriptCall ScriptGetAttribute;
+static ScriptCall ScriptSetAttribute;
+static ScriptCall ScriptRemoveAttribute;
 #if defined IS_MAIN_FF2
-static VScriptCall ScriptFireScriptHook;
+static ScriptCall ScriptFireScriptHook;
 #endif
 #endif
 
 void VScript_PluginStart()
 {
-	PrintToChatAll("???????");
-
 	HookEvent("tf_map_time_remaining", VScriptEvent, EventHookMode_Pre);
 	
 	#if defined _vscript_ext_included
@@ -31,13 +29,12 @@ void VScript_PluginStart()
 	{
 		SetupCalls();
 		#if defined IS_MAIN_FF2
+		SetupFunctions();
 		if(VScript_IsVMInitialized())
 			VScript_OnVMInitialized();
 		#endif
 	}
-	PrintToChatAll("Loaded: %d | VM: %d", Loaded, Loaded ? VScript_IsVMInitialized() : false);
 	#endif
-	PrintToChatAll("????");
 
 	int version;
 	File file = OpenFile("scripts/vscripts/freak_fortress_2.nut", "r", true);
@@ -62,12 +59,12 @@ void VScript_PluginStart()
 #if defined _vscript_ext_included
 static void SetupCalls()
 {
-	ScriptSetAttribute = new VScriptCall("FF2_SetAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String, VScriptField_Float);
-	ScriptGetAttribute = new VScriptCall("FF2_GetAttribute", VScriptField_Float, VScriptField_HScript, VScriptField_String, VScriptField_Float);
-	ScriptRemoveAttribute = new VScriptCall("FF2_RemoveAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String);
+	ScriptSetAttribute = new ScriptCall("FF2_SetAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String, VScriptField_Float);
+	ScriptGetAttribute = new ScriptCall("FF2_GetAttribute", VScriptField_Float, VScriptField_HScript, VScriptField_String, VScriptField_Float);
+	ScriptRemoveAttribute = new ScriptCall("FF2_RemoveAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String);
 
 	#if defined IS_MAIN_FF2
-	ScriptFireScriptHook = new VScriptCall("FireScriptHook", VScriptField_Bool, VScriptField_String, VScriptField_HScript);
+	ScriptFireScriptHook = new ScriptCall("FireScriptHook", VScriptField_Bool, VScriptField_String, VScriptField_HScript);
 	#endif
 }
 #endif
@@ -80,6 +77,7 @@ public void VScript_LibraryAdded(const char[] name)
 		Loaded = true;
 		SetupCalls();
 		#if defined IS_MAIN_FF2
+		SetupFunctions();
 		if(VScript_IsVMInitialized())
 			VScript_OnVMInitialized();
 		#endif
@@ -152,7 +150,7 @@ stock void VScript_SetAttribute(int entity, const char[] name, float value)
 	#if defined _vscript_ext_included
 	if(Loaded && ScriptSetAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity);
+		VScriptHandle hentity = VScript_EntityToHScript(entity, true);
 		if(hentity)
 			ScriptSetAttribute.Execute(hentity, name, value);
 		
@@ -170,7 +168,7 @@ stock void VScript_SetAttributeInt(int entity, const char[] name, int value)
 	#if defined _vscript_ext_included
 	if(Loaded && ScriptSetAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity);
+		VScriptHandle hentity = VScript_EntityToHScript(entity, true);
 		if(hentity)
 			ScriptSetAttribute.Execute(hentity, name, value);
 		
@@ -350,27 +348,22 @@ stock void VScript_UseAbility(int client, const char[] name)
 public void VScript_CreateBoss(int client)
 {
 	#if defined _vscript_ext_included
-	PrintToServer("VScript_CreateBoss");
 	if(Loaded && ScriptFireScriptHook)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
-		PrintToServer("VScript_CreateBoss::scope=%x", scope);
+		VScriptHandle scope = VScript_GetEntityScriptScope(client, true);
 		if(scope)
 		{
 			VScriptHandle boss = ExportConfig(Client(client).Cfg);
 			VScript_SetValueHScript(scope, "ff2boss", boss);
-			PrintToServer("VScript_CreateBoss::boss=%x", boss);
 
-			VScriptHandle hclient = VScript_EntityToHScript(client);
-			PrintToServer("VScript_CreateBoss::hclient=%x", hclient);
+			VScriptHandle hclient = VScript_EntityToHScript(client, true);
 			if(hclient)
 			{
 				VScriptHandle params = VScript_CreateTable();
 				VScript_SetValueHScript(params, "client", hclient);
 				VScript_SetValueHScript(params, "boss", boss);
 
-				PrintToServer("VScript_CreateBoss::params=%x", params);
-				PrintToServer("VScript_CreateBoss::%d", ScriptFireScriptHook.Execute("FF2_OnBossCreated", params));
+				ScriptFireScriptHook.Execute("FF2_OnBossCreated", params);
 
 				delete params;
 			}
@@ -440,21 +433,17 @@ stock void VScript_BossRemoved(int client)
 
 public void VScript_OnVMInitialized()
 {
-	PrintToServer("VScript_OnVMInitialized");
-
-	VScriptHandle code = VScript_CompileScript("function FF2_GetAttribute(entity, name, default_value) {\n" ...
+	VScript_Run("function FF2_GetAttribute(entity, name, default_value) {\n" ...
 		"local a = (\"GetCustomAttribute\" in entity) ? entity.GetCustomAttribute(name, default_value) : entity.GetAttribute(name, default_value)\n" ...
 		"if(a == default_value) {\n" ...
 			"local b = entity.GetScriptScope()\n" ...
 			"if(b == null || !(\"ff2attributes\" in b) || !(name in b.ff2attributes)) { return default_value }\n" ...
-			"a = m.ff2attributes[strName]\n" ...
+			"a = b.ff2attributes[name]\n" ...
 		"}\n" ...
 		"return a\n" ...
 	"}");
-	VScript_RunScript(code);
-	delete code;
 
-	code = VScript_CompileScript("function FF2_SetAttribute(entity, name, value) {\n" ...
+	VScript_Run("function FF2_SetAttribute(entity, name, value) {\n" ...
 		"if(\"AddCustomAttribute\" in entity) { entity.AddCustomAttribute(name, value, -1.0) }\n" ...
 		"else { entity.AddAttribute(name, value, -1.0) }\n" ...
 		"entity.ValidateScriptScope()\n" ...
@@ -462,33 +451,32 @@ public void VScript_OnVMInitialized()
 		"if(!(\"ff2attributes\" in a)) { a.ff2attributes <- {} }\n" ...
 		"a.ff2attributes[name] <- value\n" ...
 	"}");
-	VScript_RunScript(code);
-	delete code;
 	
-	code = VScript_CompileScript("function FF2_RemoveAttribute(entity, name) {\n" ...
+	VScript_Run("function FF2_RemoveAttribute(entity, name) {\n" ...
 		"if(\"RemoveCustomAttribute\" in entity) { entity.RemoveCustomAttribute(name) }\n" ...
 		"else { entity.RemoveAttribute(name) }\n" ...
 		"local a = entity.GetScriptScope()\n" ...
 		"if(a != null && (\"ff2attributes\" in a) && (name in a.ff2attributes)) { delete a.ff2attributes[name] }\n" ...
 	"}");
-	VScript_RunScript(code);
-	delete code;
 	
-	code = VScript_CompileScript("function FF2_GetBossConfig(player) {\n" ...
+	VScript_Run("function FF2_GetBossConfig(player) {\n" ...
 		"local a = player.GetScriptScope()\n" ...
 		"return (a != null && (\"ff2boss\" in a)) ? a.ff2boss : null\n" ...
 	"}");
-	VScript_RunScript(code);
-	delete code;
+}
 
+void SetupFunctions()
+{
 	VScript_RegisterFunction("FF2_PullBossKey", VScriptPullBossKey, "", VScriptField_Void, VScriptField_HScript, VScriptField_String);
 	VScript_RegisterFunction("FF2_PushBossKey", VScriptPushBossKey, "", VScriptField_Void, VScriptField_HScript, VScriptField_String, VScriptField_Void);
 	VScript_RegisterFunction("FF2_PullBossConfig", VScriptPullBossConfig, "", VScriptField_HScript, VScriptField_HScript);
 	VScript_RegisterFunction("FF2_PushBossConfig", VScriptPushBossConfig, "", VScriptField_HScript, VScriptField_HScript);
 	VScript_RegisterFunction("FF2_EmitBossSound", VScriptEmitBossSound, "", VScriptField_Bool, VScriptField_HScript, VScriptField_HScript);
+	VScript_RegisterFunction("FF2_DoBossSlot", VScriptDoBossSlot, "", VScriptField_Void, VScriptField_HScript, VScriptField_Int, VScriptField_Int);
+	VScript_RegisterFunction("FF2_SetClientMinion", VScriptSetClientMinion, "", VScriptField_Void, VScriptField_HScript, VScriptField_Int);
 }
 
-static void VScriptPullBossKey(VScriptContext context)
+static void VScriptPullBossKey(ScriptContext context)
 {
 	VScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
@@ -528,7 +516,7 @@ static void VScriptPullBossKey(VScriptContext context)
 	context.SetReturnNull();
 }
 
-static void VScriptPushBossKey(VScriptContext context)
+static void VScriptPushBossKey(ScriptContext context)
 {
 	VScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
@@ -602,7 +590,7 @@ static void VScriptPushBossKey(VScriptContext context)
 	}
 }
 
-static void VScriptPullBossConfig(VScriptContext context)
+static void VScriptPullBossConfig(ScriptContext context)
 {
 	VScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
@@ -633,7 +621,7 @@ static void VScriptPullBossConfig(VScriptContext context)
 	}
 }
 
-static void VScriptPushBossConfig(VScriptContext context)
+static void VScriptPushBossConfig(ScriptContext context)
 {
 	VScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
@@ -671,7 +659,7 @@ static void VScriptPushBossConfig(VScriptContext context)
 	}
 }
 
-static void VScriptEmitBossSound(VScriptContext context)
+static void VScriptEmitBossSound(ScriptContext context)
 {
 	bool result;
 	VScriptHandle hclient = context.GetArgHScript(0);
@@ -750,6 +738,37 @@ static void VScriptEmitBossSound(VScriptContext context)
 	}
 
 	context.SetReturnBool(result);
+}
+
+static void VScriptDoBossSlot(ScriptContext context)
+{
+	VScriptHandle hclient = context.GetArgHScript(0);
+	if(hclient)
+	{
+		int client = VScript_HScriptToEntity(hclient);
+		if(client > 0 && client <= MaxClients)
+		{
+			int low = context.GetArgInt(1);
+			int high = context.ArgCount > 2 ? low : context.GetArgInt(2);
+			if(high > low)
+				high = low;
+			
+			Bosses_UseSlot(client, low, high);
+		}
+	}
+}
+
+static void VScriptSetClientMinion(ScriptContext context)
+{
+	VScriptHandle hclient = context.GetArgHScript(0);
+	if(hclient)
+	{
+		int client = VScript_HScriptToEntity(hclient);
+		if(client > 0 && client <= MaxClients)
+		{
+			Client(client).MinionType = context.GetArgInt(1);
+		}
+	}
 }
 
 static VScriptHandle ExportConfig(ConfigMap cfg)

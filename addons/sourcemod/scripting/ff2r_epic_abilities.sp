@@ -846,6 +846,7 @@ public void OnLibraryAdded(const char[] name)
 	Attrib_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 
 	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
 	{
@@ -864,6 +865,7 @@ public void OnLibraryRemoved(const char[] name)
 	Attrib_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 
 	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
 	{
