@@ -506,6 +506,7 @@ static void BossMenu(int client)
 			}
 
 			ConfigMap cfg = Bosses_GetConfig(mainboss);
+			ConfigMap subcfg = Bosses_GetConfig(subboss);
 			
 			if(access && blacklist != 0)
 			{
@@ -565,12 +566,15 @@ static void BossMenu(int client)
 
 			if(Cvar[RankingStyle].IntValue)
 			{
-				Bosses_GetBossName(subboss, data, sizeof(data), _, "filename");
-				int rank = Ranking_GetRank(client, data);
+				if(!subcfg.GetBool("ranks", preview, false) || preview)
+				{
+					Bosses_GetBossName(subboss, data, sizeof(data), _, "filename");
+					int rank = Ranking_GetRank(client, data);
 
-				Bosses_GetBossName(subboss, data, sizeof(data), lang);
-				FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", rank);
-				menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
+					Bosses_GetBossName(subboss, data, sizeof(data), lang);
+					FormatEx(buffer, sizeof(buffer), "%t", "Current Rank", rank);
+					menu.AddItem("0", buffer, ITEMDRAW_DISABLED);
+				}
 			}
 
 			if(cfg.GetSection("creator"))
@@ -580,7 +584,7 @@ static void BossMenu(int client)
 			}
 
 			int count;
-			if(Bosses_GetConfig(subboss).GetInt("companion", count))
+			if(subcfg.GetInt("companion", count))
 			{
 				for(int i = menu.ItemCount; i < 6; i++)
 				{

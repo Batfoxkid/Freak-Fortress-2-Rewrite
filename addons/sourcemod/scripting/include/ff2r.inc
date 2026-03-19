@@ -926,9 +926,6 @@ native bool FF2R_GetBossData(int client);
 native void FF2R_SetBossData(int client, Handle cfg = null, bool forwards);
 native bool FF2R_GetSpecialData(int special);
 native bool FF2R_CreateBoss(int client);
-forward void FF2R_OnAbility(int client, const char[] ability);
-forward void FF2R_OnAbilityPost(int client, const char[] ability);
-forward void FF2R_OnBossModifier(int client);
 
 #endif
 

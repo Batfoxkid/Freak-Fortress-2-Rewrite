@@ -2360,7 +2360,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			TF2Tools_RemoveWeaponSlot(client, slot);
 	}
 	
-	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, true);
+	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)));
 
 	if(entity != -1 && !wearable)
 	{
@@ -3186,15 +3186,6 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 		}
 	}
 	return false;
-}
-
-TFClassType GetClassOfName(const char[] buffer)
-{
-	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
-	if(class == TFClass_Unknown)
-		class = TF2Tools_GetClass(buffer);
-	
-	return class;
 }
 
 void GetClassWeaponClassname(TFClassType class, char[] name, int length)

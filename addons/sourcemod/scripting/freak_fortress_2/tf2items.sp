@@ -27,9 +27,9 @@ enum struct WeaponData
 	int Blue;
 	int Skin;
 	bool Equip;
-	bool Forumla;
+	int Forumla;
 
-	void Setup(const char[] classname, int index, const char[] attributes = "", bool preserve = false, bool show = true, bool equip = true)
+	void Setup(const char[] classname, int index = 0, const char[] attributes = "", bool preserve = false, bool show = true, bool equip = true)
 	{
 		strcopy(this.Classname, sizeof(this.Classname), classname);
 		this.Index = index;
@@ -51,7 +51,7 @@ enum struct WeaponData
 		this.Blue = 255;
 		this.Skin = -1;
 		this.Equip = equip;
-		this.Forumla = false;
+		this.Forumla = -99;
 	}
 }
 
@@ -78,379 +78,86 @@ stock void TF2Items_PrintStatus()
 	#endif
 }
 
-stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false, bool forumla = false)
+stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, ConfigMap cfg, bool reset = true, bool equip = true, int formula = -99)
 {
-	static char classname2[36], netclass[32], buffer[PLATFORM_MAX_PATH];
-	strcopy(classname2, sizeof(classname2), classname);
+	char buffer[36];
+	strcopy(buffer, sizeof(buffer), classname);
 	
-	if(StrContains(classname2, "tf_") != 0 &&
-		StrContains(classname2, "tf2c_") != 0 &&
-		!StrEqual(classname2, "saxxy"))
+	if(StrContains(buffer, "tf_") != 0 &&
+		StrContains(buffer, "tf2c_") != 0 &&
+		!StrEqual(buffer, "saxxy"))
 	{
-		if(!cfg.Get("name", classname2, sizeof(classname2)))
-			strcopy(classname2, sizeof(classname2), "tf_wearable");
+		if(!cfg.Get("name", buffer, sizeof(buffer)) && reset)
+			strcopy(buffer, sizeof(buffer), "tf_wearable");
 	}
-	
-	TFClassType class = TF2_GetPlayerClass(client);
-	GetClassWeaponClassname(class, classname2, sizeof(classname2));
-	bool wearable = StrContains(classname2, "tf_weap") != 0 && StrContains(classname2, "tf2c_weap") != 0;
-	
-	int index = 0;
-	cfg.GetInt("index", index);
-	
-	int level = -1;
-	cfg.GetInt("level", level);
-	
-	int quality = 5;
-	cfg.GetInt("quality", quality);
-	
-	bool preserve;
-	cfg.GetBool("preserve", preserve, false);
-	
-#if defined IS_MAIN_FF2
-	bool override = false;
-#else
-	bool override = true;
-#endif
-	cfg.GetBool("override", override, false);
-	
-	int kills = -1;
-	if(!cfg.GetInt("rank", kills) && level == -1 && !override)
-		kills = GetURandomInt() % 21;
-	
-	if(kills >= 0)
-		kills = wearable ? GetKillsOfCosmeticRank(kills, index) : GetKillsOfWeaponRank(kills, index);
-	
-	if(level < 0 || level > 127)
-		level = 101;
-	
-	TFClassType forceClass;
-	if(cfg.Get("class", buffer, sizeof(buffer)))
-		forceClass = GetClassOfName(buffer);
-	
-	if(forceClass != TFClass_Unknown)
-		TF2_SetPlayerClass(client, forceClass, _, false);
-	
-	bool found = (cfg.GetKeyValType("attributes") == KeyValType_Value && cfg.Get("attributes", buffer, sizeof(buffer)) && buffer[0]);
-	int slot = wearable ? -1 : TF2_GetClassnameSlot(classname2);
 
-	if(!wearable && !override)
+	if(reset)
 	{
-		if(slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee && equip)
-		{
-			if(found)
-			{
-				Format(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1 ; %s", buffer);
-			}
-			else
-			{
-				strcopy(buffer, sizeof(buffer), "2 ; 3.1 ; 275 ; 1");
-			}
-		}
-		else if(found)
-		{
-			Format(buffer, sizeof(buffer), "2 ; 3.1 ; %s", buffer);
-		}
-		else
-		{
-			strcopy(buffer, sizeof(buffer), "2 ; 3.1");
-		}
-	}
-	else if(!found)
-	{
-		buffer[0] = 0;
-	}
-	
-	static char buffers[40][16];
-	int count = ExplodeString(buffer, " ; ", buffers, sizeof(buffers), sizeof(buffers));
-	
-	if(count % 2)
-		count--;
-	
-	int attribs;
-	int entity = -1;
+		data.Setup(buffer);
 
-#if defined IS_MAIN_FF2
-	int alive = TotalPlayersAliveEnemy(Cvar[FriendlyFire].BoolValue ? -1 : GetClientTeam(client));
-#else
-	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
-#endif
-
-	#if defined _tf2items_included
-	if(wearable || GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") != FeatureStatus_Available)
-	#endif
-	{
-		entity = CreateEntityByName(classname2);
-		if(IsValidEntity(entity))
-		{
-			SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
-			SetEntProp(entity, Prop_Send, "m_bInitialized", true);
-
-			GetEntityNetClass(entity, netclass, sizeof(netclass));
-			SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityQuality"), quality);
-			SetEntData(entity, FindSendPropInfo(netclass, "m_iEntityLevel"), level);
-
-			SetEntProp(entity, Prop_Send, "m_iEntityQuality", quality);
-			SetEntProp(entity, Prop_Send, "m_iEntityLevel", level);
-			
-			DispatchSpawn(entity);
-
-			if(!preserve)
-				SetEntProp(entity, Prop_Send, "m_bOnlyIterateItemViewAttributes", true);
-		}
-		else
-		{
-			#if defined IS_MAIN_FF2
-			Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-			#else
-			FF2R_GetBossData(client).GetString("filename", buffer, sizeof(buffer));
-			#endif
-			LogError("[Boss] Invalid classname '%s' for '%s'", classname2, buffer);
-		}
-	}
-	#if defined _tf2items_included
-	else
-	{
-		Handle item = TF2Items_CreateItem(preserve ? (OVERRIDE_ALL|FORCE_GENERATION|PRESERVE_ATTRIBUTES) : (OVERRIDE_ALL|FORCE_GENERATION));
-		TF2Items_SetClassname(item, classname2);
-		TF2Items_SetItemIndex(item, index);
-		TF2Items_SetLevel(item, level);
-		TF2Items_SetQuality(item, quality);
-		TF2Items_SetNumAttributes(item, count/2 > 14 ? 15 : count/2);
-		for(int a; attribs < count && a < 16; attribs += 2)
-		{
-			int attrib = StringToInt(buffers[attribs]);
-			if(attrib)
-			{
-				TF2Items_SetAttribute(item, a++, attrib, ParseFormula(buffers[attribs+1], alive));
-			}
-			else
-			{
-				#if defined IS_MAIN_FF2
-				Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-				#else
-				FF2R_GetBossData(client).GetString("filename", buffer, sizeof(buffer));
-				#endif
-				LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname2, buffers[attribs], buffers[attribs+1]);
-			}
-		}
-		
-		entity = TF2Items_GiveNamedItem(client, item);
-		delete item;
-
-		GetEntityNetClass(entity, netclass, sizeof(netclass));
-	}
-	#endif
-	
-	if(entity != -1)
-	{
-		if(wearable)
-		{
-			TF2U_EquipPlayerWearable(client, entity);
-		}
-		else
-		{
-			EquipPlayerWeapon(client, entity);
-		}
-		
-		if(forceClass != TFClass_Unknown)
-			TF2_SetPlayerClass(client, class, _, false);
-		
-		for(; attribs < count; attribs += 2)
-		{
-			int attrib = StringToInt(buffers[attribs]);
-			if(attrib)
-			{
-				if(forumla)
-				{
-					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], alive));
-				}
-				else
-				{
-					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
-				}
-			}
-			else
-			{
-				#if defined IS_MAIN_FF2
-				Client(client).Cfg.Get("filename", buffer, sizeof(buffer));
-				#else
-				FF2R_GetBossData(client).GetString("filename", buffer, sizeof(buffer));
-				#endif
-				LogError("[Boss] Bad weapon attribute passed for '%s' on '%s': %s ; %s", buffer, classname2, buffers[attribs], buffers[attribs+1]);
-			}
-		}
-
-		if(cfg.GetKeyValType("attributes") == KeyValType_Section)
-		{
-			ConfigMap attributes = cfg.GetSection("attributes");
-
-			StringMapSnapshot snap = attributes.Snapshot();
-			int snapLength = snap.Length;
-
-			PackVal val;
-
-			for(attribs = 0; attribs < snapLength; attribs++)
-			{
-				int length = snap.KeyBufferSize(attribs) + 1;
-				char[] key = new char[length];
-
-				snap.GetKey(attribs, key, length);
-				
-				attributes.GetArray(key, val, sizeof(val));
-
-				if(val.tag == KeyValType_Value)
-				{
-					if(forumla)
-					{
-						Attrib_Set(entity, key, _, ParseFormula(val.data, alive));
-					}
-					else
-					{
-						Attrib_SetString(entity, key, _, val.data);
-					}
-				}
-			}
-
-			delete snap;
-		}
-		
-		#if defined CUSTOMATTRIBFF2_INCLUDED
-		ConfigMap custom = cfg.GetSection("custom");
-		if(custom)
-			CustomAttrib_ApplyFromCfg(entity, custom);
+		#if defined IS_MAIN_FF2
+		data.Override = false;
 		#endif
-
-		if(kills >= 0)
-		{
-			Attrib_SetInt(entity, "kill eater", 214, kills);
-			if(wearable)
-				Attrib_SetInt(entity, "strange restriction type 1", 454, 64);
-		}
-		
-		if(!wearable)
-		{
-			if(cfg.Get("clip", buffer, sizeof(buffer)))
-			{
-				level = RoundFloat(ParseFormula(buffer, alive));
-				if(level >= 0)
-					SetEntProp(entity, Prop_Data, "m_iClip1", level);
-			}
-			
-			level = 0;
-			if(cfg.GetInt("ammotype", level) && level > 0 && level < 7)
-				SetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType", level);
-			
-			if(cfg.Get("ammo", buffer, sizeof(buffer)))
-			{
-				quality = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
-				if(quality >= 0)
-				{
-					level = RoundFloat(ParseFormula(buffer, alive));
-
-					if(cfg.Get("max", buffer, sizeof(buffer)))
-					{
-						int limit = RoundFloat(ParseFormula(buffer, alive));
-						if(limit >= 0 && level > limit)
-							level = limit;
-					}
-
-					SetEntProp(client, Prop_Data, "m_iAmmo", level, _, quality);
-				}
-			}
-			
-			if(index != 735 && StrEqual(classname2, "tf_weapon_builder"))
-			{
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level != 3, _, level);
-				}
-			}
-			else if(index == 735 || StrEqual(classname2, "tf_weapon_sapper"))
-			{
-				SetEntProp(entity, Prop_Send, "m_iObjectType", TFObject_Sapper);
-				SetEntProp(entity, Prop_Data, "m_iSubType", TFObject_Sapper);
-				
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_aBuildableObjectTypes", level == 3, _, level);
-				}
-			}
-		}
-
-		override = wearable;
-		cfg.GetBool("show", override, false);
-		if(override)
-		{
-			if(cfg.GetInt("worldmodel", index) && index)
-			{
-				if(!wearable)
-					SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-				
-				for(level = 0; level < 4; level++)
-				{
-					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
-				}
-			}
-			
-			float scale = 1.0;
-			if(cfg.GetFloat("scale", scale) && scale != 1.0)
-				SetEntPropFloat(entity, Prop_Send, "m_flModelScale", scale);
-			
-			int offset = FindSendPropInfo(netclass, "m_iItemIDHigh");
-			
-			SetEntData(entity, offset - 8, 0);	// m_iItemID
-			SetEntData(entity, offset - 4, 0);	// m_iItemID
-			SetEntData(entity, offset, 0);		// m_iItemIDHigh
-			SetEntData(entity, offset + 4, 0);	// m_iItemIDLow
-			
-			SetEntProp(entity, Prop_Send, "m_bValidatedAttachedEntity", true);
-		}
-		else if(!wearable)
-		{
-			SetEntityRenderMode(entity, RENDER_ENVIRONMENTAL);
-		}
-		
-		level = 255;
-		index = 255;
-		kills = 255;
-		count = 255;
-		
-		override = view_as<bool>(cfg.GetInt("alpha", level));
-		override = (cfg.GetInt("red", index) || override);
-		override = (cfg.GetInt("green", kills) || override);
-		override = (cfg.GetInt("blue", count) || override);
-		
-		if(override)
-		{
-			SetEntityRenderMode(entity, RENDER_TRANSCOLOR);
-			SetEntityRenderColor(entity, index, kills, count, level);
-		}
-
-		if(cfg.GetInt("skin", level))
-			SetEntProp(entity, Prop_Send, "m_nSkin", level);
-		
-		SetEntProp(entity, Prop_Send, "m_iAccountID", GetSteamAccountID(client, false));
-		
-		if(!wearable && equip && slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee)
-		{
-			equip = false;
-			TF2U_SetPlayerActiveWeapon(client, entity);
-		}
 	}
-	else if(forceClass != TFClass_Unknown)
+	else if(buffer[0])
 	{
-		TF2_SetPlayerClass(client, class, _, false);
+		strcopy(buffer, sizeof(buffer), classname);
 	}
 
-	Event event = CreateEvent("localplayer_pickup_weapon", true);
-	event.FireToClient(client);
-	event.Cancel();
+	cfg.GetInt("index", data.Index);
+	cfg.GetInt("level", data.Level);
+	cfg.GetInt("quality", data.Quality);
+	cfg.GetBool("preserve", data.Preserve, false);
+	cfg.GetBool("override", data.Override, false);
+	cfg.GetInt("rank", data.Rank);
 
-	return entity;
+	if(cfg.Get("class", buffer, sizeof(buffer)))
+		data.ForceClass = TF2Tools_GetClass(buffer);
+	
+	if(cfg.GetKeyValType("attributes") == KeyValType_Value)
+		cfg.Get("attributes", data.AttributeString, sizeof(data.AttributeString));
+
+	cfg.Get("clip", data.Clip, sizeof(data.Clip));
+	cfg.Get("ammo", data.Ammo, sizeof(data.Ammo));
+	cfg.Get("maxammo", data.MaxAmmo, sizeof(data.MaxAmmo));
+	cfg.GetBool("show", data.Show, false);
+	cfg.GetInt("worldmodel", data.Worldmodel);
+	cfg.GetInt("alpha", data.Alpha);
+	cfg.GetInt("red", data.Red);
+	cfg.GetInt("green", data.Green);
+	cfg.GetInt("blue", data.Blue);
+	cfg.GetInt("skin", data.Skin);
+	data.Equip = equip;
+	data.Forumla = formula;
 }
 
-stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
+stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false, int formula = -99)
+{
+	ArrayList cfgs = new ArrayList();
+	cfgs.Push(cfg);
+	int weapon = TF2Items_CreateFromMultiCfg(client, classname, cfgs, equip, formula);
+	delete cfgs;
+
+	return weapon;
+}
+
+stock int TF2Items_CreateFromMultiCfg(int client, const char[] classname, ArrayList cfgs, bool &equip = false, int formula = -99)
+{
+	static WeaponData data;
+
+	int length = cfgs.Length;
+	for(int i; i < length; i++)
+	{
+		ConfigMap cfg = cfgs.Get(i);
+		TF2Items_StructFromCfg(data, classname, cfg, i == 0, equip, formula);
+	}
+
+	int weapon = TF2Items_CreateFromStruct(client, data, cfgs);
+	equip = data.Equip;
+	return weapon;
+}
+
+stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs = null)
 {
 	static char buffer[64];
 	
@@ -505,12 +212,6 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 	int attribs;
 	int entity = -1;
 
-#if defined IS_MAIN_FF2
-	int alive = TotalPlayersAliveEnemy(Cvar[FriendlyFire].BoolValue ? -1 : GetClientTeam(client));
-#else
-	int alive = TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client));
-#endif
-
 	#if defined _tf2items_included
 	if(wearable || GetFeatureStatus(FeatureType_Native, "TF2Items_CreateItem") != FeatureStatus_Available)
 	#endif
@@ -552,7 +253,7 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				TF2Items_SetAttribute(item, a++, attrib, ParseFormula(buffers[attribs+1], alive));
+				TF2Items_SetAttribute(item, a++, attrib, data.Forumla == -99 ? StringToFloat(buffers[attribs+1]) : ParseFormula(buffers[attribs+1], data.Forumla));
 			}
 			else
 			{
@@ -586,18 +287,70 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				if(data.Forumla)
+				if(data.Forumla == -99)
 				{
-					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], alive));
+					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
 				}
 				else
 				{
-					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
+					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], data.Forumla));
 				}
 			}
 			else
 			{
 				ThrowError("Bad weapon attribute passed for '%s' : %s ; %s", data.Classname, buffers[attribs], buffers[attribs+1]);
+			}
+		}
+
+		if(cfgs)
+		{
+			int lengt = cfgs.Length;
+			for(int i; i < lengt; i++)
+			{
+				ConfigMap cfg = cfgs.Get(i);
+
+				if(cfg.GetKeyValType("attributes") == KeyValType_Section)
+				{
+					ConfigMap attributes = cfg.GetSection("attributes");
+
+					StringMapSnapshot snap = attributes.Snapshot();
+					int snapLength = snap.Length;
+
+					PackVal val;
+
+					for(attribs = 0; attribs < snapLength; attribs++)
+					{
+						int length = snap.KeyBufferSize(attribs) + 1;
+						char[] key = new char[length];
+
+						snap.GetKey(attribs, key, length);
+						
+						attributes.GetArray(key, val, sizeof(val));
+
+						if(val.tag == KeyValType_Value)
+						{
+							if(data.Forumla == -99)
+							{
+								Attrib_SetString(entity, key, _, val.data);
+							}
+							else
+							{
+								Attrib_Set(entity, key, _, ParseFormula(val.data, data.Forumla));
+							}
+						}
+					}
+
+					delete snap;
+				}
+				
+				#if defined CUSTOMATTRIBFF2_INCLUDED
+				if(cfg)
+				{
+					ConfigMap custom = cfg.GetSection("custom");
+					if(custom)
+						CustomAttrib_ApplyFromCfg(entity, custom);
+				}
+				#endif
 			}
 		}
 
@@ -612,7 +365,7 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 		{
 			if(data.Clip[0])
 			{
-				kills = RoundFloat(ParseFormula(data.Clip, alive));
+				kills = RoundFloat(data.Forumla == -99 ? StringToFloat(data.Clip) : ParseFormula(data.Clip, data.Forumla));
 				if(kills >= 0)
 					SetEntProp(entity, Prop_Data, "m_iClip1", kills);
 			}
@@ -622,11 +375,11 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 				int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
 				if(type >= 0)
 				{
-					kills = RoundFloat(ParseFormula(data.Ammo, alive));
+					kills = RoundFloat(data.Forumla == -99 ? StringToFloat(data.Ammo) : ParseFormula(data.Ammo, data.Forumla));
 
 					if(data.MaxAmmo[0])
 					{
-						int limit = RoundFloat(ParseFormula(data.MaxAmmo, alive));
+						int limit = RoundFloat(data.Forumla == -99 ? StringToFloat(data.MaxAmmo) : ParseFormula(data.MaxAmmo, data.Forumla));
 						if(limit >= 0 && kills > limit)
 							kills = limit;
 					}
@@ -697,6 +450,7 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 		
 		if(!wearable && data.Equip && slot >= TFWeaponSlot_Primary && slot <= TFWeaponSlot_Melee)
 		{
+			data.Equip = false;
 			TF2U_SetPlayerActiveWeapon(client, entity);
 		}
 	}

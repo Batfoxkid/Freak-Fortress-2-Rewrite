@@ -83,15 +83,6 @@ bool MultiBosses()
 	return false;
 }
 
-TFClassType GetClassOfName(const char[] buffer)
-{
-	TFClassType class = view_as<TFClassType>(StringToInt(buffer));
-	if(class == TFClass_Unknown)
-		class = TF2Tools_GetClass(buffer);
-	
-	return class;
-}
-
 void GetClassWeaponClassname(TFClassType class, char[] name, int length)
 {
 	if(!StrContains(name, "saxxy"))

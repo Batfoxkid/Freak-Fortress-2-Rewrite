@@ -1492,7 +1492,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	
 	TFClassType class = TFClass_Scout;
 	if(cfg.Get("class", buffer, sizeof(buffer)))
-		class = GetClassOfName(buffer);
+		class = TF2Tools_GetClass(buffer);
 	
 	cfg.SetInt("class", view_as<int>(class));
 	
@@ -1831,7 +1831,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 
 	TFClassType playerClass = TFClass_Scout;
 	if(Client(client).Cfg.Get("class", buffer, sizeof(buffer)))
-		playerClass = GetClassOfName(buffer);
+		playerClass = TF2Tools_GetClass(buffer);
 
 	Client(client).Cfg.SetInt("class", view_as<int>(playerClass));
 

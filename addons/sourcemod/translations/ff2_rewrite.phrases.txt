@@ -773,6 +773,41 @@
 		"#format"	"{1:d}"
 		"en"		"Refunded {1} resources for killing an ally"
 	}
+	"Danmaku Difficulty Set"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty is {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Increased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty increased to {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Decreased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty decreased to {olive}{2}{default}!"
+	}
+	"Danmaku Rank Increased"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}increased to {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}decreased to {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased Score"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:d}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}decreased to {olive}{3}{default}! ({4}%% of {5}%% health left)"
+	}
+	"Danmaku Rank Saved Score"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:d}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}kept at {olive}{3}{default}! ({4}%% of {5}%% health left)"
+	}
 	
 	"Weapon Menu"
 	{

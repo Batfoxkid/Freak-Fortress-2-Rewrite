@@ -20,6 +20,17 @@ rm addons/sourcemod/configs/freak_fortress_2/non-default/graymann.cfg
 cp addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx Gray-Mann/addons/sourcemod/plugins/ff2r_gray_abilities.smx
 rm addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx
 
+# Blitzkrieg Package
+mkdir -p Blitzkrieg/addons/sourcemod/configs/freak_fortress_2
+mkdir -p Blitzkrieg/addons/sourcemod/plugins
+cp -r custom/blitzkrieg/models Blitzkrieg
+cp -r custom/blitzkrieg/materials Blitzkrieg
+cp -r custom/blitzkrieg/sound Blitzkrieg
+cp addons/sourcemod/configs/freak_fortress_2/non-default/blitzkrieg.cfg Blitzkrieg/addons/sourcemod/configs/freak_fortress_2/blitzkrieg.cfg
+rm addons/sourcemod/configs/freak_fortress_2/non-default/blitzkrieg.cfg
+cp addons/sourcemod/scripting/plugins/ff2r_danmaku_abilities.smx Blitzkrieg/addons/sourcemod/plugins/ff2r_danmaku_abilities.smx
+rm addons/sourcemod/scripting/plugins/ff2r_danmaku_abilities.smx
+
 # Update Package
 mkdir -p Update-Package/addons/sourcemod
 cp -r addons/sourcemod/scripting/plugins Update-Package/addons/sourcemod

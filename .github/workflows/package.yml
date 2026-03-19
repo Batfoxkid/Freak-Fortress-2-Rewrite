@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir -p plugins
           spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2.smx" freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_danmaku_abilities.smx" ff2r_danmaku_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities.smx" ff2r_default_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities.smx" ff2r_epic_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities.smx" ff2r_gray_abilities.sp
@@ -70,6 +71,12 @@ jobs:
         with:
           args: zip -qq -r Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Gray-Mann
       
+      - name: Package Blitzkrieg
+        uses: montudor/action-zip@v1.0.0
+        if: "contains(github.event.head_commit.message, '[B]')"
+        with:
+          args: zip -qq -r Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Blitzkrieg
+      
       - name: Release
         uses: softprops/action-gh-release@master
         with:
@@ -79,6 +86,7 @@ jobs:
             Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
   
   nonrelease:
     runs-on: ubuntu-latest
@@ -109,6 +117,7 @@ jobs:
         run: |
           mkdir -p plugins
           spcomp -E -O2 -v2 -i "include" -o "plugins/freak_fortress_2.smx" freak_fortress_2.sp
+          spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_danmaku_abilities.smx" ff2r_danmaku_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_default_abilities.smx" ff2r_default_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_epic_abilities.smx" ff2r_epic_abilities.sp
           spcomp -E -O2 -v2 -i "include" -o "plugins/ff2r_gray_abilities.smx" ff2r_gray_abilities.sp
@@ -141,3 +150,9 @@ jobs:
         with:
           name: Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./Gray-Mann
+      
+      - name: Upload Blitzkrieg
+        uses: actions/upload-artifact@master
+        with:
+          name: Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
+          path: ./Blitzkrieg
