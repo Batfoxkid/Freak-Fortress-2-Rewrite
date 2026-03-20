@@ -689,7 +689,10 @@ static void Weapons_SpawnFrame(int ref)
 	Client(client).GetLoadout(loadout, sizeof(loadout));
 	ConfigMap cfg = FindWeaponSection(entity, loadout, _, client, temp);
 	if(!cfg)
+	{
+		VScript_WeaponChanged(client, entity);
 		return;
+	}
 	
 	bool found;
 	if(cfg.GetBool("strip", found, false) && found)
@@ -782,6 +785,8 @@ static void Weapons_SpawnFrame(int ref)
 	cfg = cfg.GetSection("custom");
 	if(cfg)
 		CustomAttrib_ApplyFromCfg(entity, cfg);
+	
+	VScript_WeaponChanged(client, entity);
 }
 
 static ConfigMap FindMatchingLoadout(const char[] loadou)

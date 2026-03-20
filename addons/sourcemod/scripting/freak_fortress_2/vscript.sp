@@ -9,7 +9,7 @@
 static char ReturnString[256];
 static float ReturnFloat;
 
-#if defined _vscript_ext_included
+#if defined _vscript_included
 static bool Loaded;
 static ScriptCall ScriptGetAttribute;
 static ScriptCall ScriptSetAttribute;
@@ -23,7 +23,7 @@ void VScript_PluginStart()
 {
 	HookEvent("tf_map_time_remaining", VScriptEvent, EventHookMode_Pre);
 	
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	Loaded = LibraryExists(VSCRIPT_LIBRARY);
 	if(Loaded)
 	{
@@ -56,22 +56,22 @@ void VScript_PluginStart()
 	SetFailState("VScript file \"freak_fortress_2.nut\" is outdated (expected v%d, got v%d)", SCRIPT_VERSION, version);
 }
 
-#if defined _vscript_ext_included
+#if defined _vscript_included
 static void SetupCalls()
 {
-	ScriptSetAttribute = new ScriptCall("FF2_SetAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String, VScriptField_Float);
-	ScriptGetAttribute = new ScriptCall("FF2_GetAttribute", VScriptField_Float, VScriptField_HScript, VScriptField_String, VScriptField_Float);
-	ScriptRemoveAttribute = new ScriptCall("FF2_RemoveAttribute", VScriptField_Void, VScriptField_HScript, VScriptField_String);
+	ScriptSetAttribute = new ScriptCall("FF2_SetAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String, ScriptField_Float);
+	ScriptGetAttribute = new ScriptCall("FF2_GetAttribute", ScriptField_Float, ScriptField_HScript, ScriptField_String, ScriptField_Float);
+	ScriptRemoveAttribute = new ScriptCall("FF2_RemoveAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String);
 
 	#if defined IS_MAIN_FF2
-	ScriptFireScriptHook = new ScriptCall("FireScriptHook", VScriptField_Bool, VScriptField_String, VScriptField_HScript);
+	ScriptFireScriptHook = new ScriptCall("FireScriptHook", ScriptField_Bool, ScriptField_String, ScriptField_HScript);
 	#endif
 }
 #endif
 
 public void VScript_LibraryAdded(const char[] name)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(!Loaded && StrEqual(name, VSCRIPT_LIBRARY))
 	{
 		Loaded = true;
@@ -87,7 +87,7 @@ public void VScript_LibraryAdded(const char[] name)
 
 public void VScript_LibraryRemoved(const char[] name)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && StrEqual(name, VSCRIPT_LIBRARY))
 		Loaded = false;
 	#endif
@@ -95,7 +95,7 @@ public void VScript_LibraryRemoved(const char[] name)
 
 stock void VScript_PrintStatus()
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	PrintToServer("'%s' is %sloaded", VSCRIPT_LIBRARY, Loaded ? "" : "not ");
 	#else
 	PrintToServer("'%s' not compiled", VSCRIPT_LIBRARY);
@@ -123,11 +123,11 @@ stock bool VScript_GetAttribute(int entity, const char[] name, float &value)
 {
 	ReturnFloat = -999.9;	
 
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptGetAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity);
-		if(hentity && ScriptGetAttribute.Execute(hentity, name, ReturnFloat) == VScriptStatus_Done)
+		ScriptHandle hentity = VScript_EntityToHScript(entity);
+		if(hentity && ScriptGetAttribute.Execute(hentity, name, ReturnFloat) == ScriptStatus_Done)
 			ReturnFloat = ScriptGetAttribute.GetReturnFloat();
 	}
 	else
@@ -147,10 +147,10 @@ stock bool VScript_GetAttribute(int entity, const char[] name, float &value)
 
 stock void VScript_SetAttribute(int entity, const char[] name, float value)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptSetAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity, true);
+		ScriptHandle hentity = VScript_EntityToHScript(entity, true);
 		if(hentity)
 			ScriptSetAttribute.Execute(hentity, name, value);
 		
@@ -165,10 +165,10 @@ stock void VScript_SetAttribute(int entity, const char[] name, float value)
 
 stock void VScript_SetAttributeInt(int entity, const char[] name, int value)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptSetAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity, true);
+		ScriptHandle hentity = VScript_EntityToHScript(entity, true);
 		if(hentity)
 			ScriptSetAttribute.Execute(hentity, name, value);
 		
@@ -181,12 +181,34 @@ stock void VScript_SetAttributeInt(int entity, const char[] name, int value)
 	AcceptEntityInput(0, "RunScriptCode", entity, entity);
 }
 
+public void VScript_SetAttributeTable(int entity, const char[] name, float value)
+{
+	#if defined _vscript_included
+	if(Loaded)
+	{
+		ScriptHandle scope = VScript_GetEntityScriptScope(entity, true);
+		if(scope)
+		{
+			ScriptHandle table = VScript_GetValueHScript(scope, "ff2attributes");
+			if(!table)
+				table = VScript_CreateTable();
+			
+			VScript_SetValueFloat(table, name, value);
+
+			delete table;
+		}
+		
+		return;
+	}
+	#endif
+}
+
 stock void VScript_RemoveAttribute(int entity, const char[] name)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptRemoveAttribute)
 	{
-		VScriptHandle hentity = VScript_EntityToHScript(entity);
+		ScriptHandle hentity = VScript_EntityToHScript(entity);
 		if(hentity)
 			ScriptRemoveAttribute.Execute(hentity, name);
 		
@@ -201,15 +223,15 @@ stock void VScript_RemoveAttribute(int entity, const char[] name)
 
 public void VScript_UpdateKey(int client, const char[] key, const char[] value)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(scope)
 		{
 			char subkey[256];
 			strcopy(subkey, sizeof(subkey), key);
-			VScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), true);
+			ScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), true);
 			if(table)
 			{
 				VScript_SetValueString(table, subkey, value);
@@ -222,15 +244,15 @@ public void VScript_UpdateKey(int client, const char[] key, const char[] value)
 
 public void VScript_DeleteKey(int client, const char[] key)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(scope)
 		{
 			char subkey[256];
 			strcopy(subkey, sizeof(subkey), key);
-			VScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), false);
+			ScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), false);
 			if(table)
 			{
 				VScript_ClearValue(table, key);
@@ -241,17 +263,39 @@ public void VScript_DeleteKey(int client, const char[] key)
 	#endif
 }
 
-#if defined _vscript_ext_included
-public void VScript_UpdateKeyScript(int client, const char[] key, VScriptHandle value)
+public void VScript_WeaponChanged(int client, int weapon)
+{
+	#if defined _vscript_included
+	if(Loaded && ScriptFireScriptHook)
+	{
+		ScriptHandle hclient = VScript_EntityToHScript(client);
+		ScriptHandle hweapon = VScript_EntityToHScript(weapon);
+
+		if(hclient && hweapon)
+		{
+			ScriptHandle params = VScript_CreateTable();
+			VScript_SetValueHScript(params, "client", hclient);
+			VScript_SetValueHScript(params, "weapon", hweapon);
+
+			ScriptFireScriptHook.Execute("FF2_OnWeaponChanged", params);
+
+			delete params;
+		}
+	}
+	#endif
+}
+
+#if defined _vscript_included
+public void VScript_UpdateKeyScript(int client, const char[] key, ScriptHandle value)
 {
 	if(Loaded)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(scope)
 		{
 			char subkey[256];
 			strcopy(subkey, sizeof(subkey), key);
-			VScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), true);
+			ScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), true);
 			if(table)
 			{
 				VScript_SetValueHScript(table, subkey, value);
@@ -261,9 +305,10 @@ public void VScript_UpdateKeyScript(int client, const char[] key, VScriptHandle 
 	}
 }
 
-static VScriptHandle FindTableKey(VScriptHandle scope, char[] key, int size, bool generate)
+// @note            The returned handle must be closed when no longer needed.
+static ScriptHandle FindTableKey(ScriptHandle scope, char[] key, int size, bool generate)
 {
-	VScriptHandle table = VScript_GetValueHScript(scope, "ff2boss");
+	ScriptHandle table = VScript_GetValueHScript(scope, "ff2boss");
 	if(table)
 	{
 		for(int pos = 0;;)
@@ -280,7 +325,7 @@ static VScriptHandle FindTableKey(VScriptHandle scope, char[] key, int size, boo
 			strcopy(subkey, length, key[pos]);
 			pos += length;
 
-			VScriptHandle newTable;
+			ScriptHandle newTable;
 
 			if(VScript_ValueExists(table, subkey))
 			{
@@ -316,19 +361,19 @@ static VScriptHandle FindTableKey(VScriptHandle scope, char[] key, int size, boo
 
 stock void VScript_UseAbility(int client, const char[] name)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
 	{
-		VScriptHandle hclient = VScript_EntityToHScript(client);
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle hclient = VScript_EntityToHScript(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(hclient && scope)
 		{
-			VScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
+			ScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
 			if(boss)
 			{
-				VScriptHandle ability = VScript_GetValueHScript(boss, name);
+				ScriptHandle ability = VScript_GetValueHScript(boss, name);
 		
-				VScriptHandle params = VScript_CreateTable();
+				ScriptHandle params = VScript_CreateTable();
 				VScript_SetValueHScript(params, "client", hclient);
 				VScript_SetValueHScript(params, "boss", boss);
 				VScript_SetValueString(params, "name", name);
@@ -347,19 +392,19 @@ stock void VScript_UseAbility(int client, const char[] name)
 
 public void VScript_CreateBoss(int client)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client, true);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client, true);
 		if(scope)
 		{
-			VScriptHandle boss = ExportConfig(Client(client).Cfg);
+			ScriptHandle boss = ExportConfig(Client(client).Cfg);
 			VScript_SetValueHScript(scope, "ff2boss", boss);
 
-			VScriptHandle hclient = VScript_EntityToHScript(client, true);
+			ScriptHandle hclient = VScript_EntityToHScript(client, true);
 			if(hclient)
 			{
-				VScriptHandle params = VScript_CreateTable();
+				ScriptHandle params = VScript_CreateTable();
 				VScript_SetValueHScript(params, "client", hclient);
 				VScript_SetValueHScript(params, "boss", boss);
 
@@ -376,16 +421,16 @@ public void VScript_CreateBoss(int client)
 
 stock void VScript_BossEquipped(int client)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
 	{
-		VScriptHandle hclient = VScript_EntityToHScript(client);
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle hclient = VScript_EntityToHScript(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(hclient && scope)
 		{
-			VScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
+			ScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
 			
-			VScriptHandle params = VScript_CreateTable();
+			ScriptHandle params = VScript_CreateTable();
 			VScript_SetValueHScript(params, "client", hclient);
 			VScript_SetValueHScript(params, "boss", boss);
 
@@ -400,18 +445,18 @@ stock void VScript_BossEquipped(int client)
 
 stock void VScript_BossRemoved(int client)
 {
-	#if defined _vscript_ext_included
+	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
 	{
-		VScriptHandle scope = VScript_GetEntityScriptScope(client);
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
 		if(scope)
 		{
-			VScriptHandle hclient = VScript_EntityToHScript(client);
+			ScriptHandle hclient = VScript_EntityToHScript(client);
 			if(hclient)
 			{
-				VScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
+				ScriptHandle boss = VScript_GetValueHScript(scope, "ff2boss");
 				
-				VScriptHandle params = VScript_CreateTable();
+				ScriptHandle params = VScript_CreateTable();
 				VScript_SetValueHScript(params, "client", hclient);
 				VScript_SetValueHScript(params, "boss", boss);
 
@@ -427,7 +472,7 @@ stock void VScript_BossRemoved(int client)
 	#endif
 }
 
-#if !defined _vscript_ext_included
+#if !defined _vscript_included
 	#endinput
 #endif
 
@@ -467,18 +512,18 @@ public void VScript_OnVMInitialized()
 
 void SetupFunctions()
 {
-	VScript_RegisterFunction("FF2_PullBossKey", VScriptPullBossKey, "", VScriptField_Void, VScriptField_HScript, VScriptField_String);
-	VScript_RegisterFunction("FF2_PushBossKey", VScriptPushBossKey, "", VScriptField_Void, VScriptField_HScript, VScriptField_String, VScriptField_Void);
-	VScript_RegisterFunction("FF2_PullBossConfig", VScriptPullBossConfig, "", VScriptField_HScript, VScriptField_HScript);
-	VScript_RegisterFunction("FF2_PushBossConfig", VScriptPushBossConfig, "", VScriptField_HScript, VScriptField_HScript);
-	VScript_RegisterFunction("FF2_EmitBossSound", VScriptEmitBossSound, "", VScriptField_Bool, VScriptField_HScript, VScriptField_HScript);
-	VScript_RegisterFunction("FF2_DoBossSlot", VScriptDoBossSlot, "", VScriptField_Void, VScriptField_HScript, VScriptField_Int, VScriptField_Int);
-	VScript_RegisterFunction("FF2_SetClientMinion", VScriptSetClientMinion, "", VScriptField_Void, VScriptField_HScript, VScriptField_Int);
+	VScript_RegisterFunction("FF2_PullBossKey", VScriptPullBossKey, "", ScriptField_Variant, ScriptField_HScript, ScriptField_String);
+	VScript_RegisterFunction("FF2_PushBossKey", VScriptPushBossKey, "", ScriptField_Void, ScriptField_HScript, ScriptField_String, ScriptField_Variant);
+	VScript_RegisterFunction("FF2_PullBossConfig", VScriptPullBossConfig, "", ScriptField_HScript, ScriptField_HScript);
+	VScript_RegisterFunction("FF2_PushBossConfig", VScriptPushBossConfig, "", ScriptField_Void, ScriptField_HScript);
+	VScript_RegisterFunction("FF2_EmitBossSound", VScriptEmitBossSound, "", ScriptField_Bool, ScriptField_HScript, ScriptField_HScript);
+	VScript_RegisterFunction("FF2_DoBossSlot", VScriptDoBossSlot, "", ScriptField_Void, ScriptField_HScript, ScriptField_Int, ScriptField_Int);
+	VScript_RegisterFunction("FF2_SetClientMinion", VScriptSetClientMinion, "", ScriptField_Void, ScriptField_HScript, ScriptField_Int);
 }
 
 static void VScriptPullBossKey(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
@@ -487,13 +532,12 @@ static void VScriptPullBossKey(ScriptContext context)
 			char key[256];
 			context.GetArgString(1, key, sizeof(key));
 
-			ConfigMap cfg = Client(client).Cfg;
-			switch(cfg.GetKeyValType(key))
+			switch(Client(client).Cfg.GetKeyValType(key))
 			{
 				case KeyValType_Value:
 				{
 					char buffer[256];
-					cfg.Get(key, buffer, sizeof(buffer));
+					Client(client).Cfg.Get(key, buffer, sizeof(buffer));
 					
 					VScript_UpdateKey(client, key, buffer);
 					context.SetReturnString(buffer);
@@ -501,7 +545,7 @@ static void VScriptPullBossKey(ScriptContext context)
 				}
 				case KeyValType_Section:
 				{
-					VScriptHandle table = ExportConfig(cfg.GetSection(key));
+					ScriptHandle table = ExportConfig(Client(client).Cfg.GetSection(key));
 
 					VScript_UpdateKeyScript(client, key, table);
 					context.SetReturnHScript(table);
@@ -518,7 +562,7 @@ static void VScriptPullBossKey(ScriptContext context)
 
 static void VScriptPushBossKey(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
@@ -527,55 +571,53 @@ static void VScriptPushBossKey(ScriptContext context)
 			char key[256], value[256];
 			context.GetArgString(1, key, sizeof(key));
 
-			VScriptFieldType type = context.GetArgType(2);
-			if(type == VScriptField_Void)
+			ScriptFieldType type = context.GetArgType(2);
+			if(type == ScriptField_Void)
 			{
 				Client(client).Cfg.DeleteSection(key);
 				VScript_DeleteKey(client, key);
 			}
-			else if(type == VScriptField_HScript)
+			else if(type == ScriptField_HScript)
 			{
 				ConfigMap cfg = Client(client).Cfg.GetSection(key);
-				VScriptHandle table = context.GetArgHScript(2);
+				ScriptHandle table = context.GetArgHScript(2);
 
 				TableToCfg(cfg, table);
 				VScript_UpdateKeyScript(client, key, table);
-
-				delete table;
 			}
 			else
 			{
 				switch(type)
 				{
-					case VScriptField_Float:
+					case ScriptField_Float:
 					{
 						FloatToString(context.GetArgFloat(2), value, sizeof(value));
 					}
-					case VScriptField_Vector:
+					case ScriptField_Vector:
 					{
 						float vec[3];
 						context.GetArgVector(2, vec);
 						FormatEx(value, sizeof(value), "%f %f %f", vec[0], vec[1], vec[2]);
 					}
-					case VScriptField_Int:
+					case ScriptField_Int:
 					{
 						IntToString(context.GetArgInt(2), value, sizeof(value));
 					}
-					case VScriptField_Bool:
+					case ScriptField_Bool:
 					{
 						IntToString(context.GetArgBool(2) ? 1 : 0, value, sizeof(value));
 					}
-					case VScriptField_String:
+					case ScriptField_String:
 					{
 						context.GetArgString(2, value, sizeof(value));
 					}
-					case VScriptField_Vector2D:
+					case ScriptField_Vector2D:
 					{
 						float vec[2];
 						context.GetArgVector2D(2, vec);
 						FormatEx(value, sizeof(value), "%f %f", vec[0], vec[1]);
 					}
-					case VScriptField_Quaternion:
+					case ScriptField_Quaternion:
 					{
 						float quat[4];
 						context.GetArgQuaternion(2, quat);
@@ -592,7 +634,7 @@ static void VScriptPushBossKey(ScriptContext context)
 
 static void VScriptPullBossConfig(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
@@ -600,9 +642,9 @@ static void VScriptPullBossConfig(ScriptContext context)
 		{
 			if(Client(client).IsBoss)
 			{
-				VScriptHandle boss = ExportConfig(Client(client).Cfg);
+				ScriptHandle boss = ExportConfig(Client(client).Cfg);
 				
-				VScriptHandle scope = VScript_GetEntityScriptScope(client);
+				ScriptHandle scope = VScript_GetEntityScriptScope(client);
 				if(scope)
 				{
 					VScript_SetValueHScript(scope, "ff2boss", boss);
@@ -613,7 +655,7 @@ static void VScriptPullBossConfig(ScriptContext context)
 			}
 			else
 			{
-				VScriptHandle scope = VScript_GetEntityScriptScope(client);
+				ScriptHandle scope = VScript_GetEntityScriptScope(client);
 				if(scope)
 					VScript_ClearValue(scope, "ff2boss");
 			}
@@ -623,15 +665,15 @@ static void VScriptPullBossConfig(ScriptContext context)
 
 static void VScriptPushBossConfig(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
 		if(client > 0 && client <= MaxClients)
 		{
-			VScriptHandle boss;
+			ScriptHandle boss;
 
-			VScriptHandle scope = VScript_GetEntityScriptScope(client);
+			ScriptHandle scope = VScript_GetEntityScriptScope(client);
 			if(scope)
 				boss = VScript_GetValueHScript(scope, "ff2boss");
 			
@@ -662,13 +704,13 @@ static void VScriptPushBossConfig(ScriptContext context)
 static void VScriptEmitBossSound(ScriptContext context)
 {
 	bool result;
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
 		if(client > 0 && client <= MaxClients)
 		{
-			VScriptHandle table = context.GetArgHScript(1);
+			ScriptHandle table = context.GetArgHScript(1);
 			if(table)
 			{
 				char key[64];
@@ -682,7 +724,7 @@ static void VScriptEmitBossSound(ScriptContext context)
 					int entity = SOUND_FROM_PLAYER;
 					if(VScript_ValueExists(table, "entity"))
 					{
-						VScriptHandle hentity = VScript_GetValueHScript(table, "entity");
+						ScriptHandle hentity = VScript_GetValueHScript(table, "entity");
 						entity = VScript_HScriptToEntity(hentity);
 						delete hentity;
 					}
@@ -707,18 +749,18 @@ static void VScriptEmitBossSound(ScriptContext context)
 					if(VScript_ValueExists(table, "pitch"))
 						pitch = VScript_GetValueInt(table, "pitch");
 					
-					VScriptHandle hplayers = VScript_GetValueHScript(table, "players");
+					ScriptHandle hplayers = VScript_GetValueHScript(table, "players");
 					if(hplayers)
 					{
 						int total;
 						int[] clients = new int[MaxClients];
 						char section[16];
-						VScriptFieldType type;
+						ScriptFieldType type;
 						for(int i; (i = VScript_GetNextKey(hplayers, i, section, sizeof(section), type)) != -1; )
 						{
-							if(type == VScriptField_HScript)
+							if(type == ScriptField_HScript)
 							{
-								VScriptHandle hentity = VScript_GetValueHScript(hplayers, section);
+								ScriptHandle hentity = VScript_GetValueHScript(hplayers, section);
 								clients[total++] = VScript_HScriptToEntity(hentity);
 								delete hentity;
 							}
@@ -742,7 +784,7 @@ static void VScriptEmitBossSound(ScriptContext context)
 
 static void VScriptDoBossSlot(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
@@ -760,7 +802,7 @@ static void VScriptDoBossSlot(ScriptContext context)
 
 static void VScriptSetClientMinion(ScriptContext context)
 {
-	VScriptHandle hclient = context.GetArgHScript(0);
+	ScriptHandle hclient = context.GetArgHScript(0);
 	if(hclient)
 	{
 		int client = VScript_HScriptToEntity(hclient);
@@ -771,17 +813,17 @@ static void VScriptSetClientMinion(ScriptContext context)
 	}
 }
 
-static VScriptHandle ExportConfig(ConfigMap cfg)
+static ScriptHandle ExportConfig(ConfigMap cfg)
 {
 	if(cfg == null)
 		return null;
 	
-	VScriptHandle table = VScript_CreateTable();
+	ScriptHandle table = VScript_CreateTable();
 	CfgToTable(table, cfg);
 	return table;
 }
 
-static void CfgToTable(VScriptHandle table, ConfigMap cfg)
+static void CfgToTable(ScriptHandle table, ConfigMap cfg)
 {
 	StringMapSnapshot snap = cfg.Snapshot();
 	
@@ -804,7 +846,7 @@ static void CfgToTable(VScriptHandle table, ConfigMap cfg)
 				}
 				case KeyValType_Section:
 				{
-					VScriptHandle subtable = VScript_CreateTable();
+					ScriptHandle subtable = VScript_CreateTable();
 					CfgToTable(subtable, val.cfg);
 					VScript_SetValueHScript(table, key, subtable);
 					delete subtable;
@@ -816,7 +858,7 @@ static void CfgToTable(VScriptHandle table, ConfigMap cfg)
 	delete snap;
 }
 
-static ConfigMap ImportConfig(VScriptHandle table)
+static ConfigMap ImportConfig(ScriptHandle table)
 {
 	if(table == null)
 		return null;
@@ -826,57 +868,57 @@ static ConfigMap ImportConfig(VScriptHandle table)
 	return cfg;
 }
 
-static void TableToCfg(ConfigMap cfg, VScriptHandle table)
+static void TableToCfg(ConfigMap cfg, ScriptHandle table)
 {
 	char key[256], value[256];
-	VScriptFieldType type;
+	ScriptFieldType type;
 	for(int i; (i = VScript_GetNextKey(table, i, key, sizeof(key), type)) != -1;)
 	{
 		switch(type)
 		{
-			case VScriptField_Void:
+			case ScriptField_Void:
 			{
 				cfg.Set(key, "");
 			}
-			case VScriptField_Float:
+			case ScriptField_Float:
 			{
 				cfg.SetFloat(key, VScript_GetValueFloat(table, key));
 			}
-			case VScriptField_Vector:
+			case ScriptField_Vector:
 			{
 				float vec[3];
 				VScript_GetValueVector(table, key, vec);
 				Format(value, sizeof(value), "%f %f %f", vec[0], vec[1], vec[2]);
 				cfg.Set(key, value);
 			}
-			case VScriptField_Int:
+			case ScriptField_Int:
 			{
 				cfg.SetInt(key, VScript_GetValueInt(table, key));
 			}
-			case VScriptField_Bool:
+			case ScriptField_Bool:
 			{
 				cfg.SetInt(key, VScript_GetValueBool(table, key) ? 1 : 0);
 			}
-			case VScriptField_String:
+			case ScriptField_String:
 			{
 				VScript_GetValueString(table, key, value, sizeof(value));
 				cfg.Set(key, value);
 			}
-			case VScriptField_HScript:
+			case ScriptField_HScript:
 			{
 				ConfigMap subcfg = cfg.SetSection(key);
-				VScriptHandle subtable = VScript_GetValueHScript(table, key);
+				ScriptHandle subtable = VScript_GetValueHScript(table, key);
 				TableToCfg(subcfg, subtable);
 				delete subtable;
 			}
-			case VScriptField_Vector2D:
+			case ScriptField_Vector2D:
 			{
 				float vec[2];
 				VScript_GetValueVector2D(table, key, vec);
 				Format(value, sizeof(value), "%f %f", vec[0], vec[1]);
 				cfg.Set(key, value);
 			}
-			case VScriptField_Quaternion:
+			case ScriptField_Quaternion:
 			{
 				float quat[4];
 				VScript_GetValueQuaternion(table, key, quat);
