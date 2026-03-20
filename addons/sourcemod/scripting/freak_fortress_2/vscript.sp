@@ -191,8 +191,11 @@ public void VScript_SetAttributeTable(int entity, const char[] name, float value
 		{
 			ScriptHandle table = VScript_GetValueHScript(scope, "ff2attributes");
 			if(!table)
+			{
 				table = VScript_CreateTable();
-			
+				VScript_SetValueHScript(scope, "ff2attributes", table);
+			}
+
 			VScript_SetValueFloat(table, name, value);
 
 			delete table;
@@ -255,7 +258,7 @@ public void VScript_DeleteKey(int client, const char[] key)
 			ScriptHandle table = FindTableKey(scope, subkey, sizeof(subkey), false);
 			if(table)
 			{
-				VScript_ClearValue(table, key);
+				VScript_ClearValue(table, subkey);
 				delete table;
 			}
 		}
@@ -330,20 +333,18 @@ static ScriptHandle FindTableKey(ScriptHandle scope, char[] key, int size, bool 
 			if(VScript_ValueExists(table, subkey))
 			{
 				newTable = VScript_GetValueHScript(table, subkey);
-				if(!newTable)
-					break;
 			}
-			else if(!generate)
-			{
-				break;
-			}
-			else
+			else if(generate)
 			{
 				newTable = VScript_CreateTable();
-				if(!newTable)
-					break;
-				
-				VScript_SetValueHScript(table, subkey, newTable);
+				if(newTable)
+					VScript_SetValueHScript(table, subkey, newTable);
+			}
+
+			if(!newTable)
+			{
+				delete table;
+				return null;
 			}
 			
 			delete table;
@@ -646,9 +647,7 @@ static void VScriptPullBossConfig(ScriptContext context)
 				
 				ScriptHandle scope = VScript_GetEntityScriptScope(client);
 				if(scope)
-				{
 					VScript_SetValueHScript(scope, "ff2boss", boss);
-				}
 
 				context.SetReturnHScript(boss);
 				delete boss;
@@ -791,7 +790,7 @@ static void VScriptDoBossSlot(ScriptContext context)
 		if(client > 0 && client <= MaxClients)
 		{
 			int low = context.GetArgInt(1);
-			int high = context.ArgCount > 2 ? low : context.GetArgInt(2);
+			int high = context.ArgCount > 2 ? context.GetArgInt(2) : low;
 			if(high > low)
 				high = low;
 			
