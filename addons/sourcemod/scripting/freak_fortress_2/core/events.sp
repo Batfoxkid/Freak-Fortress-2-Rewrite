@@ -12,6 +12,8 @@ void Events_PluginStart()
 	
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
+	HookEvent("building_healed", Events_ObjectHealed, EventHookMode_Post);
+	HookEvent("npc_hurt", Events_ObjectHurt, EventHookMode_Post);
 	HookEvent("object_deflected", Events_ObjectDeflected, EventHookMode_Post);
 	HookEvent("object_destroyed", Events_ObjectDestroyed, EventHookMode_Post);
 	HookEvent("player_spawn", Events_PlayerSpawn, EventHookMode_Post);
@@ -228,6 +230,54 @@ static Action Events_ObjectDestroyed(Event event, const char[] name, bool dontBr
 	return Plugin_Continue;
 }
 
+static void Events_ObjectHealed(Event event, const char[] name, bool dontBroadcast)
+{
+	int healer = event.GetInt("healer");
+	if(healer > 0 && healer <= MaxClients)
+	{
+		Client(healer).Healing += event.GetInt("amount");
+		Client(healer).RefreshAt = 0.0;
+	}
+}
+
+static void Events_ObjectHurt(Event event, const char[] name, bool dontBroadcast)
+{
+	int victim = event.GetInt("entindex");
+	if(IsValidEntity(victim))
+	{
+		int attacker = GetClientOfUserId(event.GetInt("attacker_player"));
+		int damage = event.GetInt("damageamount");
+		
+		if(attacker > 0 && attacker <= MaxClients)
+		{
+			int health = GetEntProp(victim, Prop_Data, "m_iHealth");
+			int activedamage = damage;
+			if(activedamage > health)
+				activedamage = health;
+			
+			Client(attacker).RefreshAt = 0.0;
+			Client(attacker).TotalDamage += activedamage;
+			
+			int team = GetClientTeam(attacker);
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(attacker != i && IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == team)
+				{
+					int entity = GetPlayerWeaponSlot(i, TFWeaponSlot_Secondary);
+					if(entity != -1 &&
+					   HasEntProp(entity, Prop_Send, "m_bHealing") &&
+					   GetEntProp(entity, Prop_Send, "m_bHealing") &&
+					   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
+					{
+						Client(i).Assist += GetEntProp(entity, Prop_Send, "m_bChargeRelease") ? activedamage : activedamage / 2;
+						Client(i).RefreshAt = 0.0;
+					}
+				}
+			}
+		}
+	}
+}
+
 static void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -350,8 +400,13 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		
 		if(victim != attacker && attacker > 0 && attacker <= MaxClients)
 		{
+			int health = Client(victim).Health;
+			int activedamage = damage;
+			if(activedamage > health)
+				activedamage = health;
+			
 			Client(attacker).RefreshAt = 0.0;
-			Client(attacker).TotalDamage += damage;
+			Client(attacker).TotalDamage += activedamage;
 			
 			int team = GetClientTeam(attacker);
 			for(int i = 1; i <= MaxClients; i++)
@@ -364,7 +419,7 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 					   GetEntProp(entity, Prop_Send, "m_bHealing") &&
 					   GetEntPropEnt(entity, Prop_Send, "m_hHealingTarget") == attacker)
 					{
-						Client(i).Assist += GetEntProp(entity, Prop_Send, "m_bChargeRelease") ? damage : damage / 2;
+						Client(i).Assist += GetEntProp(entity, Prop_Send, "m_bChargeRelease") ? activedamage : activedamage / 2;
 						Client(i).RefreshAt = 0.0;
 					}
 				}
@@ -802,26 +857,12 @@ static void Events_RPSTaunt(Event event, const char[] name, bool dontBroadcast)
 	{
 		int attacker = event.GetInt("winner");
 		if(GetClientTeam(victim) != GetClientTeam(attacker))
-		{
 			Client(victim).RPSHit = attacker;
-			if(Client(victim).MaxLives > 1)
-			{
-				Client(victim).RPSDamage = GetClientHealth(victim);
-			}
-			else if(!Client(victim).RPSDamage)
-			{
-				int damage = Client(victim).Health / 2;
-				if(damage < 999)
-					damage = 999;
-				
-				Client(victim).RPSDamage = damage;
-			}
-		}
 	}
 	else if(Client(victim).Queue > 0)
 	{
 		int attacker = event.GetInt("winner");
-		if(GetClientTeam(victim) == GetClientTeam(attacker))
+		if(GetClientTeam(victim) == GetClientTeam(attacker) && (!Preference_IsInParty(victim) || Preference_IsInParty(victim) != Preference_IsInParty(attacker)))
 		{
 			int queue = 5;
 			if(Client(victim).Queue < queue)
@@ -829,6 +870,9 @@ static void Events_RPSTaunt(Event event, const char[] name, bool dontBroadcast)
 			
 			Client(victim).Queue -= queue;
 			Client(attacker).Queue += queue;
+
+			FPrintToChat(attacker, "%t", "RPS Queue Win", queue, victim);
+			FPrintToChat(victim, "%t", "RPS Queue Lost", queue, attacker);
 		}
 	}
 }

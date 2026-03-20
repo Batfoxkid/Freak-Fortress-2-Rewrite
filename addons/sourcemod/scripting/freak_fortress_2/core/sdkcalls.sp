@@ -188,15 +188,20 @@ int SDKCall_GetMaxHealth(int client)
 	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
 
-void SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
+bool SDKCall_IncrementStat(int client, TFStatType_t stat, int amount)
 {
 	if(SDKIncrementStat)
 	{
 		Debug("%N %d %d", client, stat, amount);
 		Address address = DHook_GetGameStats();
 		if(address != Address_Null)
+		{
 			SDKCall(SDKIncrementStat, address, client, stat, amount);
+			return true;
+		}
 	}
+
+	return false;
 }
 
 void SDKCall_SetSpeed(int client)
