@@ -11,9 +11,10 @@ Use `Update Package` to update your current version of Rewrite
 Recommended:
 
 - **[SM-TFEconData](https://github.com/nosoop/SM-TFEconData)**
-- **[TF2Attributes](https://github.com/FlaminSarge/tf2attributes)**
-- **[SMExt-TFEconDynamic](https://github.com/nosoop/SMExt-TFEconDynamic)** or [SM-TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
-- **[SM-TFUtils](https://github.com/nosoop/SM-TFUtils)** (Ability Lag Compensation)
+- [TF2Attributes](https://github.com/FlaminSarge/tf2attributes)
+- [SMExt-TFEconDynamic](https://github.com/nosoop/SMExt-TFEconDynamic) or [SM-TFCustAttr](https://github.com/nosoop/SM-TFCustAttr)
+- [VScript-Ext](https://github.com/Mikusch/vscript-ext) (VScript Support)
+- [SM-TFUtils](https://github.com/nosoop/SM-TFUtils) (Ability Lag Compensation)
 
 Supported:
 
