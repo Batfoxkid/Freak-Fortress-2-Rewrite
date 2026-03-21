@@ -209,7 +209,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Gray Mann Sentry Buster Spawned"))
+	if(!TranslationPhraseExists("Danmaku Difficulty Increased"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	TF2Tools_PluginStart();
@@ -367,7 +367,7 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 	{
 		BossData boss = FF2R_GetBossData(client);
 		AbilityData ability = boss.GetAbility("special_danmaku_soul");
-		if(ability.IsMyPlugin())
+		if(ability.IsMyPlugin() && ability.GetInt("__currentdiff", -1) != -1)
 		{
 			EquipBoss(client);
 		}
@@ -470,19 +470,40 @@ static void ChangeDifficulty(int client, int newdiff)
 	BossData boss = FF2R_GetBossData(client);
 	AbilityData ability = boss.GetAbility("special_danmaku_soul");
 	
-	int difficulty = ability.GetInt("__currentdiff");
+	int difficulty = ability.GetInt("__currentdiff", -1);
 	if(difficulty != newdiff)
 	{
 		ConfigData cfgDiff = ability.GetSection("difficulty");
 		if(cfgDiff)
 		{
 			// difficulty.1
-			char buffer[16];
-			IntToString(difficulty, buffer, sizeof(buffer));
-			cfgDiff = cfgDiff.GetSection(buffer);
-			if(cfgDiff)
+			for(int a = newdiff; a >= 0; a--)
 			{
+				char buffer[64];
+				IntToString(a, buffer, sizeof(buffer));
+				cfgDiff = cfgDiff.GetSection(buffer);
+				if(cfgDiff)
+				{
+					if(difficulty != a)
+					{
+						ability.SetInt("__currentdiff", a);
 
+						char name[64];
+						for(int i = 1; i <= MaxClients; i++)
+						{
+							if(IsClientInGame(i) && !IsFakeClient(i))
+							{
+								int lang = GetClientLanguage(client);
+								if(GetBossNameCfg(boss, name, sizeof(name), lang) && GetBossNameCfg(cfgDiff, buffer, sizeof(buffer), lang))
+								{
+									FPrintToChatEx(i, client, "%t", difficulty == -1 ? "Danmaku Difficulty Set" : (a > difficulty) ? "Danmaku Difficulty Increased" : "Danmaku Difficulty Decreased", name, buffer);
+								}
+							}
+						}
+					}
+
+					return;
+				}
 			}
 		}
 	}
@@ -1611,4 +1632,24 @@ int TotalPlayersAliveEnemy(int team = -1)
 	}
 	
 	return amount;
+}
+
+bool GetBossNameCfg(ConfigMap cfg, char[] buffer, int length, int lang = -1, const char[] string = "name")
+{
+	if(lang != -1)
+	{
+		GetLanguageInfo(lang, buffer, length);
+		Format(buffer, length, "%s_%s", string, buffer);
+		if(!cfg.Get(buffer, buffer, length) && !cfg.Get(string, buffer, length))
+			buffer[0] = 0;
+	}
+	else if(!cfg.Get(string, buffer, length))
+	{
+		buffer[0] = 0;
+	}
+	
+	ReplaceString(buffer, length, "\\n", "\n");
+	ReplaceString(buffer, length, "\\t", "\t");
+	ReplaceString(buffer, length, "\\r", "\r");
+	return view_as<bool>(buffer[0]);
 }
