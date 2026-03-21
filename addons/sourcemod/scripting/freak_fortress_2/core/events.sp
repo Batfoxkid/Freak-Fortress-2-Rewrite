@@ -812,7 +812,7 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 			SetGlobalTransTarget(clients[i]);
 
 			if(team == -1 || !Client(clients[i]).IsBoss)
-				FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+				FPrintToChat(clients[i], "%t", "You Dealt Damage", Client(clients[i]).TotalDamage, Client(clients[i]).TotalHealing, Client(clients[i]).TotalAssist);
 
 			if(!Client(clients[i]).NoHud)
 			{
@@ -820,7 +820,7 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 					ClientCommand(clients[i], "playgamesound saxton_hale/9000.wav");
 				
 				if(team == -1 || !Client(clients[i]).IsBoss)
-					Format(screen, sizeof(screen), "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).Healing, Client(clients[i]).TotalAssist);
+					Format(screen, sizeof(screen), "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).TotalHealing, Client(clients[i]).TotalAssist);
 
 				if(team > -1)
 					Format(screen, sizeof(screen), "%s\n \n%t", screen, "Top Damage Hud", top[0], dmg[0], top[1], dmg[1], top[2], dmg[2]);
