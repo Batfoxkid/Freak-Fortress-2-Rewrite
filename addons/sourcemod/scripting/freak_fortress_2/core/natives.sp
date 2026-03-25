@@ -202,8 +202,8 @@ static any Native_GetClientScore(Handle plugin, int params)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
 	
 	SetNativeCellRef(2, Client(client).TotalDamage);
-	SetNativeCellRef(3, Client(client).Healing);
-	SetNativeCellRef(4, Client(client).Assist);
+	SetNativeCellRef(3, Client(client).TotalHealing);
+	SetNativeCellRef(4, Client(client).TotalAssist);
 	return Client(client).TotalDamage + Client(client).TotalAssist;
 }
 
