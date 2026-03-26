@@ -304,12 +304,12 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		}
 	}
 	
-	if(damagetype & DMG_CLUB)
+	if(damagetype & DMG_BLAST_SURFACE)
 	{
 		value = Attrib_FindOnPlayer(attacker, "kill refills meter", 2034);
 		if(value)
 		{
-			float charge = GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter") + value;
+			float charge = GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter") + (value * 100.0);
 			if(charge > 100.0)
 				charge = 100.0;
 			
