@@ -252,8 +252,12 @@ static void Events_ObjectHurt(Event event, const char[] name, bool dontBroadcast
 		{
 			int health = GetEntProp(victim, Prop_Data, "m_iHealth");
 			int activedamage = damage;
-			if(activedamage > health)
-				activedamage = health;
+			if(health < 0)
+			{
+				activedamage += health;
+				if(activedamage < 0)
+					activedamage = 0;
+			}
 			
 			Client(attacker).RefreshAt = 0.0;
 			Client(attacker).TotalDamage += activedamage;
@@ -366,7 +370,7 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 			SetVariantString(NULL_STRING);
 			AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 			
-			if(!Client(client).NoChanges && RoundStatus == 0 && GetClientMenu(client) == MenuSource_None)
+			if(!Client(client).NoChanges && RoundStatus == 0 && (Weapons_InMenu(client) || GetClientMenu(client) == MenuSource_None))
 				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
 		}
 		
@@ -402,8 +406,12 @@ static Action Events_PlayerHurt(Event event, const char[] name, bool dontBroadca
 		{
 			int health = Client(victim).Health;
 			int activedamage = damage;
-			if(activedamage > health)
-				activedamage = health;
+			if(health < 0)
+			{
+				activedamage += health;
+				if(activedamage < 0)
+					activedamage = 0;
+			}
 			
 			Client(attacker).RefreshAt = 0.0;
 			Client(attacker).TotalDamage += activedamage;

@@ -10,6 +10,7 @@
 static bool Loaded;
 #endif
 
+static bool InMenu[MAXTF2PLAYERS];
 static ArrayList LoadoutList;
 
 void Weapons_PluginStart()
@@ -196,6 +197,11 @@ bool Weapons_ConfigEnabled()
 	return view_as<bool>(LoadoutList);
 }
 
+bool Weapons_InMenu(int client)
+{
+	return InMenu[client];
+}
+
 void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 {
 	if(Client(client).IsBoss)
@@ -217,7 +223,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 				menu.AddItem(NULL_STRING, buffer, ITEMDRAW_SPACER);
 			}
 			
-			menu.Display(client, time);
+			InMenu[client] = menu.Display(client, time);
 		}
 	}
 	else if(Weapons_ConfigEnabled() && Client(client).MinionType != 1)
@@ -275,7 +281,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 		if(loadouts > 1)
 		{
 			FormatEx(buffer2, sizeof(buffer2), "%t\n ", Client(client).NoChanges ? "Enable Weapon Changes" : "Disable Weapon Changes");
-			menu.AddItem(NULL_STRING, buffer2);
+			menu.AddItem("__nochanges", buffer2);
 
 			for(int i; i < loadouts; i++)
 			{
@@ -301,7 +307,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 
 			menu.ExitBackButton = (time == MENU_TIME_FOREVER && Menu_BackButton(client));
 			menu.ExitButton = true;
-			menu.DisplayAt(client, page / 7 * 7, time);
+			InMenu[client] = menu.DisplayAt(client, page / 7 * 7, time);
 		}
 		else
 		{
@@ -320,7 +326,7 @@ void Weapons_ChangeMenu(int client, int time = MENU_TIME_FOREVER, int page = 0)
 			
 			menu.Pagination = 0;
 			menu.ExitButton = true;
-			menu.Display(client, time);
+			InMenu[client] = menu.Display(client, time);
 		}
 	}
 }
@@ -335,11 +341,14 @@ static int Weapons_ChangeMenuH(Menu menu, MenuAction action, int client, int cho
 		}
 		case MenuAction_Cancel:
 		{
+			InMenu[client] = false;
 			if(choice == MenuCancel_ExitBack)
 				Menu_MainMenu(client);
 		}
 		case MenuAction_Select:
 		{
+			InMenu[client] = false;
+			
 			char buffer[32];
 			menu.GetItem(choice, buffer, sizeof(buffer));
 			if(buffer[0])
