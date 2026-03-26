@@ -754,10 +754,10 @@ static void VScriptEmitBossSound(ScriptContext context)
 						int total;
 						int[] clients = new int[MaxClients];
 						char section[16];
-						ScriptFieldType type;
-						for(int i; (i = hplayers.GetNextKey(i, section, sizeof(section), type)) != -1; )
+						ScriptFieldType keytype, valuetype;
+						for(int i; (i = hplayers.GetNextKey(i, section, sizeof(section), keytype, valuetype)) != -1; )
 						{
-							if(type == ScriptField_HScript)
+							if(valuetype == ScriptField_HScript)
 							{
 								ScriptHandle hentity = hplayers.GetHScript(section);
 								clients[total++] = VScript_HScriptToEntity(hentity);
@@ -870,10 +870,10 @@ static ConfigMap ImportConfig(ScriptHandle table)
 static void TableToCfg(ConfigMap cfg, ScriptHandle table)
 {
 	char key[256], value[256];
-	ScriptFieldType type;
-	for(int i; (i = table.GetNextKey(i, key, sizeof(key), type)) != -1;)
+	ScriptFieldType keytype, valuetype;
+	for(int i; (i = table.GetNextKey(i, key, sizeof(key), keytype, valuetype)) != -1;)
 	{
-		switch(type)
+		switch(valuetype)
 		{
 			case ScriptField_Void:
 			{
