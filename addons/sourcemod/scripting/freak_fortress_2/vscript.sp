@@ -14,9 +14,7 @@ static bool Loaded;
 static ScriptCall ScriptGetAttribute;
 static ScriptCall ScriptSetAttribute;
 static ScriptCall ScriptRemoveAttribute;
-#if defined IS_MAIN_FF2
 static ScriptCall ScriptFireScriptHook;
-#endif
 #endif
 
 void VScript_PluginStart()
@@ -62,10 +60,7 @@ static void SetupCalls()
 	ScriptSetAttribute = new ScriptCall("FF2_SetAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String, ScriptField_Float);
 	ScriptGetAttribute = new ScriptCall("FF2_GetAttribute", ScriptField_Float, ScriptField_HScript, ScriptField_String, ScriptField_Float);
 	ScriptRemoveAttribute = new ScriptCall("FF2_RemoveAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String);
-
-	#if defined IS_MAIN_FF2
 	ScriptFireScriptHook = new ScriptCall("FireScriptHook", ScriptField_Bool, ScriptField_String, ScriptField_HScript);
-	#endif
 }
 #endif
 
