@@ -586,6 +586,7 @@ public void OnLibraryAdded(const char[] name)
 	TF2Tools_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
+	VScript_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -596,6 +597,7 @@ public void OnLibraryRemoved(const char[] name)
 	TF2Tools_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
+	VScript_LibraryRemoved(name);
 }
 
 public void OnClientPutInServer(int client)

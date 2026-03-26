@@ -97,6 +97,21 @@ stock void CustomAttrib_PrintStatus()
 	#endif
 }
 
+stock bool CustomAttrib_Loaded()
+{
+	#if defined __tf_econ_dyn_included
+	if(TFEYLoaded)
+		return true;
+	#endif
+
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded)
+		return true;
+	#endif
+
+	return false;
+}
+
 stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 {
 	StringMapSnapshot snap = cfg.Snapshot();

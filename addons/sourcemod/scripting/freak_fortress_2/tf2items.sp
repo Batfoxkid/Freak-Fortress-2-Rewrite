@@ -709,5 +709,7 @@ stock int TF2Items_CreateFromStruct(int client, const WeaponData data)
 	event.FireToClient(client);
 	event.Cancel();
 
+	VScript_WeaponChanged(client, entity);
+
 	return entity;
 }
