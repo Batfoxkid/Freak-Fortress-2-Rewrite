@@ -360,7 +360,7 @@ static ScriptHandle FindTableKey(ScriptHandle scope, char[] key, int size, bool 
 	#endinput
 #endif
 
-stock void VScript_UseAbility(int client, const char[] name)
+public void VScript_UseAbility(int client, const char[] name)
 {
 	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
@@ -420,7 +420,7 @@ public void VScript_CreateBoss(int client)
 	#endif
 }
 
-stock void VScript_BossEquipped(int client)
+public void VScript_BossEquipped(int client)
 {
 	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
@@ -444,7 +444,7 @@ stock void VScript_BossEquipped(int client)
 	#endif
 }
 
-stock void VScript_BossRemoved(int client)
+public void VScript_BossRemoved(int client)
 {
 	#if defined _vscript_included
 	if(Loaded && ScriptFireScriptHook)
