@@ -25,7 +25,7 @@ void VScript_PluginStart()
 	Loaded = LibraryExists(VSCRIPT_LIBRARY);
 	if(Loaded)
 	{
-		SetupCalls();
+		RequestFrame(SetupCalls);
 		#if defined IS_MAIN_FF2
 		SetupFunctions();
 		if(VScript_IsVMInitialized())
@@ -70,7 +70,7 @@ public void VScript_LibraryAdded(const char[] name)
 	if(!Loaded && StrEqual(name, VSCRIPT_LIBRARY))
 	{
 		Loaded = true;
-		SetupCalls();
+		RequestFrame(SetupCalls);
 		#if defined IS_MAIN_FF2
 		SetupFunctions();
 		if(VScript_IsVMInitialized())

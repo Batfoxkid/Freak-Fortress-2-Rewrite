@@ -373,6 +373,10 @@
 	{
 		"en"		"Clear All"
 	}
+	"Whitelist All"
+	{
+		"en"		"Whitelist All"
+	}
 	"Disable Playing Boss"
 	{
 		"en"		"Disable Playing Boss"

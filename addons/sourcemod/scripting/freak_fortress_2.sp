@@ -221,7 +221,7 @@ public void OnPluginStart()
 	LoadTranslations("ff2_rewrite.phrases");
 	LoadTranslations("common.phrases");
 	LoadTranslations("core.phrases");
-	if(!TranslationPhraseExists("View Creators"))
+	if(!TranslationPhraseExists("Whitelist All"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	TF2Tools_PluginStart();

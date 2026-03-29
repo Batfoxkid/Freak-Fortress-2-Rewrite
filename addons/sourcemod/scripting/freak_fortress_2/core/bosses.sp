@@ -2305,6 +2305,9 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 			{
 				Client(client).PassiveAt = time + 0.2;
 				Bosses_UseSlot(client, 1, 3);
+
+				if(IsFakeClient(client))
+					Bosses_UseRage(client);
 			}
 			
 			if(!Client(client).NoHud && !(buttons & IN_SCORE))
@@ -2373,6 +2376,40 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 			}
 		}
 	}
+}
+
+Action Bosses_UseRage(int client)
+{
+	if(!Client(client).IsBoss)
+		return Plugin_Handled;
+	
+	float rageDamage = Client(client).RageDamage;
+	if(rageDamage >= 0.0 && rageDamage < 99999.0)
+	{
+		int rageType = Client(client).RageMode;
+		if(rageType != 2)
+		{
+			float rageMin, charge;
+			if(rageDamage <= 1.0 || (charge = Client(client).GetCharge(0)) >= (rageMin = Client(client).RageMin))
+			{
+				if(rageDamage > 1.0)
+				{
+					if(rageType == 1)
+					{
+						Client(client).SetCharge(0, charge - rageMin);
+					}
+					else if(rageType == 0)
+					{
+						Client(client).SetCharge(0, 0.0);
+					}
+				}
+				
+				Bosses_UseSlot(client, 0, 0);
+				return Plugin_Handled;
+			}
+		}
+	}
+	return Plugin_Continue;
 }
 
 void Bosses_UseSlot(int client, int low, int high)
