@@ -17,7 +17,7 @@ function _FF2_GetAttribute(strName)
 		flResult = m.ff2attributes[strName]
 	}
 
-	FF2R_CallPawn("returning", {returnfloat = flResult})
+	_FF2_CallPawn("returning", {returnfloat = flResult})
 }
 
 function _FF2_SetAttribute(strName, flValue)
