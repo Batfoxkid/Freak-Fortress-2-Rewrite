@@ -134,9 +134,8 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			if(damagetype == DMG_GENERIC && Client(victim).RPSHit == attacker)
 			{
 				Client(victim).RPSHit = 0;
-				damage = float(Client(victim).RPSDamage);
-				critType = CritType_None;
-				return Plugin_Changed;
+				if(!IsInvuln(victim))
+					SetEntityHealth(victim, 1);
 			}
 			
 			if(IsInvuln(victim))

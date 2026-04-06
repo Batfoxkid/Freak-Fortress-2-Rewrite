@@ -214,6 +214,16 @@
 		"#format"	"{1:d}"
 		"en"		"Sapper: {1}％"
 	}
+	"RPS Queue Win"
+	{
+		"#format"	"{1:d},{2:N}"
+		"en"		"You won {olive}{1} {default}queue points from {teamcolor}{2}{default}!"
+	}
+	"RPS Queue Lost"
+	{
+		"#format"	"{1:d},{2:N}"
+		"en"		"You lost {olive}{1} {default}queue points to {teamcolor}{2}{default}!"
+	}
 	
 	"Preference Updated"
 	{
@@ -362,6 +372,10 @@
 	"Clear All"
 	{
 		"en"		"Clear All"
+	}
+	"Whitelist All"
+	{
+		"en"		"Whitelist All"
 	}
 	"Disable Playing Boss"
 	{

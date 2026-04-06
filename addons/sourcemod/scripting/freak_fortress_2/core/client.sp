@@ -20,6 +20,7 @@ static float SapperCooldownFor[MAXTF2PLAYERS];
 static char LoadoutName[MAXTF2PLAYERS][32];
 static int Damage[MAXTF2PLAYERS][6];
 static int TotalDamage[MAXTF2PLAYERS];
+static int Healing[MAXTF2PLAYERS];
 static int Assist[MAXTF2PLAYERS];
 static int Index[MAXTF2PLAYERS];
 
@@ -262,11 +263,24 @@ methodmap Client
 		}
 	}
 	
-	property int Healing	// m_RoundScoreData -> m_iHealPoints
+	property int Healing
 	{
 		public get()
 		{
-			return GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 11);
+			return Healing[view_as<int>(this)];
+		}
+		public set(int amount)
+		{
+			Healing[view_as<int>(this)] = amount;
+		}
+	}
+	
+	property int TotalHealing
+	{
+		public get()
+		{
+			return Healing[view_as<int>(this)]
+				+ GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 11);	// m_RoundScoreData -> m_iHealPoints
 		}
 	}
 	
@@ -300,10 +314,6 @@ methodmap Client
 		public get()
 		{
 			return GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 10);
-		}
-		public set(int amount)
-		{
-			SDKCall_IncrementStat(view_as<int>(this), TFSTAT_BACKSTABS, amount - GetEntProp(view_as<int>(this), Prop_Send, "m_RoundScoreData", 4, 10));
 		}
 	}
 	
@@ -639,20 +649,6 @@ methodmap Client
 		}
 	}
 	
-	property int RPSDamage
-	{
-		public get()
-		{
-			int value;
-			this.Cfg.GetInt("rpsdmg", value);
-			return value;
-		}
-		public set(int value)
-		{
-			this.Cfg.SetInt("rpsdmg", value);
-		}
-	}
-	
 	property float RageDebuff
 	{
 		public get()
@@ -695,6 +691,7 @@ methodmap Client
 	public void ResetByRound()
 	{
 		this.Damage = 0;
+		this.Healing = 0;
 		this.Assist = 0;
 		this.TotalDamage = 0;
 		this.SetDamage(TFWeaponSlot_Primary, 0);

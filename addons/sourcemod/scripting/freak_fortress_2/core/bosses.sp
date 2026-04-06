@@ -1767,7 +1767,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 	if(Client(client).Cfg)
 	{
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 	}
@@ -2063,7 +2063,7 @@ static void EquipBoss(int client, bool weapons)
 	Forward_OnBossEquipped(client, weapons);
 
 	if(weapons)
-		VScript_Call("_FF2_BossEquipped", client);
+		VScript_BossEquipped(client);
 }
 
 void Bosses_UpdateHealth(int client)
@@ -2177,7 +2177,7 @@ void Bosses_ClientDisconnect(int client)
 		Ranking_BossRemoved(client, true);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
 		
@@ -2207,7 +2207,7 @@ void Bosses_Remove(int client)
 		Ranking_BossRemoved(client, false);
 		DHook_UnhookBoss(client);
 		Forward_OnBossRemoved(client);
-		VScript_Call("_FF2_BossRemoved", client);
+		VScript_BossRemoved(client);
 		
 		DeleteCfg(Client(client).Cfg);
 		Client(client).Cfg = null;
@@ -2305,6 +2305,9 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 			{
 				Client(client).PassiveAt = time + 0.2;
 				Bosses_UseSlot(client, 1, 3);
+
+				if(IsFakeClient(client))
+					Bosses_UseRage(client);
 			}
 			
 			if(!Client(client).NoHud && !(buttons & IN_SCORE))
@@ -2373,6 +2376,40 @@ void Bosses_PlayerRunCmd(int client, int buttons)
 			}
 		}
 	}
+}
+
+Action Bosses_UseRage(int client)
+{
+	if(!Client(client).IsBoss)
+		return Plugin_Handled;
+	
+	float rageDamage = Client(client).RageDamage;
+	if(rageDamage >= 0.0 && rageDamage < 99999.0)
+	{
+		int rageType = Client(client).RageMode;
+		if(rageType != 2)
+		{
+			float rageMin, charge;
+			if(rageDamage <= 1.0 || (charge = Client(client).GetCharge(0)) >= (rageMin = Client(client).RageMin))
+			{
+				if(rageDamage > 1.0)
+				{
+					if(rageType == 1)
+					{
+						Client(client).SetCharge(0, charge - rageMin);
+					}
+					else if(rageType == 0)
+					{
+						Client(client).SetCharge(0, 0.0);
+					}
+				}
+				
+				Bosses_UseSlot(client, 0, 0);
+				return Plugin_Handled;
+			}
+		}
+	}
+	return Plugin_Continue;
 }
 
 void Bosses_UseSlot(int client, int low, int high)
@@ -3040,7 +3077,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 	return size;
 }
 
-bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3]=NULL_VECTOR, const float dir[3]=NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
+bool Bosses_PlaySound(int boss, const int[] clients, int numClients, const char[] key, const char[] required = NULL_STRING, int entity = SOUND_FROM_PLAYER, int channel = SNDCHAN_AUTO, int level = SNDLEVEL_NORMAL, int flags = SND_NOFLAGS, float volume = SNDVOL_NORMAL, int pitch = SNDPITCH_NORMAL, int speakerentity = -1, const float origin[3] = NULL_VECTOR, const float dir[3] = NULL_VECTOR, bool updatePos = true, float soundtime = 0.0)
 {
 	SoundEnum sound;
 	sound.Entity = entity;

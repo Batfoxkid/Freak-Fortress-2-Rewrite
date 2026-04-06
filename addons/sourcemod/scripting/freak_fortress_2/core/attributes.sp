@@ -150,6 +150,9 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
 			}
 		}
 	}
+
+	if(!SDKCall_IncrementStat(attacker, TFSTAT_BACKSTABS, 1))
+		SetEntProp(attacker, Prop_Send, "m_RoundScoreData", 4, 10, Client(attacker).Stabs + 1);
 	
 	Event event = CreateEvent("player_death", true);
 	
@@ -163,7 +166,7 @@ bool Attributes_OnBackstabBoss(int attacker, int victim, float &damage, int weap
  	event.SetInt("customkill", backstab ? TF_CUSTOM_BACKSTAB : 0);
 	event.SetInt("crit_type", 2);
 	
-	int stabs = ++Client(attacker).Stabs;
+	int stabs = Client(attacker).Stabs;
 	event.SetInt("kill_streak_total", stabs);
 	event.SetInt("kill_streak_wep", stabs);
 	
@@ -301,12 +304,12 @@ void Attributes_OnHitBoss(int attacker, int victim, int inflictor, float fdamage
 		}
 	}
 	
-	if(damagetype & DMG_CLUB)
+	if(damagetype & DMG_BLAST_SURFACE)
 	{
 		value = Attrib_FindOnPlayer(attacker, "kill refills meter", 2034);
 		if(value)
 		{
-			float charge = GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter") + value;
+			float charge = GetEntPropFloat(attacker, Prop_Send, "m_flChargeMeter") + (value * 100.0);
 			if(charge > 100.0)
 				charge = 100.0;
 			

@@ -166,8 +166,8 @@ void Ranking_RoundEnd(int[] clients, int amount, int winner)
 				{
 					if(b != team)
 					{
-						alive += PlayersAlive[i];
-						total += MaxPlayersAlive[i];
+						alive += PlayersAlive[b];
+						total += MaxPlayersAlive[b];
 					}
 				}
 

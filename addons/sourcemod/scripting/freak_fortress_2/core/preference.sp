@@ -680,16 +680,22 @@ static void BossMenu(int client)
 			}
 
 			delete list;
+
+			if(found || blacklist > 0)
+			{
+				FormatEx(data, sizeof(data), "%t\n ", blacklist > 0 ? "Clear Blacklist" : "Clear Whitelist");
+				menu.InsertItem(0, "-1", data, (!found && blacklist > 0) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+			}
+			else if(blacklist != 0)
+			{
+				FormatEx(data, sizeof(data), "%t\n ", "Whitelist All");
+				menu.InsertItem(0, "-4", data);
+			}
 			
 			if(Preference_DisabledBoss(client, ViewingPack[client]))
 			{
 				FormatEx(data, sizeof(data), "%t", "Enable Playing Boss");
 				menu.InsertItem(0, "-3", data);
-			}
-			else if(found)
-			{
-				FormatEx(data, sizeof(data), "%t", blacklist > 0 ? "Clear Blacklist" : "Clear Whitelist");
-				menu.InsertItem(0, "-1", data);
 			}
 			else if(Cvar[PrefToggle].BoolValue)
 			{
@@ -872,6 +878,24 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 			{
 				switch(value)
 				{
+					case -4:
+					{
+						UpdateDataBase[client] = true;
+						
+						if(!BossListing[client])
+							BossListing[client] = new ArrayList();
+						
+						int length = BossListing[client].Length;
+						for(int i; i < length; i++)
+						{
+							ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
+							if(cfg && cfg.GetInt("charset", value) && value == ViewingPack[client])
+							{
+								if(BossListing[client].FindValue(i) == -1)
+									BossListing[client].Push(i);
+							}
+						}
+					}
 					case -3:
 					{
 						if(BossListing[client])

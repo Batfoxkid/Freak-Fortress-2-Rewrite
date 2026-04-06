@@ -395,7 +395,10 @@ stock void Attrib_SetString(int entity, const char[] name = "", int index = -1, 
 		if(Loaded)
 		{
 			if(TF2Attrib_SetFromStringValue(entity, buffer, value))
+			{
+				VScript_SetAttributeTable(entity, buffer, StringToFloat(value));
 				return;
+			}
 		}
 	}
 	Attrib_Set(entity, buffer, index, StringToFloat(value));
