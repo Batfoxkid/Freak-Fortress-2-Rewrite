@@ -383,9 +383,9 @@ static Action Gamemode_SetControlPoint(Handle timer)
 			{
 				found = true;
 				
-				int delay;
-				if(Client(client).Cfg.GetInt("pointdelay", delay))
-					time = float(delay * players) + time;
+				float delay;
+				if(Client(client).Cfg.GetFloat("pointdelay", delay))
+					time = (players * delay) + time;
 			}
 			
 			if(Client(client).Cfg.GetInt("pointalive", PointUnlock))
@@ -464,12 +464,9 @@ void Gamemode_RoundStart()
 						else
 						{
 							TF2Tools_RegeneratePlayer(client);
-							TF2_RefillMaxAmmo(client);
 						}
-						
-						int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-						if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
-							SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max", 811));
+
+						RequestFrame(PostRoundStart, GetClientUserId(client));
 					}
 				}
 			}
@@ -539,6 +536,19 @@ void Gamemode_RoundStart()
 	}
 	
 	Music_RoundStart();
+}
+
+static void PostRoundStart(int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client && IsPlayerAlive(client) && !Client(client).IsBoss && !Client(client).MinionType)
+	{
+		TF2_RefillMaxAmmo(client);
+
+		int entity = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+		if(IsValidEntity(entity) && HasEntProp(entity, Prop_Send, "m_flChargeLevel"))
+			SetEntPropFloat(entity, Prop_Send, "m_flChargeLevel", Attrib_FindOnPlayer(client, "ubercharge_preserved_on_spawn_max", 811));
+	}
 }
 
 void Gamemode_CheckPointUnlock(int alive, bool notice)
@@ -1143,7 +1153,10 @@ void Gamemode_PlayerRunCmd(int client, int buttons)
 		{
 			int team = GetClientTeam(client);
 			if(PlayersAlive[team] < 3)
-				TF2Tools_AddCondition(client, TF2_GetPlayerClass(client) == TFClass_Scout ? TFCond_Buffed : TFCond_CritCola, 0.5);
+			{
+				TFClassType class = TF2_GetPlayerClass(client);
+				TF2Tools_AddCondition(client, (class == TFClass_Scout || class == TFClass_Heavy) ? TFCond_Buffed : TFCond_CritCola, 0.5);
+			}
 			
 			if(PlayersAlive[team] < 2) 
 			{

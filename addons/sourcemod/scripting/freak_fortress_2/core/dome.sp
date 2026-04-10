@@ -38,6 +38,7 @@ static int DomeColor[4];
 
 static float DomeStart = 0.0;
 static float DomeRadius = 0.0;
+static float DomeStartRadius = 0.0;
 static float DomePreviousGameTime = 0.0;
 static float DomePlayerTime[MAXTF2PLAYERS] = {0.0, ...};
 static bool DomePlayerOutside[MAXTF2PLAYERS] = {false, ...};
@@ -95,7 +96,7 @@ void Dome_EntityCreated(int entity, const char[] classname)
 	if(!Dome_Enabled())
 		return;
 	
-	if(Cvar[CaptureDomeStyle].BoolValue)
+	if(Cvar[CaptureDomeStyle].IntValue == 1)
 		return;
 	
 	if(StrEqual(classname, "team_control_point_master"))
@@ -143,7 +144,7 @@ static Action Dome_BlockOutput(const char[] output, int caller, int activator, f
 	if(!Dome_Enabled())
 		return Plugin_Continue;
 	
-	if(Cvar[CaptureDomeStyle].BoolValue)
+	if(Cvar[CaptureDomeStyle].IntValue == 1)
 		return Plugin_Continue;
 
 	//Always block this function, maps may assume round ended
@@ -174,29 +175,47 @@ void Dome_RoundSetup()
 		DomePlayerOutside[client] = false;
 }
 
-static bool Dome_Start(int entity = 0)
+static bool Dome_Start()
 {
 	if(!Dome_Enabled())
 		return false;
 	
 	if(DomeStart != 0.0)	//Check if we already have dome enabled, if so return false
 		return false;
-
-	if(entity <= MaxClients)
-	{
-		entity = FindEntityByClassname(-1, "team_control_point");
-		if(entity <= MaxClients)
-			return false;
-	}
 	
-	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", DomeCP);
+	int entity = FindEntityByClassname(-1, "team_control_point");
+	if(entity == -1 || Cvar[CaptureDomeStyle].IntValue == 2)
+	{
+		GetDynamicDomePoint(DomeCP);
+
+		if(entity != -1)
+		{
+			TeleportEntity(entity, DomeCP);
+			entity = -1;
+		}
+
+		while((entity = FindEntityByClassname(entity, "trigger_capture_area")) != -1)
+		{
+			AcceptEntityInput(entity, "Disable");
+		}
+	}
+	else
+	{
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", DomeCP);
+	}
 	
 	//Create dome prop
 	int dome = CreateEntityByName("prop_dynamic");
 	if(dome == -1)
 		return false;
 	
-	DomeRadius = DOME_START_RADIUS;
+	DomeStartRadius = DOME_START_RADIUS;
+
+	float mindist = GetFurtherestPlayer() * 1.1;
+	if(DomeStartRadius < mindist)
+		DomeStartRadius = mindist;
+	
+	DomeRadius = DomeStartRadius;
 	
 	DispatchKeyValueVector(dome, "origin", DomeCP);						//Set origin to CP
 	DispatchKeyValue(dome, "model", "models/kirillian/brsphere_huge.mdl");	//Set model
@@ -465,7 +484,7 @@ static void Dome_UpdateRadius()
 	float gameTimeDifference = gameTime - DomePreviousGameTime;
 	
 	//Calculate speed dome should be
-	float speed = DOME_START_RADIUS / Cvar[CaptureDome].FloatValue;
+	float speed = DomeStartRadius / Cvar[CaptureDome].FloatValue;
 	
 	//Calculate new radius from speed and time
 	float radius = DomeRadius - (speed * gameTimeDifference);
@@ -502,4 +521,75 @@ static bool Dome_IsDomeProp(int prop)
 	GetEntPropString(prop, Prop_Data, "m_ModelName", model, sizeof(model));
 			
 	return StrEqual(model, "models/props_gameplay/cap_point_base.mdl") || StrEqual(model, "models/props_doomsday/cap_point_small.mdl");
+}
+
+// Gets a center point based on locations of remaining players, as well as the distance from the furtherest away player
+static void GetDynamicDomePoint(float result[3])
+{
+	for(int i; i < 3; i++)
+	{
+		result[i] = 0.0;
+	}
+	
+	float pos[3];
+	float amount;
+
+	bool spec = Cvar[SpecTeam].BoolValue;
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client) && IsPlayerAlive(client) && !Client(client).MinionType)
+		{
+			if(spec || GetClientTeam(client) > TFTeam_Spectator)
+			{
+				GetClientAbsOrigin(client, pos);
+
+				float weight = 1.0;
+				if(Client(client).IsBoss)
+				{
+					weight = 0.5;
+				}
+				else if(TF2_GetPlayerClass(client) == TFClass_Engineer)
+				{
+					weight = 3.0;	// Give bonus weight to engineers for their nests
+				}
+				
+				amount += weight;
+				for(int i; i < 3; i++)
+				{
+					result[i] += pos[i] * weight;
+				}
+			}
+		}
+	}
+
+	if(amount > 0.0)
+	{
+		for(int i; i < 3; i++)
+		{
+			result[i] /= amount;
+		}
+	}
+}
+
+static float GetFurtherestPlayer()
+{
+	float maxdist, pos[3];
+
+	bool spec = Cvar[SpecTeam].BoolValue;
+	for(int client = 1; client <= MaxClients; client++)
+	{
+		if(IsClientInGame(client) && IsPlayerAlive(client) && Client(client).MinionType != 2)
+		{
+			if(spec || GetClientTeam(client) > TFTeam_Spectator)
+			{
+				GetClientAbsOrigin(client, pos);
+
+				float dist = GetVectorDistance(pos, DomeCP, true);
+				if(dist > maxdist)
+					maxdist = dist;
+			}
+		}
+	}
+
+	return SquareRoot(maxdist);
 }

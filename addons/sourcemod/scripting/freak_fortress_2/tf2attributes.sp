@@ -323,7 +323,7 @@ stock void Attrib_Set(int entity, const char[] name = "", int index = -1, float 
 		#endif
 	}
 	
-	if(buffer[0])
+	if(entity > MaxClients && buffer[0])
 	{
 		VScript_SetAttribute(entity, buffer, value);
 		return;
@@ -336,6 +336,12 @@ stock void Attrib_Set(int entity, const char[] name = "", int index = -1, float 
 		return;
 	}
 	#endif
+	
+	if(buffer[0])
+	{
+		VScript_SetAttribute(entity, buffer, value);
+		return;
+	}
 
 	ErrorDefIndex(index);
 }
@@ -356,7 +362,7 @@ stock void Attrib_SetInt(int entity, const char[] name = "", int index = -1, int
 		#endif
 	}
 	
-	if(buffer[0])
+	if(entity > MaxClients && buffer[0])
 	{
 		VScript_SetAttributeInt(entity, buffer, value);
 		return;
@@ -369,6 +375,12 @@ stock void Attrib_SetInt(int entity, const char[] name = "", int index = -1, int
 		return;
 	}
 	#endif
+	
+	if(buffer[0])
+	{
+		VScript_SetAttributeInt(entity, buffer, value);
+		return;
+	}
 
 	ErrorDefIndex(index);
 }
@@ -423,7 +435,7 @@ stock void Attrib_Remove(int entity, const char[] name = "", int index = -1)
 		#endif
 	}
 	
-	if(buffer[0])
+	if(entity > MaxClients && buffer[0])
 	{
 		VScript_RemoveAttribute(entity, buffer);
 		return;
@@ -436,6 +448,12 @@ stock void Attrib_Remove(int entity, const char[] name = "", int index = -1)
 		return;
 	}
 	#endif
+	
+	if(buffer[0])
+	{
+		VScript_RemoveAttribute(entity, buffer);
+		return;
+	}
 
 	ErrorDefIndex(index);
 }

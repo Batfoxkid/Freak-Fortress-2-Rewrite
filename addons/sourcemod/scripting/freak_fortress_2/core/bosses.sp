@@ -668,7 +668,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						int amount = ReplaceString(mapname, length, "*", NULL_STRING);
 						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 						{
-							precache = view_as<bool>(StringToInt(val.data));
+							cfgsub.GetBool(val.data, precache, false);
 							size = length;
 						}
 					}
