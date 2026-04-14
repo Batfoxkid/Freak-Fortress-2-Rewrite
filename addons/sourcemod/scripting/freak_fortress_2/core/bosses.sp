@@ -364,14 +364,19 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					{
 						case KeyValType_Section:
 						{
+							ConfigMap cfgBoss = val.cfg;
+
+							bool loadboss = choosen.FindValue(a) != -1;
+							cfgBoss.GetBool(precache ? "packload" : "outload", loadboss, false);
+
 							length = ReplaceString(bossname, length, "*", NULL_STRING);
 							if(length)
 							{
-								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, loadboss, vscripts);
 							}
 							else
 							{
-								LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+								LoadCharacter(bossname, pack, mapname, loadboss, vscripts);
 							}
 						}
 						case KeyValType_Value:
@@ -858,7 +863,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											music = cfgsound.GetSize("time") > 0;
 									}
 									
-									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+									if(StrContains(key, "!") == 0)
+									{
+										PrecacheSentenceFile(key);
+									}
+									else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
 									{
 										if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
 										{
@@ -892,7 +901,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												music = view_as<bool>(cfgsub.GetInt(section, length2));
 											}
 											
-											if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
+											if(StrContains(key, "!") == 0)
+											{
+												PrecacheSentenceFile(key);
+											}
+											else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
 												if(music && StrContains(key, "#") != 0)
 												{
@@ -919,7 +932,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
 											}
 											
-											if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
+											if(StrContains(buffer, "!") == 0)
+											{
+												PrecacheSentenceFile(buffer);
+											}
+											else if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
 												if(music && StrContains(buffer, "#") != 0)
 												{
@@ -2829,7 +2846,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 								sound.Entity = SOUND_FROM_PLAYER;
 						}
 						
-						if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+						if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 						{
 							if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 								size = strlen(sound.Sound);
@@ -2872,7 +2889,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 					{
 						if(length > val.size)	// "example.mp3"	""
 						{
-							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 							{
 								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
@@ -2921,7 +2938,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							
 							size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
 							
-							if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+							if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1 && StrContains(sound.Sound, "!") != 0)
 							{
 								if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
@@ -2967,7 +2984,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 						sound.Entity = SOUND_FROM_PLAYER;
 				}
 				
-				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 				{
 					if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 						size = strlen(sound.Sound);
@@ -3010,7 +3027,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 			{
 				if(strlen(key) > val.size)	// "example.mp3"	""
 				{
-					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 					{
 						if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
@@ -3059,7 +3076,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 					
 					size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
 					
-					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1 && StrContains(sound.Sound, "!") != 0)
 					{
 						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
