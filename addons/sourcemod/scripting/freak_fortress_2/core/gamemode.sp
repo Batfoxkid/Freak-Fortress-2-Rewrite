@@ -459,7 +459,7 @@ void Gamemode_RoundStart()
 						{
 							SetEntProp(client, Prop_Send, "m_lifeState", 2);
 							ChangeClientTeam(client, MercTeam);
-							TF2Tools_RespawnPlayer(players[i]);
+							TF2Tools_RespawnPlayer(client);
 						}
 						else
 						{
