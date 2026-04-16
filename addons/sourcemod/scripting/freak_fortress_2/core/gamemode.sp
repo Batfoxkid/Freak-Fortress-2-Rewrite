@@ -170,7 +170,7 @@ void Gamemode_RoundSetup()
 					{
 						SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
 						ChangeClientTeam(players[i], team);
-						SetEntProp(players[i], Prop_Send, "m_lifeState", 0);
+						TF2Tools_RespawnPlayer(players[i]);
 						
 						team++;
 						if(team >= maxTeams)
@@ -238,7 +238,7 @@ void Gamemode_RoundSetup()
 					{
 						SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
 						ChangeClientTeam(players[i], MercTeam);
-						SetEntProp(players[i], Prop_Send, "m_lifeState", 0);
+						TF2Tools_RespawnPlayer(players[i]);
 					}
 				}
 				else	// No boss, normal Arena time
@@ -260,7 +260,7 @@ void Gamemode_RoundSetup()
 						{
 							SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
 							ChangeClientTeam(players[i], team);
-							SetEntProp(players[i], Prop_Send, "m_lifeState", 0);
+							TF2Tools_RespawnPlayer(players[i]);
 							
 							team++;
 							if(team >= (TFTeam_Red + Configs_TeamCount()))
@@ -459,7 +459,7 @@ void Gamemode_RoundStart()
 						{
 							SetEntProp(client, Prop_Send, "m_lifeState", 2);
 							ChangeClientTeam(client, MercTeam);
-							SetEntProp(client, Prop_Send, "m_lifeState", 0);
+							TF2Tools_RespawnPlayer(players[i]);
 						}
 						else
 						{
