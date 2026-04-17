@@ -711,7 +711,7 @@ static void BossMenu(int client)
 					if((cfg.GetBool("enabled", enabled) && enabled) == !a)
 					{
 						bool preview;
-						bool access = Bosses_CanAccessBoss(client, index, PREF_MENU, _, preview);
+						bool access = CanAccessBoss(client, index, PREF_MENU, _, preview);
 						if(access || preview)
 						{
 							IntToString(index, data, sizeof(data));

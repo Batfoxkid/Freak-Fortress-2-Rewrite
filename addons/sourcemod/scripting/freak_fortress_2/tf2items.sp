@@ -382,14 +382,22 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 		cfg.GetBool("show", override, false);
 		if(override)
 		{
-			if(cfg.GetInt("worldmodel", index) && index)
+			if(cfg.ContainsKey("worldmodel"))
 			{
-				if(!wearable)
-					SetEntProp(entity, Prop_Send, "m_iWorldModelIndex", index);
-				
-				for(level = 0; level < 4; level++)
+				if(!cfg.GetInt("worldmodel", index) || index == 0)
 				{
-					SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", index, _, level);
+					cfg.Get("worldmodel", buffer, sizeof(buffer));
+					if(buffer[0])
+						index = PrecacheModel(buffer);
+
+					if(index == 0)
+					{
+						cfg.DeleteSection("worldmodel");
+					}
+					else
+					{
+						cfg.SetInt("worldmodel", index);
+					}
 				}
 			}
 			

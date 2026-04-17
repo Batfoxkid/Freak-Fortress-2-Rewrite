@@ -569,6 +569,32 @@ static void GetDynamicDomePoint(float result[3])
 			result[i] /= amount;
 		}
 	}
+
+	// Move back in bounds to a position we know is safe (a player)
+	for(int i; i < 200; i++)
+	{
+		if(!TR_PointOutsideWorld(result))
+			break;
+		
+		for(int b; b < 3; b++)
+		{
+			if(result[b] < pos[b])
+			{
+				result[b] += 10.0;
+			}
+			else if(result[b] > pos[b])
+			{
+				result[b] -= 10.0;
+			}
+		}
+	}
+
+	// Snap to the ground
+	Handle trace = TR_TraceRayEx(result, {90.0, 0.0, 0.0}, MASK_PLAYERSOLID, RayType_Infinite);
+	if(TR_DidHit(trace))
+		TR_GetEndPosition(result, trace);
+	
+	delete trace;
 }
 
 static float GetFurtherestPlayer()
