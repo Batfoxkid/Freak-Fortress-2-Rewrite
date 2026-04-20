@@ -519,36 +519,32 @@ void SetupFunctions()
 
 static void VScriptPullBossKey(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients && Client(client).Cfg)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients && Client(client).Cfg)
+		char key[256];
+		context.GetArgString(1, key, sizeof(key));
+
+		switch(Client(client).Cfg.GetKeyValType(key))
 		{
-			char key[256];
-			context.GetArgString(1, key, sizeof(key));
-
-			switch(Client(client).Cfg.GetKeyValType(key))
+			case KeyValType_Value:
 			{
-				case KeyValType_Value:
-				{
-					char buffer[256];
-					Client(client).Cfg.Get(key, buffer, sizeof(buffer));
-					
-					VScript_UpdateKey(client, key, buffer);
-					context.SetReturnString(buffer);
-					return;
-				}
-				case KeyValType_Section:
-				{
-					ScriptHandle table = ExportConfig(Client(client).Cfg.GetSection(key));
+				char buffer[256];
+				Client(client).Cfg.Get(key, buffer, sizeof(buffer));
+				
+				VScript_UpdateKey(client, key, buffer);
+				context.SetReturnString(buffer);
+				return;
+			}
+			case KeyValType_Section:
+			{
+				ScriptHandle table = ExportConfig(Client(client).Cfg.GetSection(key));
 
-					VScript_UpdateKeyScript(client, key, table);
-					context.SetReturnHScript(table);
+				VScript_UpdateKeyScript(client, key, table);
+				context.SetReturnHScript(table);
 
-					delete table;
-					return;
-				}
+				delete table;
+				return;
 			}
 		}
 	}
@@ -558,216 +554,192 @@ static void VScriptPullBossKey(ScriptContext context)
 
 static void VScriptPushBossKey(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients && Client(client).IsBoss)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients && Client(client).IsBoss)
+		char key[256], value[256];
+		context.GetArgString(1, key, sizeof(key));
+
+		ScriptFieldType type = context.GetArgType(2);
+		if(type == ScriptField_Void)
 		{
-			char key[256], value[256];
-			context.GetArgString(1, key, sizeof(key));
+			Client(client).Cfg.DeleteSection(key);
+			VScript_DeleteKey(client, key);
+		}
+		else if(type == ScriptField_HScript)
+		{
+			ConfigMap cfg = Client(client).Cfg.GetSection(key);
+			ScriptHandle table = context.GetArgHScript(2);
 
-			ScriptFieldType type = context.GetArgType(2);
-			if(type == ScriptField_Void)
+			TableToCfg(cfg, table);
+			VScript_UpdateKeyScript(client, key, table);
+		}
+		else
+		{
+			switch(type)
 			{
-				Client(client).Cfg.DeleteSection(key);
-				VScript_DeleteKey(client, key);
-			}
-			else if(type == ScriptField_HScript)
-			{
-				ConfigMap cfg = Client(client).Cfg.GetSection(key);
-				ScriptHandle table = context.GetArgHScript(2);
-
-				TableToCfg(cfg, table);
-				VScript_UpdateKeyScript(client, key, table);
-			}
-			else
-			{
-				switch(type)
+				case ScriptField_Float:
 				{
-					case ScriptField_Float:
-					{
-						FloatToString(context.GetArgFloat(2), value, sizeof(value));
-					}
-					case ScriptField_Vector:
-					{
-						float vec[3];
-						context.GetArgVector(2, vec);
-						FormatEx(value, sizeof(value), "%f %f %f", vec[0], vec[1], vec[2]);
-					}
-					case ScriptField_Int:
-					{
-						IntToString(context.GetArgInt(2), value, sizeof(value));
-					}
-					case ScriptField_Bool:
-					{
-						IntToString(context.GetArgBool(2) ? 1 : 0, value, sizeof(value));
-					}
-					case ScriptField_String:
-					{
-						context.GetArgString(2, value, sizeof(value));
-					}
-					case ScriptField_Vector2D:
-					{
-						float vec[2];
-						context.GetArgVector2D(2, vec);
-						FormatEx(value, sizeof(value), "%f %f", vec[0], vec[1]);
-					}
-					case ScriptField_Quaternion:
-					{
-						float quat[4];
-						context.GetArgQuaternion(2, quat);
-						FormatEx(value, sizeof(value), "%f %f %f %f", quat[0], quat[1], quat[2], quat[3]);
-					}
+					FloatToString(context.GetArgFloat(2), value, sizeof(value));
 				}
-
-				Client(client).Cfg.Set(key, value);
-				VScript_UpdateKey(client, key, value);
+				case ScriptField_Vector:
+				{
+					float vec[3];
+					context.GetArgVector(2, vec);
+					FormatEx(value, sizeof(value), "%f %f %f", vec[0], vec[1], vec[2]);
+				}
+				case ScriptField_Int:
+				{
+					IntToString(context.GetArgInt(2), value, sizeof(value));
+				}
+				case ScriptField_Bool:
+				{
+					IntToString(context.GetArgBool(2) ? 1 : 0, value, sizeof(value));
+				}
+				case ScriptField_String:
+				{
+					context.GetArgString(2, value, sizeof(value));
+				}
+				case ScriptField_Vector2D:
+				{
+					float vec[2];
+					context.GetArgVector2D(2, vec);
+					FormatEx(value, sizeof(value), "%f %f", vec[0], vec[1]);
+				}
+				case ScriptField_Quaternion:
+				{
+					float quat[4];
+					context.GetArgQuaternion(2, quat);
+					FormatEx(value, sizeof(value), "%f %f %f %f", quat[0], quat[1], quat[2], quat[3]);
+				}
 			}
+
+			Client(client).Cfg.Set(key, value);
+			VScript_UpdateKey(client, key, value);
 		}
 	}
 }
 
 static void VScriptPullBossConfig(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients)
+		if(Client(client).IsBoss)
 		{
-			if(Client(client).IsBoss)
-			{
-				ScriptHandle boss = ExportConfig(Client(client).Cfg);
-				
-				ScriptHandle scope = VScript_GetEntityScriptScope(client);
-				if(scope)
-					scope.SetHScript("ff2boss", boss);
+			ScriptHandle boss = ExportConfig(Client(client).Cfg);
+			
+			ScriptHandle scope = VScript_GetEntityScriptScope(client);
+			if(scope)
+				scope.SetHScript("ff2boss", boss);
 
-				context.SetReturnHScript(boss);
-				delete boss;
-			}
-			else
-			{
-				ScriptHandle scope = VScript_GetEntityScriptScope(client);
-				if(scope)
-					scope.DeleteKey("ff2boss");
-			}
+			context.SetReturnHScript(boss);
+			delete boss;
+		}
+		else
+		{
+			ScriptHandle scope = VScript_GetEntityScriptScope(client);
+			if(scope)
+				scope.DeleteKey("ff2boss");
 		}
 	}
 }
 
 static void VScriptPushBossConfig(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients)
+		ScriptHandle boss;
+
+		ScriptHandle scope = VScript_GetEntityScriptScope(client);
+		if(scope)
+			boss = scope.GetHScript("ff2boss");
+		
+		ConfigMap cfg = ImportConfig(boss);
+
+		if(cfg)
 		{
-			ScriptHandle boss;
-
-			ScriptHandle scope = VScript_GetEntityScriptScope(client);
-			if(scope)
-				boss = scope.GetHScript("ff2boss");
-			
-			ConfigMap cfg = ImportConfig(boss);
-
-			if(cfg)
+			if(Client(client).Cfg)
 			{
-				if(Client(client).Cfg)
-				{
-					DeleteCfg(Client(client).Cfg);
-					Client(client).Cfg = cfg;
-				}
-				else
-				{
-					Bosses_CreateFromConfig(client, cfg, GetClientTeam(client), _, false);
-				}
+				DeleteCfg(Client(client).Cfg);
+				Client(client).Cfg = cfg;
 			}
-			else if(Client(client).Cfg)
+			else
 			{
-				Bosses_Remove(client);
+				Bosses_CreateFromConfig(client, cfg, GetClientTeam(client), _, false);
 			}
-
-			delete boss;
 		}
+		else if(Client(client).Cfg)
+		{
+			Bosses_Remove(client);
+		}
+
+		delete boss;
 	}
 }
 
 static void VScriptEmitBossSound(ScriptContext context)
 {
 	bool result;
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients)
+		ScriptHandle table = context.GetArgHScript(1);
+		if(table)
 		{
-			ScriptHandle table = context.GetArgHScript(1);
-			if(table)
+			char key[64];
+			table.GetString("sound_name", key, sizeof(key));
+			if(key[0])
 			{
-				char key[64];
-				table.GetString("sound_name", key, sizeof(key));
-				if(key[0])
+				char required[256];
+				if(table.HasKey("required"))
+					table.GetString("required", required, sizeof(required));
+				
+				int entity = SOUND_FROM_PLAYER;
+				if(table.HasKey("entity"))
+					entity = table.GetEntity("entity");
+
+				int channel = SNDCHAN_AUTO;
+				if(table.HasKey("channel"))
+					channel = table.GetInt("channel");
+				
+				int level = SNDLEVEL_NORMAL;
+				if(table.HasKey("sound_level"))
+					level = table.GetInt("sound_level");
+				
+				int flags = SND_NOFLAGS;
+				if(table.HasKey("flags"))
+					flags = table.GetInt("flags");
+				
+				float volume = SNDVOL_NORMAL;
+				if(table.HasKey("volume"))
+					volume = table.GetFloat("volume");
+				
+				int pitch = SNDPITCH_NORMAL;
+				if(table.HasKey("pitch"))
+					pitch = table.GetInt("pitch");
+				
+				ScriptHandle hplayers = table.GetHScript("players");
+				if(hplayers)
 				{
-					char required[256];
-					if(table.HasKey("required"))
-						table.GetString("required", required, sizeof(required));
-					
-					int entity = SOUND_FROM_PLAYER;
-					if(table.HasKey("entity"))
+					int total;
+					int[] clients = new int[MaxClients];
+
+					ScriptIterator iter = hplayers.Iterate();
+					while(iter.Next())
 					{
-						ScriptHandle hentity = table.GetHScript("entity");
-						entity = VScript_HScriptToEntity(hentity);
-						delete hentity;
+						if(iter.ValueType == ScriptField_HScript)
+							clients[total++] = iter.GetValueEntity();
 					}
 
-					int channel = SNDCHAN_AUTO;
-					if(table.HasKey("channel"))
-						channel = table.GetInt("channel");
+					delete hplayers;
 					
-					int level = SNDLEVEL_NORMAL;
-					if(table.HasKey("sound_level"))
-						level = table.GetInt("sound_level");
-					
-					int flags = SND_NOFLAGS;
-					if(table.HasKey("flags"))
-						flags = table.GetInt("flags");
-					
-					float volume = SNDVOL_NORMAL;
-					if(table.HasKey("volume"))
-						volume = table.GetFloat("volume");
-					
-					int pitch = SNDPITCH_NORMAL;
-					if(table.HasKey("pitch"))
-						pitch = table.GetInt("pitch");
-					
-					ScriptHandle hplayers = table.GetHScript("players");
-					if(hplayers)
-					{
-						int total;
-						int[] clients = new int[MaxClients];
-						char section[16];
-						ScriptFieldType keytype, valuetype;
-						for(int i; (i = hplayers.GetNextKey(i, section, sizeof(section), keytype, valuetype)) != -1; )
-						{
-							if(valuetype == ScriptField_HScript)
-							{
-								ScriptHandle hentity = hplayers.GetHScript(section);
-								clients[total++] = VScript_HScriptToEntity(hentity);
-								delete hentity;
-							}
-						}
-
-						delete hplayers;
-						
-						result = Bosses_PlaySound(client, clients, total, key, required, entity, channel, level, flags, volume, pitch);
-					}
-					else
-					{
-						result = Bosses_PlaySoundToAll(client, key, required, entity, channel, level, flags, volume, pitch);
-					}
+					result = Bosses_PlaySound(client, clients, total, key, required, entity, channel, level, flags, volume, pitch);
+				}
+				else
+				{
+					result = Bosses_PlaySoundToAll(client, key, required, entity, channel, level, flags, volume, pitch);
 				}
 			}
 		}
@@ -778,32 +750,24 @@ static void VScriptEmitBossSound(ScriptContext context)
 
 static void VScriptDoBossSlot(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients)
-		{
-			int low = context.GetArgInt(1);
-			int high = context.ArgCount > 2 ? context.GetArgInt(2) : low;
-			if(high > low)
-				high = low;
-			
-			Bosses_UseSlot(client, low, high);
-		}
+		int low = context.GetArgInt(1);
+		int high = context.ArgCount > 2 ? context.GetArgInt(2) : low;
+		if(high > low)
+			high = low;
+		
+		Bosses_UseSlot(client, low, high);
 	}
 }
 
 static void VScriptSetClientMinion(ScriptContext context)
 {
-	ScriptHandle hclient = context.GetArgHScript(0);
-	if(hclient)
+	int client = context.GetArgEntity(0);
+	if(client > 0 && client <= MaxClients)
 	{
-		int client = VScript_HScriptToEntity(hclient);
-		if(client > 0 && client <= MaxClients)
-		{
-			Client(client).MinionType = context.GetArgInt(1);
-		}
+		Client(client).MinionType = context.GetArgInt(1);
 	}
 }
 
@@ -865,10 +829,12 @@ static ConfigMap ImportConfig(ScriptHandle table)
 static void TableToCfg(ConfigMap cfg, ScriptHandle table)
 {
 	char key[256], value[256];
-	ScriptFieldType keytype, valuetype;
-	for(int i; (i = table.GetNextKey(i, key, sizeof(key), keytype, valuetype)) != -1;)
+	ScriptIterator iter = table.Iterate();
+	while(iter.Next())
 	{
-		switch(valuetype)
+		iter.GetKeyString(key, sizeof(key));
+
+		switch(iter.ValueType)
 		{
 			case ScriptField_Void:
 			{
@@ -876,26 +842,26 @@ static void TableToCfg(ConfigMap cfg, ScriptHandle table)
 			}
 			case ScriptField_Float:
 			{
-				cfg.SetFloat(key, table.GetFloat(key));
+				cfg.SetFloat(key, iter.GetValueFloat());
 			}
 			case ScriptField_Vector:
 			{
 				float vec[3];
-				table.GetVector(key, vec);
+				iter.GetValueVector(vec);
 				Format(value, sizeof(value), "%f %f %f", vec[0], vec[1], vec[2]);
 				cfg.Set(key, value);
 			}
 			case ScriptField_Int:
 			{
-				cfg.SetInt(key, table.GetInt(key));
+				cfg.SetInt(key, iter.GetValueInt());
 			}
 			case ScriptField_Bool:
 			{
-				cfg.SetInt(key, table.GetBool(key) ? 1 : 0);
+				cfg.SetInt(key, iter.GetValueBool() ? 1 : 0);
 			}
 			case ScriptField_String:
 			{
-				table.GetString(key, value, sizeof(value));
+				iter.GetValueString(value, sizeof(value));
 				cfg.Set(key, value);
 			}
 			case ScriptField_HScript:
@@ -908,14 +874,14 @@ static void TableToCfg(ConfigMap cfg, ScriptHandle table)
 			case ScriptField_Vector2D:
 			{
 				float vec[2];
-				table.GetVector2D(key, vec);
+				iter.GetValueVector2D(vec);
 				Format(value, sizeof(value), "%f %f", vec[0], vec[1]);
 				cfg.Set(key, value);
 			}
 			case ScriptField_Quaternion:
 			{
 				float quat[4];
-				table.GetQuaternion(key, quat);
+				iter.GetValueQuaternion(quat);
 				Format(value, sizeof(value), "%f %f %f %f", quat[0], quat[1], quat[2], quat[3]);
 				cfg.Set(key, value);
 			}

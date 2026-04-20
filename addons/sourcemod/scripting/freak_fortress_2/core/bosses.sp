@@ -364,14 +364,19 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 					{
 						case KeyValType_Section:
 						{
+							ConfigMap cfgBoss = val.cfg;
+
+							bool loadboss = choosen.FindValue(a) != -1;
+							cfgBoss.GetBool(precache ? "packload" : "outload", loadboss, false);
+
 							length = ReplaceString(bossname, length, "*", NULL_STRING);
 							if(length)
 							{
-								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, loadboss, vscripts);
 							}
 							else
 							{
-								LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+								LoadCharacter(bossname, pack, mapname, loadboss, vscripts);
 							}
 						}
 						case KeyValType_Value:
@@ -668,7 +673,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 						int amount = ReplaceString(mapname, length, "*", NULL_STRING);
 						if(StrEqual(map, mapname, false) || (amount == 1 && !StrContains(map, mapname, false)) || (amount > 1 && StrContains(map, mapname, false) != -1))
 						{
-							precache = view_as<bool>(StringToInt(val.data));
+							cfgsub.GetBool(val.data, precache, false);
 							size = length;
 						}
 					}
@@ -858,7 +863,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 											music = cfgsound.GetSize("time") > 0;
 									}
 									
-									if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
+									if(StrContains(key, "!") == 0)
+									{
+										PrecacheSentenceFile(key);
+									}
+									else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)
 									{
 										if(music && StrContains(key, "#") != 0)	// Replace the tree with an added #
 										{
@@ -892,7 +901,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												music = view_as<bool>(cfgsub.GetInt(section, length2));
 											}
 											
-											if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
+											if(StrContains(key, "!") == 0)
+											{
+												PrecacheSentenceFile(key);
+											}
+											else if(StrContains(key, SndExts[0]) != -1 || StrContains(key, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
 												if(music && StrContains(key, "#") != 0)
 												{
@@ -919,7 +932,11 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 												music = view_as<bool>(cfgsub.GetInt(buffer2, length2));
 											}
 											
-											if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
+											if(StrContains(buffer, "!") == 0)
+											{
+												PrecacheSentenceFile(buffer);
+											}
+											else if(StrContains(buffer, SndExts[0]) != -1 || StrContains(buffer, SndExts[1]) != -1)	// Check to make sure it's a sound
 											{
 												if(music && StrContains(buffer, "#") != 0)
 												{
@@ -1634,74 +1651,6 @@ int Bosses_GetByName(const char[] name, bool exact = true, bool enabled = true, 
 		}
 	}
 	return similarBoss;
-}
-
-bool Bosses_CanAccessBoss(int client, int special, bool playing = false, int team = -1, bool enabled = true, bool &preview = false)
-{
-	ConfigMap cfg = Bosses_GetConfig(special);
-	if(!cfg)
-		return false;
-	
-	bool blocked;
-	if(enabled && (!cfg.GetBool("enabled", blocked) || !blocked))
-		return false;
-	
-	if(playing)
-	{
-		// If random is disabled, blocks the boss being played without being selected
-		blocked = false;
-		if(cfg.GetBool("random", blocked, false) && !blocked)
-		{
-			if(!Preference_HasWhitelisted(client, special, false))
-				return false;
-		}
-	}
-	
-	cfg.GetBool("preview", preview, false);
-	
-	static char buffer1[512];
-	if(cfg.Get("steamid", buffer1, sizeof(buffer1)))
-	{
-		static char buffer2[64];
-		return GetClientAuthId(client, AuthId_SteamID64, buffer2, sizeof(buffer2)) && StrContains(buffer1, buffer2, false) != -1;
-	}
-	
-	blocked = false;
-	if(cfg.GetBool("blocked", blocked, false) && blocked)
-		return false;
-	
-	blocked = false;
-	if(cfg.GetBool("owner", blocked, false) && blocked)
-		return false;
-	
-	if(team != -1)
-	{
-		int value;
-		if(cfg.GetInt("bossteam", value) && value > TFTeam_Spectator && team != value)
-			return false;
-	}
-	
-	bool admin = view_as<bool>(cfg.Get("admin", buffer1, sizeof(buffer1)));
-	if(admin)
-		blocked = !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer1), true);
-	
-	if(!admin || blocked)
-	{
-		if(cfg.Get("cvar", buffer1, sizeof(buffer1)))
-		{
-			// If a cvar, check if it's enabled
-			ConVar cvar = FindConVar(buffer1);
-			if(!cvar || !cvar.BoolValue)
-				return false;
-			
-			blocked = false;
-		}
-		
-		if(!playing)	// If have both "admin" and "hidden", allow playing the boss randomly
-			cfg.GetBool("hidden", blocked, false);
-	}
-	
-	return !blocked;
 }
 
 bool Bosses_GetBossName(int special, char[] buffer, int length, int lang = -1, const char[] string = "name")
@@ -2829,7 +2778,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 								sound.Entity = SOUND_FROM_PLAYER;
 						}
 						
-						if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+						if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 						{
 							if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 								size = strlen(sound.Sound);
@@ -2872,7 +2821,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 					{
 						if(length > val.size)	// "example.mp3"	""
 						{
-							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+							if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 							{
 								if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
@@ -2921,7 +2870,7 @@ int Bosses_GetRandomSoundCfg(ConfigMap full, const char[] section, SoundEnum sou
 							
 							size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
 							
-							if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+							if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1 && StrContains(sound.Sound, "!") != 0)
 							{
 								if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 									size = strlen(sound.Sound);
@@ -2967,7 +2916,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 						sound.Entity = SOUND_FROM_PLAYER;
 				}
 				
-				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+				if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 				{
 					if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 						size = strlen(sound.Sound);
@@ -3010,7 +2959,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 			{
 				if(strlen(key) > val.size)	// "example.mp3"	""
 				{
-					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1)
+					if(StrContains(key, SndExts[0]) == -1 && StrContains(key, SndExts[1]) == -1 && StrContains(key, "!") != 0)
 					{
 						if(GetGameSoundParams(key, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);
@@ -3059,7 +3008,7 @@ int Bosses_GetSpecificSoundCfg(ConfigMap full, const char[] section, char[] key,
 					
 					size = strcopy(sound.Sound, sizeof(sound.Sound), val.data);
 					
-					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1)
+					if(StrContains(sound.Sound, SndExts[0]) == -1 && StrContains(sound.Sound, SndExts[1]) == -1 && StrContains(sound.Sound, "!") != 0)
 					{
 						if(GetGameSoundParams(sound.Sound, sound.Channel, sound.Level, sound.Volume, sound.Pitch, sound.Sound, sizeof(sound.Sound), sound.Entity == SOUND_FROM_LOCAL_PLAYER ? SOUND_FROM_PLAYER : sound.Entity))
 							size = strlen(sound.Sound);

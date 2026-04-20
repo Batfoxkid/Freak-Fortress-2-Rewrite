@@ -91,7 +91,7 @@ void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax 
 		for(int client = 1; client <= MaxClients; client++)
 		{
 			// Get remaining bosses alive
-			if(IsClientInGame(client) && IsPlayerAlive(client) && Client(client).IsBoss && Client(client).Cfg.GetSection("sound_lastman"))
+			if(client != exclude && IsClientInGame(client) && IsPlayerAlive(client) && Client(client).IsBoss && Client(client).Cfg.GetSection("sound_lastman"))
 			{
 				team = GetClientTeam(client);
 
@@ -287,6 +287,15 @@ static void Events_PlayerSpawn(Event event, const char[] name, bool dontBroadcas
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(client && Cvar[DisguiseModels].BoolValue)
 	{
+		if(GetClientTeam(client) % 2)
+		{
+			Attrib_Remove(client, "vision opt in flags", 406);
+		}
+		else
+		{
+			Attrib_Set(client, "vision opt in flags", 406, 4.0);
+		}
+
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 0);
 		SetEntProp(client, Prop_Send, "m_nModelIndexOverrides", 0, _, 3);
 	}
@@ -589,18 +598,21 @@ static void Events_PlayerDeath(Event event, const char[] name, bool dontBroadcas
 				Events_CheckAlivePlayers(victim);
 				CustomAttrib_PlayerDeath(victim);
 				
-				int entity, i;
-				while(TF2_GetItem(victim, entity, i))
+				if(!Client(victim).IsBoss)
 				{
-					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
-						TF2_RemoveItem(victim, entity);
-				}
-				
-				i = 0;
-				while(TF2U_GetWearable(victim, entity, i))
-				{
-					if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
-						TF2Tools_RemoveWearable(victim, entity);
+					int entity, i;
+					while(TF2_GetItem(victim, entity, i))
+					{
+						if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+							TF2_RemoveItem(victim, entity);
+					}
+					
+					i = 0;
+					while(TF2U_GetWearable(victim, entity, i))
+					{
+						if(!GetEntProp(entity, Prop_Send, "m_iAccountID"))
+							TF2Tools_RemoveWearable(victim, entity);
+					}
 				}
 			}
 			

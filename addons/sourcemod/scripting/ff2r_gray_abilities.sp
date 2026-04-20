@@ -844,17 +844,21 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		RequestAnnouncement(event.GetInt("team") == (TheAnnouncer == 3 ? 2 : 3) ? Announce_Win : Announce_Lose, 6.0, true);
 	}
 
-	// Explode the bomb on win
-	if(event && event.GetInt("winreason") == 1 && IsValidEntity(BombRef) && BombCarrier)
+	if(IsValidEntity(BombRef) && BombCarrier)
 	{
 		Attrib_Remove(BombCarrier, "move speed penalty", 54);
 		Attrib_Remove(BombCarrier, "increase player capture value", 68);
 
-		float pos[3];
-		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
-		TE_Particle("mvm_hatch_destroy", pos);
-		EmitGameSoundToAll("MVM.BombExplodes", BombCarrier);
-		ForcePlayerSuicide(BombCarrier);
+		// Explode the bomb on win
+		if(event && event.GetInt("winreason") == 1)
+		{
+			float pos[3];
+			GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
+			TE_Particle("mvm_hatch_destroy", pos);
+			EmitGameSoundToAll("MVM.BombExplodes", BombCarrier);
+			ForcePlayerSuicide(BombCarrier);
+		}
+
 		RemoveEntity(BombRef);
 	}
 }
