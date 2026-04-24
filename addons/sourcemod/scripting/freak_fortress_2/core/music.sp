@@ -46,7 +46,7 @@ void Music_BossCreated(int boss)
 	{
 		for(int client = 1; client <= MaxClients; client++)
 		{
-			if(!CurrentTheme[client][0] && IsClientInGame(client))
+			if(((Enabled && RoundStatus == 0) || !CurrentTheme[client][0]) && IsClientInGame(client))
 				Music_PlaySongToClient(client, sound, boss);
 		}
 	}
@@ -116,7 +116,10 @@ void Music_RoundEnd(int[] clients, int amount, int winner)
 			}
 			
 			if(sound.Sound[0])
+			{
+				sound.Time = 0.0;
 				Music_PlaySongToClient(clients[i], sound, boss);
+			}
 		}
 	}
 }

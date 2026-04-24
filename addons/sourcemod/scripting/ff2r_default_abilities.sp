@@ -267,8 +267,9 @@
 	{
 		"tf_projectile_pipe"
 		{
-			"model"	"models/player/saxton_hale/w_easteregg.mdl"
-			"scale"	"1.0"
+			"model"		"models/player/saxton_hale/w_easteregg.mdl"	// Model
+			"hitbox"	"true"										// If to replace hitbox
+			"scale"		"1.0"										// Size
 		}
 		
 		"plugin_name"			"ff2r_default_abilities"
@@ -1017,12 +1018,12 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							static char buffer[512];
 							
 							ability.GetString("forward", buffer, sizeof(buffer), "1.0 + (n * 0.00275)");
-							float velo = ParseFormula(buffer, power);
+							float velo = ParseExpr(buffer, Formula_BasicValue, float(power));
 							velocity[0] *= velo;
 							velocity[1] *= velo;
 							
 							ability.GetString("upward", buffer, sizeof(buffer), "750 + (n * 3.25)");
-							velocity[2] = ParseFormula(buffer, power);
+							velocity[2] = ParseExpr(buffer, Formula_BasicValue, float(power));
 
 							if(emergency)
 								velocity[2] += ability.GetFloat("emergency", 2000.0);
@@ -1969,7 +1970,21 @@ public void Hook_ProjectileSpawned(int entity)
 				if(cfg)
 				{
 					if(cfg.GetString("model", buffer, sizeof(buffer)))
-						SetEntityModel(entity, buffer);
+					{
+						int model = PrecacheModel(buffer);
+
+						if(cfg.GetBool("hitbox", true))
+						{
+							SetEntityModel(entity, buffer);
+						}
+						else
+						{
+							for(int i; i < 4; i++)
+							{
+								SetEntProp(entity, Prop_Send, "m_nModelIndexOverrides", model, _, i);
+							}
+						}
+					}
 					
 					float scale = cfg.GetFloat("scale", 1.0);
 					if(scale != 1.0 && scale > 0.0)
@@ -2340,6 +2355,11 @@ void Rage_TradeSpam(int client, ConfigData cfg, const char[] ability, int phase)
 	}
 }
 
+void Formula_EnemyPlayers(const char[] var_name, int var_name_len, float &f, any data)
+{
+	f = float(TotalPlayersAliveEnemy((!data || CvarFriendlyFire.BoolValue) ? -1 : GetClientTeam(data)));
+}
+
 void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 {
 	static char classname[36];
@@ -2362,7 +2382,7 @@ void Rage_NewWeapon(int client, ConfigData cfg, const char[] ability)
 			TF2Tools_RemoveWeaponSlot(client, slot);
 	}
 	
-	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, TotalPlayersAliveEnemy(CvarFriendlyFire.BoolValue ? -1 : GetClientTeam(client)));
+	int entity = TF2Items_CreateFromCfg(client, classname, cfg, _, Formula_EnemyPlayers);
 
 	if(entity != -1 && !wearable)
 	{
@@ -3058,7 +3078,7 @@ float GetFormula(ConfigData cfg, const char[] key, int players, float defaul = 0
 	if(!cfg.GetString(key, buffer, sizeof(buffer)))
 		return defaul;
 	
-	return ParseFormula(buffer, players);
+	return ParseExpr(buffer, Formula_BasicValue, float(players));
 }
 
 float GetBossCharge(ConfigData cfg, const char[] slot, float defaul = 0.0)
@@ -3764,7 +3784,13 @@ int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 	}
 }
 
-public bool TraceRay_DontHitSelf(int entity, int mask, any data)
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
+{
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
+}
+
+bool TraceRay_DontHitSelf(int entity, int mask, any data)
 {
 	return (entity != data);
 }

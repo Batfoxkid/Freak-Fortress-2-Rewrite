@@ -2769,7 +2769,7 @@ float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const c
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);
-	float value = ParseFormula(buffer, players);
+	float value = ParseExpr(buffer, Formula_BasicValue, players);
 	cfg.SetFloat(key, value);
 	return value;
 }
@@ -3109,7 +3109,13 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 	return false;
 }
 
-public bool Trace_WorldOnly(int entity, int contentsMask)
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
+{
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
+}
+
+bool Trace_WorldOnly(int entity, int contentsMask)
 {
 	return !entity;
 }

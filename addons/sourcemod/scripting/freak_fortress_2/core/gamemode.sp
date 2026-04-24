@@ -400,10 +400,10 @@ static Action Gamemode_SetControlPoint(Handle timer)
 	{
 		char buffer[256];
 		Cvar[CaptureTime].GetString(buffer, sizeof(buffer));
-		time = ParseFormula(buffer, players);
+		time = ParseExpr(buffer, Formula_BasicValue, float(players));
 		
 		Cvar[CaptureAlive].GetString(buffer, sizeof(buffer));
-		PointUnlock = RoundToCeil(ParseFormula(buffer, players));
+		PointUnlock = RoundToCeil(ParseExpr(buffer, Formula_BasicValue, float(players)));
 	}
 	
 	if(time > 0.001)

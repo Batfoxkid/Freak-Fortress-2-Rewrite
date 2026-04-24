@@ -14,6 +14,7 @@ static bool Loaded;
 static ScriptCall ScriptGetAttribute;
 static ScriptCall ScriptSetAttribute;
 static ScriptCall ScriptRemoveAttribute;
+static ScriptCall ScriptRemoveAllAttributes;
 static ScriptCall ScriptFireScriptHook;
 #endif
 
@@ -60,6 +61,7 @@ static void SetupCalls()
 	ScriptSetAttribute = new ScriptCall("FF2_SetAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String, ScriptField_Float);
 	ScriptGetAttribute = new ScriptCall("FF2_GetAttribute", ScriptField_Float, ScriptField_HScript, ScriptField_String, ScriptField_Float);
 	ScriptRemoveAttribute = new ScriptCall("FF2_RemoveAttribute", ScriptField_Void, ScriptField_HScript, ScriptField_String);
+	ScriptRemoveAllAttributes = new ScriptCall("FF2_RemoveAllAttributes", ScriptField_Void, ScriptField_HScript);
 	ScriptFireScriptHook = new ScriptCall("FireScriptHook", ScriptField_Bool, ScriptField_String, ScriptField_HScript);
 }
 #endif
@@ -215,6 +217,33 @@ stock void VScript_RemoveAttribute(int entity, const char[] name)
 	#endif
 
 	Format(ReturnString, sizeof(ReturnString), "_FF2_RemoveAttribute(\"%s\")", name);
+	SetVariantString(ReturnString);
+	AcceptEntityInput(0, "RunScriptCode", entity, entity);
+}
+
+stock void VScript_RemoveAllAttributes(int entity, bool remove = true)
+{
+	#if defined _vscript_included
+	if(Loaded && ScriptRemoveAllAttributes)
+	{
+		if(remove)
+		{
+			ScriptHandle hentity = VScript_EntityToHScript(entity);
+			if(hentity)
+				ScriptRemoveAllAttributes.Execute(hentity);
+		}
+		else
+		{
+			ScriptHandle hentity = VScript_GetEntityScriptScope(entity);
+			if(hentity)
+				hentity.DeleteKey("ff2attributes");
+		}
+		
+		return;
+	}
+	#endif
+
+	Format(ReturnString, sizeof(ReturnString), "_FF2_RemoveAllAttributes(%s)", remove ? "true" : "false");
 	SetVariantString(ReturnString);
 	AcceptEntityInput(0, "RunScriptCode", entity, entity);
 }
@@ -498,6 +527,18 @@ public void VScript_OnVMInitialized()
 		"else { entity.RemoveAttribute(name) }\n" ...
 		"local a = entity.GetScriptScope()\n" ...
 		"if(a != null && (\"ff2attributes\" in a) && (name in a.ff2attributes)) { delete a.ff2attributes[name] }\n" ...
+	"}");
+	
+	VScript_Run("function FF2_RemoveAllAttributes(entity) {\n" ...
+		"local c = (\"RemoveCustomAttribute\" in entity)\n" ...
+		"local a = entity.GetScriptScope()\n" ...
+		"if(a != null && (\"ff2attributes\" in a)) {\n" ...
+			"foreach(b in m.ff2attributes) {\n" ...
+				"if(c) { entity.RemoveCustomAttribute(b) }\n" ...
+				"else { entity.RemoveAttribute(b) }\n" ...
+			"}\n" ...
+			"delete a.ff2attributes\n" ...
+		"}\n" ...
 	"}");
 	
 	VScript_Run("function FF2_GetBossConfig(player) {\n" ...

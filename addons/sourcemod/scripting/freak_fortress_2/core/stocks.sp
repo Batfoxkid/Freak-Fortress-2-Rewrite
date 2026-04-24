@@ -121,7 +121,7 @@ int TotalPlayersAlive()
 	return amount;
 }
 
-int TotalPlayersAliveEnemy(int team)
+stock int TotalPlayersAliveEnemy(int team)
 {
 	int amount;
 	for(int i = Cvar[SpecTeam].BoolValue ? TFTeam_Unassigned : TFTeam_Red; i < TFTeam_MAX; i++)
@@ -938,6 +938,12 @@ void CreateFade(int client, int duration = 2000, int red = 255, int green = 255,
 	bf.WriteByte(blue);
 	bf.WriteByte(alpha);
 	EndMessage();
+}
+
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
+{
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
 }
 
 void FPrintToChat(int client, const char[] message, any ...)

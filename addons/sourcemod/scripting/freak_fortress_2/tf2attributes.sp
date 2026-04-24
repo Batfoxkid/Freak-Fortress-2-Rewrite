@@ -457,3 +457,17 @@ stock void Attrib_Remove(int entity, const char[] name = "", int index = -1)
 
 	ErrorDefIndex(index);
 }
+
+stock void Attrib_RemoveAll(int entity)
+{
+	#if defined _tf2attributes_included
+	if(Loaded)
+	{
+		VScript_RemoveAllAttributes(entity, false);
+		TF2Attrib_RemoveAll(entity);
+		return;
+	}
+	#endif
+
+	VScript_RemoveAllAttributes(entity, true);
+}

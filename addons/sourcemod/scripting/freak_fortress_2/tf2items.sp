@@ -27,7 +27,9 @@ enum struct WeaponData
 	int Blue;
 	int Skin;
 	bool Equip;
-	int Forumla;
+#if defined FORUMLA_PHRASER
+	ConfigMapMathVarFunc Forumla;
+#endif
 
 	void Setup(const char[] classname, int index = 0, const char[] attributes = "", bool preserve = false, bool show = true, bool equip = true)
 	{
@@ -51,7 +53,9 @@ enum struct WeaponData
 		this.Blue = 255;
 		this.Skin = -1;
 		this.Equip = equip;
-		this.Forumla = -99;
+		#if defined FORUMLA_PHRASER
+		this.Forumla = INVALID_FUNCTION;
+		#endif
 	}
 }
 
@@ -78,9 +82,13 @@ stock void TF2Items_PrintStatus()
 	#endif
 }
 
-stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, ConfigMap cfg, bool reset = true, bool equip = true, int formula = -99)
+#if defined FORUMLA_PHRASER
+stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, ConfigMap cfg, bool reset = true, bool equip = true, ConfigMapMathVarFunc formula = INVALID_FUNCTION)
+#else
+stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, ConfigMap cfg, bool reset = true, bool equip = true)
+#endif
 {
-	char buffer[36];
+	char buffer[PLATFORM_MAX_PATH];
 	strcopy(buffer, sizeof(buffer), classname);
 	
 	if(StrContains(buffer, "tf_") != 0 &&
@@ -103,6 +111,31 @@ stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, Confi
 	{
 		strcopy(buffer, sizeof(buffer), classname);
 	}
+	
+	if(cfg.ContainsKey("worldmodel"))
+	{
+		int index;
+		if(cfg.GetInt("worldmodel", index) && index != 0)
+		{
+			data.Worldmodel = index;
+		}
+		else
+		{
+			cfg.Get("worldmodel", buffer, sizeof(buffer));
+			if(buffer[0])
+				index = PrecacheModel(buffer);
+
+			if(index == 0)
+			{
+				cfg.DeleteSection("worldmodel");
+			}
+			else
+			{
+				cfg.SetInt("worldmodel", index);
+				data.Worldmodel = index;
+			}
+		}
+	}
 
 	cfg.GetInt("index", data.Index);
 	cfg.GetInt("level", data.Level);
@@ -121,17 +154,22 @@ stock void TF2Items_StructFromCfg(WeaponData data, const char[] classname, Confi
 	cfg.Get("ammo", data.Ammo, sizeof(data.Ammo));
 	cfg.Get("maxammo", data.MaxAmmo, sizeof(data.MaxAmmo));
 	cfg.GetBool("show", data.Show, false);
-	cfg.GetInt("worldmodel", data.Worldmodel);
 	cfg.GetInt("alpha", data.Alpha);
 	cfg.GetInt("red", data.Red);
 	cfg.GetInt("green", data.Green);
 	cfg.GetInt("blue", data.Blue);
 	cfg.GetInt("skin", data.Skin);
 	data.Equip = equip;
+#if defined FORUMLA_PHRASER
 	data.Forumla = formula;
+#endif
 }
 
-stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false, int formula = -99)
+#if defined FORUMLA_PHRASER
+stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false, ConfigMapMathVarFunc formula = INVALID_FUNCTION)
+#else
+stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap cfg, bool &equip = false)
+#endif
 {
 	ArrayList cfgs = new ArrayList();
 	cfgs.Push(cfg);
@@ -141,7 +179,11 @@ stock int TF2Items_CreateFromCfg(int client, const char[] classname, ConfigMap c
 	return weapon;
 }
 
-stock int TF2Items_CreateFromMultiCfg(int client, const char[] classname, ArrayList cfgs, bool &equip = false, int formula = -99)
+#if defined FORUMLA_PHRASER
+stock int TF2Items_CreateFromMultiCfg(int client, const char[] classname, ArrayList cfgs, bool &equip = false, ConfigMapMathVarFunc formula = INVALID_FUNCTION)
+#else
+stock int TF2Items_CreateFromMultiCfg(int client, const char[] classname, ArrayList cfgs, bool &equip = false)
+#endif
 {
 	static WeaponData data;
 
@@ -253,7 +295,20 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				TF2Items_SetAttribute(item, a++, attrib, data.Forumla == -99 ? StringToFloat(buffers[attribs+1]) : ParseFormula(buffers[attribs+1], data.Forumla));
+				float value;
+
+				#if defined FORUMLA_PHRASER
+				if(data.Forumla && data.Forumla != INVALID_FUNCTION)
+				{
+					value = ParseExpr(buffers[attribs+1], data.Forumla, client);
+				}
+				else
+				#endif
+				{
+					value = StringToFloat(buffers[attribs+1]);
+				}
+
+				TF2Items_SetAttribute(item, a++, attrib, value);
 			}
 			else
 			{
@@ -287,13 +342,15 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 			int attrib = StringToInt(buffers[attribs]);
 			if(attrib)
 			{
-				if(data.Forumla == -99)
+				#if defined FORUMLA_PHRASER
+				if(data.Forumla && data.Forumla != INVALID_FUNCTION)
 				{
-					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
+					Attrib_Set(entity, _, attrib, ParseExpr(buffers[attribs+1], data.Forumla, client));
 				}
 				else
+				#endif
 				{
-					Attrib_Set(entity, _, attrib, ParseFormula(buffers[attribs+1], data.Forumla));
+					Attrib_SetString(entity, _, attrib, buffers[attribs+1]);
 				}
 			}
 			else
@@ -308,10 +365,11 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 			for(int i; i < lengt; i++)
 			{
 				ConfigMap cfg = cfgs.Get(i);
+				ConfigMap attributes;
 
 				if(cfg.GetKeyValType("attributes") == KeyValType_Section)
 				{
-					ConfigMap attributes = cfg.GetSection("attributes");
+					attributes = cfg.GetSection("attributes");
 
 					StringMapSnapshot snap = attributes.Snapshot();
 					int snapLength = snap.Length;
@@ -329,13 +387,15 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 
 						if(val.tag == KeyValType_Value)
 						{
-							if(data.Forumla == -99)
+							#if defined FORUMLA_PHRASER
+							if(data.Forumla && data.Forumla != INVALID_FUNCTION)
 							{
-								Attrib_SetString(entity, key, _, val.data);
+								Attrib_Set(entity, key, _, ParseExpr(val.data, data.Forumla, client));
 							}
 							else
+							#endif
 							{
-								Attrib_Set(entity, key, _, ParseFormula(val.data, data.Forumla));
+								Attrib_SetString(entity, key, _, val.data);
 							}
 						}
 					}
@@ -343,14 +403,45 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 					delete snap;
 				}
 				
-				#if defined CUSTOMATTRIBFF2_INCLUDED
 				if(cfg)
 				{
-					ConfigMap custom = cfg.GetSection("custom");
+					ConfigMap custom = attributes ? attributes.GetSection("custom") : cfg.GetSection("custom");
 					if(custom)
-						CustomAttrib_ApplyFromCfg(entity, custom);
+					{
+						StringMapSnapshot snap = custom.Snapshot();
+						
+						int entries = snap.Length;
+						for(int b; b < entries; b++)
+						{
+							int length = snap.KeyBufferSize(b) + 1;
+							
+							char[] key = new char[length];
+							snap.GetKey(b, key, length);
+							
+							static PackVal attribute;	
+							custom.GetArray(key, attribute, sizeof(attribute));
+							if(attribute.tag == KeyValType_Value)
+							{
+								#if defined FORUMLA_PHRASER
+								if(data.Forumla && data.Forumla != INVALID_FUNCTION)
+								{
+									Attrib_Set(entity, key, _, ParseExpr(attribute.data, data.Forumla, client));
+								}
+								else
+								#endif
+								{
+									#if defined CUSTOMATTRIBFF2_INCLUDED
+									CustomAttrib_SetString(entity, key, attribute.data);
+									#else
+									Attrib_SetString(entity, key, _, attribute.data);
+									#endif
+								}
+							}
+						}
+						
+						delete snap;
+					}
 				}
-				#endif
 			}
 		}
 
@@ -365,7 +456,17 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 		{
 			if(data.Clip[0])
 			{
-				kills = RoundFloat(data.Forumla == -99 ? StringToFloat(data.Clip) : ParseFormula(data.Clip, data.Forumla));
+				#if defined FORUMLA_PHRASER
+				if(data.Forumla && data.Forumla != INVALID_FUNCTION)
+				{
+					kills = RoundFloat(ParseExpr(data.Clip, data.Forumla, client));
+				}
+				else
+				#endif
+				{
+					kills = StringToInt(data.Clip);
+				}
+
 				if(kills >= 0)
 					SetEntProp(entity, Prop_Data, "m_iClip1", kills);
 			}
@@ -375,13 +476,32 @@ stock int TF2Items_CreateFromStruct(int client, WeaponData data, ArrayList cfgs 
 				int type = GetEntProp(entity, Prop_Send, "m_iPrimaryAmmoType");
 				if(type >= 0)
 				{
-					kills = RoundFloat(data.Forumla == -99 ? StringToFloat(data.Ammo) : ParseFormula(data.Ammo, data.Forumla));
+					#if defined FORUMLA_PHRASER
+					if(data.Forumla && data.Forumla != INVALID_FUNCTION)
+					{
+						kills = RoundFloat(ParseExpr(data.Ammo, data.Forumla, client));
+					}
+					else
+					#endif
+					{
+						kills = StringToInt(data.Ammo);
+					}
 
 					if(data.MaxAmmo[0])
 					{
-						int limit = RoundFloat(data.Forumla == -99 ? StringToFloat(data.MaxAmmo) : ParseFormula(data.MaxAmmo, data.Forumla));
-						if(limit >= 0 && kills > limit)
-							kills = limit;
+						#if defined FORUMLA_PHRASER
+						if(data.Forumla && data.Forumla != INVALID_FUNCTION)
+						{
+							count = RoundFloat(ParseExpr(data.MaxAmmo, data.Forumla, client));
+						}
+						else
+						#endif
+						{
+							count = StringToInt(data.MaxAmmo);
+						}
+
+						if(count >= 0 && kills > count)
+							kills = count;
 					}
 
 					SetEntProp(client, Prop_Data, "m_iAmmo", kills, _, type);

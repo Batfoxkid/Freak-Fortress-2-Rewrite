@@ -10,7 +10,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, '[')"
+    if: "!contains(github.event.head_commit.message, '[skip]')"
     
     steps:
       - name: Install Checkout
@@ -49,48 +49,43 @@ jobs:
       
       - name: Package Full
         uses: montudor/action-zip@v1.0.0
-        if: "contains(github.event.head_commit.message, '[M]')"
         with:
           args: zip -qq -r New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip New-Install-Package
       
       - name: Package Update
         uses: montudor/action-zip@v1.0.0
-        if: "contains(github.event.head_commit.message, '[M]')"
         with:
           args: zip -qq -r Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Update-Package
       
       - name: Package Epic Scout
         uses: montudor/action-zip@v1.0.0
-        if: "contains(github.event.head_commit.message, '[E]')"
         with:
-          args: zip -qq -r Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Epic-Scout
+          args: zip -qq -r Epic-Scout-DLC.zip Epic-Scout
       
       - name: Package Gray Mann
         uses: montudor/action-zip@v1.0.0
-        if: "contains(github.event.head_commit.message, '[G]')"
         with:
-          args: zip -qq -r Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Gray-Mann
+          args: zip -qq -r Gray-Mann-DLC.zip Gray-Mann
       
       - name: Package Blitzkrieg
         uses: montudor/action-zip@v1.0.0
-        if: "contains(github.event.head_commit.message, '[B]')"
         with:
-          args: zip -qq -r Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip Blitzkrieg
+          args: zip -qq -r Blitzkrieg-DLC-Beta-Test.zip Blitzkrieg
       
       - name: Release
         uses: softprops/action-gh-release@master
         with:
           tag_name: ${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           files: |
-            New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-            Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-            Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
-            Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
+            Epic-Scout-DLC.zip
+            Gray-Mann-DLC.zip
+            Blitzkrieg-DLC-Beta-Test.zip
   
   nonrelease:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[')"
+    if: "contains(github.event.head_commit.message, '[skip]')"
     
     steps:
       - name: Install Checkout
@@ -138,21 +133,3 @@ jobs:
         with:
           name: Update-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
           path: ./Update-Package
-      
-      - name: Upload Epic Scout
-        uses: actions/upload-artifact@master
-        with:
-          name: Epic-Scout-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./Epic-Scout
-      
-      - name: Upload Gray Mann
-        uses: actions/upload-artifact@master
-        with:
-          name: Gray-Mann-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./Gray-Mann
-      
-      - name: Upload Blitzkrieg
-        uses: actions/upload-artifact@master
-        with:
-          name: Blitzkrieg-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}
-          path: ./Blitzkrieg

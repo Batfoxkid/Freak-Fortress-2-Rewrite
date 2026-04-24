@@ -1695,18 +1695,18 @@ void GetMinMaxFromFormula(float &minn, float &maxx, ConfigData cfg, const char[]
 		if(buffer2[0] == ';')
 			strcopy(buffer2, sizeof(buffer2), defaul);
 		
-		maxx = ParseFormula(buffer2, players);
+		maxx = ParseExpr(buffer2, Formula_BasicValue, players);
 		minn = maxx;
 	}
 	else if(buffer2[0] == ';')
 	{
-		minn = ParseFormula(buffer1, players);
+		minn = ParseExpr(buffer1, Formula_BasicValue, players);
 		maxx = minn;
 	}
 	else
 	{
-		minn = ParseFormula(buffer1, players);
-		maxx = ParseFormula(buffer2, players);
+		minn = ParseExpr(buffer1, Formula_BasicValue, players);
+		maxx = ParseExpr(buffer2, Formula_BasicValue, players);
 	}
 }
 
@@ -2023,9 +2023,10 @@ void TE_Particle(const char[] Name, float origin[3]=NULL_VECTOR, float start[3]=
 	TE_SendToAll(delay);
 }
 
-public bool Trace_WorldOnly(int entity, int contentsMask)
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
 {
-	return !entity;
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
 }
 
 void FPrintToChatEx(int client, int author, const char[] message, any ...)

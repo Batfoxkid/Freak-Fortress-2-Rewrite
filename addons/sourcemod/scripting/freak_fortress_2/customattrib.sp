@@ -1,4 +1,7 @@
+#if defined IS_MAIN_FF2 || defined CUSTOM_ATTRIBS
 #tryinclude <tf_econ_dynamic>
+#endif
+
 #tryinclude <tf_custom_attributes>
 
 #pragma semicolon 1
@@ -31,7 +34,6 @@ void CustomAttrib_PluginLoad()
 	MarkNativeAsOptional("TF2CustAttr_GetString");
 	#endif
 	
-	#if defined IS_MAIN_FF2
 	#if defined __tf_econ_dyn_included
 	MarkNativeAsOptional("TF2EconDynAttribute.TF2EconDynAttribute");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetClass");
@@ -39,7 +41,6 @@ void CustomAttrib_PluginLoad()
 	MarkNativeAsOptional("TF2EconDynAttribute.SetDescriptionFormat");
 	MarkNativeAsOptional("TF2EconDynAttribute.SetCustom");
 	MarkNativeAsOptional("TF2EconDynAttribute.Register");
-	#endif
 	#endif
 }
 
@@ -55,11 +56,7 @@ stock void CustomAttrib_AllPluginsLoaded()
 	#if defined __tf_econ_dyn_included
 	TFEYLoaded = GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") == FeatureStatus_Available;
 	if(TFEYLoaded)
-	{
-		#if defined IS_MAIN_FF2
 		AddAttributes();
-		#endif
-	}
 	#endif
 }
 
@@ -82,9 +79,8 @@ public void CustomAttrib_LibraryRemoved(const char[] name)
 stock void CustomAttrib_PrintStatus()
 {
 	#if defined __tf_econ_dyn_included
-	if(GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") != FeatureStatus_Available)
-		TFEYLoaded = false;
-
+	TFEYLoaded = (GetFeatureStatus(FeatureType_Native, "TF2EconDynAttribute.TF2EconDynAttribute") != FeatureStatus_Available);
+	
 	PrintToServer("'%s' is %sloaded", TFEY_LIBRARY, TFEYLoaded ? "" : "not ");
 	#else
 	PrintToServer("'%s' not compiled", TFEY_LIBRARY);
@@ -128,16 +124,21 @@ stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 		cfg.GetArray(key, attribute, sizeof(attribute));
 		if(attribute.tag == KeyValType_Value)
 		{
-			#if defined __tf_custom_attributes_included
-			if(TCALoaded)
-				TF2CustAttr_SetString(entity, key, attribute.data);
-			#endif
-			
-			Attrib_SetString(entity, key, _, attribute.data);
+			CustomAttrib_SetString(entity, key, attribute.data);
 		}
 	}
 	
 	delete snap;
+}
+
+stock void CustomAttrib_SetString(int entity, const char[] key, const char[] value)
+{
+	#if defined __tf_custom_attributes_included
+	if(TCALoaded)
+		TF2CustAttr_SetString(entity, key, value);
+	#endif
+	
+	Attrib_SetString(entity, key, _, value);
 }
 
 stock float CustomAttrib_FindOnPlayer(int client, const char[] name, bool multi = false)
@@ -440,97 +441,97 @@ static void AddAttributes()
 	attrib.Register();
 
 	attrib.SetName("milk limit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_1");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "milk limit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("hit stale DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_2");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "hit stale DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("sentry death DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_3");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "sentry death DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("jarate limit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_4");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "jarate limit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("boost limit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_5");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "boost limit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("teleport no spawn DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_6");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "teleport no spawn DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("vaccinator DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_7");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "vaccinator DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("cloak on hit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_8");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "cloak on hit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("cloak and dagger no DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_9");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "cloak and dagger no DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("laugh is slow DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_10");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "laugh is slow DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("caber boss crit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_11");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "caber boss crit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("start with uber DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_12");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "start with uber DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("mark limit DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_13");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "mark limit DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("health drop on damage DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_14");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "health drop on damage DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("resist effects stuns DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_15");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "resist effects stuns DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("kill effects boss hits DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_16");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "kill effects boss hits DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("backstabs DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_17");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "backstabs DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("disguise resistance DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_18");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "disguise resistance DISPLAY ONLY");
 	attrib.Register();
 
 	attrib.SetName("sapper boss effect DISPLAY ONLY");
-	attrib.SetClass("ff2.displayonly_19");
+	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "sapper boss effect DISPLAY ONLY");
 	attrib.Register();
 	

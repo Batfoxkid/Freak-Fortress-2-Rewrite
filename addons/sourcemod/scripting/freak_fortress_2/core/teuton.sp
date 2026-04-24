@@ -55,7 +55,7 @@ static Action Teuton_SpawnTimer(Handle timer, any userid)
 		{
 			ChangeClientTeam(client, MercTeam);
 			TF2Tools_RespawnPlayer(client);
-			TF2_SetPlayerClass(client, TFClass_DemoMan);
+			TF2_SetPlayerClass(client, TFClass_DemoMan, _, false);
 			TF2_RemoveAllItems(client);
 			Client(client).MinionType = 2;
 			

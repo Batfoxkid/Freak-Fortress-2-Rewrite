@@ -6,8 +6,6 @@ cp -r custom/epic_scout/materials Epic-Scout
 cp -r custom/epic_scout/sound Epic-Scout
 cp addons/sourcemod/configs/freak_fortress_2/non-default/epicscout.cfg Epic-Scout/addons/sourcemod/configs/freak_fortress_2/epicscout.cfg
 rm addons/sourcemod/configs/freak_fortress_2/non-default/epicscout.cfg
-cp addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx Epic-Scout/addons/sourcemod/plugins/ff2r_epic_abilities.smx
-rm addons/sourcemod/scripting/plugins/ff2r_epic_abilities.smx
 
 # Gray Mann Package
 mkdir -p Gray-Mann/addons/sourcemod/configs/freak_fortress_2
@@ -17,8 +15,6 @@ cp -r custom/gray_mann/materials Gray-Mann
 cp -r custom/gray_mann/sound Gray-Mann
 cp addons/sourcemod/configs/freak_fortress_2/non-default/graymann.cfg Gray-Mann/addons/sourcemod/configs/freak_fortress_2/graymann.cfg
 rm addons/sourcemod/configs/freak_fortress_2/non-default/graymann.cfg
-cp addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx Gray-Mann/addons/sourcemod/plugins/ff2r_gray_abilities.smx
-rm addons/sourcemod/scripting/plugins/ff2r_gray_abilities.smx
 
 # Blitzkrieg Package
 mkdir -p Blitzkrieg/addons/sourcemod/configs/freak_fortress_2
@@ -28,8 +24,6 @@ cp -r custom/blitzkrieg/materials Blitzkrieg
 cp -r custom/blitzkrieg/sound Blitzkrieg
 cp addons/sourcemod/configs/freak_fortress_2/non-default/blitzkrieg.cfg Blitzkrieg/addons/sourcemod/configs/freak_fortress_2/blitzkrieg.cfg
 rm addons/sourcemod/configs/freak_fortress_2/non-default/blitzkrieg.cfg
-cp addons/sourcemod/scripting/plugins/ff2r_danmaku_abilities.smx Blitzkrieg/addons/sourcemod/plugins/ff2r_danmaku_abilities.smx
-rm addons/sourcemod/scripting/plugins/ff2r_danmaku_abilities.smx
 
 # Update Package
 mkdir -p Update-Package/addons/sourcemod

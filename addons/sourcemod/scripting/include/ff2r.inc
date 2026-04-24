@@ -747,7 +747,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
-	// RPS lose count
+	// Who won the RPS
 	property int RPSHit
 	{
 		public get()
@@ -760,7 +760,7 @@ methodmap BossData < ConfigData
 		}
 	}
 	
-	// First RPS damage taken
+	// Unused
 	property int RPSDamage
 	{
 		public get()

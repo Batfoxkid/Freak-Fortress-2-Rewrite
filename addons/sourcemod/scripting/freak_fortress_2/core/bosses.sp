@@ -1846,16 +1846,19 @@ int Bosses_SetHealth(int client, int players)
 	float ragedmg = 1900.0;
 	static char buffer[1024];
 	if(Client(client).Cfg.Get("ragedamage", buffer, sizeof(buffer)))
-		ragedmg = ParseFormula(buffer, players);
+		ragedmg = ParseExpr(buffer, Formula_BasicValue, float(players));
 	
 	Client(client).RageDamage = ragedmg;
 	
 	int maxhealth;
 	if(Client(client).Cfg.Get("health_formula", buffer, sizeof(buffer)))
-		maxhealth = RoundFloat(ParseFormula(buffer, players));
-	
-	if(maxhealth < 1)
+	{
+		maxhealth = RoundFloat(ParseExpr(buffer, Formula_BasicValue, float(players)));
+	}
+	else
+	{
 		maxhealth = RoundFloat(Pow((760.8 + players) * (players - 1.0), 1.0341) + 2046.0);
+	}
 	
 	Client(client).MaxHealth = maxhealth;
 	

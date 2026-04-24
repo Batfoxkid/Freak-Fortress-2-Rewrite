@@ -1,4 +1,4 @@
-SCRIPT_VERSION <- 2
+SCRIPT_VERSION <- 3
 /*
 	VScript script for calling special functions for Freak Fortress 2: Rewrite
 */
@@ -53,6 +53,32 @@ function _FF2_RemoveAttribute(strName)
 	local m = activator.GetScriptScope()
 	if(m != null && ("ff2attributes" in m) && (strName in m.ff2attributes))
 		delete m.ff2attributes[strName]
+}
+
+function _FF2_RemoveAllAttributes(bRemove)
+{
+	local bCustom = ("RemoveCustomAttribute" in activator)
+
+	local m = activator.GetScriptScope()
+	if(m != null && ("ff2attributes" in m))
+	{
+		if(bRemove)
+		{
+			foreach(strName in m.ff2attributes)
+			{
+				if(bCustom)
+				{
+					activator.RemoveCustomAttribute(strName)
+				}
+				else
+				{
+					activator.RemoveAttribute(strName)
+				}
+			}
+		}
+
+		delete m.ff2attributes
+	}
 }
 
 function _FF2_CallPawn(strEvent, tTable)
