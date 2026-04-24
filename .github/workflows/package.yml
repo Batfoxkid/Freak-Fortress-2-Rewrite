@@ -5,7 +5,9 @@ permissions:
 
 on:
   push:
-    branches: main
+    branches:
+      - main
+      - danmedic
 
 jobs:
   release:
