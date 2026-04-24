@@ -485,7 +485,13 @@ static ConfigMap FindWeaponSection(int entity, char cwx[64] = "", int client = 0
 		Format(buffer1, sizeof(buffer1), "CWX.%s", cwx);
 		ConfigMap cfg = loadout.GetSection(buffer1);
 		if(cfg)
+		{
+			#if defined IS_MAIN_FF2
 			return FindClassSection(cfg, client, temp);
+			#else
+			return FindClassSection(cfg, client);
+			#endif
+		}
 	}
 	#endif
 	
