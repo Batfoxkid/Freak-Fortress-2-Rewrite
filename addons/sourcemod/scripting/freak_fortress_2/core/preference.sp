@@ -2,9 +2,6 @@
 #pragma newdecls required
 
 #define FILE_DIFF		"data/freak_fortress_2/modifiers.cfg"
-#define PREF_ENABLED	(1 << 0)
-#define PREF_PLAYING	(1 << 1)
-#define PREF_MENU		(1 << 2)
 
 static ConfigMap Difficulties;
 static int BossOverride = -1;
@@ -86,7 +83,7 @@ void Preference_AddBoss(int client, const char[] name)
 	else
 	{
 		int special = Bosses_GetByName(name, true, false, _, "filename");
-		if(special != -1 && CanAccessBoss(client, special, PREF_MENU))
+		if(special != -1 && Preference_CanAccessBoss(client, special, PREF_MENU))
 			BossListing[client].Push(special);
 	}
 }
@@ -149,7 +146,7 @@ bool Preference_DisabledBoss(int client, int charset)
 	return false;
 }
 
-static bool CanAccessBoss(int client, int special, int flags, int team = -1, bool &preview = false)
+bool Preference_CanAccessBoss(int client, int special, int flags, int team = -1, bool &preview = false)
 {
 	ConfigMap cfg = Bosses_GetConfig(special);
 	if(!cfg)
@@ -159,7 +156,7 @@ static bool CanAccessBoss(int client, int special, int flags, int team = -1, boo
 	if((flags & PREF_ENABLED) && (!cfg.GetBool("enabled", blocked) || !blocked))
 		return false;
 	
-	if(flags & PREF_PLAYING)
+	if(client && (flags & PREF_PLAYING))
 	{
 		// If random is disabled, blocks the boss being played without being selected
 		blocked = false;
@@ -173,8 +170,16 @@ static bool CanAccessBoss(int client, int special, int flags, int team = -1, boo
 	if(flags & PREF_MENU)
 		cfg.GetBool("preview", preview, false);
 	
+	if(flags & PREF_PLAYING)
+	{
+		blocked = false;
+		cfg.GetBool("raidboss", blocked, false);
+		if(blocked == ((flags & PREF_RAID) ? true : false))
+			return false;
+	}
+	
 	static char buffer1[512];
-	if(cfg.Get("steamid", buffer1, sizeof(buffer1)))
+	if(client && cfg.Get("steamid", buffer1, sizeof(buffer1)))
 	{
 		static char buffer2[64];
 		return GetClientAuthId(client, AuthId_SteamID64, buffer2, sizeof(buffer2)) && StrContains(buffer1, buffer2, false) != -1;
@@ -196,7 +201,7 @@ static bool CanAccessBoss(int client, int special, int flags, int team = -1, boo
 	}
 	
 	bool admin = view_as<bool>(cfg.Get("admin", buffer1, sizeof(buffer1)));
-	if(admin)
+	if(admin && client)
 		blocked = !CheckCommandAccess(client, "ff2_all_bosses", ReadFlagString(buffer1), true);
 	
 	if(!admin || blocked)
@@ -235,29 +240,53 @@ bool Preference_ValidBossSelection(int client, int team = -1)
 			continue;
 		
 		foundBoss = true;
-		if(CanAccessBoss(client, index, PREF_ENABLED|PREF_PLAYING, team))
+		if(Preference_CanAccessBoss(client, index, PREF_ENABLED|PREF_PLAYING, team))
 			return true;
 	}
 
 	return !foundBoss;
 }
 
-int Preference_PickBoss(int client, int team = -1)
+int Preference_PickBoss(int client, int team = -1, bool raid = false)
 {
 	int special = BossOverride;
 	if(special == -1)
 	{
-		if(PartyLeader[client])
+		if(!client)
+		{
+			int flags = raid ? (PREF_ENABLED|PREF_PLAYING|PREF_RAID) : (PREF_ENABLED|PREF_PLAYING);
+
+			ArrayList list = new ArrayList();
+			int length = Bosses_GetConfigLength();
+			for(int i; i < length; i++)
+			{
+				if(Preference_CanAccessBoss(client, i, flags, team))
+					list.Push(i);
+			}
+			
+			length = list.Length;
+			if(length)
+			{
+				special = list.Get(GetURandomInt() % length);
+				ForwardOld_OnSpecialSelected(0, special, false);
+			}
+
+			delete list;
+			return special;
+		}
+		else if(PartyLeader[client])
 		{
 			special = PartyMainBoss[PartyLeader[client]];
 		}
 		else
 		{
+			int flags = raid ? (PREF_ENABLED|PREF_PLAYING|PREF_RAID) : (PREF_ENABLED|PREF_PLAYING);
+
 			ArrayList list = new ArrayList();
 			int length = Bosses_GetConfigLength();
 			for(int i; i < length; i++)
 			{
-				if(CanAccessBoss(client, i, PREF_ENABLED|PREF_PLAYING, team))
+				if(Preference_CanAccessBoss(client, i, flags, team))
 					list.Push(i);
 			}
 			
@@ -401,7 +430,7 @@ static Action Preference_BossMenuCmd(int client, int args)
 				special = Bosses_GetByName(buffer, false, false, GetClientLanguage(client));
 			}
 			
-			if(CanAccessBoss(client, special, PREF_MENU))
+			if(Preference_CanAccessBoss(client, special, PREF_MENU))
 			{
 				// Needed to avoid duel selecting
 				if(GetClientMenu(client) != MenuSource_None)
@@ -553,7 +582,7 @@ static void BossMenu(int client)
 		int subboss = ViewingBoss[client].Get(ViewingBoss[client].Length - 1);
 		
 		bool preview;
-		bool access = CanAccessBoss(client, mainboss, PREF_MENU, _, preview);
+		bool access = Preference_CanAccessBoss(client, mainboss, PREF_MENU, _, preview);
 		if(access || preview)
 		{
 			if(ViewingPack[client] >= 0)
@@ -703,7 +732,7 @@ static void BossMenu(int client)
 				}
 			}
 
-			bool enabled;
+			bool enabled, raidboss;
 			int length = list.Length;
 			for(int a; a < 2; a++)	// Enabled characters first
 			{
@@ -712,10 +741,10 @@ static void BossMenu(int client)
 					index = list.Get(b);
 					cfg = Bosses_GetConfig(index);
 
-					if((cfg.GetBool("enabled", enabled) && enabled) == !a)
+					if(((cfg.GetBool("enabled", enabled) && enabled) && (!cfg.GetBool("raidboss", raidboss) || !raidboss)) == !a)
 					{
 						bool preview;
-						bool access = CanAccessBoss(client, index, PREF_MENU, _, preview);
+						bool access = Preference_CanAccessBoss(client, index, PREF_MENU, _, preview);
 						if(access || preview)
 						{
 							IntToString(index, data, sizeof(data));
@@ -1668,7 +1697,7 @@ int Preference_GetFullQueuePoints(int client)
 	return queue;
 }
 
-int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team = -1)
+int Preference_GetBossQueue(int[] players, int maxsize, int type, int team = -1)
 {
 	int size;
 	int[][] queue = new int[MaxClients][2];
@@ -1686,14 +1715,17 @@ int Preference_GetBossQueue(int[] players, int maxsize, bool display, int team =
 				continue;
 			}
 			
-			if(PartyLeader[client])
+			if(type != 2)
 			{
-				if(!display && PartyMainBoss[PartyLeader[client]] != PartyChoice[client])
+				if(PartyLeader[client])
+				{
+					if(!type && PartyMainBoss[PartyLeader[client]] != PartyChoice[client])
+						continue;
+				}
+				else if(!Preference_ValidBossSelection(client, team))
+				{
 					continue;
-			}
-			else if(!Preference_ValidBossSelection(client, Charset))
-			{
-				continue;
+				}
 			}
 			
 			queue[size][1] = Preference_GetFullQueuePoints(client);
@@ -1750,7 +1782,7 @@ static Action Preference_ForceBossCmd(int client, int args)
 		{
 			FReplyToCommand(client, "%t", "Boss Not Found");
 		}
-		else if(rcon || CanAccessBoss(client, special, PREF_ENABLED))
+		else if(rcon || Preference_CanAccessBoss(client, special, PREF_ENABLED))
 		{
 			BossOverride = special;
 			Bosses_GetBossName(special, name, sizeof(name), lang);
@@ -1795,7 +1827,7 @@ static void ForceBossMenu(int client, int item)
 	bool rcon = CheckCommandAccess(client, "sm_rcon", ADMFLAG_RCON);
 	for(int i; i < length; i++)
 	{
-		if(rcon || CanAccessBoss(client, i, PREF_ENABLED))
+		if(rcon || Preference_CanAccessBoss(client, i, PREF_ENABLED))
 		{
 			IntToString(i, num, sizeof(num));
 			Bosses_GetBossName(i, name, sizeof(name), lang);

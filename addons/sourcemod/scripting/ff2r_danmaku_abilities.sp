@@ -452,7 +452,6 @@ public void OnLibraryRemoved(const char[] name)
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 {
-	PrintToChatAll("FF2R_OnBossCreated");
 	AbilityData ability = boss.GetAbility("special_danmaku_soul");
 	if(ability.IsMyPlugin())
 	{
@@ -594,7 +593,6 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 
 public void FF2R_OnBossEquipped(int client, bool weapons)
 {
-	PrintToChatAll("FF2R_OnBossEquipped");
 	if(weapons)
 	{
 		BossData boss = FF2R_GetBossData(client);
@@ -1916,7 +1914,6 @@ void EquipBoss(int client, const char[] section = "", bool dissolve = true)
 								SetEntityModel(wearable, buffer);
 								SetEntityRenderFx(client, RENDERFX_FADE_FAST);
 								RenderModelRef[client] = EntIndexToEntRef(wearable);
-								PrintToChatAll("DDDDD");
 							}
 						}
 					}

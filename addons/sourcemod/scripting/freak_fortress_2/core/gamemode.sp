@@ -149,8 +149,9 @@ void Gamemode_RoundSetup()
 			CreateTimer(preround / 2.857143, Gamemode_IntroTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 			CreateTimer(preround - 0.1, Gamemode_SetControlPoint, _, TIMER_FLAG_NO_MAPCHANGE);
 			
+			// Boss vs Boss
 			int bosses = Cvar[BossVsBoss].IntValue;
-			if(bosses > 0)	// Boss vs Boss
+			if(bosses > 0)
 			{
 				int count;
 				int[] players = new int[MaxClients];
@@ -179,7 +180,7 @@ void Gamemode_RoundSetup()
 					
 					for(team = maxTeams - 1; team >= TFTeam_Red; team--)
 					{
-						count = Preference_GetBossQueue(players, MaxClients, false, team);
+						count = Preference_GetBossQueue(players, MaxClients, 0, team);
 						for(int i; i < bosses && i < count; i++)
 						{
 							if(!Client(players[i]).IsBoss)
@@ -190,83 +191,150 @@ void Gamemode_RoundSetup()
 						}
 					}
 				}
-			}
-			else	// Standard FF2
-			{
-				int boss[1];
-				if(Preference_GetBossQueue(boss, 1, false))
-				{
-					int team;
-					int special = Preference_PickBoss(boss[0]);
-					ConfigMap cfg;
-					if((cfg = Bosses_GetConfig(special)))
-					{
-						cfg.GetInt("bossteam", team);
 
-						if(team == TFTeam_Spectator)
-						{
-							team = TFTeam_Red + (GetTime() % Configs_TeamCount());
-						}
-						else if(team < TFTeam_Spectator || team >= (Configs_TeamCount() + 2))
-						{
-							team = Cvar[BossTeam].IntValue;
-						}
+				return;
+			}
+			
+			// Raid FF2
+			if(GetURandomFloat() < Cvar[RaidChance].FloatValue)
+			{
+				int special = Preference_PickBoss(0, _, true);
+
+				int[] boss = new int[MaxClients];
+				int amount = Preference_GetBossQueue(boss, MaxClients, 2);
+				if(amount)
+				{
+					for(int i; i < amount; i++)
+					{
+						if(Preference_DisabledBoss(boss[i], Charset))
+							continue;
 						
-						Bosses_CreateFromSpecial(boss[0], special, team);
-						Client(boss[0]).Queue = 0;
-					}
-					else
-					{
-						char buffer[64];
-						Bosses_GetCharsetName(Charset, buffer, sizeof(buffer));
-						LogError("[!!!] Failed to find a valid boss in %s (#%d)", buffer, Charset);
-					}
-					
-					int count;
-					int[] players = new int[MaxClients];
-					for(int client = 1; client <= MaxClients; client++)
-					{
-						if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
-							players[count++] = client;
-					}
-					
-					MercTeam = TFTeam_Red + (GetTime() % (Configs_TeamCount() - 1));
-					if(MercTeam >= team)
-						MercTeam++;
-					
-					for(int i; i < count; i++)
-					{
-						SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
-						ChangeClientTeam(players[i], MercTeam);
-						TF2Tools_RespawnPlayer(players[i]);
+						if(!Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_PLAYING|PREF_RAID))
+							continue;
+						
+						if(!Preference_HasWhitelisted(boss[i], special) && Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_MENU|PREF_RAID))
+							continue;
+						
+						ConfigMap cfg = Bosses_GetConfig(special);
+						if(cfg)
+						{
+							int team;
+							cfg.GetInt("bossteam", team);
+
+							if(team == TFTeam_Spectator)
+							{
+								team = TFTeam_Red + (GetTime() % Configs_TeamCount());
+							}
+							else if(team < TFTeam_Spectator || team >= (Configs_TeamCount() + 2))
+							{
+								team = Cvar[BossTeam].IntValue;
+							}
+							
+							Bosses_CreateFromSpecial(boss[i], special, team);
+							Client(boss[i]).Queue = 0;
+							
+							int count;
+							int[] players = new int[MaxClients];
+							for(int client = 1; client <= MaxClients; client++)
+							{
+								if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+									players[count++] = client;
+							}
+							
+							MercTeam = TFTeam_Red + (GetTime() % (Configs_TeamCount() - 1));
+							if(MercTeam >= team)
+								MercTeam++;
+							
+							for(int b; b < count; b++)
+							{
+								SetEntProp(players[b], Prop_Send, "m_lifeState", 2);
+								ChangeClientTeam(players[b], MercTeam);
+								TF2Tools_RespawnPlayer(players[b]);
+							}
+
+							return;
+						}
+
+						break;
 					}
 				}
-				else	// No boss, normal Arena time
+			}
+
+			// Standard FF2
+			int boss[1];
+			if(Preference_GetBossQueue(boss, 1, 0))
+			{
+				int team;
+				int special = Preference_PickBoss(boss[0]);
+				ConfigMap cfg;
+				if((cfg = Bosses_GetConfig(special)))
 				{
-					int count;
-					int[] players = new int[MaxClients];
-					for(int client = 1; client <= MaxClients; client++)
+					cfg.GetInt("bossteam", team);
+
+					if(team == TFTeam_Spectator)
 					{
-						if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
-							players[count++] = client;
+						team = TFTeam_Red + (GetTime() % Configs_TeamCount());
+					}
+					else if(team < TFTeam_Spectator || team >= (Configs_TeamCount() + 2))
+					{
+						team = Cvar[BossTeam].IntValue;
 					}
 					
-					if(count)
-					{
-						SortIntegers(players, count, Sort_Random);
-						
-						int team = TFTeam_Red + (GetTime() % Configs_TeamCount());
-						for(int i; i < count; i++)
-						{
-							SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
-							ChangeClientTeam(players[i], team);
-							TF2Tools_RespawnPlayer(players[i]);
-							
-							team++;
-							if(team >= (TFTeam_Red + Configs_TeamCount()))
-								team = TFTeam_Red;
-						}
-					}
+					Bosses_CreateFromSpecial(boss[0], special, team);
+					Client(boss[0]).Queue = 0;
+				}
+				else
+				{
+					char buffer[64];
+					Bosses_GetCharsetName(Charset, buffer, sizeof(buffer));
+					LogError("[!!!] Failed to find a valid boss in %s (#%d)", buffer, Charset);
+				}
+				
+				int count;
+				int[] players = new int[MaxClients];
+				for(int client = 1; client <= MaxClients; client++)
+				{
+					if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+						players[count++] = client;
+				}
+				
+				MercTeam = TFTeam_Red + (GetTime() % (Configs_TeamCount() - 1));
+				if(MercTeam >= team)
+					MercTeam++;
+				
+				for(int i; i < count; i++)
+				{
+					SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
+					ChangeClientTeam(players[i], MercTeam);
+					TF2Tools_RespawnPlayer(players[i]);
+				}
+
+				return;
+			}
+			
+			// No boss, normal Arena time
+			int count;
+			int[] players = new int[MaxClients];
+			for(int client = 1; client <= MaxClients; client++)
+			{
+				if(IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+					players[count++] = client;
+			}
+			
+			if(count)
+			{
+				SortIntegers(players, count, Sort_Random);
+				
+				int team = TFTeam_Red + (GetTime() % Configs_TeamCount());
+				for(int i; i < count; i++)
+				{
+					SetEntProp(players[i], Prop_Send, "m_lifeState", 2);
+					ChangeClientTeam(players[i], team);
+					TF2Tools_RespawnPlayer(players[i]);
+					
+					team++;
+					if(team >= (TFTeam_Red + Configs_TeamCount()))
+						team = TFTeam_Red;
 				}
 			}
 		}

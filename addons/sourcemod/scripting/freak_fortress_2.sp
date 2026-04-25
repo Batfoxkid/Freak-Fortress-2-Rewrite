@@ -32,6 +32,11 @@
 
 #define SNDVOL_BOSS	2.0
 
+#define PREF_ENABLED	(1 << 0)
+#define PREF_PLAYING	(1 << 1)
+#define PREF_MENU		(1 << 2)
+#define PREF_RAID		(1 << 3)
+
 #include "freak_fortress_2/tf2tools.sp"
 
 enum SectionType
@@ -116,6 +121,9 @@ enum
 	DisguiseModels,
 	PlayerGlow,
 	MusicPlaylist,
+	RaidChance,
+	RaidLimit,
+	RaidPlayers,
 	RankingStats,
 	RankingLose,
 	RankingStyle,

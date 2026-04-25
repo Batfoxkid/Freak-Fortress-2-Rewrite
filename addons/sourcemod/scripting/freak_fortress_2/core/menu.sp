@@ -206,7 +206,7 @@ static Action Menu_QueueMenuCmd(int client, int args)
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
 	{
 		int[] clients = new int[MaxClients];
-		int amount = Preference_GetBossQueue(clients, MaxClients, true);
+		int amount = Preference_GetBossQueue(clients, MaxClients, 1);
 		if(amount)
 		{
 			for(int i; i < amount; i++)
@@ -236,7 +236,7 @@ static void QueueMenu(int client)
 	menu.SetTitle("%t", "Queue Menu");
 	
 	int[] clients = new int[MaxClients];
-	int amount = Preference_GetBossQueue(clients, MaxClients, true);
+	int amount = Preference_GetBossQueue(clients, MaxClients, 1);
 	
 	char buffer[64];
 	bool exitButton = Menu_BackButton(client);
