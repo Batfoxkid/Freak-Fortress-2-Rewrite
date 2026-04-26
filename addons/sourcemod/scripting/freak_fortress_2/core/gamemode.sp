@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+static int MapRaids;
 static bool Waiting;
 static float HealingFor;
 static int WinnerOverride;
@@ -105,6 +106,7 @@ void Gamemode_MapInit()
 
 void Gamemode_MapStart()
 {
+	MapRaids = 0;
 	RoundStatus = -1;
 	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
 	PrecacheScriptSound("Announcer.AM_CapEnabledRandom");
@@ -198,64 +200,69 @@ void Gamemode_RoundSetup()
 			// Raid FF2
 			if(GetURandomFloat() < Cvar[RaidChance].FloatValue)
 			{
-				int special = Preference_PickBoss(0, _, true);
-
-				int[] boss = new int[MaxClients];
-				int amount = Preference_GetBossQueue(boss, MaxClients, 2);
-				if(amount)
+				int limit = Cvar[RaidLimit].IntValue;
+				if(limit < 1 || MapRaids < limit)
 				{
-					for(int i; i < amount; i++)
+					int special = Preference_PickBoss(0, _, true);
+
+					int[] boss = new int[MaxClients];
+					int amount = Preference_GetBossQueue(boss, MaxClients, 2);
+					if(amount && amount >= Cvar[RaidPlayers].IntValue)
 					{
-						if(Preference_DisabledBoss(boss[i], Charset))
-							continue;
-						
-						if(!Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_PLAYING|PREF_RAID))
-							continue;
-						
-						if(!Preference_HasWhitelisted(boss[i], special) && Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_MENU|PREF_RAID))
-							continue;
-						
-						ConfigMap cfg = Bosses_GetConfig(special);
-						if(cfg)
+						for(int i; i < amount; i++)
 						{
-							int team;
-							cfg.GetInt("bossteam", team);
+							if(Preference_DisabledBoss(boss[i], Charset))
+								continue;
+							
+							if(!Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_PLAYING|PREF_RAID))
+								continue;
+							
+							if(!Preference_HasWhitelisted(boss[i], special) && Preference_CanAccessBoss(boss[i], special, PREF_ENABLED|PREF_MENU|PREF_RAID))
+								continue;
+							
+							ConfigMap cfg = Bosses_GetConfig(special);
+							if(cfg)
+							{
+								int team;
+								cfg.GetInt("bossteam", team);
 
-							if(team == TFTeam_Spectator)
-							{
-								team = TFTeam_Red + (GetTime() % Configs_TeamCount());
-							}
-							else if(team < TFTeam_Spectator || team >= (Configs_TeamCount() + 2))
-							{
-								team = Cvar[BossTeam].IntValue;
-							}
-							
-							Bosses_CreateFromSpecial(boss[i], special, team);
-							Client(boss[i]).Queue = 0;
-							
-							int count;
-							int[] players = new int[MaxClients];
-							for(int client = 1; client <= MaxClients; client++)
-							{
-								if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
-									players[count++] = client;
-							}
-							
-							MercTeam = TFTeam_Red + (GetTime() % (Configs_TeamCount() - 1));
-							if(MercTeam >= team)
-								MercTeam++;
-							
-							for(int b; b < count; b++)
-							{
-								SetEntProp(players[b], Prop_Send, "m_lifeState", 2);
-								ChangeClientTeam(players[b], MercTeam);
-								TF2Tools_RespawnPlayer(players[b]);
+								if(team == TFTeam_Spectator)
+								{
+									team = TFTeam_Red + (GetTime() % Configs_TeamCount());
+								}
+								else if(team < TFTeam_Spectator || team >= (Configs_TeamCount() + 2))
+								{
+									team = Cvar[BossTeam].IntValue;
+								}
+								
+								Bosses_CreateFromSpecial(boss[i], special, team);
+								Client(boss[i]).Queue = 0;
+								
+								int count;
+								int[] players = new int[MaxClients];
+								for(int client = 1; client <= MaxClients; client++)
+								{
+									if(!Client(client).IsBoss && IsClientInGame(client) && GetClientTeam(client) > TFTeam_Spectator)
+										players[count++] = client;
+								}
+								
+								MercTeam = TFTeam_Red + (GetTime() % (Configs_TeamCount() - 1));
+								if(MercTeam >= team)
+									MercTeam++;
+								
+								for(int b; b < count; b++)
+								{
+									SetEntProp(players[b], Prop_Send, "m_lifeState", 2);
+									ChangeClientTeam(players[b], MercTeam);
+									TF2Tools_RespawnPlayer(players[b]);
+								}
+
+								MapRaids++;
+								return;
 							}
 
-							return;
+							break;
 						}
-
-						break;
 					}
 				}
 			}

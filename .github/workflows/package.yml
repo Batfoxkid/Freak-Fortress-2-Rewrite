@@ -6,8 +6,6 @@ permissions:
 on:
   push:
     branches: main
-  pull_request:
-    branches: main
 
 jobs:
   release:
@@ -72,7 +70,7 @@ jobs:
       - name: Package Blitzkrieg
         uses: montudor/action-zip@v1.0.0
         with:
-          args: zip -qq -r Blitzkrieg-DLC-Beta-Test.zip Blitzkrieg
+          args: zip -qq -r Blitzkrieg-DLC.zip Blitzkrieg
       
       - name: Release
         uses: softprops/action-gh-release@master
@@ -83,7 +81,7 @@ jobs:
             New-Install-Package-${{env.PLUGIN_VERSION}}.${{env.PLUGIN_VERSION_REVISION}}.zip
             Epic-Scout-DLC.zip
             Gray-Mann-DLC.zip
-            Blitzkrieg-DLC-Beta-Test.zip
+            Blitzkrieg-DLC.zip
   
   nonrelease:
     runs-on: ubuntu-latest
