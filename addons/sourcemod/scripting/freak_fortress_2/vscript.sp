@@ -4,7 +4,7 @@
 #pragma newdecls required
 
 #define VSCRIPT_LIBRARY	"vscript"
-#define SCRIPT_VERSION	2
+#define SCRIPT_VERSION	3
 
 static char ReturnString[256];
 static float ReturnFloat;
