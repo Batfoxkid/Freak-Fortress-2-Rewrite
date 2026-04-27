@@ -159,45 +159,89 @@
 	{
 		"en"		" | Look at Target & Release"
 	}
+	"Boss Mobility Release"
+	{
+		"en"		" | And Release"
+	}
 	"Boss Mobility 0"
 	{
 		"en"		" | Hold Primary Attack"
+	}
+	"Boss Click 0"
+	{
+		"en"		" | Press Primary Attack"
 	}
 	"Boss Mobility 1"
 	{
 		"en"		" | Hold Jump"
 	}
+	"Boss Click 1"
+	{
+		"en"		" | Press Jump"
+	}
 	"Boss Mobility 2"
 	{
 		"en"		" | Hold Duck"
+	}
+	"Boss Click 2"
+	{
+		"en"		" | Press Duck"
 	}
 	"Boss Mobility 3"
 	{
 		"en"		" | Move Forward"
 	}
+	"Boss Click 3"
+	{
+		"en"		" | Press Forward"
+	}
 	"Boss Mobility 4"
 	{
 		"en"		" | Move Back"
+	}
+	"Boss Click 4"
+	{
+		"en"		" | Press Back"
 	}
 	"Boss Mobility 9"
 	{
 		"en"		" | Move Left"
 	}
+	"Boss Click 9"
+	{
+		"en"		" | Press Left"
+	}
 	"Boss Mobility 10"
 	{
 		"en"		" | Move Right"
+	}
+	"Boss Click 10"
+	{
+		"en"		" | Press Right"
 	}
 	"Boss Mobility 11"
 	{
 		"en"		" | Hold Secondary Attack"
 	}
+	"Boss Click 11"
+	{
+		"en"		" | Press Secondary Attack"
+	}
 	"Boss Mobility 13"
 	{
 		"en"		" | Hold Reload"
 	}
+	"Boss Click 13"
+	{
+		"en"		" | Press Reload"
+	}
 	"Boss Mobility 25"
 	{
 		"en"		" | Hold Special Attack"
+	}
+	"Boss Click 25"
+	{
+		"en"		" | Press Special Attack"
 	}
 	"Current Stats Hud"
 	{
@@ -787,6 +831,95 @@
 		"#format"	"{1:d}"
 		"en"		"Refunded {1} resources for killing an ally"
 	}
+	"Danmaku Waves"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"Wave: {1} / {2}"
+	}
+	"Danmaku Revives"
+	{
+		"#format"	"{1:d}"
+		"en"		"Lives: {1}"
+	}
+	"Danmaku Player Revives"
+	{
+		"#format"	"{1:d}"
+		"en"		"Your Revives Remaining: {1}"
+	}
+	"Danmaku Team Revives"
+	{
+		"#format"	"{1:d}"
+		"en"		"Team Revives Remaining: {1}"
+	}
+	"Danmaku Difficulty Set"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty is {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Increased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty increased to {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Decreased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}difficulty decreased to {olive}{2}{default}!"
+	}
+	"Danmaku Rank Increased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}rank increased to {olive}{2}{default}!"
+	}
+	"Danmaku Rank Increased Map"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}increased to {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{teamcolor}{1} {default}rank decreased to {olive}{2}{default}!"
+	}
+	"Danmaku Rank Decreased Map"
+	{
+		"#format"	"{1:s},{2:s},{3:s}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}decreased to {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased Score"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:d}"
+		"en"		"{teamcolor}{1} {default}rank decreased to {olive}{2}{default}! ({olive}{3}%% {default}of {olive}{4}%% {default}health left)"
+	}
+	"Danmaku Rank Decreased Score Map"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:d}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}decreased to {olive}{3}{default}! ({olive}{4}%% {default}of {olive}{5}%% {default}health left)"
+	}
+	"Danmaku Rank Saved Score"
+	{
+		"#format"	"{1:s},{2:s},{3:d},{4:d}"
+		"en"		"{teamcolor}{1} {default}rank kept at {olive}{2}{default}! ({olive}{3}%% {default}of {olive}{4}%% {default}health left)"
+	}
+	"Danmaku Rank Saved Score Map"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:d},{5:d}"
+		"en"		"{teamcolor}{1} {default}rank on {olive}{2} {default}kept at {olive}{3}{default}! ({olive}{4}%% {default}of {olive}{5}%% {default}health left)"
+	}
+	"Danmaku Teleport Ready"
+	{
+		"#format"	"{1:d}"
+		"en"		"Quick Escape is ready. {1} charges."
+	}
+	"Danmaku Teleport Not Ready"
+	{
+		"#format"	"{1:d}"
+		"en"		"Quick Escape is not ready. {1} charges."
+	}
+	"Danmaku Teleport Stuck"
+	{
+		"en"		"Quick Escape location is invalid."
+	}
 	
 	"Weapon Menu"
 	{
@@ -946,6 +1079,16 @@
 	{
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Climb walls by hitting them but consumes {4} health"
+	}
+	"danmaku bounce"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Projectile reflects off walls {4} times"
+	}
+	"danmaku gravity"
+	{
+		"#format"	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"Projectiles are affected by gravity"
 	}
 	"milk limit DISPLAY ONLY"
 	{

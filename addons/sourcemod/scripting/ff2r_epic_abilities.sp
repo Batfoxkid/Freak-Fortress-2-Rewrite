@@ -362,6 +362,8 @@ public void OnPluginStart()
 	TF2U_PluginStart();
 	VScript_PluginStart();
 	
+	HookEvent("player_death", OnPlayerDeath);
+	
 	PlayerShieldBlocked = GetUserMessageId("PlayerShieldBlocked");
 	
 	SyncHud = CreateHudSynchronizer();
@@ -618,6 +620,8 @@ public void FF2R_OnBossRemoved(int client)
 	if(DodgeFor[client])
 		DodgeFor[client] = 1.0;
 	
+	RemoveRenderMode(client, false);
+
 	if(RazorbackRef[client] != INVALID_ENT_REFERENCE)
 	{
 		RazorbackRef[client] = INVALID_ENT_REFERENCE;
@@ -1604,7 +1608,7 @@ public void OnWeaponSwitch(int client, int weapon)
 		TF2_SetPlayerClass(client, class, _, false);
 		FF2R_UpdateBossAttributes(client);
 		
-		if(AnimSwap[client] && EntRefToEntIndex(BodyRef[client]) == INVALID_ENT_REFERENCE)
+		if(AnimSwap[client] && !IsValidEntity(BodyRef[client]))
 		{
 			int index = GetEntProp(client, Prop_Send, "m_nModelIndex");
 			if(index > 0)
@@ -1621,9 +1625,8 @@ public void OnWeaponSwitch(int client, int weapon)
 					
 					BodyRef[client] = EntIndexToEntRef(entity);
 					TF2U_EquipPlayerWearable(client, entity);
-					
+
 					SetEntityRenderFx(client, RENDERFX_FADE_FAST);
-					
 					SetVariantString(NULL_STRING);
 					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 				}
@@ -1681,27 +1684,7 @@ public void OnWeaponSwitch(int client, int weapon)
 	}
 	else if(IsPlayerAlive(client))
 	{
-		if(BodyRef[client] != INVALID_ENT_REFERENCE)
-		{
-			int entity = EntRefToEntIndex(BodyRef[client]);
-			if(entity != INVALID_ENT_REFERENCE)
-			{
-				int index = GetEntProp(entity, Prop_Send, "m_nModelIndex");
-				if(index > 0)
-				{
-					char buffer[PLATFORM_MAX_PATH];
-					ModelIndexToString(index, buffer, sizeof(buffer));
-					
-					SetVariantString(buffer);
-					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
-				}
-				
-				TF2_RemoveWearable(client, entity);
-			}
-			
-			SetEntityRenderFx(client, RENDERFX_NONE);
-			BodyRef[client] = INVALID_ENT_REFERENCE;
-		}
+		RemoveRenderMode(client, true);
 		
 		if(WeapRef[client] != INVALID_ENT_REFERENCE || HandRef[client] != INVALID_ENT_REFERENCE)
 		{
@@ -1723,6 +1706,44 @@ public void OnWeaponSwitch(int client, int weapon)
 			WeapRef[client] = INVALID_ENT_REFERENCE;
 			HandRef[client] = INVALID_ENT_REFERENCE;
 		}
+	}
+}
+
+void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	if(victim)
+	{
+		if(!(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
+			RemoveRenderMode(victim, true);
+	}
+}
+
+void RemoveRenderMode(int client, bool models)
+{
+	if(BodyRef[client] != INVALID_ENT_REFERENCE)
+	{
+		int entity = EntRefToEntIndex(BodyRef[client]);
+		if(entity == INVALID_ENT_REFERENCE)
+			TF2_RemoveWearable(client, entity);
+		
+		if(models)
+		{
+			BossData boss = FF2R_GetBossData(client);
+			if(boss)
+			{
+				char model[PLATFORM_MAX_PATH];
+				boss.GetString("model", model, sizeof(model));
+				if(model[0])
+				{
+					SetVariantString(model);
+					AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
+				}
+			}
+		}
+
+		SetEntityRenderFx(client, RENDERFX_NONE);
+		BodyRef[client] = INVALID_ENT_REFERENCE;
 	}
 }
 
@@ -2769,7 +2790,7 @@ float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const c
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);
-	float value = ParseFormula(buffer, players);
+	float value = ParseExpr(buffer, Formula_BasicValue, players);
 	cfg.SetFloat(key, value);
 	return value;
 }
@@ -3109,7 +3130,13 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 	return false;
 }
 
-public bool Trace_WorldOnly(int entity, int contentsMask)
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
+{
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
+}
+
+bool Trace_WorldOnly(int entity, int contentsMask)
 {
 	return !entity;
 }

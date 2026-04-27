@@ -63,6 +63,13 @@ int Ranking_ApplyEffects(int client, float &multi)
 		return 0;
 	}
 
+	bool ranks;
+	if(Client(client).Cfg.GetBool("ranks", ranks, false) && !ranks)
+	{
+		multi = 1.0;
+		return 0;
+	}
+
 	int rank = Ranking_GetRank(client, name);
 	multi = Ranking_GetHealthMulti(rank);
 	if(multi != 1.0)

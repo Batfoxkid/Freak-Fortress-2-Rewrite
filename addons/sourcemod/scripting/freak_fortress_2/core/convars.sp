@@ -52,6 +52,9 @@ void ConVar_PluginStart()
 	Cvar[CaptureDomeRadius] = CreateConVar("ff2_game_capture_dome_radius", "0.0", "How much radius of dome closes in. 0 for default", _, true, 0.0);
 	Cvar[BossTeam] = CreateConVar("ff2_game_bossteam", "3", "Default team to use for bosses, 2 = RED, 3 = BLU", _, true, 2.0, true, float(TFTeam_MAX - 1));
 	Cvar[MusicPlaylist] = CreateConVar("ff2_game_playlist", "1", "If to allow players to select any boss theme to listen to", _, true, 0.0, true, 1.0);
+	Cvar[RaidChance] = CreateConVar("ff2_game_raids", "0.02", "Chance that a raid boss will be selected instead of a standard boss", _, true, 0.0, true, 1.0);
+	Cvar[RaidLimit] = CreateConVar("ff2_game_raids_map", "0", "Maximum amount of raid bosses that can be selected during the map duration, 0 for no limit", _, true, 0.0);
+	Cvar[RaidPlayers] = CreateConVar("ff2_game_raids_players", "0", "Minimum amount of playing players before a raid boss can be selected", _, true, 0.0);
 	
 	CreateConVar("ff2_oldjump", "1", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);
 	CreateConVar("ff2_base_jumper_stun", "0", "Backwards Compatibility ConVar", FCVAR_DONTRECORD|FCVAR_HIDDEN, true, 0.0, true, 1.0);

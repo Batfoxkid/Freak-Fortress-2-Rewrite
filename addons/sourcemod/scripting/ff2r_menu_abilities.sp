@@ -75,7 +75,6 @@
 
 #include <sourcemod>
 #include <sdkhooks>
-#include <sdktools>
 #include <adt_trie_sort>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -88,9 +87,6 @@
 #define PLUGIN_VERSION	"Custom"
 
 #define ABILITY_NAME	"special_menu_manager"
-
-#define TFTeam_Spectator		1
-#define TF_DEATHFLAG_DEADRINGER	(1 << 5)
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
@@ -117,6 +113,7 @@ int PlayersAlive[4];
 
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/subplugin.sp"
+#include "freak_fortress_2/tf2tools.sp"
 
 public Plugin myinfo =
 {
@@ -150,6 +147,7 @@ public void OnPluginStart()
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Post);
 	
 	Subplugin_PluginStart();
+	TF2Tools_PluginStart();
 }
 
 void FF2R_PluginLoaded()
@@ -168,11 +166,13 @@ void FF2R_PluginLoaded()
 public void OnLibraryAdded(const char[] name)
 {
 	Subplugin_LibraryAdded(name);
+	TF2Tools_LibraryAdded(name);
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
 	Subplugin_LibraryRemoved(name);
+	TF2Tools_LibraryRemoved(name);
 }
 
 public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
@@ -305,7 +305,7 @@ float SetFloatFromFormula(ConfigData cfg, const char[] key, int players, const c
 {
 	static char buffer[1024];
 	cfg.GetString(key, buffer, sizeof(buffer), defaul);
-	float value = ParseFormula(buffer, players);
+	float value = ParseExpr(buffer, Formula_BasicValue, players);
 	cfg.SetFloat(key, value);
 	return value;
 }
@@ -746,6 +746,14 @@ public void ShowMenu(int target, int client, BossData boss, AbilityData ability,
 					{
 						blocked = true;
 					}
+					else if((flags & MAG_MAGIC) && TF2_IsPlayerInCondition(client, TFCond_Sapped))
+					{
+						blocked = true;
+					}
+					else if(!(flags & MAG_MIND) && TF2_IsPlayerInCondition(client, TFCond_Dazed))
+					{
+						blocked = true;
+					}
 				}
 				
 				if(blocked)
@@ -930,6 +938,14 @@ public int ShowMenuH(Menu menu, MenuAction action, int client, int selection)
 											blocked = true;
 										}
 										else if((var1 & MAG_GROUND) && !(GetEntityFlags(client) & FL_ONGROUND))
+										{
+											blocked = true;
+										}
+										else if((var1 & MAG_MAGIC) && TF2_IsPlayerInCondition(client, TFCond_Sapped))
+										{
+											blocked = true;
+										}
+										else if(!(var1 & MAG_MIND) && TF2_IsPlayerInCondition(client, TFCond_Dazed))
 										{
 											blocked = true;
 										}
@@ -1372,4 +1388,10 @@ bool GetBossNameCfg(ConfigData cfg, char[] buffer, int length, int lang = -1, co
 int GetClientMaxHealth(int client)
 {
 	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
+}
+
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
+{
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
 }

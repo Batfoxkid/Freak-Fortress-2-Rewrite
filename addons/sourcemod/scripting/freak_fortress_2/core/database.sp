@@ -245,7 +245,7 @@ static void Database_ClientSetup(Database db, int userid, int numQueries, DBResu
 		{
 			DataBase.Execute(tr, Database_Success, Database_Fail);
 		}
-		else if(IsClientInGame(client) && StartTime[client] > GetEngineTime() + 300.0)	// Slow databases, notify the player
+		else if(IsClientInGame(client) && StartTime[client] > GetEngineTime() + 120.0)	// Slow databases, notify the player
 		{
 			FPrintToChat(client, "%t", "Preference Updated");
 		}

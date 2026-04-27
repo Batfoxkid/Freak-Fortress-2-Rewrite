@@ -287,7 +287,7 @@ stock TFClassType TF2Tools_GetClass(const char[] classname)
 			return view_as<TFClassType>(i);
 	}
 
-	return TFClass_Unknown;
+	return view_as<TFClassType>(StringToInt(classname));
 }
 
 stock int TF2Tools_GetClassName(TFClassType class, char[] classname, int length)

@@ -1509,7 +1509,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	
 	TFClassType class = TFClass_Scout;
 	if(cfg.Get("class", buffer, sizeof(buffer)))
-		class = GetClassOfName(buffer);
+		class = TF2Tools_GetClass(buffer);
 	
 	cfg.SetInt("class", view_as<int>(class));
 	
@@ -1780,7 +1780,7 @@ void Bosses_CreateFromConfig(int client, ConfigMap cfg, int team, int lead = 0, 
 
 	TFClassType playerClass = TFClass_Scout;
 	if(Client(client).Cfg.Get("class", buffer, sizeof(buffer)))
-		playerClass = GetClassOfName(buffer);
+		playerClass = TF2Tools_GetClass(buffer);
 
 	Client(client).Cfg.SetInt("class", view_as<int>(playerClass));
 
@@ -1846,16 +1846,19 @@ int Bosses_SetHealth(int client, int players)
 	float ragedmg = 1900.0;
 	static char buffer[1024];
 	if(Client(client).Cfg.Get("ragedamage", buffer, sizeof(buffer)))
-		ragedmg = ParseFormula(buffer, players);
+		ragedmg = ParseExpr(buffer, Formula_BasicValue, float(players));
 	
 	Client(client).RageDamage = ragedmg;
 	
 	int maxhealth;
 	if(Client(client).Cfg.Get("health_formula", buffer, sizeof(buffer)))
-		maxhealth = RoundFloat(ParseFormula(buffer, players));
-	
-	if(maxhealth < 1)
+	{
+		maxhealth = RoundFloat(ParseExpr(buffer, Formula_BasicValue, float(players)));
+	}
+	else
+	{
 		maxhealth = RoundFloat(Pow((760.8 + players) * (players - 1.0), 1.0341) + 2046.0);
+	}
 	
 	Client(client).MaxHealth = maxhealth;
 	

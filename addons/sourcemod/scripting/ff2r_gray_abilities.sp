@@ -844,17 +844,21 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		RequestAnnouncement(event.GetInt("team") == (TheAnnouncer == 3 ? 2 : 3) ? Announce_Win : Announce_Lose, 6.0, true);
 	}
 
-	// Explode the bomb on win
-	if(event && event.GetInt("winreason") == 1 && IsValidEntity(BombRef) && BombCarrier)
+	if(IsValidEntity(BombRef) && BombCarrier)
 	{
 		Attrib_Remove(BombCarrier, "move speed penalty", 54);
 		Attrib_Remove(BombCarrier, "increase player capture value", 68);
 
-		float pos[3];
-		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
-		TE_Particle("mvm_hatch_destroy", pos);
-		EmitGameSoundToAll("MVM.BombExplodes", BombCarrier);
-		ForcePlayerSuicide(BombCarrier);
+		// Explode the bomb on win
+		if(event && event.GetInt("winreason") == 1)
+		{
+			float pos[3];
+			GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
+			TE_Particle("mvm_hatch_destroy", pos);
+			EmitGameSoundToAll("MVM.BombExplodes", BombCarrier);
+			ForcePlayerSuicide(BombCarrier);
+		}
+
 		RemoveEntity(BombRef);
 	}
 }
@@ -1691,18 +1695,18 @@ void GetMinMaxFromFormula(float &minn, float &maxx, ConfigData cfg, const char[]
 		if(buffer2[0] == ';')
 			strcopy(buffer2, sizeof(buffer2), defaul);
 		
-		maxx = ParseFormula(buffer2, players);
+		maxx = ParseExpr(buffer2, Formula_BasicValue, players);
 		minn = maxx;
 	}
 	else if(buffer2[0] == ';')
 	{
-		minn = ParseFormula(buffer1, players);
+		minn = ParseExpr(buffer1, Formula_BasicValue, players);
 		maxx = minn;
 	}
 	else
 	{
-		minn = ParseFormula(buffer1, players);
-		maxx = ParseFormula(buffer2, players);
+		minn = ParseExpr(buffer1, Formula_BasicValue, players);
+		maxx = ParseExpr(buffer2, Formula_BasicValue, players);
 	}
 }
 
@@ -2019,9 +2023,10 @@ void TE_Particle(const char[] Name, float origin[3]=NULL_VECTOR, float start[3]=
 	TE_SendToAll(delay);
 }
 
-public bool Trace_WorldOnly(int entity, int contentsMask)
+void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
 {
-	return !entity;
+	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')
+		f = data;
 }
 
 void FPrintToChatEx(int client, int author, const char[] message, any ...)
