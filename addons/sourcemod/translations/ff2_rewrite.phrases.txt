@@ -836,6 +836,11 @@
 		"#format"	"{1:d},{2:d}"
 		"en"		"Wave: {1} / {2}"
 	}
+	"Danmaku Revives"
+	{
+		"#format"	"{1:d}"
+		"en"		"Lives: {1}"
+	}
 	"Danmaku Player Revives"
 	{
 		"#format"	"{1:d}"

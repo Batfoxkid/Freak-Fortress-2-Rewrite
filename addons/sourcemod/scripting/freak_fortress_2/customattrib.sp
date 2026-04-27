@@ -29,6 +29,7 @@ static int HasCritGlow[MAXTF2PLAYERS];
 void CustomAttrib_PluginLoad()
 {
 	#if defined __tf_custom_attributes_included
+	MarkNativeAsOptional("TF2CustAttr_SetFloat");
 	MarkNativeAsOptional("TF2CustAttr_GetFloat");
 	MarkNativeAsOptional("TF2CustAttr_SetString");
 	MarkNativeAsOptional("TF2CustAttr_GetString");
@@ -124,7 +125,23 @@ stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 		cfg.GetArray(key, attribute, sizeof(attribute));
 		if(attribute.tag == KeyValType_Value)
 		{
-			CustomAttrib_SetString(entity, key, attribute.data);
+			if(StrEqual(attribute.data, "R"))
+			{
+				#if defined __tf_custom_attributes_included
+				if(TCALoaded)
+					TF2CustAttr_SetFloat(entity, key, 0.0);
+				#endif
+
+				#if defined IS_MAIN_FF2
+				Attrib_Set(entity, key, _, 0.0);
+				#else
+				Attrib_Remove(entity, key);
+				#endif
+			}
+			else
+			{
+				CustomAttrib_SetString(entity, key, attribute.data);
+			}
 		}
 	}
 	

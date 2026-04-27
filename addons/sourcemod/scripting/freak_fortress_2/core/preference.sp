@@ -174,7 +174,7 @@ bool Preference_CanAccessBoss(int client, int special, int flags, int team = -1,
 	{
 		blocked = false;
 		cfg.GetBool("raidboss", blocked, false);
-		if(blocked == ((flags & PREF_RAID) ? true : false))
+		if(blocked != ((flags & PREF_RAID) ? true : false))
 			return false;
 	}
 	
@@ -741,7 +741,7 @@ static void BossMenu(int client)
 					index = list.Get(b);
 					cfg = Bosses_GetConfig(index);
 
-					if(((cfg.GetBool("enabled", enabled) && enabled) && (!cfg.GetBool("raidboss", raidboss) || !raidboss)) == !a)
+					if(((cfg.GetBool("enabled", enabled) && enabled) && (!cfg.GetBool("raidboss", raidboss, false) || !raidboss)) == !a)
 					{
 						bool preview;
 						bool access = Preference_CanAccessBoss(client, index, PREF_MENU, _, preview);

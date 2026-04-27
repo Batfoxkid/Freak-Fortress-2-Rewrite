@@ -4,12 +4,9 @@
 static bool FirstBlood;
 static bool LastMann;
 static bool InRegen;
-static Handle SyncHud;
 
 void Events_PluginStart()
 {
-	SyncHud = CreateHudSynchronizer();
-	
 	HookEvent("arena_round_start", Events_RoundStart, EventHookMode_Pre);
 	HookEvent("arena_win_panel", Events_WinPanel, EventHookMode_Pre);
 	HookEvent("building_healed", Events_ObjectHealed, EventHookMode_Post);
@@ -28,17 +25,6 @@ void Events_PluginStart()
 	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
-}
-
-void Events_RoundSetup()
-{
-	for(int client = 1; client <= MaxClients; client++)
-	{
-		if(IsClientInGame(client))
-		{
-			ClearSyncHud(client, SyncHud);
-		}
-	}
 }
 
 void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
@@ -849,7 +835,7 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 				{
 					TF2Tools_GetTeamColor4(GetClientTeam(clients[i]), color);
 					SetHudTextParamsEx(-1.0, 0.5, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 14.0 ? 0 : 2, 3.0);
-					ShowSyncHudText(clients[i], SyncHud, screen);
+					ShowSyncHudText(clients[i], TeamSyncHud[3], screen);
 				}
 			}
 		}

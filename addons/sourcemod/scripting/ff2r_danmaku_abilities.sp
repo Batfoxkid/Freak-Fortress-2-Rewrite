@@ -230,6 +230,7 @@ Database DataBase;
 StringMap BossRank;
 StringMap BossKills;
 Handle SyncHudTele;
+Handle SyncHudWave;
 bool OTDLoaded;
 
 int PlayersAlive[TFTeam_MAXLimit];
@@ -297,7 +298,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("ff2_rewrite.phrases");
-	if(!TranslationPhraseExists("Danmaku Difficulty Increased"))
+	if(!TranslationPhraseExists("Danmaku Revives"))
 		SetFailState("Translation file \"ff2_rewrite.phrases\" is outdated");
 	
 	TF2Tools_PluginStart();
@@ -338,12 +339,19 @@ public void OnPluginStart()
 
 	CvarFriendlyFire = FindConVar("mp_friendlyfire");
 	SyncHudTele = CreateHudSynchronizer();
+	SyncHudWave = CreateHudSynchronizer();
 
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("post_inventory_application", OnInventoryApplication, EventHookMode_Post);
 	HookEvent("revive_player_complete", OnRevivePlayer, EventHookMode_Post);
 	HookEvent("teamplay_round_start", OnRoundSetup, EventHookMode_Post);
 	HookEvent("teamplay_round_win", OnRoundEnd, EventHookMode_Post);
+
+	AddCommandListener(ChangeTeamCommand, "explode");
+	AddCommandListener(ChangeTeamCommand, "kill");
+	AddCommandListener(ChangeTeamCommand, "spectate");
+	AddCommandListener(ChangeTeamCommand, "jointeam");
+	AddCommandListener(ChangeTeamCommand, "autoteam");
 
 	Subplugin_PluginStart();
 	
@@ -550,7 +558,7 @@ public void FF2R_OnBossCreated(int client, BossData boss, bool setup)
 				CurrentWave = 0;
 
 				delete WaveTimer;
-				WaveTimer = CreateTimer(10.0, ShowWaveCount, _, TIMER_REPEAT);
+				WaveTimer = CreateTimer(1.0, ShowWaveCount, _, TIMER_REPEAT);
 				TriggerTimer(WaveTimer);
 
 				float time = ParseExpr(WaveTime, Formula_Danmaku);
@@ -842,7 +850,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					else
 					{
 						holding = 2;
-						ClientCommand(client, "common/wpn_denyselect.wav");
+						ClientCommand(client, "playgamesound common/wpn_denyselect.wav");
 					}
 
 					ability.SetInt("_holding", holding);
@@ -910,6 +918,31 @@ public void TF2_OnConditionRemoved(int client, TFCond cond)
 			RespawnIdle[client] = false;
 		}
 	}
+}
+
+Action ChangeTeamCommand(int client, const char[] command, int args)
+{
+	if(IsPlayerAlive(client))
+	{
+		// No kill binds during wave revives
+		if(GetClientTeam(client) == WaveTeam && WaveRevives > 0)
+			return Plugin_Handled;
+		
+		// No kill binds for tracker bosses
+		BossData boss = FF2R_GetBossData(client);
+		if(boss)
+		{
+			AbilityData ability = boss.GetAbility("special_danmaku_soul");
+			if(ability.IsMyPlugin())
+			{
+				int tracker = ability.GetInt("difficulty.tracker");
+				if(tracker)
+					return Plugin_Handled;
+			}
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 Action PlayerTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
@@ -1117,7 +1150,7 @@ void RemoveRenderMode(int client, bool models)
 			}
 		}
 
-		SetEntityRenderMode(client, RENDER_NORMAL);
+		SetEntityRenderFx(client, RENDERFX_NONE);
 		RenderModelRef[client] = -1;
 	}
 }
@@ -1127,11 +1160,11 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	int victim = GetClientOfUserId(event.GetInt("userid"));
 	if(victim)
 	{
-		RemoveRenderMode(victim, true);
-
-		if(WaveFlags & WAVE_REVIVEMARKER)
+		if(!(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
 		{
-			if(!(event.GetInt("death_flags") & TF_DEATHFLAG_DEADRINGER))
+			RemoveRenderMode(victim, true);
+
+			if(WaveFlags & WAVE_REVIVEMARKER)
 			{
 				if(victim && GetClientTeam(victim) == WaveTeam && !FF2R_GetBossData(victim) && FF2R_GetClientMinion(victim) != 2)
 				{
@@ -1162,7 +1195,7 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 						}
 
 						if(WaveSoundTarget)
-							FF2R_EmitBossSoundToClient(victim, "sound_danmaku_killed", WaveSoundTarget, "revive");
+							FF2R_EmitBossSoundToClient(victim, "sound_danmaku_killed", WaveSoundTarget, "revive", .volume = 1.0);
 					}
 					else if(WaveSoundTarget)
 					{
@@ -1174,7 +1207,7 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	}
 
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
-	if(attacker)
+	if(attacker && victim != attacker)
 	{
 		BossData boss = FF2R_GetBossData(attacker);
 		if(boss)
@@ -1340,7 +1373,7 @@ void WaveTimerFinish(const char[] output, int caller, int activator, float delay
 					{
 						for(int i = 1; i < 4; i++)
 						{
-							GivePlayerAmmo(client, 499, i, true);
+							GivePlayerAmmo(client, 999, i, true);
 						}
 
 						TF2Tools_AddCondition(client, TFCond_HalloweenQuickHeal, 3.0);
@@ -1550,10 +1583,22 @@ void RemoveReviveMarker(int client)
 
 Action ShowWaveCount(Handle timer)
 {
+	SetHudTextParams(-1.0, 0.06, 1.1, 64, 255, 64, 255);
 	for(int client = 1; client <= MaxClients; client++)
 	{
 		if(IsClientInGame(client) && !IsFakeClient(client))
-			SendDialogToOne(client, {0, 255, 0, 255}, "%t", "Danmaku Waves", CurrentWave + 1, WaveMax);
+		{
+			if(GetClientTeam(client) == WaveTeam)
+			{
+				SetGlobalTransTarget(client);
+				ShowSyncHudText(client, SyncHudWave, "%t                                                 %t", "Danmaku Waves", CurrentWave + 1, WaveMax, "Danmaku Revives", PlayerRevives[client] + WaveRevives);
+			}
+			else if(!FF2R_GetBossData(client))
+			{
+				SetGlobalTransTarget(client);
+				ShowSyncHudText(client, SyncHudWave, "%t                                                            ", "Danmaku Waves", CurrentWave + 1, WaveMax);
+			}
+		}
 	}
 	return Plugin_Continue;
 }
@@ -1571,7 +1616,7 @@ Action ShowWeaponChangeTimer(Handle timer, DataPack pack)
 			Weapons_ShowChanges(client, weapon);
 		
 		if(slot < 3)
-			GivePlayerAmmo(client, 499, slot + 1, true);
+			GivePlayerAmmo(client, 999, slot + 1, true);
 		
 		if(slot < 6)
 		{
@@ -1709,7 +1754,7 @@ bool TryTeleport(int client, ConfigData ability)
 				
 				// isspotstuck
 				trace = TR_TraceHullFilterEx(testPos, testPos, mins, maxs, MASK_PLAYERSOLID, TraceRay_TeamPlayers, team);
-				found = TR_DidHit(trace);
+				found = !TR_DidHit(trace);
 				delete trace;
 			}
 		}
@@ -2096,7 +2141,7 @@ void Database_CacheBossRank(Database db, DataPack pack, int numQueries, DBResult
 
 			Transaction tr = new Transaction();
 
-			DataBase.Format(buffer, sizeof(buffer), "INSERT INTO ff2_danmaku_v1 (boss, map) VALUES ('%s', '%s')", buffer, map);
+			DataBase.Format(buffer, sizeof(buffer), "INSERT INTO ff2_danmaku_v1 (boss, map) VALUES ('%s', '%s')", boss, map);
 			tr.AddQuery(buffer);
 
 			DataBase.Execute(tr, Database_Success, Database_Fail);
@@ -2162,7 +2207,7 @@ void Database_CacheBossKills(Database db, DataPack pack, int numQueries, DBResul
 
 		Transaction tr = new Transaction();
 
-		DataBase.Format(buffer, sizeof(buffer), "INSERT INTO ff2_killtrack_v1 (boss) VALUES ('%s')", buffer);
+		DataBase.Format(buffer, sizeof(buffer), "INSERT INTO ff2_killtrack_v1 (boss) VALUES ('%s')", boss);
 		tr.AddQuery(buffer);
 
 		DataBase.Execute(tr, Database_Success, Database_Fail);
@@ -2485,8 +2530,7 @@ void ProjectileClockFrame(DataPack pack)
 	float fwd[3], right[3], up[3];
 	GetVectorAngles(ang, fwd);
 	GetAngleVectors(fwd, fwd, right, up);
-	//PrintCenterTextAll("F %f %f %f\nR %f %f %f\nU %f %f %f", fwd[0], fwd[1], fwd[2], right[0], right[1], right[2], up[0], up[1], up[2]);
-
+	
 	for(int i; i < 3; i++)
 	{
 		vel[i] = Fabs(fwd[i]) * ang[i];
@@ -2496,8 +2540,6 @@ void ProjectileClockFrame(DataPack pack)
 		if(type == 0 || type == 2)
 			vel[i] += Fabs(up[i]) * y;
 	}
-
-	//PrintCenterTextAll("%f | %f %f", current, x, y);
 
 	GetVectorAngles(vel, ang);
 	TeleportEntity(entity, _, ang, vel);
@@ -2560,7 +2602,6 @@ void ProjectileRingFrame(DataPack pack)
 	float fwd[3], right[3], up[3];
 	GetVectorAngles(ang, fwd);
 	GetAngleVectors(fwd, fwd, right, up);
-	//PrintCenterTextAll("F %f %f %f\nR %f %f %f\nU %f %f %f", fwd[0], fwd[1], fwd[2], right[0], right[1], right[2], up[0], up[1], up[2]);
 	
 	for(int i; i < 2; i++)
 	{
@@ -3574,21 +3615,6 @@ stock void VectorRotateMatrix(const float vec[3], const float matrix[4][3], floa
 float GetLinearVelocity(float vec[3])
 {
 	return SquareRoot((vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]));
-}
-
-void SendDialogToOne(int client, const int color[4], const char[] text, any ...)
-{
-	char message[100];
-	VFormat(message, sizeof(message), text, 4);	
-	
-	KeyValues kv = new KeyValues("Stuff", "title", message);
-	kv.SetColor("color", color[0], color[1], color[2], color[3]);
-	kv.SetNum("level", 3);
-	kv.SetNum("time", 11);
-	
-	CreateDialog(client, kv, DialogType_Msg);
-
-	delete kv;
 }
 
 void ConstrainDistance(const float startPoint[3], float endPoint[3], float distance, float maxDistance)

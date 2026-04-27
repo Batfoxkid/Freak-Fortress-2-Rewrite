@@ -8,7 +8,6 @@ static int WinnerOverride;
 static int PointUnlock;
 static int MercTeam = TFTeam_Red;
 static Handle BackupTimer;
-static Handle TeamSyncHud[TFTeam_MAXLimit];
 static Handle HudTimer[TFTeam_MAXLimit];
 static bool HasBoss[TFTeam_MAXLimit];
 
@@ -124,7 +123,6 @@ void Gamemode_RoundSetup()
 	WinnerOverride = -1;
 	
 	Gamemode_RoundReset();
-	Events_RoundSetup();
 	
 	if(Enabled)
 	{
@@ -573,7 +571,11 @@ void Gamemode_RoundStart()
 				ServerCommand(buffer);
 			
 			Forward_OnBossCreated(boss[i], Client(boss[i]).Cfg, false);
-			Preference_ApplyDifficulty(boss[i], boss[i], false);
+
+			bool value;
+			if(!Client(boss[i]).Cfg.GetBool("nomods", value, false) || !value)
+				Preference_ApplyDifficulty(boss[i], boss[i], false);
+			
 			int rank = Ranking_ApplyEffects(boss[i], multi);
 			
 			int maxhealth = Client(boss[i]).MaxHealth;
@@ -812,7 +814,7 @@ void Gamemode_RoundEnd(int winteam)
 					Format(screen, sizeof(screen), "%s\n%t", screen, "Team Had Players Left Hud", buffer, PlayersAlive[i], MaxPlayersAlive[i]);
 				}
 
-				if(i != 0 && HasBoss[i])
+				if(i != 2 && i != 3 && HasBoss[i])
 					ClearSyncHud(clients[a], TeamSyncHud[i]);
 			}
 
@@ -820,7 +822,7 @@ void Gamemode_RoundEnd(int winteam)
 			if(bytes > 2)
 			{
 				SetHudTextParamsEx(-1.0, pos, 15.0, {255, 255, 255, 255}, color, Cvar[BonusroundTime].FloatValue < 12.0 ? 0 : 2, 15.0 / float(bytes));
-				ShowSyncHudText(clients[a], TeamSyncHud[0], screen);
+				ShowSyncHudText(clients[a], TeamSyncHud[2], screen);
 			}
 		}
 	}

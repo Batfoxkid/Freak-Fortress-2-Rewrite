@@ -151,6 +151,7 @@ ConVar Cvar[Cvar_MAX];
 
 int PlayersAlive[TFTeam_MAXLimit];
 int MaxPlayersAlive[TFTeam_MAXLimit];
+Handle TeamSyncHud[TFTeam_MAXLimit];
 int Charset;
 bool Enabled;
 int RoundStatus;

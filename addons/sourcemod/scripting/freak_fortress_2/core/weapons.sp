@@ -216,7 +216,7 @@ void Weapons_ShowChanges(int client, int entity)
 			
 			cfg.GetArray(key, val, sizeof(val));
 
-			if(val.tag == KeyValType_Value && TranslationPhraseExists(key))
+			if(val.tag == KeyValType_Value && !StrEqual(val.data, "R") && TranslationPhraseExists(key))
 			{
 				FormatValue(val.data, value, sizeof(value), "value_is_percentage");
 				FormatValue(val.data, desc, sizeof(desc), "value_is_inverted_percentage");
@@ -451,7 +451,20 @@ static void Weapons_SpawnFrame(int ref)
 				cfg.GetArray(key, attributeValue, sizeof(attributeValue));
 
 				if(attributeValue.tag == KeyValType_Value)
-					Attrib_SetString(entity, key, _, attributeValue.data);
+				{
+					if(StrEqual(attributeValue.data, "R"))
+					{
+						#if defined IS_MAIN_FF2
+						Attrib_Set(entity, key, _, 0.0);
+						#else
+						Attrib_Remove(entity, key);
+						#endif
+					}
+					else
+					{
+						Attrib_SetString(entity, key, _, attributeValue.data);
+					}
+				}
 			}
 
 			delete snap;
