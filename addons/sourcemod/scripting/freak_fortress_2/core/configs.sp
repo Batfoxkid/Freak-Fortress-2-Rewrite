@@ -170,14 +170,37 @@ bool Configs_SetMap(const char[] mapname)
 
 static void Configs_StartVote(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
-	if(!VotedPack && Cvar[PackVotes].BoolValue && Bosses_MultipleCharsets(false))
+	if(!VotedPack && Cvar[PackVotes].BoolValue)
 	{
-		char mapname[64];
-		GetMapDisplayName(newValue, mapname, sizeof(mapname));
-		if(Configs_MapIsGamemode(mapname))
+		ConfigMap pack;
+		int found;
+		bool hidden;
+		for(int i; (pack = Bosses_GetCharset(i)); i++)
 		{
-			VotedPack = true;
-			RequestFrame(Configs_PackVoteFrame);
+			if(pack.GetBool("hidden", hidden, false) && hidden)
+				continue;
+			
+			if(pack.GetBool("alwaysload", hidden, false) && hidden)
+				continue;
+			
+			if(found)
+			{
+				found = 2;
+				break;
+			}
+
+			found = 1;
+		}
+		
+		if(found > 1)
+		{
+			char mapname[64];
+			GetMapDisplayName(newValue, mapname, sizeof(mapname));
+			if(Configs_MapIsGamemode(mapname))
+			{
+				VotedPack = true;
+				RequestFrame(Configs_PackVoteFrame);
+			}
 		}
 	}
 }
@@ -213,7 +236,8 @@ static void Configs_PackVoteFrame()
 				i = 0;
 			
 			ConfigMap pack = Bosses_GetCharset(i);
-			if(pack.GetBool("hidden", hidden, false) && hidden)
+			if((pack.GetBool("hidden", hidden, false) && hidden) ||
+				(pack.GetBool("alwaysload", hidden, false) && hidden))
 			{
 				a--;
 				continue;

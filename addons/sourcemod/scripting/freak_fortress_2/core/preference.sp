@@ -546,7 +546,7 @@ static Action Preference_BossMenuCmd(int client, int args)
 	}
 	else
 	{
-		ViewingPack[client] = Enabled ? Charset : -1;
+		ViewingPack[client] = (Enabled && !Bosses_MultiLoadCharsets()) ? Charset : -1;
 		ViewingPage[client] = 0;
 		delete ViewingBoss[client];
 		
@@ -719,6 +719,13 @@ static void BossMenu(int client)
 		{
 			menu.SetTitle("%t%s\n ", "Boss Selection Command", data);
 
+			bool hideDisable = Bosses_IsCharsetSideLoaded(ViewingPack[client]);
+			if(!hideDisable)
+			{
+				if(!Bosses_MultiLoadCharsets(hideDisable))
+					hideDisable = false;
+			}
+
 			ArrayList list = new ArrayList();
 			
 			bool found;
@@ -798,7 +805,7 @@ static void BossMenu(int client)
 				FormatEx(data, sizeof(data), "%t", "Enable Playing Boss");
 				menu.InsertItem(0, "-3", data);
 			}
-			else if(Cvar[PrefToggle].BoolValue)
+			else if(!hideDisable && Cvar[PrefToggle].BoolValue)
 			{
 				FormatEx(data, sizeof(data), "%t", "Disable Playing Boss");
 				menu.InsertItem(0, "-2", data);
@@ -819,16 +826,25 @@ static void BossMenu(int client)
 	{
 		menu.SetTitle("%t", "Boss Selection Command");
 		
+		bool hidden, allLoaded;
+		bool multiLoaded = Bosses_MultiLoadCharsets(allLoaded);
 		int disables, enables;
 		
 		int length = Bosses_GetCharsetLength();
 		for(int i; i < length; i++)
 		{
+			if(!Enabled || i != Charset)
+			{
+				ConfigMap pack = Bosses_GetCharset(i);
+				if(pack.GetBool("hidden", hidden, false) && hidden)
+					continue;
+			}
+			
 			if(Preference_DisabledBoss(client, i))
 			{
 				disables++;
 			}
-			else
+			else if(!Bosses_IsCharsetSideLoaded(i))
 			{
 				enables++;
 			}
@@ -837,14 +853,14 @@ static void BossMenu(int client)
 		// Show if any boss pack has one disabled
 		if(disables)
 		{
-			FormatEx(data, sizeof(data), "%t", "Enable Playing Boss All");
+			FormatEx(data, sizeof(data), "%t", allLoaded ? "Enable Playing Boss" : "Enable Playing Boss All");
 			menu.AddItem("-3", data);
 		}
 		
-		// Show if any boss pack doesn't have one disaabled
+		// Show if any boss pack doesn't have one disabled
 		if(enables && Cvar[PrefToggle].BoolValue)
 		{
-			FormatEx(data, sizeof(data), "%t", "Disable Playing Boss All");
+			FormatEx(data, sizeof(data), "%t", allLoaded ? "Disable Playing Boss" : "Disable Playing Boss All");
 			menu.AddItem("-2", data);
 		}
 		
@@ -855,7 +871,6 @@ static void BossMenu(int client)
 			menu.AddItem("-1", data);
 		}
 		
-		bool hidden;
 		for(int i; i < length; i++)
 		{
 			ConfigMap pack = Bosses_GetCharset(i);
@@ -863,7 +878,8 @@ static void BossMenu(int client)
 			Bosses_GetCharsetName(i, buffer, sizeof(buffer), lang);
 			if(Enabled && i == Charset)
 			{
-				Format(buffer, sizeof(buffer), "%s ✓", buffer);
+				if(!multiLoaded)
+					Format(buffer, sizeof(buffer), "%s ✓", buffer);
 			}
 			else if(pack.GetBool("hidden", hidden, false) && hidden)
 			{
@@ -1074,13 +1090,17 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
-						int length = -1-Bosses_GetCharsetLength();
-						for(int i = -1; i > length; i--)
+						int length = Bosses_GetCharsetLength();
+						for(int i; i < length; i++)
 						{
-							if(BossListing[client].FindValue(i) == -1)
+							if(Bosses_IsCharsetSideLoaded(i))
+								continue;
+							
+							int index = -(i+1);
+							if(BossListing[client].FindValue(index) == -1)
 							{
 								UpdateDataBase[client] = true;
-								BossListing[client].Push(i);
+								BossListing[client].Push(index);
 							}
 						}
 					}

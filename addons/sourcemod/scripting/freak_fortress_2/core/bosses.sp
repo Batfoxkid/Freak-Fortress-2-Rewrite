@@ -325,10 +325,13 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 			ConfigMap cfgBosses = cfgPack.GetSection("bosses");
 			if(!cfgBosses)
 				cfgBosses = cfgPack;
-
-			PackList.Push(cfgPack);
 			
+			bool hasLoaded;
 			bool precache = charset == pack;
+			if(!precache)
+				cfgPack.GetBool("alwaysload", precache, false);
+			
+			PackList.Push(cfgPack);
 
 			SortedSnapshot snapBosses = CreateSortedSnapshot(cfgBosses);
 			int entriesBosses = snapBosses.Length;
@@ -372,11 +375,13 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 							length = ReplaceString(bossname, length, "*", NULL_STRING);
 							if(length)
 							{
-								LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, loadboss, vscripts);
+								if(LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, loadboss, vscripts))
+									hasLoaded = true;
 							}
 							else
 							{
-								LoadCharacter(bossname, pack, mapname, loadboss, vscripts);
+								if(LoadCharacter(bossname, pack, mapname, loadboss, vscripts))
+									hasLoaded = true;
 							}
 						}
 						case KeyValType_Value:
@@ -388,11 +393,13 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 									length = ReplaceString(bossname, length, "*", NULL_STRING);
 									if(length)
 									{
-										LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+										if(LoadCharacterDirectory(filepath, bossname, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts))
+											hasLoaded = true;
 									}
 									else
 									{
-										LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+										if(LoadCharacter(bossname, pack, mapname, choosen.FindValue(a) != -1, vscripts))
+											hasLoaded = true;
 									}
 								}
 							}
@@ -401,11 +408,13 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 								length = ReplaceString(val.data, sizeof(val.data), "*", NULL_STRING);
 								if(length)
 								{
-									LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+									if(LoadCharacterDirectory(filepath, val.data, length>1, pack, mapname, choosen.FindValue(a) != -1, vscripts))
+										hasLoaded = true;
 								}
 								else
 								{
-									LoadCharacter(val.data, pack, mapname, choosen.FindValue(a) != -1, vscripts);
+									if(LoadCharacter(val.data, pack, mapname, choosen.FindValue(a) != -1, vscripts))
+										hasLoaded = true;
 								}
 							}
 						}
@@ -414,6 +423,8 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 
 				delete choosen;
 			}
+
+			cfgPack.SetInt("_loaded", hasLoaded ? 1 : 0);
 
 			if(clean && cfgBosses != cfgPack)
 				cfgPack.DeleteSection("bosses");
@@ -439,6 +450,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	{
 		ConfigMap cfg = view_as<ConfigMap>(new StringMap());
 		cfg.Set("name", "Freak Fortress 2");
+		cfg.SetInt("loaded", 1);
 
 		PackList.Push(cfg);
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
@@ -510,7 +522,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 	}
 }
 
-static void LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, ArrayList vscripts, const char[] current = NULL_STRING)
+static bool LoadCharacterDirectory(const char[] basepath, const char[] matching, bool full, int charset, const char[] map, bool precache, ArrayList vscripts, const char[] current = NULL_STRING)
 {
 	char filepath[PLATFORM_MAX_PATH];
 	if(current[0])
@@ -524,8 +536,9 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 	
 	DirectoryListing listing = OpenDirectory(filepath);
 	if(!listing)
-		return;
+		return false;
 	
+	bool loaded;
 	FileType type;
 	while(listing.GetNext(filepath, sizeof(filepath), type))
 	{
@@ -540,7 +553,10 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 					Format(filepath, sizeof(filepath), "%s/%s", current, filepath);
 				
 				if(!matching[0] || (full && StrContains(filepath, matching) != -1) || (!full && !StrContains(filepath, matching)))
-					LoadCharacter(filepath, charset, map, precache, vscripts);
+				{
+					if(LoadCharacter(filepath, charset, map, precache, vscripts))
+						loaded = true;
+				}
 				
 				continue;
 			}
@@ -552,15 +568,18 @@ static void LoadCharacterDirectory(const char[] basepath, const char[] matching,
 				if(current[0])
 					Format(filepath, sizeof(filepath), "%s/%s", current, filepath);
 				
-				LoadCharacterDirectory(basepath, matching, full, charset, map, precache, vscripts, filepath);
+				if(LoadCharacterDirectory(basepath, matching, full, charset, map, precache, vscripts, filepath))
+					loaded = true;
 			}
 		}
 	}
 	
 	delete listing;
+
+	return loaded;
 }
 
-static void LoadCharacter(const char[] character, int charset, const char[] map, bool precached, ArrayList vscripts)
+static bool LoadCharacter(const char[] character, int charset, const char[] map, bool precached, ArrayList vscripts)
 {
 	char buffer[PLATFORM_MAX_PATH];
 	FormatEx(buffer, sizeof(buffer), "%s/%s.cfg", FOLDER_CONFIGS, character);
@@ -570,7 +589,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	{
 		LogError("[Boss] %s is not a boss character", character);
 		DeleteCfg(full);
-		return;
+		return false;
 	}
 	
 	ConfigMap cfg = full.GetSection("character");
@@ -578,7 +597,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	{
 		LogError("[Boss] %s is not a boss character", character);
 		DeleteCfg(full);
-		return;
+		return false;
 	}
 	
 	bool precache = precached;
@@ -586,7 +605,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	if(action == Plugin_Stop)
 	{
 		DeleteCfg(full);
-		return;
+		return false;
 	}
 	
 	if(action != Plugin_Handled)
@@ -604,7 +623,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			}
 			
 			DeleteCfg(full);
-			return;
+			return false;
 		}
 		
 		if(cfg.GetInt("fversion", i) && i != 2)
@@ -619,7 +638,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 			}
 			
 			DeleteCfg(full);
-			return;
+			return false;
 		}
 	}
 	
@@ -1514,6 +1533,7 @@ static void LoadCharacter(const char[] character, int charset, const char[] map,
 	cfg.SetInt("class", view_as<int>(class));
 	
 	Forward_OnBossPrecached(cfg, precache, BossList.Push(cfg));
+	return true;
 }
 
 void Bosses_MapEnd()
@@ -1553,7 +1573,7 @@ int Bosses_GetCharsetLength()
 }
 
 // If multiple boss packs are visible
-bool Bosses_MultipleCharsets(bool currentCheck = true)
+bool Bosses_MultipleCharsets(bool &multiLoaded = false)
 {
 	if(PackList)
 	{
@@ -1562,10 +1582,13 @@ bool Bosses_MultipleCharsets(bool currentCheck = true)
 		for(int i; i < length; i++)
 		{
 			ConfigMap pack = PackList.Get(i);
-			if(!currentCheck || !Enabled || i != Charset)
+			if(!Enabled || i != Charset)
 			{
 				if(pack.GetBool("hidden", hidden, false) && hidden)
 					continue;
+				
+				if(pack.GetBool("alwaysload", hidden) && hidden)
+					multiLoaded = true;
 			}
 			
 			if(found)
@@ -1575,6 +1598,58 @@ bool Bosses_MultipleCharsets(bool currentCheck = true)
 		}
 	}
 
+	return false;
+}
+
+bool Bosses_MultiLoadCharsets(bool &allLoaded = false)
+{
+	bool found;
+
+	if(PackList)
+	{
+		allLoaded = true;
+
+		bool value;
+		int length = PackList.Length;
+		for(int i; i < length; i++)
+		{
+			ConfigMap pack = PackList.Get(i);
+			if(!Enabled || i != Charset)
+			{
+				if(pack.GetBool("hidden", value, false) && value)
+					continue;
+				
+				if(Bosses_IsCharsetSideLoaded(i))
+				{
+					found = true;
+				}
+				else
+				{
+					allLoaded = false;
+				}
+			}
+		}
+	}
+
+	return found;
+}
+
+bool Bosses_IsCharsetSideLoaded(int index)
+{
+	if(Charset != index)
+	{
+		ConfigMap cfg = Bosses_GetCharset(index);
+		if(cfg)
+		{
+			bool value;
+			if(cfg.GetBool("alwaysload", value, false) && value)
+				return true;
+			
+			if(cfg.GetBool("_loaded", value) && value)
+				return true;
+		}
+	}
+	
 	return false;
 }
 
