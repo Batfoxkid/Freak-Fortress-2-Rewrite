@@ -867,8 +867,12 @@ static void BossMenu(int client)
 		// Show if boss pack has a listing that's not related to disables
 		if(BossListing[client] && BossListing[client].Length > disables)
 		{
-			FormatEx(data, sizeof(data), "%t", "Clear All");
+			FormatEx(data, sizeof(data), "%t\n ", "Clear All");
 			menu.AddItem("-1", data);
+		}
+		else
+		{
+			menu.AddItem("-1", data, ITEMDRAW_SPACER);
 		}
 		
 		for(int i; i < length; i++)
@@ -1002,14 +1006,17 @@ static int BossMenuH(Menu menu, MenuAction action, int client, int choice)
 						if(!BossListing[client])
 							BossListing[client] = new ArrayList();
 						
-						int length = BossListing[client].Length;
+						int length = Bosses_GetConfigLength();
 						for(int i; i < length; i++)
 						{
-							ConfigMap cfg = Bosses_GetConfig(BossListing[client].Get(i));
+							ConfigMap cfg = Bosses_GetConfig(i);
 							if(cfg && cfg.GetInt("charset", value) && value == ViewingPack[client])
 							{
 								if(BossListing[client].FindValue(i) == -1)
-									BossListing[client].Push(i);
+								{
+									if(Preference_CanAccessBoss(client, i, PREF_MENU))
+										BossListing[client].Push(i);
+								}
 							}
 						}
 					}
