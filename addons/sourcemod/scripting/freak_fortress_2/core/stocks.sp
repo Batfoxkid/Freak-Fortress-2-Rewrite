@@ -940,6 +940,29 @@ void CreateFade(int client, int duration = 2000, int red = 255, int green = 255,
 	EndMessage();
 }
 
+float GetDefaultClassSpeed(TFClassType class)
+{
+	switch(class)
+	{
+		case TFClass_Scout:
+			return 400.0;
+		
+		case TFClass_Soldier:
+			return 240.0;
+		
+		case TFClass_DemoMan:
+			return 280.0;
+		
+		case TFClass_Heavy:
+			return 230.0;
+		
+		case TFClass_Medic, TFClass_Spy:
+			return 320.0;
+	}
+
+	return 300.0;
+}
+
 void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any data)
 {
 	if(CharToLower(var_name[0]) == 'n' || CharToLower(var_name[0]) == 'x')

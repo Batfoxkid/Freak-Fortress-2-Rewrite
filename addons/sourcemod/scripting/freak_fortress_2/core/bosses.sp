@@ -2129,24 +2129,7 @@ void Bosses_SetSpeed(int client)
 	
 	if(maxspeed > 0.0)
 	{
-		float defaul = 300.0;
-		switch(TF2_GetPlayerClass(client))
-		{
-			case TFClass_Scout:
-				defaul = 400.0;
-			
-			case TFClass_Soldier:
-				defaul = 240.0;
-			
-			case TFClass_DemoMan:
-				defaul = 280.0;
-			
-			case TFClass_Heavy:
-				defaul = 230.0;
-			
-			case TFClass_Medic, TFClass_Spy:
-				defaul = 320.0;
-		}
+		float defaul = GetDefaultClassSpeed(TF2_GetPlayerClass(client));
 		
 		// Total Health / (This Life Max Health + Other Lives Max Health)
 		float speed = maxspeed + 70.0 - (70.0 * Client(client).Health / (SDKCall_GetMaxHealth(client) + (Client(client).MaxHealth * (Client(client).MaxLives - 1))));
@@ -2162,7 +2145,7 @@ void Bosses_SetSpeed(int client)
 			{
 				if(target != client && IsClientInGame(target) && IsPlayerAlive(target) && GetClientTeam(target) != team)
 				{
-					float sped = GetEntPropFloat(target, Prop_Send, "m_flMaxspeed") * 1.075;
+					float sped = GetDefaultClassSpeed(TF2_GetPlayerClass(target)) * 1.075;
 					if(sped < lowest)
 						lowest = sped;
 				}
