@@ -23,6 +23,8 @@ void Native_PluginLoad()
 	CreateNative("FF2R_ClientHasFile", Native_ClientHasFile);
 	CreateNative("FF2R_GetClientAssist", Native_GetClientAssist);
 	CreateNative("FF2R_SetClientAssist", Native_SetClientAssist);
+	CreateNative("FF2R_StopMusic", Native_StopMusic);
+	CreateNative("FF2R_PlayMusic", Native_PlayMusic);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -306,5 +308,17 @@ static any Native_SetClientAssist(Handle plugin, int params)
 	
 	Client(client).Assist = GetNativeCell(2);
 	Client(client).RefreshAt = 0.0;
+	return 0;
+}
+
+static any Native_StopMusic(Handle plugin, int params)
+{
+	Music_PlaySongToAll();
+	return 0;
+}
+
+static any Native_PlayMusic(Handle plugin, int params)
+{
+	Music_PlayNextSong();
 	return 0;
 }

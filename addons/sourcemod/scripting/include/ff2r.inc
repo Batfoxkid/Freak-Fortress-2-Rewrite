@@ -328,6 +328,22 @@ stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] requ
 }
 
 /**
+ *	Stops any currently playing music for all clients.
+ *  Does not play any other music after it's called. Best used with FF2R_PlayMusic(); 
+ *
+ *	@noreturn
+ */
+native void FF2R_StopMusic();
+
+/**
+ * If shuffle is disabled, plays the next song of the current boss's bgm's.
+ * If shuffle is enabled, plays the next song from any of the boss's bgm's.
+ *
+ * @noreturn
+ */
+native void FF2R_PlayMusic();
+ 
+/**
  *	Below is related to using ConfigMap, though cfgmap is not required for this include, needed for the below
  */
 #if defined CFGMAP_FF2R
@@ -966,5 +982,7 @@ public void __pl_ff2r_SetNTVOptional()
 	MarkNativeAsOptional("FF2R_GetSpecialData");
 	MarkNativeAsOptional("FF2R_GetSpecialCount");
 	MarkNativeAsOptional("FF2R_CreateBoss");
+	MarkNativeAsOptional("FF2R_StopMusic");
+	MarkNativeAsOptional("FF2R_PlayMusic");
 }
 #endif
