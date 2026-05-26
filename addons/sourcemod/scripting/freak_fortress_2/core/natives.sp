@@ -313,12 +313,78 @@ static any Native_SetClientAssist(Handle plugin, int params)
 
 static any Native_StopMusic(Handle plugin, int params)
 {
-	Music_PlaySongToAll();
+	int client = params >= 1 ? GetNativeCell(1) : 0;
+
+	if(client)
+		Music_PlaySongToClient(client);
+	else
+		Music_PlaySongToAll();
+	
 	return 0;
 }
 
 static any Native_PlayMusic(Handle plugin, int params)
 {
-	Music_PlayNextSong();
+	int client   = params >= 1 ? GetNativeCell(1) : 0;
+	int index    = params >= 2 ? GetNativeCell(2) :-1;
+	bool shuffle = params >= 3 ? view_as<bool>(GetNativeCell(3)) : false;
+	
+	if(index >= 0 && index < Music_GetPlaylist().Length)
+	{
+		MusicEnum music;
+		Music_GetPlaylist().GetArray(index, music);
+
+		ConfigMap cfg = Bosses_GetConfig(music.Special);
+		if (!cfg) return 0;
+
+		SoundEnum sound;
+		sound.Default();
+		if(!Bosses_GetSpecificSoundCfg(cfg, music.Section, music.Key, sizeof(music.Key), sound))
+			return 0;
+
+		if(client)
+		{
+			bool prev = Client(client).MusicShuffle;
+			Client(client).MusicShuffle = true;
+			Music_PlaySongToClient(client, sound, music.Special);
+			Client(client).MusicShuffle = prev;
+		}
+		else
+		{
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(IsClientInGame(i))
+				{
+					bool prev = Client(i).MusicShuffle;
+					Client(i).MusicShuffle = true;
+					Music_PlaySongToClient(i, sound, music.Special);
+					Client(i).MusicShuffle = prev;
+				}
+			}
+		}
+	}
+	else
+	{
+		if(client)
+		{
+			bool prev = Client(client).MusicShuffle;
+			if(shuffle) Client(client).MusicShuffle = true;
+			Music_PlayNextSong(client);
+			Client(client).MusicShuffle = prev;
+		}
+		else
+		{
+			for(int i = 1; i <= MaxClients; i++)
+			{
+				if(IsClientInGame(i))
+				{
+					bool prev = Client(i).MusicShuffle;
+					if(shuffle) Client(i).MusicShuffle = true;
+					Music_PlayNextSong(i);
+					Client(i).MusicShuffle = prev;
+				}
+			}
+		}
+	}
 	return 0;
 }
