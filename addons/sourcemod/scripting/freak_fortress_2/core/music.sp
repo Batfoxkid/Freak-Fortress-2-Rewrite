@@ -36,6 +36,11 @@ void Music_AddSong(int special, const char[] section, const char[] key)
 	Playlist.PushArray(music);
 }
 
+ArrayList Music_GetPlaylist()
+{
+	return Playlist;
+}
+
 void Music_BossCreated(int boss)
 {
 	SoundEnum sound;
