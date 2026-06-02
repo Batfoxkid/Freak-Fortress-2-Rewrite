@@ -349,6 +349,31 @@ stock bool FF2R_EmitBossSoundToAll(const char[] key, int boss, const char[] requ
 }
 
 /**
+ *  If a client isn't specified, stops any currently playing music for all players.
+ *  If a client was specified, stops any currently playing music for that player only.
+ *  Does not play any other music after it's called. Best used with FF2R_PlayMusic(); 
+ *
+ *  @param client    Client index, 0 for all players
+ *	@noreturn
+ */
+native void FF2R_StopMusic(int client = 0);
+
+/**
+ *  Plays music for all clients or a specific client only.
+ *  If no index is given, plays the next song based on the client's current shuffle state.
+ *  If an index is given, plays that specific music from the playlist.
+ *  If shuffle is disabled, plays the next song of the current boss's bgm's.
+ *  If shuffle is enabled, plays the next song from the playlist.
+ *  Does not permanently change any player's settings.
+ *
+ *  @param client           Client index, 0 for all players
+ *  @param playlistindex    Specific playlist index to play, -1 for no specific music
+ *  @param shuffle          If true, forces shuffle for this call only
+ *  @noreturn
+ */
+native void FF2R_PlayMusic(int client = 0, int playlistindex = -1, bool shuffle = false);
+ 
+/**
  *	Below is related to using ConfigMap, though cfgmap is not required for this include, needed for the below
  */
 #if defined CFGMAP_FF2R
@@ -987,5 +1012,7 @@ public void __pl_ff2r_SetNTVOptional()
 	MarkNativeAsOptional("FF2R_GetSpecialData");
 	MarkNativeAsOptional("FF2R_GetSpecialCount");
 	MarkNativeAsOptional("FF2R_CreateBoss");
+	MarkNativeAsOptional("FF2R_StopMusic");
+	MarkNativeAsOptional("FF2R_PlayMusic");
 }
 #endif
