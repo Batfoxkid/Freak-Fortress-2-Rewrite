@@ -251,11 +251,12 @@ static void Configs_PackVoteFrame()
 				(pack.GetBool("alwaysload", hidden, false) && hidden))
 			{
 				a--;
-				continue;
 			}
-
-			IntToString(i, buffer, sizeof(buffer));
-			menu.AddItem(buffer, buffer);
+			else
+			{
+				IntToString(i, buffer, sizeof(buffer));
+				menu.AddItem(buffer, buffer);
+			}
 			
 			if(i == start)
 				break;

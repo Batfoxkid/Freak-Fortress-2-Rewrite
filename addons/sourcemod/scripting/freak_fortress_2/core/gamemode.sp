@@ -501,7 +501,7 @@ void Gamemode_RoundStart()
 	
 	Events_CheckAlivePlayers(_, _, true);
 	
-	if(Enabled && !GameRules_GetProp("m_bInWaitingForPlayers", 1))
+	if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
 		ArrayList teams = new ArrayList();
 		int[] merc = new int[MaxClients];
@@ -526,7 +526,7 @@ void Gamemode_RoundStart()
 				{
 					merc[mercs++] = client;
 					
-					if(IsPlayerAlive(client))
+					if(Enabled && IsPlayerAlive(client))
 					{
 						if(!bvb && IsFakeClient(client) && team != MercTeam)
 						{

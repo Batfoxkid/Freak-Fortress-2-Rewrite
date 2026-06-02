@@ -59,6 +59,9 @@ Factor      = number | ident | 'e' (Euler's constant) | 'pi' | 'urand' | '(' Exp
 
 /// Expr = AddExpr .
 stock float ParseExpr(const char[] expression, ConfigMapMathVarFunc fn_math=INVALID_FUNCTION, any data=0) {
+	if(!expression[0])
+		return 0.0;
+	
 	LexState ls; GetToken(ls, expression);
 	return ParseAddExpr(ls, expression, fn_math, data);
 }

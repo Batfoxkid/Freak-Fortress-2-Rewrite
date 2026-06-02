@@ -35,7 +35,7 @@ void Forward_PluginLoad()
 	BossEquippedPost = new GlobalForward("FF2R_OnBossEquipped", ET_Ignore, Param_Cell, Param_Cell);
 	RankChangePost = new GlobalForward("FF2R_OnRankChange", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 	MenuPagePre = new GlobalForward("FF2R_OnMenuOpenPre", ET_Event, Param_Cell, Param_String);
-	MenuPagePost = new GlobalForward("FF2R_OnMenuOpenPost", ET_Ignore, Param_Cell, Param_String, Param_CellByRef);
+	MenuPagePost = new GlobalForward("FF2R_OnMenuOpenPost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)

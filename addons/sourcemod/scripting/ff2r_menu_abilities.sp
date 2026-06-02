@@ -432,8 +432,7 @@ Action Timer_MenuTick(Handle timer, int client)
 	if(IsClientInGame(client) && ShowMenuAll(client, !SetupMode[client]))
 		return Plugin_Continue;
 	
-	// This shouldn't happen ever
-	LogError("FF2R_OnBossRemoved was not called, yell at Batfoxkid");
+	// This only happens if someone is being silly
 	MenuTimer[client] = null;
 	return Plugin_Stop;
 }

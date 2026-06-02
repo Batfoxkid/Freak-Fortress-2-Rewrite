@@ -271,7 +271,6 @@ Handle WaveTimer;
 #include "freak_fortress_2/subplugin.sp"
 #include "freak_fortress_2/tf2attributes.sp"
 #include "freak_fortress_2/tf2items.sp"
-#include "freak_fortress_2/tf2tools.sp"
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/vscript.sp"
 #include "freak_fortress_2/core/weapons.sp"
