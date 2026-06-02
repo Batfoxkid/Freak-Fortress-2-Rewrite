@@ -108,7 +108,7 @@ void Weapons_ShowChanges(int client, int entity)
 	if(custom[0])
 	{
 		#if defined __cwx_included
-		if(CWX)
+		if(CWXLoaded)
 		{
 			KeyValues kv = CWX_GetItemExtData(custom, "name");
 			if(kv)
@@ -549,7 +549,7 @@ static ConfigMap FindWeaponSection(int entity, char custom[64] = "", int client 
 			if(!cfg)
 			{
 				Format(buffer1, sizeof(buffer1), "CWX.%s", custom);
-				ConfigMap cfg = loadout.GetSection(buffer1);
+				cfg = loadout.GetSection(buffer1);
 			}
 
 			if(cfg)
