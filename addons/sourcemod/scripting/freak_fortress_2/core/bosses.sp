@@ -456,7 +456,7 @@ void Bosses_BuildPacks(int &charset, const char[] mapname)
 		BuildPath(Path_SM, filepath, sizeof(filepath), FOLDER_CONFIGS);
 		LoadCharacterDirectory(filepath, NULL_STRING, true, 0, mapname, charset>=0, vscripts);
 		if(Enabled && charset >= 0)
-			SteamWorks_SetGameTitle();
+			SteamWorks_SetGameTitle(NULL_STRING);
 	}
 	
 	LockStringTables(save);

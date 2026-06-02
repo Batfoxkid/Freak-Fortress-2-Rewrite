@@ -219,6 +219,17 @@ static void Configs_PackVoteFrame()
 	}
 	else
 	{
+		int total;
+		int[] clients = new int[MaxClients];
+		for(int i = 1; i <= MaxClients; i++)
+		{
+			if(IsClientInGame(i) && !IsFakeClient(i))
+			{
+				if(Forward_OnMenuPagePre(i, "configs.packvote"))
+					clients[total++] = i;
+			}
+		}
+
 		Menu menu = new Menu(Configs_PackVoteH, view_as<MenuAction>(MENU_ACTIONS_ALL));
 		
 		int length = Bosses_GetCharsetLength();
@@ -256,8 +267,13 @@ static void Configs_PackVoteFrame()
 		menu.ExitButton = false;
 		menu.NoVoteButton = true;
 		
+		for(i = 0; i < total; i++)
+		{
+			Forward_OnMenuPagePost(clients[i], "configs.packvote", menu);
+		}
+
 		ConVar cvar = FindConVar("sm_mapvote_voteduration");
-		menu.DisplayVoteToAll(cvar ? cvar.IntValue : 20);
+		menu.DisplayVote(clients, total, cvar ? cvar.IntValue : 20);
 	}
 }
 

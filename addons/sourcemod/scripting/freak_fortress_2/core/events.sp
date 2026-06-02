@@ -365,8 +365,18 @@ static Action Events_InventoryApplication(Event event, const char[] name, bool d
 			SetVariantString(NULL_STRING);
 			AcceptEntityInput(client, "SetCustomModelWithClassAnimations");
 			
-			if(!Client(client).NoChanges && RoundStatus == 0 && (Weapons_InMenu(client) || GetClientMenu(client) == MenuSource_None))
-				Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
+			if(RoundStatus == 0 && (Weapons_InMenu(client) || GetClientMenu(client) == MenuSource_None))
+			{
+				if(Client(client).NoChanges)
+				{
+					if(GetClientMenu(client) != MenuSource_None)
+						CancelClientMenu(client);
+				}
+				else
+				{
+					Weapons_ChangeMenu(client, Cvar[PreroundTime].IntValue);
+				}
+			}
 		}
 		
 		CustomAttrib_OnInventoryApplication(userid);

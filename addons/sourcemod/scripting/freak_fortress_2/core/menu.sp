@@ -100,6 +100,9 @@ static Action Menu_MainMenuCmd(int client, int args)
 
 void Menu_MainMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "menu.main"))
+		return;
+	
 	Menu menu = new Menu(Menu_MainMenuH);
 	menu.SetTitle("Freak Fortress 2: Rewrite (" ... PLUGIN_VERSION ... "." ... PLUGIN_VERSION_REVISION ... ")\n" ... GITHUB_URL ... "\n ");
 	
@@ -134,6 +137,8 @@ void Menu_MainMenu(int client)
 	}
 	
 	menu.ExitButton = true;
+	
+	Forward_OnMenuPagePost(client, "menu.main", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -229,6 +234,9 @@ static Action Menu_QueueMenuCmd(int client, int args)
 
 static void QueueMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "menu.queue"))
+		return;
+	
 	Menu menu = new Menu(Menu_QueueMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -264,6 +272,7 @@ static void QueueMenu(int client)
 	
 	menu.Pagination = 0;
 	menu.ExitButton = true;
+	Forward_OnMenuPagePost(client, "menu.queue", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -296,6 +305,9 @@ static int Menu_QueueMenuH(Menu menu, MenuAction action, int client, int choice)
 
 static void ResetQueueMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "menu.reset"))
+		return;
+	
 	Menu menu = new Menu(ResetQueueMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -311,6 +323,7 @@ static void ResetQueueMenu(int client)
 	menu.AddItem(NULL_STRING, buffer);
 	
 	menu.ExitButton = true;
+	Forward_OnMenuPagePost(client, "menu.reset", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -385,6 +398,9 @@ static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 	int target = userid[0] ? GetClientOfUserId(StringToInt(userid)) : 0;
 	if(target)
 	{
+		if(!Forward_OnMenuPagePre(client, "admin.queue.points"))
+			return;
+		
 		Menu menu = new Menu(Menu_AddPointsActionH);
 		
 		menu.SetTitle("%T%N\n ", "Queue Menu", client, target);
@@ -398,16 +414,21 @@ static void AddPointsMenu(int client, const char[] userid = NULL_STRING)
 		menu.AddItem(userid, "-500");
 		
 		menu.ExitBackButton = true;
+		Forward_OnMenuPagePost(client, "admin.queue.points", menu);
 		menu.Display(client, MENU_TIME_FOREVER);
 	}
 	else
 	{
+		if(!Forward_OnMenuPagePre(client, "admin.queue.target"))
+			return;
+		
 		Menu menu = new Menu(Menu_AddPointsTargetH);
 		
 		menu.SetTitle("%T", "Queue Menu", client);
 		
 		AddTargetsToMenu(menu, client);
 		
+		Forward_OnMenuPagePost(client, "admin.queue.target", menu);
 		menu.Display(client, MENU_TIME_FOREVER);
 	}
 }

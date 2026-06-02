@@ -23,6 +23,7 @@ Supported:
 - [SteamWorks](https://github.com/ExperimentFailed/SteamWorks) (Server Game Description)
 - [File Network](https://github.com/Batfoxkid/File-Network) (Late Download Support)
 - [SM-TFCustomWeaponsX](https://github.com/nosoop/SM-TFCustomWeaponsX) (Weapon Config Section)
+- [Custom Weapons 3](https://forums.alliedmods.net/showthread.php?t=285258) (Weapon Config Section)
 - [Goomba](https://github.com/Flyflo/SM-Goomba-Stomp-Addons) (Boss Supported)
 
 ## Credits

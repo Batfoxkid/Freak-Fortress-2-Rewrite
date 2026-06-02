@@ -447,6 +447,9 @@ static Action Music_Command(int client, int args)
 
 void Music_MainMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "music.main"))
+		return;
+	
 	Menu menu = new Menu(Music_MainMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -470,6 +473,7 @@ void Music_MainMenu(int client)
 	
 	menu.ExitButton = true;
 	menu.ExitBackButton = Menu_BackButton(client);
+	Forward_OnMenuPagePost(client, "music.main", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -553,6 +557,9 @@ static int Music_MainMenuH(Menu menu, MenuAction action, int client, int choice)
 
 static void PlaylistMenu(int client, int page = 0)
 {
+	if(!Forward_OnMenuPagePre(client, "music.playlist"))
+		return;
+	
 	Menu menu = new Menu(Music_PlaylistMenuH);
 	
 	menu.SetTitle("%t", "Music Menu");
@@ -627,6 +634,7 @@ static void PlaylistMenu(int client, int page = 0)
 	
 	menu.ExitButton = true;
 	menu.ExitBackButton = true;
+	Forward_OnMenuPagePost(client, "music.playlist", menu);
 	menu.DisplayAt(client, page, MENU_TIME_FOREVER);
 }
 

@@ -15,6 +15,8 @@ static GlobalForward BossPrecachePost;
 static GlobalForward PickupDroppedWeaponPre;
 static GlobalForward BossEquippedPost;
 static GlobalForward RankChangePost;
+static GlobalForward MenuPagePre;
+static GlobalForward MenuPagePost;
 
 void Forward_PluginLoad()
 {
@@ -32,6 +34,8 @@ void Forward_PluginLoad()
 	PickupDroppedWeaponPre = new GlobalForward("FF2R_OnPickupDroppedWeapon", ET_Event, Param_Cell, Param_Cell, Param_CellByRef);
 	BossEquippedPost = new GlobalForward("FF2R_OnBossEquipped", ET_Ignore, Param_Cell, Param_Cell);
 	RankChangePost = new GlobalForward("FF2R_OnRankChange", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
+	MenuPagePre = new GlobalForward("FF2R_OnMenuOpenPre", ET_Event, Param_Cell, Param_String);
+	MenuPagePost = new GlobalForward("FF2R_OnMenuOpenPost", ET_Ignore, Param_Cell, Param_String, Param_CellByRef);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -241,5 +245,24 @@ void Forward_OnRankChange(int client, const char[] filename, int oldRank, int ne
 	Call_PushString(filename);
 	Call_PushCell(oldRank);
 	Call_PushCell(newRank);
+	Call_Finish();
+}
+
+bool Forward_OnMenuPagePre(int client, const char[] name)
+{
+	Action action;
+	Call_StartForward(MenuPagePre);
+	Call_PushCell(client);
+	Call_PushString(name);
+	Call_Finish(action);
+	return action < Plugin_Handled;
+}
+
+void Forward_OnMenuPagePost(int client, const char[] name, Menu menu)
+{
+	Call_StartForward(MenuPagePost);
+	Call_PushCell(client);
+	Call_PushString(name);
+	Call_PushCell(menu);
 	Call_Finish();
 }

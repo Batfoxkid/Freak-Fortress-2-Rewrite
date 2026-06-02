@@ -45,11 +45,7 @@ void SteamWorks_PrintStatus()
 	#endif
 }
 
-stock void SteamWorks_SetGameTitle(const char[] pack = NULL_STRING)
-{
-	_SteamWorks_SetGameTitle(pack);
-}
-public void _SteamWorks_SetGameTitle(const char[] pack)
+public void SteamWorks_SetGameTitle(const char[] pack)
 {
 	#if defined _SteamWorks_Included
 	strcopy(Pack, sizeof(Pack), pack);

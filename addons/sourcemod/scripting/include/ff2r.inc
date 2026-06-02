@@ -257,6 +257,27 @@ forward void FF2R_OnBossEquipped(int client, bool weapons);
 forward void FF2R_OnRankChange(int client, const char[] filename, int oldRank, int newRank);
 
 /**
+ * Called when a player attempts to open a specific FF2 menu
+ * 
+ * @param client	Client index
+ * @param id		ID name (see source files for references)
+ * 
+ * @return		Plugin_Handled/Plugin_Stop to prevent the menu from opening
+ */
+forward Action FF2R_OnMenuOpenPre(int client, const char[] name);
+
+/**
+ * Called when a player opens a specific FF2 menu
+ * 
+ * @param client	Client index
+ * @param id		ID name (see source files for references)
+ * @param menu		Menu handle (don't close)
+ * 
+ * @noreturn
+ */
+forward void FF2R_OnMenuOpenPost(int client, const char[] name, Menu menu);
+
+/**
  * Wrapper to emit sound to one client.
  * 
  * @param client		Client index

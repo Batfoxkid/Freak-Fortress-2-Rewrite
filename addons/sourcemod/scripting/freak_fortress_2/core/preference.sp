@@ -21,8 +21,6 @@ void Preference_PluginStart()
 {
 	RegFreakCmd("boss", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection");
 	RegFreakCmd("party", Preference_BossMenuCmd, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
-	RegConsoleCmd("sm_boss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
-	RegConsoleCmd("sm_setboss", Preference_BossMenuLegacy, "Freak Fortress 2 Boss Selection", FCVAR_HIDDEN);
 	RegFreakCmd("modifier", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers");
 	RegFreakCmd("modifiers", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers", FCVAR_HIDDEN);
 	RegFreakCmd("difficulty", Preference_DifficultyMenuCmd, "Freak Fortress 2 Boss Modifiers", FCVAR_HIDDEN);
@@ -396,20 +394,6 @@ int Preference_PickBoss(int client, int team = -1, bool raid = false)
 	return special;
 }
 
-static Action Preference_BossMenuLegacy(int client, int args)
-{
-	FReplyToCommand(client, "%t", "Legacy Boss Menu Command");
-	
-	if(client)
-	{
-		ViewingPack[client] = Enabled ? Charset : -1;
-		ViewingPage[client] = 0;
-		delete ViewingBoss[client];
-		BossMenu(client);
-	}
-	return Plugin_Handled;
-}
-
 static Action Preference_BossMenuCmd(int client, int args)
 {
 	if(GetCmdReplySource() == SM_REPLY_TO_CONSOLE)
@@ -569,6 +553,9 @@ void Preference_BossMenu(int client)
 
 static void BossMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "preference.bosses"))
+		return;
+	
 	int blacklist = Cvar[PrefBlacklist].IntValue;
 	Menu menu = new Menu(BossMenuH);
 	
@@ -711,6 +698,7 @@ static void BossMenu(int client)
 		}
 		
 		menu.ExitBackButton = true;
+		Forward_OnMenuPagePost(client, "preference.bosses", menu);
 		menu.Display(client, MENU_TIME_FOREVER);
 	}
 	else if(ViewingPack[client] >= 0)
@@ -820,6 +808,7 @@ static void BossMenu(int client)
 		}
 		
 		menu.ExitBackButton = (Menu_BackButton(client) || Bosses_MultipleCharsets());
+		Forward_OnMenuPagePost(client, "preference.bosses", menu);
 		menu.DisplayAt(client, ViewingPage[client], MENU_TIME_FOREVER);
 	}
 	else
@@ -895,6 +884,7 @@ static void BossMenu(int client)
 		}
 		
 		menu.ExitBackButton = Menu_BackButton(client);
+		Forward_OnMenuPagePost(client, "preference.bosses", menu);
 		menu.DisplayAt(client, ViewingPage[client], MENU_TIME_FOREVER);
 	}
 }
@@ -1186,6 +1176,9 @@ static void CreateParty(int client)
 	}
 	
 	Preference_ClientDisconnect(client);
+
+	if(!Forward_OnMenuPagePre(client, "party.create"))
+		return;
 	
 	Menu menu = new Menu(CreatePartyH);
 	
@@ -1213,6 +1206,7 @@ static void CreateParty(int client)
 	}
 	
 	menu.ExitBackButton = true;
+	Forward_OnMenuPagePost(client, "party.create", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -1249,6 +1243,9 @@ static bool PartyMenu(int client)
 {
 	if(!PartyLeader[client])
 		return InviteMenu(client);
+	
+	if(!Forward_OnMenuPagePre(client, "party.group"))
+		return false;
 	
 	Menu menu = new Menu(PartyMenuH);
 	
@@ -1299,6 +1296,7 @@ static bool PartyMenu(int client)
 	menu.AddItem("-1", buffer);
 	
 	menu.ExitBackButton = true;
+	Forward_OnMenuPagePost(client, "party.group", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 	return true;
 }
@@ -1357,7 +1355,7 @@ static int PartyMenuH(Menu menu, MenuAction action, int client, int choice)
 						PartyInvite[target][client] = -1;
 						PartyMenu(client);
 					}
-					else
+					else if(Forward_OnMenuPagePre(client, "party.invite"))
 					{
 						SetGlobalTransTarget(client);
 						
@@ -1383,11 +1381,12 @@ static int PartyMenuH(Menu menu, MenuAction action, int client, int choice)
 							menu2.AddItem("-1", "N/A", ITEMDRAW_DISABLED);
 						
 						menu2.ExitBackButton = true;
+						Forward_OnMenuPagePost(client, "party.invite", menu2);
 						menu2.Display(client, MENU_TIME_FOREVER);
 					}
 				}
 			}
-			else
+			else if(Forward_OnMenuPagePre(client, "party.bossdesc"))
 			{
 				SetGlobalTransTarget(client);
 				
@@ -1404,6 +1403,7 @@ static int PartyMenuH(Menu menu, MenuAction action, int client, int choice)
 				menu2.AddItem("-1", NULL_STRING, ITEMDRAW_NOTEXT);
 				
 				menu2.ExitBackButton = true;
+				Forward_OnMenuPagePost(client, "party.bossdesc", menu2);
 				menu2.Display(client, MENU_TIME_FOREVER);
 			}
 		}
@@ -1471,6 +1471,9 @@ static bool InviteMenu(int client)
 	{
 		if(client != target && PartyInvite[client][target] != -1)
 		{
+			if(!Forward_OnMenuPagePre(client, "party.invitation"))
+				return false;
+			
 			Menu menu = new Menu(InviteMenuH);
 			
 			SetGlobalTransTarget(client);
@@ -1496,6 +1499,7 @@ static bool InviteMenu(int client)
 			FormatEx(buffer1, sizeof(buffer1), "%t", "Boss Party Block");
 			menu.AddItem(buffer2, buffer1, ITEMDRAW_DISABLED);
 			
+			Forward_OnMenuPagePost(client, "party.invitation", menu);
 			menu.Display(client, MENU_TIME_FOREVER);
 			return true;
 		}
@@ -1839,6 +1843,9 @@ static Action Preference_ForceBossCmd(int client, int args)
 
 static void ForceBossMenu(int client, int item)
 {
+	if(!Forward_OnMenuPagePre(client, "admin.forceboss"))
+		return;
+	
 	Menu menu = new Menu(ForceBossMenuH);
 	
 	SetGlobalTransTarget(client);
@@ -1862,6 +1869,7 @@ static void ForceBossMenu(int client, int item)
 		}
 	}
 	
+	Forward_OnMenuPagePost(client, "admin.forceboss", menu);
 	menu.DisplayAt(client, item/7*7, MENU_TIME_FOREVER);
 }
 
@@ -2246,7 +2254,7 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 	if(name[0])
 	{
 		ConfigMap cfg = Difficulties.GetSection(name);
-		if(cfg)
+		if(cfg && Forward_OnMenuPagePre(client, "difficulty.item"))
 		{
 			Menu menu = new Menu(DifficultyMenuItemH);
 			
@@ -2276,10 +2284,11 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 			}
 			
 			menu.ExitBackButton = true;
+			Forward_OnMenuPagePost(client, "difficulty.item", menu);
 			menu.Display(client, MENU_TIME_FOREVER);
 		}
 	}
-	else
+	else if(Forward_OnMenuPagePre(client, "difficulty.main"))
 	{
 		Menu menu = new Menu(DifficultyMenuH);
 		
@@ -2323,6 +2332,7 @@ static void DifficultyMenu(int client, const char[] name = NULL_STRING)
 		delete snap;
 		
 		menu.ExitBackButton = Menu_BackButton(client);
+		Forward_OnMenuPagePost(client, "difficulty.main", menu);
 		menu.DisplayAt(client, ViewingPage[client], MENU_TIME_FOREVER);
 	}
 }
@@ -2466,6 +2476,9 @@ static bool GetDiffByName(const char[] name, char[] buffer, int length, int lang
 
 static void CreatorMenu(int client)
 {
+	if(!Forward_OnMenuPagePre(client, "preference.creator"))
+		return;
+	
 	ConfigMap cfg = Bosses_GetConfig(ViewingBoss[client].Get(0));
 	if(!cfg)
 		return;
@@ -2506,6 +2519,7 @@ static void CreatorMenu(int client)
 	}
 
 	menu.ExitBackButton = true;
+	Forward_OnMenuPagePost(client, "preference.creator", menu);
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 

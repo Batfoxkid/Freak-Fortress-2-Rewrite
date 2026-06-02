@@ -7,8 +7,11 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+native bool CW3_AddAttribute(int slot, int client, const char[] attrib, const char[] plugin, const char[] value, bool whileActive);
+
 #define TFEY_LIBRARY	"tf2econdynamic"
 #define TCA_LIBRARY		"tf2custattr"
+#define CW3A_LIBRARY	"cw3-attributes"
 
 #if !defined CUSTOMATTRIBFF2_INCLUDED
 #define CUSTOMATTRIBFF2_INCLUDED	-69420.69
@@ -20,6 +23,10 @@ static bool TFEYLoaded;
 
 #if defined __tf_custom_attributes_included
 static bool TCALoaded;
+#endif
+
+#if defined _cw3_attributes_included_
+static bool CW3Loaded;
 #endif
 
 #if defined IS_MAIN_FF2
@@ -43,12 +50,18 @@ void CustomAttrib_PluginLoad()
 	MarkNativeAsOptional("TF2EconDynAttribute.SetCustom");
 	MarkNativeAsOptional("TF2EconDynAttribute.Register");
 	#endif
+
+	MarkNativeAsOptional("CW3_AddAttribute");
 }
 
 void CustomAttrib_PluginStart()
 {
 	#if defined __tf_custom_attributes_included
 	TCALoaded = LibraryExists(TCA_LIBRARY);
+	#endif
+	
+	#if defined _cw3_attributes_included_
+	CW3Loaded = LibraryExists(CW3A_LIBRARY);
 	#endif
 }
 
@@ -67,6 +80,11 @@ public void CustomAttrib_LibraryAdded(const char[] name)
 	if(!TCALoaded && StrEqual(name, TCA_LIBRARY))
 		TCALoaded = true;
 	#endif
+
+	#if defined _cw3_attributes_included_
+	if(!CW3Loaded && StrEqual(name, CW3A_LIBRARY))
+		CW3Loaded = true;
+	#endif
 }
 
 public void CustomAttrib_LibraryRemoved(const char[] name)
@@ -74,6 +92,11 @@ public void CustomAttrib_LibraryRemoved(const char[] name)
 	#if defined __tf_custom_attributes_included
 	if(TCALoaded && StrEqual(name, TCA_LIBRARY))
 		TCALoaded = false;
+	#endif
+
+	#if defined _cw3_attributes_included_
+	if(CW3Loaded && StrEqual(name, CW3A_LIBRARY))
+		CW3Loaded = false;
 	#endif
 }
 
@@ -92,39 +115,74 @@ stock void CustomAttrib_PrintStatus()
 	#else
 	PrintToServer("'%s' not compiled", TCA_LIBRARY);
 	#endif
-}
 
-stock bool CustomAttrib_Loaded()
-{
-	#if defined __tf_econ_dyn_included
-	if(TFEYLoaded)
-		return true;
+	#if defined _cw3_attributes_included_
+	PrintToServer("'%s' is %sloaded", CW3A_LIBRARY, CW3Loaded ? "" : "not ");
+	#else
+	PrintToServer("'%s' not compiled", CW3A_LIBRARY);
 	#endif
-
-	#if defined __tf_custom_attributes_included
-	if(TCALoaded)
-		return true;
-	#endif
-
-	return false;
 }
 
 stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 {
-	StringMapSnapshot snap = cfg.Snapshot();
-	
-	int entries = snap.Length;
-	for(int i; i < entries; i++)
+	ConfigMap custom = cfg.GetSection("custom");
+	if(custom)
 	{
-		int length = snap.KeyBufferSize(i) + 1;
+		#if defined _cw3_attributes_included_
+		char buffer[64];
+		GetEntityClassname(entity, buffer, sizeof(buffer));
+		int slot = TF2_GetClassnameSlot(buffer);
+		#endif
+
+		StringMapSnapshot snap = custom.Snapshot();
 		
-		char[] key = new char[length];
-		snap.GetKey(i, key, length);
-		
-		static PackVal attribute;	
-		cfg.GetArray(key, attribute, sizeof(attribute));
-		if(attribute.tag == KeyValType_Value)
+		int entries = snap.Length;
+		for(int i; i < entries; i++)
 		{
+			int length = snap.KeyBufferSize(i) + 1;
+			
+			char[] key = new char[length];
+			snap.GetKey(i, key, length);
+			
+			static PackVal attribute;	
+			custom.GetArray(key, attribute, sizeof(attribute));
+			switch(attribute.tag)
+			{
+				case KeyValType_Section:
+				{
+					attribute.cfg.Get("value", attribute.data, sizeof(attribute.data));
+					
+					#if defined _cw3_attributes_included_
+					attribute.cfg.Get("plugin", buffer, sizeof(buffer));
+					
+					if(CW3Loaded && buffer[0])
+					{
+						if(StrEqual(attribute.data, "R"))
+						{
+							bool active;
+							attribute.cfg.GetBool("while active", active, false);
+							CW3_AddAttribute(slot, GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"), key, buffer, "", active);
+						}
+						else
+						{
+							bool active;
+							attribute.cfg.GetBool("while active", active, false);
+							CW3_AddAttribute(slot, GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity"), key, buffer, attribute.data, active);
+						}
+
+						continue;
+					}
+					#endif
+				}
+				case KeyValType_Value:
+				{
+				}
+				default:
+				{
+					continue;
+				}
+			}
+			
 			if(StrEqual(attribute.data, "R"))
 			{
 				#if defined __tf_custom_attributes_included
@@ -143,9 +201,9 @@ stock void CustomAttrib_ApplyFromCfg(int entity, ConfigMap cfg)
 				CustomAttrib_SetString(entity, key, attribute.data);
 			}
 		}
+		
+		delete snap;
 	}
-	
-	delete snap;
 }
 
 stock void CustomAttrib_SetString(int entity, const char[] key, const char[] value)
@@ -301,6 +359,25 @@ stock bool CustomAttrib_GetString(int weapon, const char[] name, char[] buffer, 
 #if !defined IS_MAIN_FF2
 	#endinput
 #endif
+
+public Action CW3_OnAddAttribute(int slot, int client, const char[] attrib, const char[] plugin, const char[] value, bool whileActive)
+{
+	if(!StrEqual(plugin, "freak_fortress_2"))
+		return Plugin_Continue;
+	
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if(weapon != -1)
+		Attrib_SetString(weapon, attrib, _, value);
+	
+	return Plugin_Handled;
+}
+
+public void CW3_OnWeaponRemoved(int slot, int client)
+{
+	int weapon = GetPlayerWeaponSlot(client, slot);
+	if(weapon != -1)
+		VScript_RemoveAllAttributes(weapon, true);
+}
 
 #if defined __tf_econ_dyn_included
 static void AddAttributes()
@@ -550,6 +627,11 @@ static void AddAttributes()
 	attrib.SetName("sapper boss effect DISPLAY ONLY");
 	attrib.SetClass("ff2.displayonly");
 	attrib.SetCustom("description_ff2_string", "sapper boss effect DISPLAY ONLY");
+	attrib.Register();
+
+	attrib.SetName("is custom weapon");
+	attrib.SetClass("ff2.overrideconfig");
+	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
 	
 	delete attrib;
