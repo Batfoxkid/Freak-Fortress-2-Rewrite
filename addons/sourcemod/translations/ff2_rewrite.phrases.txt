@@ -1185,4 +1185,9 @@
 		"#format"	"{1:s},{2:s},{3:s},{4:s}"
 		"en"		"Can be applied to a boss to reduce their damage for a short time"
 	}
+	"dmg taken from fall reduced"
+	{
+		"#format" 	"{1:s},{2:s},{3:s},{4:s}"
+		"en"		"{1}%% fall damage reduction"
+	}
 }
