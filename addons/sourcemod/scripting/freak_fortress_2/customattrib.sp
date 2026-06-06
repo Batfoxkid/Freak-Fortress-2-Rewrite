@@ -633,6 +633,12 @@ static void AddAttributes()
 	attrib.SetClass("ff2.overrideconfig");
 	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
+
+	attrib.SetName("dmg taken from fall reduced");
+	attrib.SetClass("ff2.mult_dmgtaken_from_fall");
+	attrib.SetDescriptionFormat("value_is_percentage");
+	attrib.SetCustom("description_ff2_string", "dmg taken from fall reduced");
+	attrib.Register();
 	
 	delete attrib;
 }

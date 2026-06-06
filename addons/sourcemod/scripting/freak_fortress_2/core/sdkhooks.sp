@@ -429,6 +429,27 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 			return changed ? Plugin_Changed : Plugin_Continue;
 		}
 	}
+
+	else if (damagetype & DMG_FALL)
+	{
+		float flOriginalDamage = damage,
+		flModifiedDamage = damage * CustomAttrib_FindOnPlayer(victim, "dmg taken from fall reduced", true);
+
+		if (flModifiedDamage < 0)
+		{
+			damage = 0.0;
+
+			return Plugin_Handled;
+		}
+
+		if (flModifiedDamage != flOriginalDamage)
+		{
+			damage = flModifiedDamage;
+
+			return Plugin_Changed;
+		}
+	}
+
 	return Plugin_Continue;
 }
 
