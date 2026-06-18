@@ -186,6 +186,15 @@ native void FF2R_SetClientAssist(int client, int assist);
 native int FF2R_GetSpecialCount();
 
 /**
+ * Gets the player's current boss list from preferences
+ * 
+ * @note			Negative indexes mean they have disabled playing on boss pack index (-1 - X)
+ *
+ * @return			ArrayList of boss indexes, null if blank (don't close)
+ */
+native ArrayList FF2R_GetClientListing(int client);
+
+/**
  * Called when a player spawns, dies, disconnects, etc.
  * 
  * @note		Players counted as minions aren't counted
@@ -276,7 +285,6 @@ forward Action FF2R_OnMenuOpenPre(int client, const char[] name);
  * @noreturn
  */
 forward void FF2R_OnMenuOpenPost(int client, const char[] name, Menu menu);
-
 /**
  * Wrapper to emit sound to one client.
  * 

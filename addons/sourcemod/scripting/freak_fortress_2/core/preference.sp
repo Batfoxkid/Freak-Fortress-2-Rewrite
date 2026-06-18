@@ -99,6 +99,11 @@ bool Preference_ShouldUpdate(int client)
 	return UpdateDataBase[client];
 }
 
+ArrayList Preference_GetBossListing(int client)
+{
+	return BossListing[client];
+}
+
 bool Preference_GetBoss(int client, int index, char[] buffer = "", int length = 0)
 {
 	if(!BossListing[client] || index >= BossListing[client].Length)

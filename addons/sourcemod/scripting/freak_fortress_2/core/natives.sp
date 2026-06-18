@@ -25,6 +25,7 @@ void Native_PluginLoad()
 	CreateNative("FF2R_SetClientAssist", Native_SetClientAssist);
 	CreateNative("FF2R_StopMusic", Native_StopMusic);
 	CreateNative("FF2R_PlayMusic", Native_PlayMusic);
+	CreateNative("FF2R_GetClientListing", Native_GetClientListing);
 	
 	RegPluginLibrary("ff2r");
 }
@@ -387,4 +388,13 @@ static any Native_PlayMusic(Handle plugin, int params)
 		}
 	}
 	return 0;
+}
+
+static any Native_GetClientListing(Handle plugin, int params)
+{
+	int client = GetNativeCell(1);
+	if(client < 0 || client >= MAXTF2PLAYERS)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client index %d is invalid", client);
+	
+	return Preference_GetBossListing(client);
 }
