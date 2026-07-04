@@ -339,8 +339,8 @@ public void OnPluginStart()
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);	// const CEconItemView *pScriptItem
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);	// bool bForce
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKGiveNamedItem = EndPrepSDKCall();
 	if(!SDKGiveNamedItem)
