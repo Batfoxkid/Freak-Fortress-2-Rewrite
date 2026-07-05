@@ -214,7 +214,6 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	Attrib_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
 	MarkNativeAsOptional("FF2_SetClientGlow");

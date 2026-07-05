@@ -178,31 +178,6 @@ stock void VScript_SetAttributeInt(int entity, const char[] name, int value)
 	AcceptEntityInput(0, "RunScriptCode", entity, entity);
 }
 
-public void VScript_SetAttributeTable(int entity, const char[] name, float value)
-{
-	#if defined _vscript_included
-	if(Loaded)
-	{
-		ScriptHandle scope = VScript_GetEntityScriptScope(entity, true);
-		if(scope)
-		{
-			ScriptHandle table = scope.GetHScript("ff2attributes");
-			if(!table)
-			{
-				table = VScript_CreateTable();
-				scope.SetHScript("ff2attributes", table);
-			}
-
-			table.SetFloat(name, value);
-
-			delete table;
-		}
-		
-		return;
-	}
-	#endif
-}
-
 stock void VScript_RemoveAttribute(int entity, const char[] name)
 {
 	#if defined _vscript_included
