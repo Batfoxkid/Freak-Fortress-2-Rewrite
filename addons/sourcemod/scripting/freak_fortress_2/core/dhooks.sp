@@ -31,7 +31,7 @@ static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 
 static int PrefClass;
-static int EffectClass;
+static int EffectClass = -1;
 static int KnifeWasChanged = -1;
 
 void DHook_PluginStart()
