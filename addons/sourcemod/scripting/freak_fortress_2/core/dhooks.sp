@@ -31,7 +31,7 @@ static int ForceRespawnPreHook[MAXTF2PLAYERS];
 static int ForceRespawnPostHook[MAXTF2PLAYERS];
 
 static int PrefClass;
-static int EffectClass;
+static int EffectClass = -1;
 static int KnifeWasChanged = -1;
 
 void DHook_PluginStart()
@@ -430,12 +430,11 @@ static MRESReturn DHook_KnifeInjuredPre(int entity, DHookParam param)
 {
 	if(DamageTypeOffset != -1 && !param.IsNull(2) && Client(param.Get(2)).IsBoss)
 	{
-		Address address = param.GetAddress(3) + view_as<Address>(DamageTypeOffset);
-		int damagetype = LoadFromAddress(address, NumberType_Int32);
+		int damagetype = param.GetObjectVar(3, DamageTypeOffset, ObjectValueType_Int);
 		if(!(damagetype & DMG_BURN))
 		{
 			KnifeWasChanged = damagetype;
-			StoreToAddress(address, damagetype | DMG_BURN, NumberType_Int32);
+			param.SetObjectVar(3, DamageTypeOffset, ObjectValueType_Int, damagetype | DMG_BURN);
 		}
 	}
 
@@ -446,7 +445,7 @@ static MRESReturn DHook_KnifeInjuredPost(int entity, DHookParam param)
 {
 	if(KnifeWasChanged != -1)
 	{
-		StoreToAddress(param.GetAddress(3) + view_as<Address>(DamageTypeOffset), KnifeWasChanged, NumberType_Int32);
+		param.SetObjectVar(3, DamageTypeOffset, ObjectValueType_Int, KnifeWasChanged);
 		KnifeWasChanged = -1;
 	}
 

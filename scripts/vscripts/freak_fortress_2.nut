@@ -1,4 +1,4 @@
-SCRIPT_VERSION <- 3
+SCRIPT_VERSION <- 4
 /*
 	VScript script for calling special functions for Freak Fortress 2: Rewrite
 */
@@ -64,7 +64,7 @@ function _FF2_RemoveAllAttributes(bRemove)
 	{
 		if(bRemove)
 		{
-			foreach(strName in m.ff2attributes)
+			foreach(strName, flValue in m.ff2attributes)
 			{
 				if(bCustom)
 				{

@@ -213,7 +213,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	
 	ThisPlugin = myself;
 	
-	Attrib_PluginLoad();
 	CustomAttrib_PluginLoad();
 	Forward_PluginLoad();
 	ForwardOld_PluginLoad();

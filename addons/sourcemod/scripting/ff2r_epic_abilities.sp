@@ -148,10 +148,6 @@
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE		100000000.0
 
-#if SOURCEMOD_V_REV < 7302
-#define SDKType_Address	view_as<SDKType>(9)
-#endif
-
 #define	HITGROUP_GENERIC	0
 #define	HITGROUP_HEAD		1
 #define	HITGROUP_CHEST		2
@@ -274,7 +270,6 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	Attrib_PluginLoad();
 	TF2U_PluginLoad();
 	return APLRes_Success;
 }
@@ -304,7 +299,11 @@ public void OnPluginStart()
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_QAngle, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);
+	#if SOURCEMOD_V_MINOR >= 13
+	PrepSDKCall_AddParameter(SDKType_Address, SDKPass_Plain);
+	#else
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	#endif
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKCreate = EndPrepSDKCall();
 	if(!SDKCreate)
@@ -339,8 +338,12 @@ public void OnPluginStart()
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Virtual, "CTFPlayer::GiveNamedItem");
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
+	#if SOURCEMOD_V_MINOR >= 13
+	PrepSDKCall_AddParameter(SDKType_Address, SDKPass_Plain);
+	#else
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	#endif
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_ByValue);
-	PrepSDKCall_AddParameter(GetFeatureStatus(FeatureType_Native, "LoadAddressFromAddress") == FeatureStatus_Available ? SDKType_Address : SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKGiveNamedItem = EndPrepSDKCall();
 	if(!SDKGiveNamedItem)

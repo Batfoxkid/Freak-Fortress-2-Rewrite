@@ -13,12 +13,6 @@
 static bool Loaded;
 #endif
 
-void Attrib_PluginLoad()
-{
-	MarkNativeAsOptional("TF2Attrib_SetFromStringValue");
-	MarkNativeAsOptional("TF2Attrib_UnsafeGetStringValue");
-}
-
 void Attrib_PluginStart()
 {
 	#if defined _tf2attributes_included
@@ -262,31 +256,10 @@ stock bool Attrib_Get(int entity, const char[] name = "", int index = -1, float 
 
 stock bool Attrib_GetString(int entity, const char[] name = "", int index = -1, char[] buffer, int length)
 {
-	#if defined _tf2attributes_included
-	if(Loaded)
-	{
-		Address address = Address_Null;
-		
-		if(index != -1)
-		{
-			address = TF2Attrib_GetByDefIndex(entity, index);
-		}
-		else if(TF2Attrib_IsValidAttributeName(name))
-		{
-			address = TF2Attrib_GetByName(entity, name);
-		}
-
-		if(address == Address_Null)
-			return false;
-		
-		return view_as<bool>(TF2Attrib_UnsafeGetStringValue(address, buffer, length));
-	}
-	#endif
-
 	float value;
 	if(!Attrib_Get(entity, name, index, value))
 		return false;
-	
+
 	FloatToString(value, buffer, length);
 	return true;
 }
@@ -387,36 +360,7 @@ stock void Attrib_SetInt(int entity, const char[] name = "", int index = -1, int
 
 stock void Attrib_SetString(int entity, const char[] name = "", int index = -1, const char[] value)
 {
-	#if defined _tf2attributes_included
-	char buffer[64];
-	if(name[0])
-	{
-		strcopy(buffer, sizeof(buffer), name);
-	}
-	else
-	{
-		#if defined TFED_LIBRARY
-		TF2ED_GetAttributeName(index, buffer, sizeof(buffer));
-		#elseif defined __tf_econ_data_included
-		TF2Econ_GetAttributeName(index, buffer, sizeof(buffer));
-		#endif
-	}
-
-	if(buffer[0])
-	{
-		if(Loaded)
-		{
-			if(TF2Attrib_SetFromStringValue(entity, buffer, value))
-			{
-				VScript_SetAttributeTable(entity, buffer, StringToFloat(value));
-				return;
-			}
-		}
-	}
-	Attrib_Set(entity, buffer, index, StringToFloat(value));
-	#else
 	Attrib_Set(entity, name, index, StringToFloat(value));
-	#endif
 }
 
 stock void Attrib_Remove(int entity, const char[] name = "", int index = -1)
