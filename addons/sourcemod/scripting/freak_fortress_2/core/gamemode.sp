@@ -497,12 +497,12 @@ void Gamemode_RoundStart()
 	if(RoundStatus == 1)
 		return;
 	
-	RoundStatus = 1;
-	
-	Events_CheckAlivePlayers(_, _, true);
-	
 	if(!GameRules_GetProp("m_bInWaitingForPlayers", 1))
 	{
+		RoundStatus = 1;
+
+		Events_CheckAlivePlayers(_, _, true);
+
 		ArrayList teams = new ArrayList();
 		int[] merc = new int[MaxClients];
 		int[] boss = new int[MaxClients];
@@ -610,9 +610,9 @@ void Gamemode_RoundStart()
 		}
 
 		delete teams;
+		
+		Music_RoundStart();
 	}
-	
-	Music_RoundStart();
 }
 
 static void PostRoundStart(int userid)
