@@ -221,67 +221,66 @@ void Music_PlaySong(const int[] clients, int numClients, SoundEnum sound = {}, i
 	
 	if(sound.Sound[0])
 	{
-		char songName[64];
+		char baseName[64];
 		if(sound.Name[0])
-			strcopy(songName, sizeof(songName), sound.Name);
-		
-		char songArtist[64];
+			strcopy(baseName, sizeof(baseName), sound.Name);
+
+		char baseArtist[64];
 		if(sound.Artist[0])
-			strcopy(songArtist, sizeof(songArtist), sound.Artist);
-		
-		float time = sound.Time;
-		char sample2[PLATFORM_MAX_PATH];
-		strcopy(sample2, sizeof(sample2), sound.Sound);
-		ForwardOld_OnMusic(sample2, time, songName, songArtist, clients[0]);
-		
-		if(time)
-		{
-			time += GetGameTime();
-		}
-		else
-		{
-			time = FAR_FUTURE;
-		}
-		
+			strcopy(baseArtist, sizeof(baseArtist), sound.Artist);
+
 		int count = RoundToCeil(sound.Volume);
 		float vol = sound.Volume / float(count);
-		
-		int[] clients2 = new int[numClients];
-		int amount;
 
-		bool noName = !songName[0];
-		bool noArtist = !songArtist[0];
-		
 		for(int i; i < numClients; i++)
 		{
-			DeniedByFileNet[clients[i]] = !FileNet_HasFile(clients[i], sound.FileNet);
-			if(DeniedByFileNet[clients[i]])
+			int client = clients[i];
+
+			DeniedByFileNet[client] = !FileNet_HasFile(client, sound.FileNet);
+			if(DeniedByFileNet[client])
 				continue;
-			
+
+			char sample[PLATFORM_MAX_PATH];
+			strcopy(sample, sizeof(sample), sound.Sound);
+			float time = sound.Time;
+			char songName[64], songArtist[64];
+			strcopy(songName, sizeof(songName), baseName);
+			strcopy(songArtist, sizeof(songArtist), baseArtist);
+
+			bool noMusic = Client(client).NoMusic;
+
+			if(!noMusic && ForwardOld_OnMusic(sample, time, songName, songArtist, client))
+			{
+				CurrentTheme[client][0] = 0;
+				NextThemeAt[client] = FAR_FUTURE;
+				continue;
+			}
+
+			float nextThemeAt = time ? time + GetGameTime() : FAR_FUTURE;
+
 			if(songName[0] || songArtist[0])
 			{
-				if(noName)
-					FormatEx(songName, sizeof(songName), "{default}%T", "Unknown Song", clients[i]);
-				
-				if(noArtist)
-					FormatEx(songArtist, sizeof(songArtist), "{default}%T", "Unknown Artist", clients[i]);
-				
-				FPrintToChat(clients[i], "%t", "Now Playing", songArtist, songName);
+				if(!songName[0])
+					FormatEx(songName, sizeof(songName), "{default}%T", "Unknown Song", client);
+
+				if(!songArtist[0])
+					FormatEx(songArtist, sizeof(songArtist), "{default}%T", "Unknown Artist", client);
+
+				FPrintToChat(client, "%t", "Now Playing", songArtist, songName);
 			}
-			
-			if(!Client(clients[i]).NoMusic)
+
+			if(!noMusic)
 			{
-				clients2[amount++] = clients[i];
-				strcopy(CurrentTheme[clients[i]], sizeof(CurrentTheme[]), sample2);
-				NextThemeAt[clients[i]] = time;
-				CurrentVolume[clients[i]] = count;
-				CurrentSource[clients[i]] = source;
+				strcopy(CurrentTheme[client], sizeof(CurrentTheme[]), sample);
+				NextThemeAt[client] = nextThemeAt;
+				CurrentVolume[client] = count;
+				CurrentSource[client] = source;
+
+				for(int c; c < count; c++)
+				{
+					EmitSoundToClient(client, sample, _, SNDCHAN_STATIC, SNDLEVEL_NONE, _, vol, sound.Pitch);
+				}
 			}
-		}
-		
-		for(int i; i < count; i++)
-		{
-			EmitSound(clients2, amount, sample2, _, SNDCHAN_STATIC, SNDLEVEL_NONE, _, vol, sound.Pitch);
 		}
 	}
 	else
