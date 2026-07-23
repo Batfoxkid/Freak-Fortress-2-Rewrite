@@ -136,6 +136,8 @@ void Music_PlayerRunCmd(int client)
 		// If theme expired by time out, don't run StopSound code
 		CurrentTheme[client][0] = 0;
 		Music_PlayNextSong(client);
+		if(!CurrentTheme[client][0])
+			Forward_OnMusicStop(client);
 	}
 }
 
@@ -221,13 +223,18 @@ void Music_PlaySong(const int[] clients, int numClients, SoundEnum sound = {}, i
 	
 	if(sound.Sound[0])
 	{
-		char baseName[64];
+		char songName[64];
 		if(sound.Name[0])
-			strcopy(baseName, sizeof(baseName), sound.Name);
-
-		char baseArtist[64];
+			strcopy(songName, sizeof(songName), sound.Name);
+		
+		char songArtist[64];
 		if(sound.Artist[0])
-			strcopy(baseArtist, sizeof(baseArtist), sound.Artist);
+			strcopy(songArtist, sizeof(songArtist), sound.Artist);
+		
+		float time = sound.Time;
+		char sample2[PLATFORM_MAX_PATH];
+		strcopy(sample2, sizeof(sample2), sound.Sound);
+		ForwardOld_OnMusic(sample2, time, songName, songArtist, clients[0]);
 
 		int count = RoundToCeil(sound.Volume);
 		float vol = sound.Volume / float(count);
@@ -241,38 +248,54 @@ void Music_PlaySong(const int[] clients, int numClients, SoundEnum sound = {}, i
 				continue;
 
 			char sample[PLATFORM_MAX_PATH];
-			strcopy(sample, sizeof(sample), sound.Sound);
-			float time = sound.Time;
-			char songName[64], songArtist[64];
-			strcopy(songName, sizeof(songName), baseName);
-			strcopy(songArtist, sizeof(songArtist), baseArtist);
+			strcopy(sample, sizeof(sample), sample2);
+			float clientTime = time;
+			char name[64], artist[64];
+			strcopy(name, sizeof(name), songName);
+			strcopy(artist, sizeof(artist), songArtist);
 
 			bool noMusic = Client(client).NoMusic;
 
-			if(!noMusic && ForwardOld_OnMusic(sample, time, songName, songArtist, client))
+			if(!noMusic)
 			{
-				CurrentTheme[client][0] = 0;
-				NextThemeAt[client] = FAR_FUTURE;
-				continue;
+				FF2RMusicInfo info;
+				strcopy(info.path, sizeof(info.path), sample);
+				info.duration = clientTime;
+				strcopy(info.name, sizeof(info.name), name);
+				strcopy(info.artist, sizeof(info.artist), artist);
+
+				Action action = Forward_OnMusicStart(client, info);
+				if(action >= Plugin_Handled)
+				{
+					CurrentTheme[client][0] = 0;
+					NextThemeAt[client] = FAR_FUTURE;
+					continue;
+				}
+
+				if(action == Plugin_Changed)
+				{
+					strcopy(sample, sizeof(sample), info.path);
+					clientTime = info.duration;
+					strcopy(name, sizeof(name), info.name);
+					strcopy(artist, sizeof(artist), info.artist);
+				}
 			}
 
-			float nextThemeAt = time ? time + GetGameTime() : FAR_FUTURE;
-
-			if(songName[0] || songArtist[0])
+			if(name[0] || artist[0])
 			{
-				if(!songName[0])
-					FormatEx(songName, sizeof(songName), "{default}%T", "Unknown Song", client);
+				if(!name[0])
+					FormatEx(name, sizeof(name), "{default}%T", "Unknown Song", client);
 
-				if(!songArtist[0])
-					FormatEx(songArtist, sizeof(songArtist), "{default}%T", "Unknown Artist", client);
+				if(!artist[0])
+					FormatEx(artist, sizeof(artist), "{default}%T", "Unknown Artist", client);
 
-				FPrintToChat(client, "%t", "Now Playing", songArtist, songName);
+				FPrintToChat(client, "%t", "Now Playing", artist, name);
 			}
 
 			if(!noMusic)
 			{
 				strcopy(CurrentTheme[client], sizeof(CurrentTheme[]), sample);
-				NextThemeAt[client] = nextThemeAt;
+				NextThemeAt[client] = clientTime ? clientTime + GetGameTime() : FAR_FUTURE;
 				CurrentVolume[client] = count;
 				CurrentSource[client] = source;
 
@@ -287,8 +310,12 @@ void Music_PlaySong(const int[] clients, int numClients, SoundEnum sound = {}, i
 	{
 		for(int i; i < numClients; i++)
 		{
-			CurrentTheme[clients[i]][0] = 0;
-			NextThemeAt[clients[i]] = FAR_FUTURE;
+			int client = clients[i];
+			bool wasPlaying = CurrentTheme[client][0] != 0;
+			CurrentTheme[client][0] = 0;
+			NextThemeAt[client] = FAR_FUTURE;
+			if(wasPlaying)
+				Forward_OnMusicStop(client);
 		}
 	}
 }

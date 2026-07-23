@@ -17,6 +17,8 @@ static GlobalForward BossEquippedPost;
 static GlobalForward RankChangePost;
 static GlobalForward MenuPagePre;
 static GlobalForward MenuPagePost;
+static GlobalForward MusicStart;
+static GlobalForward MusicStop;
 
 void Forward_PluginLoad()
 {
@@ -36,6 +38,8 @@ void Forward_PluginLoad()
 	RankChangePost = new GlobalForward("FF2R_OnRankChange", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 	MenuPagePre = new GlobalForward("FF2R_OnMenuOpenPre", ET_Event, Param_Cell, Param_String);
 	MenuPagePost = new GlobalForward("FF2R_OnMenuOpenPost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
+	MusicStart = new GlobalForward("FF2R_OnMusicStart", ET_Event, Param_Cell, Param_Array);
+	MusicStop = new GlobalForward("FF2R_OnMusicStop", ET_Ignore, Param_Cell);
 }
 
 void Forward_OnBossCreated(int client, ConfigMap cfg, bool setup)
@@ -264,5 +268,22 @@ void Forward_OnMenuPagePost(int client, const char[] name, Menu menu)
 	Call_PushCell(client);
 	Call_PushString(name);
 	Call_PushCell(menu);
+	Call_Finish();
+}
+
+Action Forward_OnMusicStart(int client, FF2RMusicInfo info)
+{
+	Action action;
+	Call_StartForward(MusicStart);
+	Call_PushCell(client);
+	Call_PushArrayEx(info, sizeof(info), SM_PARAM_COPYBACK);
+	Call_Finish(action);
+	return action;
+}
+
+void Forward_OnMusicStop(int client)
+{
+	Call_StartForward(MusicStop);
+	Call_PushCell(client);
 	Call_Finish();
 }
