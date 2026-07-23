@@ -19,7 +19,7 @@ void ForwardOld_PluginLoad()
 {
 	PreAbility = new GlobalForward("FF2_PreAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_CellByRef);
 	OnAbility = new GlobalForward("FF2_OnAbility", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell);
-	OnMusic = new GlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef, Param_Cell);
+	OnMusic = new GlobalForward("FF2_OnMusic", ET_Hook, Param_String, Param_FloatByRef);
 	OnMusic2 = new GlobalForward("FF2_OnMusic2", ET_Hook, Param_String, Param_FloatByRef, Param_String, Param_String);
 	OnTriggerHurt = new GlobalForward("FF2_OnTriggerHurt", ET_Hook, Param_Cell, Param_Cell, Param_FloatByRef);
 	OnSpecialSelected = new GlobalForward("FF2_OnSpecialSelected", ET_Hook, Param_Cell, Param_CellByRef, Param_String, Param_Cell);
@@ -87,7 +87,6 @@ bool ForwardOld_OnMusic(char path[PLATFORM_MAX_PATH], float &time, char name[64]
 		Call_StartForward(OnMusic);
 		Call_PushStringEx(path2, sizeof(path2), SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_PushFloatRef(time2);
-		Call_PushCell(client);
 		Call_Finish(action);
 		
 		if(action == Plugin_Changed)

@@ -13,6 +13,7 @@
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
+#include <ff2r>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -29,8 +30,6 @@
 
 #define FAR_FUTURE	100000000.0
 #define MAXTF2PLAYERS	MAXPLAYERS+1
-
-#define SNDVOL_BOSS	2.0
 
 #define PREF_ENABLED	(1 << 0)
 #define PREF_PLAYING	(1 << 1)
