@@ -192,9 +192,9 @@ static void Database_ClientSetup(Database db, int userid, int numQueries, DBResu
 		if(results[0].FetchRow())
 		{
 			Client(client).Queue = results[0].FetchInt(1);
-			Client(client).NoVoice = !results[0].FetchInt(3);
-			Client(client).NoChanges = !results[0].FetchInt(4);
-			Client(client).NoDmgHud = !results[0].FetchInt(5);
+			Client(client).NoVoice = results[0].FetchInt(3) == 0;
+			Client(client).NoChanges = results[0].FetchInt(4) == 0;
+			Client(client).NoDmgHud = results[0].FetchInt(5) == 0;
 			results[0].FetchString(6, buffer, sizeof(buffer));
 			Client(client).SetLastPlayed(buffer);
 			results[0].FetchString(7, buffer, sizeof(buffer));

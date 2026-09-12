@@ -173,7 +173,7 @@ stock bool TF2U_IsInRespawnRoom(int entity)
 	}
 	#endif
 
-	return !entity;
+	return entity == 0;
 }
 
 stock int TF2U_GetPlayerLoadoutEntity(int client, int loadoutSlot, bool includeWearableWeapons = true)

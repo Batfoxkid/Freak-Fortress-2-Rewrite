@@ -3000,7 +3000,7 @@ void TF2_RemoveAllItems(int client)
 
 public bool Trace_WorldOnly(int entity, int contentsMask)
 {
-	return !entity;
+	return entity == 0;
 }
 
 void FPrintToChatEx(int client, int author, const char[] message, any ...)

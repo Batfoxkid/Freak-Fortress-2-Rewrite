@@ -743,7 +743,7 @@ static void BossMenu(int client)
 					index = list.Get(b);
 					cfg = Bosses_GetConfig(index);
 
-					if(((cfg.GetBool("enabled", enabled) && enabled) && (!cfg.GetBool("raidboss", raidboss, false) || !raidboss)) == !a)
+					if(((cfg.GetBool("enabled", enabled) && enabled) && (!cfg.GetBool("raidboss", raidboss, false) || !raidboss)) == (a == 0))
 					{
 						bool preview;
 						bool access = Preference_CanAccessBoss(client, index, PREF_MENU, _, preview);

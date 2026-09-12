@@ -3141,7 +3141,7 @@ void Formula_BasicValue(const char[] var_name, int var_name_len, float &f, any d
 
 bool Trace_WorldOnly(int entity, int contentsMask)
 {
-	return !entity;
+	return entity == 0;
 }
 
 stock void Debug(const char[] buffer, any ...)
