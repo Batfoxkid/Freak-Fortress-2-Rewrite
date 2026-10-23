@@ -1,6 +1,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#define SOUND_9000	"saxton_hale/9000.wav"
+
 static bool FirstBlood;
 static bool LastMann;
 static bool InRegen;
@@ -25,6 +27,11 @@ void Events_PluginStart()
 	HookEvent("teamplay_point_captured", Events_PointCaptured, EventHookMode_Post);
 	HookEvent("teamplay_round_win", Events_RoundEnd, EventHookMode_Post);
 	HookEvent("teamplay_setup_finished", Events_RoundStart, EventHookMode_Post);
+}
+
+void Events_MapStart()
+{
+	AddFileToDownloadsTable("sound/" ... SOUND_9000);
 }
 
 void Events_CheckAlivePlayers(int exclude = 0, bool alive = true, bool resetMax = false)
@@ -833,7 +840,7 @@ static Action Events_WinPanel(Event event, const char[] name, bool dontBroadcast
 			if(!Client(clients[i]).NoHud)
 			{
 				if(dmg[0] > 9000)
-					ClientCommand(clients[i], "playgamesound saxton_hale/9000.wav");
+					ClientCommand(clients[i], "playgamesound " ... SOUND_9000);
 				
 				if(team == -1 || !Client(clients[i]).IsBoss)
 					Format(screen, sizeof(screen), "%t", "You Dealt Damage Hud", Client(clients[i]).TotalDamage, Client(clients[i]).TotalHealing, Client(clients[i]).TotalAssist);

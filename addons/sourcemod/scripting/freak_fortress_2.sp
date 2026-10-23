@@ -292,6 +292,7 @@ public void OnMapStart()
 	Configs_MapStart();
 	DHook_MapStart();
 	Dome_MapStart();
+	Events_MapStart();
 	Gamemode_MapStart();
 	Teuton_MapStart();
 	ServerCommand("script_execute freak_fortress_2");
