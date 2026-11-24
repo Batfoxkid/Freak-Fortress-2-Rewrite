@@ -61,6 +61,14 @@
 	{
 		"ru"		"синей команды"
 	}
+	"Team 4"
+	{
+		"ru"		"зеленой команды"
+	}
+	"Team 5"
+	{
+		"ru"		"жёлтой команды"
+	}
 	"Point Unlocked"
 	{
 		"ru"		"Контрольная точка разблокирована"
@@ -129,45 +137,89 @@
 	{
 		"ru"		" | Посмотри на цель и отпусти"
 	}
+	"Boss Mobility Release"
+	{
+		"ru"		" | и отпусти"  
+	}
 	"Boss Mobility 0"
 	{
 		"ru"		" | Удерживай ЛКМ"
+	}
+	"Boss Click 0"
+	{
+		"ru"		" | Нажми ЛКМ"
 	}
 	"Boss Mobility 1"
 	{
 		"ru"		" | Удерживай прыжок"
 	}
+	"Boss Click 1"
+	{
+		"ru"		" | Нажми прыжок"
+	}
 	"Boss Mobility 2"
 	{
 		"ru"		" | Удерживай приседание"
+	}
+	"Boss Click 2"
+	{
+		"ru"		" | Нажми приседание"
 	}
 	"Boss Mobility 3"
 	{
 		"ru"		" | Двигайся вперёд"
 	}
+	"Boss Click 3"
+	{
+		"ru"		" | Нажми вперёд"
+	}
 	"Boss Mobility 4"
 	{
 		"ru"		" | Двигайся назад"
+	}
+	"Boss Click 4"
+	{
+		"ru"		" | Нажми назад"
 	}
 	"Boss Mobility 9"
 	{
 		"ru"		" | Двигайся влево"
 	}
+	"Boss Click 9"
+	{
+		"ru"		" | Нажми влево"
+	}
 	"Boss Mobility 10"
 	{
 		"ru"		" | Двигайся вправо"
+	}
+	"Boss Click 10"
+	{
+		"ru"		" | Нажми вправо"
 	}
 	"Boss Mobility 11"
 	{
 		"ru"		" | Удерживай ПКМ"
 	}
+	"Boss Click 11"
+	{
+		"ru"		" | Нажми ПКМ"
+	}
 	"Boss Mobility 13"
 	{
 		"ru"		" | Удерживай перезарядку"
 	}
+	"Boss Click 13"
+	{
+		"ru"		" | Нажми перезарядку"
+	}
 	"Boss Mobility 25"
 	{
 		"ru"		" | Удерживай СКМ"
+	}
+	"Boss Click 25"
+	{
+		"ru"		" | Нажми СКМ"
 	}
 	"Current Stats Hud"
 	{
@@ -180,6 +232,14 @@
 	"Sapper Cooldown"
 	{
 		"ru"		"Жучок: {1}％"
+	}
+	"RPS Queue Win"
+	{
+		"ru"		"Ты выйграл {olive}{1} {default}очков очереди у {teamcolor}{2}{default}!"
+	}
+	"RPS Queue Lost"
+	{
+		"ru"		"Ты проиграл {olive}{1} {default}очков очереди у {teamcolor}{2}{default}!"
 	}
 	
 	"Preference Updated"
@@ -321,6 +381,10 @@
 	"Clear All"
 	{
 		"ru"		"Очистить все"
+	}
+	"Whitelist All"
+	{
+		"ru"		"Выбрать всех"
 	}
 	"Disable Playing Boss"
 	{
@@ -695,6 +759,78 @@
 	{
 		"ru"		"Возвращено {1} ресурсов за убийство союзника"
 	}
+	"Danmaku Waves"
+	{
+		"ru"		"Волна: {1} / {2}"
+	}
+	"Danmaku Revives"
+	{
+		"ru"		"Жизни: {1}"
+	}
+	"Danmaku Player Revives"
+	{
+		"ru"		"Осталось возрождений: {1}"
+	}
+	"Danmaku Team Revives"
+	{
+		"ru"		"Командных возрождений осталось: {1}"
+	}
+	"Danmaku Difficulty Set"
+	{
+		"ru"		"Сложность {teamcolor}{1} {default}: {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Increased"
+	{
+		"ru"		"Сложность {teamcolor}{1} {default}увеличилась до {olive}{2}{default}!"
+	}
+	"Danmaku Difficulty Decreased"
+	{
+		"ru"		"Сложность {teamcolor}{1} {default}понизилась до {olive}{2}{default}!"
+	}
+	"Danmaku Rank Increased"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}увеличился до {olive}{2}{default}!"
+	}
+	"Danmaku Rank Increased Map"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}на {olive}{2} {default}увеличился до {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}понизился до {olive}{2}{default}!"
+	}
+	"Danmaku Rank Decreased Map"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}на {olive}{2} {default}понизился до {olive}{3}{default}!"
+	}
+	"Danmaku Rank Decreased Score"
+	{
+		"ru"		"Ранг {teamcolor}{1} {default}понизился до {olive}{2}{default}! (Осталось {olive}{3}%% {default}из {olive}{4}%% {default}здоровья)"
+	}
+	"Danmaku Rank Decreased Score Map"
+	{
+		"ru"		"Ранг{teamcolor}{1} {default}на {olive}{2} {default}понизился до {olive}{3}{default}! (Осталось{olive}{4}%% {default}из {olive}{5}%% {default}здоровья)"
+	}
+	"Danmaku Rank Saved Score"
+	{
+		"ru"		"Ранг{teamcolor}{1} {default}остался на {olive}{2}{default}! (Осталось{olive}{3}%% {default}из {olive}{4}%% {default}здоровья)"
+	}
+	"Danmaku Rank Saved Score Map"
+	{
+		"ru"		"Ранг{teamcolor}{1} {default}на {olive}{2} {default}остался на {olive}{3}{default}! (Осталось{olive}{4}%% {default}из {olive}{5}%% {default}здоровья)"
+	}
+	"Danmaku Teleport Ready"
+	{
+		"ru"		"Быстрый побег готов. Осталось зарядов: {1}"
+	}
+	"Danmaku Teleport Not Ready"
+	{
+		"ru"		"Быстрый побег не готов. Осталось зарядов: {1}"
+	}
+	"Danmaku Teleport Stuck"
+	{
+		"ru"		"Недопустимое место для быстрого побега."
+	}
 	
 	"Weapon Menu"
 	{
@@ -812,6 +948,10 @@
 	{
 		"ru"		"Последовательные попаданию по боссу увеличивают время перезарядки на {3}%%"
 	}
+	"mod recharge time hit stale"
+	{
+		"ru"		"Последовательные попадания по боссу увеличивают время перезарядки на {3}%%"
+	}
 	"mod stun boss on hit"
 	{
 		"ru"		"Оглушает босса на {4} секунд"
@@ -827,6 +967,14 @@
 	"melee sickle climb"
 	{
 		"ru"		"Взбирайтесь по стенам ударяя по ним, но при этом теряя {4} здоровья"
+	}
+	"danmaku bounce"
+	{
+		"ru"		"Снаряды отскакивают от стен {4} раз"
+	}
+	"danmaku gravity"
+	{
+		"ru"		"На снаряды действует гравитация"
 	}
 	"milk limit DISPLAY ONLY"
 	{
@@ -903,5 +1051,9 @@
 	"sapper boss effect DISPLAY ONLY"
 	{
 		"ru"		"Может быть применён на босса чтобы уменьшить его урон на короткий период времени"
+	}
+	"dmg taken from fall reduced"
+	{
+		"ru"		"Урон от падения снижен на {1}%%"
 	}
 }
